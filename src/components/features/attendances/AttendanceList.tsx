@@ -1,0 +1,538 @@
+'use client';
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useMembers } from '@/hooks/useMembers';
+import { useAttendances } from '@/hooks/useAttendances';
+import { useAttendanceDeadlines } from '@/hooks/useAttendanceDeadlines';
+import { useAuth } from '@/hooks/useAuth';
+import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { createClient } from '@/lib/supabase/client';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { Save, RotateCcw, ChevronsDown, ChevronsUp } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { Database } from '@/types/database.types';
+import { Part } from '@/types';
+
+import MemberChip from './MemberChip';
+import AttendanceSummary from './AttendanceSummary';
+import AttendanceFilters from './AttendanceFilters';
+import DeadlineStatusBar from './DeadlineStatusBar';
+import { cn, getPartLabel } from '@/lib/utils';
+import { ChevronDown, ChevronRight, CheckCheck, XCircle } from 'lucide-react';
+
+interface AttendanceListProps {
+    date: Date;
+}
+
+// Supabase Database 타입 사용
+type Attendance = Database['public']['Tables']['attendances']['Row'];
+
+const PARTS: Part[] = ['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'];
+
+// 파트별 그라데이션 배경색
+const partGradients: Record<Part, string> = {
+    SOPRANO: 'from-purple-50 to-purple-100/50',
+    ALTO: 'from-yellow-50 to-yellow-100/50',
+    TENOR: 'from-blue-50 to-blue-100/50',
+    BASS: 'from-green-50 to-green-100/50',
+    SPECIAL: 'from-gray-50 to-gray-100/50',
+};
+
+const partAccentColors: Record<Part, string> = {
+    SOPRANO: 'text-purple-700',
+    ALTO: 'text-yellow-700',
+    TENOR: 'text-blue-700',
+    BASS: 'text-green-700',
+    SPECIAL: 'text-gray-700',
+};
+
+export default function AttendanceList({ date }: AttendanceListProps) {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const { profile, user } = useAuth();
+    const [userPart, setUserPart] = useState<string | null>(null);
+    const [isPartLoading, setIsPartLoading] = useState(false);
+    const queryClient = useQueryClient();
+
+    // 파트장인 경우 본인 파트 확인
+    useEffect(() => {
+        async function fetchUserPart() {
+            if (profile?.role === 'PART_LEADER' && user?.email) {
+                setIsPartLoading(true);
+                const supabase = createClient();
+                const { data } = await supabase
+                    .from('members')
+                    .select('part')
+                    .eq('email', user.email)
+                    .single();
+                if (data) setUserPart(data.part);
+                setIsPartLoading(false);
+            }
+        }
+        fetchUserPart();
+    }, [profile, user]);
+
+    const { data: membersData, isLoading: membersLoading } = useMembers({
+        member_status: 'REGULAR',
+        limit: 100,
+    });
+
+    const { data: attendances, isLoading: attendancesLoading } = useAttendances({
+        date: dateStr,
+    });
+
+    // 마감 상태 조회
+    const {
+        data: deadlines,
+        isLoading: deadlinesLoading,
+        refetch: refetchDeadlines,
+    } = useAttendanceDeadlines(dateStr);
+
+    // 전체 마감 여부 (수정 가능 여부에 사용)
+    const isFullyClosed = deadlines?.isFullyClosed ?? false;
+    const canEditAfterClose = ['ADMIN', 'CONDUCTOR'].includes(profile?.role || '');
+
+    const [activeTab, setActiveTab] = useState<'service' | 'practice'>('service');
+    const [showAbsentOnly, setShowAbsentOnly] = useState(false);
+
+    // 변경사항 추적 상태
+    const [pendingChanges, setPendingChanges] = useState<Record<string, Partial<Attendance>>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // 파트별 열림/닫힘 상태
+    const [openParts, setOpenParts] = useState<Record<Part, boolean>>({
+        SOPRANO: true,
+        ALTO: true,
+        TENOR: true,
+        BASS: true,
+        SPECIAL: true,
+    });
+
+    const isLoading = membersLoading || attendancesLoading || deadlinesLoading || (profile?.role === 'PART_LEADER' && isPartLoading);
+
+    const members = membersData?.data || [];
+
+    // 파트별로 멤버 그룹화
+    const membersByPart = useMemo(() => {
+        return members.reduce((acc, member) => {
+            if (profile?.role === 'PART_LEADER' && userPart && member.part !== userPart) {
+                return acc;
+            }
+            const part = member.part;
+            if (!acc[part]) {
+                acc[part] = [];
+            }
+            acc[part].push(member);
+            return acc;
+        }, {} as Record<string, typeof members>);
+    }, [members, profile?.role, userPart]);
+
+    // 현재 탭의 필드명
+    const currentField = activeTab === 'service' ? 'is_service_available' : 'is_practice_attended';
+
+    // 멤버의 출석 상태 계산
+    const getMemberAttendingStatus = useCallback((memberId: string): boolean => {
+        const pending = pendingChanges[memberId];
+        const attendance = attendances?.find(a => a.member_id === memberId);
+        const dbValue = attendance?.[currentField] ?? true;
+        const pendingValue = pending?.[currentField];
+        return pendingValue !== undefined ? pendingValue : dbValue;
+    }, [pendingChanges, attendances, currentField]);
+
+    // 파트별 통계 계산
+    const partStats = useMemo(() => {
+        return PARTS.map(part => {
+            const partMembers = membersByPart[part] || [];
+            const attendingCount = partMembers.filter(member =>
+                getMemberAttendingStatus(member.id)
+            ).length;
+
+            return {
+                part,
+                total: partMembers.length,
+                attending: attendingCount,
+            };
+        }).filter(stat => stat.total > 0);
+    }, [membersByPart, getMemberAttendingStatus]);
+
+    // 전체 통계
+    const totalStats = useMemo(() => {
+        const total = partStats.reduce((sum, s) => sum + s.total, 0);
+        const attending = partStats.reduce((sum, s) => sum + s.attending, 0);
+        return { total, attending };
+    }, [partStats]);
+
+    const absentCount = totalStats.total - totalStats.attending;
+
+    // 스마트 기본값: 불참자 있는 파트만 자동 열림
+    useEffect(() => {
+        if (isLoading) return;
+
+        const newOpenParts: Record<Part, boolean> = {} as Record<Part, boolean>;
+        PARTS.forEach(part => {
+            const partMembers = membersByPart[part] || [];
+            const hasAbsent = partMembers.some(m => !getMemberAttendingStatus(m.id));
+            newOpenParts[part] = hasAbsent;
+        });
+        setOpenParts(newOpenParts);
+    }, [isLoading, membersByPart, attendances]);
+
+    // 필터링된 멤버
+    const filteredMembersByPart = useMemo(() => {
+        if (!showAbsentOnly) return membersByPart;
+
+        return Object.fromEntries(
+            Object.entries(membersByPart).map(([part, partMembers]) => [
+                part,
+                partMembers.filter(member => !getMemberAttendingStatus(member.id))
+            ])
+        );
+    }, [membersByPart, getMemberAttendingStatus, showAbsentOnly]);
+
+    // 출석 상태 변경 핸들러
+    const handleToggle = useCallback((memberId: string) => {
+        const currentValue = getMemberAttendingStatus(memberId);
+        setPendingChanges(prev => {
+            const memberChanges = prev[memberId] || {};
+            return {
+                ...prev,
+                [memberId]: {
+                    ...memberChanges,
+                    [currentField]: !currentValue
+                }
+            };
+        });
+    }, [getMemberAttendingStatus, currentField]);
+
+    // 파트 전체 선택/해제 핸들러
+    const handleSelectAllPart = useCallback((part: string, value: boolean) => {
+        const partMembers = membersByPart[part] || [];
+
+        setPendingChanges(prev => {
+            const updates = { ...prev };
+            partMembers.forEach(member => {
+                updates[member.id] = {
+                    ...(updates[member.id] || {}),
+                    [currentField]: value,
+                };
+            });
+            return updates;
+        });
+    }, [membersByPart, currentField]);
+
+    // 파트 토글 핸들러
+    const handlePartToggle = useCallback((part: Part) => {
+        setOpenParts(prev => ({ ...prev, [part]: !prev[part] }));
+    }, []);
+
+    // 전체 펼치기/접기
+    const handleExpandAll = useCallback(() => {
+        setOpenParts(Object.fromEntries(PARTS.map(p => [p, true])) as Record<Part, boolean>);
+    }, []);
+
+    const handleCollapseAll = useCallback(() => {
+        setOpenParts(Object.fromEntries(PARTS.map(p => [p, false])) as Record<Part, boolean>);
+    }, []);
+
+    // 변경사항 저장
+    const handleSubmit = async () => {
+        if (Object.keys(pendingChanges).length === 0) return;
+
+        setIsSubmitting(true);
+        try {
+            const payload = Object.entries(pendingChanges).map(([memberId, changes]) => {
+                const existing = attendances?.find(a => a.member_id === memberId);
+
+                const is_service_available = changes.is_service_available ??
+                    (existing?.is_service_available ?? true);
+
+                const is_practice_attended = changes.is_practice_attended ??
+                    (existing?.is_practice_attended ?? true);
+
+                return {
+                    member_id: memberId,
+                    date: dateStr,
+                    is_service_available,
+                    is_practice_attended,
+                };
+            });
+
+            const res = await fetch('/api/attendances/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ attendances: payload }),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to save attendances');
+            }
+
+            setPendingChanges({});
+            queryClient.invalidateQueries({ queryKey: ['attendances'] });
+            alert('저장되었습니다.');
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+            console.error('Failed to save attendances:', error);
+            alert(`저장 실패: ${errorMessage}`);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleReset = () => {
+        if (confirm('변경사항을 모두 취소하시겠습니까?')) {
+            setPendingChanges({});
+        }
+    };
+
+    const hasChanges = Object.keys(pendingChanges).length > 0;
+
+    if (isLoading) {
+        return <div className="flex justify-center p-8"><Spinner /></div>;
+    }
+
+    return (
+        <div className="space-y-4">
+            {/* 헤더 */}
+            <div className="flex justify-between items-center sticky top-0 bg-white z-10 py-4 border-b">
+                <h3 className="text-lg font-semibold">
+                    {format(date, 'M월 d일 (E)', { locale: ko })} 출석 체크
+                </h3>
+                <div className="flex gap-2">
+                    {hasChanges && (
+                        <>
+                            <Button variant="outline" size="sm" onClick={handleReset} disabled={isSubmitting}>
+                                <RotateCcw className="w-4 h-4 mr-2" />
+                                취소
+                            </Button>
+                            <Button
+                                size="sm"
+                                onClick={handleSubmit}
+                                disabled={isSubmitting || (isFullyClosed && !canEditAfterClose)}
+                            >
+                                {isSubmitting ? <Spinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                                저장 ({Object.keys(pendingChanges).length})
+                            </Button>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {/* 마감 현황 바 */}
+            <DeadlineStatusBar
+                date={dateStr}
+                deadlines={deadlines}
+                isLoading={deadlinesLoading}
+                userRole={profile?.role ?? undefined}
+                userPart={userPart as Part | null}
+                onRefetch={() => refetchDeadlines()}
+            />
+
+            {/* 요약 프로그레스 바 */}
+            <AttendanceSummary
+                totalCount={totalStats.total}
+                attendingCount={totalStats.attending}
+                partStats={partStats}
+            />
+
+            {/* 필터 + 펼치기/접기 버튼 */}
+            <div className="flex flex-col gap-2">
+                <AttendanceFilters
+                    showAbsentOnly={showAbsentOnly}
+                    onShowAbsentOnlyChange={setShowAbsentOnly}
+                    absentCount={absentCount}
+                />
+                <div className="flex gap-1 justify-end">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleExpandAll}
+                        className="text-xs h-7 px-2 text-[var(--color-text-secondary)]"
+                    >
+                        <ChevronsDown className="w-4 h-4 mr-1" />
+                        모두 펼치기
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCollapseAll}
+                        className="text-xs h-7 px-2 text-[var(--color-text-secondary)]"
+                    >
+                        <ChevronsUp className="w-4 h-4 mr-1" />
+                        모두 접기
+                    </Button>
+                </div>
+            </div>
+
+            {/* 탭 */}
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'service' | 'practice')} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="service">예배 등단 (주중 파악)</TabsTrigger>
+                    <TabsTrigger value="practice">예배 후 연습 (주일 당일)</TabsTrigger>
+                </TabsList>
+
+                {['service', 'practice'].map((tabValue) => (
+                    <TabsContent key={tabValue} value={tabValue} className="space-y-3">
+                        {PARTS.map((part) => {
+                            const partMembers = filteredMembersByPart[part] || [];
+                            const allPartMembers = membersByPart[part] || [];
+
+                            if (allPartMembers.length === 0) return null;
+
+                            const partAttendingCount = allPartMembers.filter(m =>
+                                getMemberAttendingStatus(m.id)
+                            ).length;
+                            const partAbsentCount = allPartMembers.length - partAttendingCount;
+
+                            const isExpanded = openParts[part];
+
+                            return (
+                                <div key={part} className="rounded-xl overflow-hidden border border-[var(--color-border-default)] bg-white shadow-sm">
+                                    {/* 파트 헤더 */}
+                                    <button
+                                        type="button"
+                                        onClick={() => handlePartToggle(part)}
+                                        className={cn(
+                                            "w-full flex items-center justify-between px-4 py-3",
+                                            "bg-gradient-to-r transition-colors duration-200",
+                                            partGradients[part],
+                                            "hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-primary-300)]"
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            {isExpanded ? (
+                                                <ChevronDown className={cn("w-5 h-5", partAccentColors[part])} />
+                                            ) : (
+                                                <ChevronRight className={cn("w-5 h-5", partAccentColors[part])} />
+                                            )}
+                                            <span className={cn("font-bold", partAccentColors[part])}>
+                                                {getPartLabel(part)}
+                                            </span>
+                                            <span className="text-sm text-[var(--color-text-secondary)]">
+                                                {partAttendingCount}/{allPartMembers.length}명
+                                            </span>
+                                        </div>
+
+                                        {partAbsentCount > 0 ? (
+                                            <span className="px-2 py-0.5 text-xs font-medium bg-[var(--color-error-100)] text-[var(--color-error-700)] rounded-full">
+                                                {partAbsentCount}명 불참
+                                            </span>
+                                        ) : (
+                                            <span className="px-2 py-0.5 text-xs font-medium bg-[var(--color-success-100)] text-[var(--color-success-700)] rounded-full">
+                                                전원출석
+                                            </span>
+                                        )}
+                                    </button>
+
+                                    {/* 펼쳐진 내용 */}
+                                    {isExpanded && (
+                                        <div className="p-4 space-y-3 bg-white">
+                                            {/* 빠른 액션 버튼들 */}
+                                            {!(isFullyClosed && !canEditAfterClose) && (
+                                                <div className="flex gap-2 justify-end">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleSelectAllPart(part, true);
+                                                        }}
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md
+                                                            text-[var(--color-success-600)] bg-[var(--color-success-50)]
+                                                            hover:bg-[var(--color-success-100)] transition-colors"
+                                                    >
+                                                        <CheckCheck className="w-3.5 h-3.5" />
+                                                        전체 출석
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleSelectAllPart(part, false);
+                                                        }}
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md
+                                                            text-[var(--color-text-tertiary)] bg-gray-100
+                                                            hover:bg-gray-200 transition-colors"
+                                                    >
+                                                        <XCircle className="w-3.5 h-3.5" />
+                                                        전체 불참
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* 칩 그리드 */}
+                                            <div className="flex flex-wrap gap-2">
+                                                {partMembers.map((member) => {
+                                                    const attendance = attendances?.find(a => a.member_id === member.id);
+                                                    const dbValue = tabValue === 'service'
+                                                        ? (attendance?.is_service_available ?? true)
+                                                        : (attendance?.is_practice_attended ?? true);
+                                                    const pending = pendingChanges[member.id];
+                                                    const pendingValue = tabValue === 'service'
+                                                        ? pending?.is_service_available
+                                                        : pending?.is_practice_attended;
+                                                    const isAttending = pendingValue !== undefined ? pendingValue : dbValue;
+                                                    const isChanged = pendingValue !== undefined && pendingValue !== dbValue;
+
+                                                    // 전체 마감 시 수정 권한 없으면 비활성화
+                                                    const isDisabled = isFullyClosed && !canEditAfterClose;
+
+                                                    return (
+                                                        <MemberChip
+                                                            key={member.id}
+                                                            member={{
+                                                                id: member.id,
+                                                                name: member.name,
+                                                                part: member.part as Part,
+                                                                is_leader: member.is_leader ?? false,
+                                                            }}
+                                                            isAttending={isAttending}
+                                                            isChanged={isChanged}
+                                                            disabled={isDisabled}
+                                                            onToggle={() => handleToggle(member.id)}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* 불참자 필터 시 해당 파트에 불참자가 없을 때 */}
+                                            {showAbsentOnly && partMembers.length === 0 && partAbsentCount === 0 && (
+                                                <div className="text-center py-4 text-sm text-[var(--color-text-tertiary)]">
+                                                    이 파트는 전원 출석입니다
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* 접힌 상태에서 미니 프리뷰 */}
+                                    {!isExpanded && partAbsentCount > 0 && (
+                                        <div className="px-4 py-2 bg-gray-50 border-t border-[var(--color-border-default)]">
+                                            <p className="text-xs text-[var(--color-text-tertiary)]">
+                                                불참: {allPartMembers
+                                                    .filter(m => !getMemberAttendingStatus(m.id))
+                                                    .map(m => m.name)
+                                                    .slice(0, 5)
+                                                    .join(', ')}
+                                                {partAbsentCount > 5 && ` 외 ${partAbsentCount - 5}명`}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+
+                        {/* 필터 적용 시 결과가 없을 때 */}
+                        {showAbsentOnly && absentCount === 0 && (
+                            <div className="text-center py-8 text-[var(--color-text-secondary)]">
+                                모든 대원이 출석으로 체크되어 있습니다.
+                            </div>
+                        )}
+                    </TabsContent>
+                ))}
+            </Tabs>
+        </div>
+    );
+}
