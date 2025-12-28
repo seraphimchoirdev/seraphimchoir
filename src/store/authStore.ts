@@ -28,6 +28,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: Error | null;
+  hasHydrated: boolean; // localStorage에서 hydration 완료 여부
 }
 
 // Auth Store 액션 인터페이스
@@ -45,6 +46,9 @@ interface AuthActions {
   setError: (error: Error | null) => void;
   clearError: () => void;
 
+  // Hydration 상태
+  setHasHydrated: (hasHydrated: boolean) => void;
+
   // 권한 확인 메서드
   hasRole: (requiredRoles: string[]) => boolean;
   isAdmin: () => boolean;
@@ -60,6 +64,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: true,
   error: null,
+  hasHydrated: false,
 };
 
 /**
@@ -260,6 +265,11 @@ export const useAuthStore = create<AuthStore>()(
           set({ error: null }, false, 'auth/clearError');
         },
 
+        // Hydration 상태 설정
+        setHasHydrated: (hasHydrated: boolean) => {
+          set({ hasHydrated }, false, 'auth/setHasHydrated');
+        },
+
         // 역할 확인
         hasRole: (requiredRoles: string[]) => {
           const { profile } = get();
@@ -279,7 +289,21 @@ export const useAuthStore = create<AuthStore>()(
           // localStorage에 저장할 상태만 선택
           user: state.user,
           profile: state.profile,
+          isAuthenticated: state.isAuthenticated,
         }),
+        // Hydration 시 상태 병합 로직
+        merge: (persistedState, currentState) => {
+          const persisted = persistedState as Partial<AuthState>;
+          // user가 있으면 isAuthenticated도 true로 설정
+          const isAuthenticated = !!persisted?.user;
+          return {
+            ...currentState,
+            ...persisted,
+            isAuthenticated,
+            hasHydrated: true,
+            isLoading: false, // Hydration 완료 시 로딩도 false로
+          };
+        },
       }
     ),
     {

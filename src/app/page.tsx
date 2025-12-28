@@ -3,25 +3,28 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 
 export default function Home() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   useEffect(() => {
-    console.log('HomePage: isLoading =', isLoading, 'isAuthenticated =', isAuthenticated);
+    console.log('HomePage: hasHydrated =', hasHydrated, 'isAuthenticated =', isAuthenticated);
 
-    if (!isLoading && isAuthenticated) {
-      console.log('HomePage: 로그인됨, /members로 리다이렉트');
-      router.push('/members');
+    // Hydration 완료 후 인증된 사용자는 대시보드로 리다이렉트
+    if (hasHydrated && isAuthenticated) {
+      console.log('HomePage: 로그인됨, /dashboard로 리다이렉트');
+      router.push('/dashboard');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, hasHydrated, router]);
 
-  if (isLoading) {
+  // Hydration 완료 전에만 로딩 표시
+  if (!hasHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]" suppressHydrationWarning>
         <div className="text-center">
