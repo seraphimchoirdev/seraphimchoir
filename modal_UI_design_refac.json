@@ -1,0 +1,149 @@
+{
+  "meta": {
+    "context": "Mentor/mentee matching web app modal components (e.g. 'Modal components for MentorConnect') summarized as UX/UI principles mapping content and visual design.[web:2][web:12][web:17]",
+    "generated_at": "2025-11-20",
+    "scope": "Generic modal patterns for authentication, profile, confirmation, and destructive actions in a mentoring platform.[web:2][web:12]"
+  },
+  "principles": [
+    {
+      "id": "layout_central_focus",
+      "category": "layout",
+      "summary": "Place the modal at the visual center with a dimmed overlay to pull focus to a single mentoring task (login, sign‑up, connect, delete). [web:12]",
+      "details": {
+        "content_role": "The modal isolates a focused step in the mentoring flow (e.g. 'Connect with mentor', 'Create mentee profile', 'Delete account') so the user understands that only this step is currently actionable. [web:2][web:12]",
+        "design_mapping": {
+          "position": "Center the dialog on the viewport, vertically and horizontally, to signal primary focus and reduce eye travel. [web:12]",
+          "overlay": "Use a semi‑transparent dark overlay over the main app to visually mute background lists, dashboards, and profiles while keeping them contextually visible. [web:12]",
+          "elevation": "Apply clear elevation (shadow, border, or surface contrast) so the modal reads as a separate layer above the mentor/mentee content. [web:12]"
+        },
+        "behavior": "Background content is non‑interactive while the modal is open, forcing completion or dismissal of the current mentoring action before continuing. [web:12]"
+      }
+    },
+    {
+      "id": "information_hierarchy",
+      "category": "typography",
+      "summary": "Use a strong title, optional subtitle, and body text hierarchy to communicate what decision or task the modal is about. [web:12]",
+      "details": {
+        "content_role": "Titles reflect user tasks in mentoring context, e.g. 'Sign in as Mentor', 'Complete your mentee profile', 'Remove connection with this mentee'. [web:2][web:12]",
+        "design_mapping": {
+          "title_style": "Larger, bolder type for the modal title with clear line spacing to separate it from the body copy. [web:12]",
+          "subtitle_style": "A lighter‑weight, smaller subtitle or helper text clarifies impact (e.g. 'This action will remove all active sessions with this mentee.'). [web:12]",
+          "body_text": "Use regular, highly legible body text for instructions and field labels, maintaining consistent font family across all modals to reinforce brand cohesion. [web:12]"
+        },
+        "behavior": "Longer explanations wrap within the content area rather than expanding the modal width, keeping a narrow readable column for mentoring‑related explanations. [web:12]"
+      }
+    },
+    {
+      "id": "primary_secondary_actions",
+      "category": "actions",
+      "summary": "Map the primary mentoring action to a high‑contrast primary button and secondary/cancel actions to lower‑emphasis styles. [web:12]",
+      "details": {
+        "content_role": "Action labels are verbs tied to domain tasks, e.g. 'Send request', 'Save profile', 'Continue as mentee', 'Cancel'. [web:2][web:12]",
+        "design_mapping": {
+          "primary_button": "Use brand accent color with solid fill for the primary action (e.g. sending a mentor request), with sufficient contrast against the modal background. [web:12]",
+          "secondary_button": "Use text‑button or outlined style with neutral or lower‑saturation color for dismissive actions like 'Cancel' or 'Not now'. [web:12]",
+          "alignment": "Align actions to the right (or a consistent edge) in the modal footer to create a predictable decision area. [web:12]"
+        },
+        "behavior": "Keyboard focus and default action (Enter key) trigger the primary mentoring action only when validation passes, avoiding accidental destructive operations. [web:12]"
+      }
+    },
+    {
+      "id": "destructive_actions_safety",
+      "category": "actions",
+      "summary": "Visually distinguish destructive mentoring actions (e.g. delete connection, remove account) using color and copy that highlight risk. [web:12]",
+      "details": {
+        "content_role": "Copy explicitly states what will be lost or changed, such as 'This will delete all messages with this mentee and cannot be undone.'. [web:12]",
+        "design_mapping": {
+          "color": "Use a reserved danger color (e.g. red) only for destructive primary buttons like 'Delete mentee' to create a strong association with irreversible actions. [web:12]",
+          "layout": "Place destructive options away from safe navigation (e.g. leftmost button or separated group) so users must deliberately target them. [web:12]",
+          "iconography": "Optionally add a subtle warning icon next to titles or buttons to visually emphasize risk without overwhelming the design. [web:12]"
+        },
+        "behavior": "Consider an explicit confirmation step (e.g. typing the mentee name or checking a 'I understand' checkbox) for highly impactful deletions. [web:12]"
+      }
+    },
+    {
+      "id": "form_structure_authentication",
+      "category": "forms",
+      "summary": "Keep login, registration, and role‑selection forms in modals short, vertically stacked, and clearly labeled. [web:2][web:12]",
+      "details": {
+        "content_role": "Forms capture essential mentoring attributes like role (mentor/mentee), email, password, expertise area, and experience without overwhelming the first interaction. [web:2][web:10][web:12]",
+        "design_mapping": {
+          "field_layout": "Use a single column of fields with consistent spacing and full‑width inputs for email, password, and profile basics to support quick scanning on both desktop and mobile. [web:10][web:12]",
+          "labels_and_placeholders": "Place labels above inputs for clarity and use concise placeholders that match real data (e.g. 'Senior Backend Engineer', '5+ years experience'). [web:10][web:12]",
+          "grouping": "Group related fields (personal info, professional info, contact) with subtle spacing or headings rather than complex multi‑column layouts. [web:10][web:12]"
+        },
+        "behavior": "Validation feedback appears inline under the relevant field in a warning color, while preserving the overall modal structure to avoid jarring layout shifts. [web:12]"
+      }
+    },
+    {
+      "id": "copy_contextual_clarity",
+      "category": "content",
+      "summary": "Use clear, contextual language that reflects the mentoring relationship and stage of the journey. [web:2][web:12]",
+      "details": {
+        "content_role": "Headlines and body text mention mentors, mentees, sessions, and goals to anchor what the action changes in the mentoring workflow. [web:2][web:7][web:12]",
+        "design_mapping": {
+          "tone": "Adopt a friendly but professional tone consistent across all modals, using short sentences and avoiding jargon. [web:7][web:12]",
+          "helper_text": "Place helper text close to the element it explains (e.g. under a field that asks for areas of expertise) using smaller, neutral text color. [web:7][web:12]",
+          "empty_states": "If there is no data yet (e.g. no saved mentors), include a short description and a primary action like 'Browse mentors' within the modal. [web:7][web:12]"
+        },
+        "behavior": "Dynamic copy can adjust to the current role ('Complete your mentor profile' vs 'Complete your mentee profile') while preserving layout stability. [web:7][web:12]"
+      }
+    },
+    {
+      "id": "feedback_and_status",
+      "category": "feedback",
+      "summary": "Provide immediate visual feedback for loading, success, and error states within the same modal frame. [web:12]",
+      "details": {
+        "content_role": "Feedback reassures users that actions like sending a mentorship request or saving a profile have been processed. [web:7][web:12]",
+        "design_mapping": {
+          "loading": "Show a spinner or progress indicator near the primary button label, dimming the button to prevent double submissions. [web:12]",
+          "success": "Display short confirmation text (e.g. 'Request sent to your mentor') and an accent icon, optionally auto‑closing after a short delay. [web:12]",
+          "errors": "Render error messages near the problematic field or as a non‑blocking banner at the top of the modal in an alert color. [web:12]"
+        },
+        "behavior": "Keep the modal open until errors are resolved or the user acknowledges success, avoiding surprise context switches to new pages. [web:12]"
+      }
+    },
+    {
+      "id": "responsive_adaptation",
+      "category": "responsiveness",
+      "summary": "Adapt modal dimensions and spacing for smaller screens while preserving hierarchy and tappable target sizes. [web:12]",
+      "details": {
+        "content_role": "On mobile, modals often handle quick mentoring tasks (e.g. confirming a session time or accepting a mentor) without leaving the current view. [web:7][web:12]",
+        "design_mapping": {
+          "width_height": "Use max‑width constraints on desktop and full‑width or bottom‑sheet style on mobile, while maintaining comfortable padding. [web:12]",
+          "touch_targets": "Ensure buttons and form fields have sufficient height and spacing for thumb interaction on phones. [web:12]",
+          "scroll_behavior": "Allow modal body content to scroll independently when forms are long, keeping the header and actions visible or easy to reach. [web:12]"
+        },
+        "behavior": "Close controls and safe actions (like 'Cancel') stay easily reachable near edges on small screens to avoid accidental destructive taps. [web:12]"
+      }
+    },
+    {
+      "id": "visual_brand_language",
+      "category": "visual_style",
+      "summary": "Use color, typography, and iconography consistent with the mentoring brand to make modals feel integrated with the overall product. [web:2][web:12]",
+      "details": {
+        "content_role": "Visual identity in modals reinforces trust during sensitive steps like sharing personal background, expertise, or career goals. [web:7][web:12]",
+        "design_mapping": {
+          "color_system": "Apply brand primary and secondary colors to headers, primary buttons, and subtle accents, while using neutral backgrounds for the modal surface. [web:12]",
+          "typography": "Reuse the same font families and scales as the main app, with slight weight increases in titles to differentiate dialog content. [web:12]",
+          "illustrations_icons": "Optionally include small, friendly illustrations or icons that reference mentoring (e.g. people, chat, goals) in onboarding or empty‑state modals without cluttering forms. [web:17][web:12]"
+        },
+        "behavior": "All interaction states (hover, focus, pressed, disabled) follow the same design tokens as other components so modals feel like part of a cohesive system. [web:12]"
+      }
+    },
+    {
+      "id": "accessibility_focus_management",
+      "category": "accessibility",
+      "summary": "Ensure keyboard and screen‑reader users can fully operate the modal, with clear focus management and readable contrast. [web:12]",
+      "details": {
+        "content_role": "Accessible modals allow all mentors and mentees, including those using assistive technologies, to manage mentoring sessions and profiles. [web:7][web:12]",
+        "design_mapping": {
+          "contrast": "Maintain sufficient color contrast between text and background for titles, body copy, and controls, including overlay vs modal surface. [web:12]",
+          "focus_outline": "Make focus indicators clearly visible on all interactive elements, especially close icons and primary actions. [web:12]",
+          "aria_roles": "Use dialog roles and labels so assistive technologies can announce the purpose and title of the modal. [web:12]"
+        },
+        "behavior": "Trap keyboard focus within the modal while it is open, set initial focus to the first actionable element, and return focus to the triggering control when closing. [web:12]"
+      }
+    }
+  ]
+}

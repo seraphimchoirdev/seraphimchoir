@@ -1,0 +1,337 @@
+{
+  "userListDesignPrinciples": {
+    "metadata": {
+      "designName": "User List",
+      "designer": "Tuhel",
+      "designType": "Product Design",
+      "source": "Dribbble",
+      "context": "사용자 목록 관리 인터페이스"
+    },
+    "colorSystem": {
+      "principle": "명확한 계층 구조와 시각적 대비를 위한 색상 시스템",
+      "implementation": {
+        "primary": {
+          "usage": "주요 액션 버튼, 활성 상태 표시",
+          "context": "사용자의 주의를 끌어야 하는 CTA 버튼 및 중요 액션"
+        },
+        "neutral": {
+          "usage": "배경, 테두리, 보조 텍스트",
+          "context": "콘텐츠 가독성을 높이고 시각적 피로도를 줄이는 중립 색상"
+        },
+        "semantic": {
+          "success": "활성 상태, 완료된 작업",
+          "warning": "주의가 필요한 항목",
+          "error": "오류 또는 비활성 상태",
+          "context": "사용자가 즉각적으로 상태를 인지할 수 있도록 하는 색상 코딩"
+        },
+        "contrast": {
+          "principle": "최대 2가지 주요 색상 사용, 다양한 색조와 음영으로 대비 조절",
+          "reason": "과도한 색상 사용은 시각적 혼란을 야기하므로 절제된 팔레트 유지"
+        }
+      }
+    },
+    "typography": {
+      "principle": "정보 계층에 따른 타이포그래피 시스템",
+      "hierarchy": {
+        "primary": {
+          "usage": "사용자 이름, 주요 식별 정보",
+          "weight": "medium-bold",
+          "size": "base-large",
+          "context": "리스트 내에서 가장 중요한 정보로 스캔 가능성 극대화"
+        },
+        "secondary": {
+          "usage": "이메일, 직책, 부가 정보",
+          "weight": "regular",
+          "size": "small-medium",
+          "context": "보조 정보로서 주요 정보를 뒷받침"
+        },
+        "metadata": {
+          "usage": "날짜, 상태, 라벨",
+          "weight": "regular-light",
+          "size": "small",
+          "color": "muted",
+          "context": "시각적 무게를 줄여 정보의 우선순위 표현"
+        }
+      },
+      "readability": {
+        "lineHeight": "적절한 행간으로 밀집된 정보에서도 가독성 확보",
+        "letterSpacing": "읽기 편안한 자간 유지"
+      }
+    },
+    "layout": {
+      "principle": "스캔 가능성과 정보 밀도의 균형",
+      "structure": {
+        "tableGrid": {
+          "columns": [
+            {
+              "name": "선택(Checkbox)",
+              "width": "고정 (좁음)",
+              "alignment": "center",
+              "purpose": "다중 선택 기능 제공"
+            },
+            {
+              "name": "시각적 식별자(Avatar/Icon)",
+              "width": "고정 (중간)",
+              "alignment": "left",
+              "purpose": "빠른 시각적 인지를 위한 프로필 이미지"
+            },
+            {
+              "name": "주요 정보(Name)",
+              "width": "유동적",
+              "alignment": "left",
+              "purpose": "가장 중요한 식별 정보"
+            },
+            {
+              "name": "보조 정보(Email/Role)",
+              "width": "유동적",
+              "alignment": "left",
+              "purpose": "추가 컨텍스트 제공"
+            },
+            {
+              "name": "상태/메타데이터",
+              "width": "고정 (중간)",
+              "alignment": "center",
+              "purpose": "현재 상태를 한눈에 파악"
+            },
+            {
+              "name": "액션(Actions)",
+              "width": "고정 (좁음-중간)",
+              "alignment": "right",
+              "purpose": "컨텍스트 메뉴 또는 빠른 액션"
+            }
+          ],
+          "context": "테이블 그리드는 정보를 체계적으로 정렬하여 비교와 스캔을 용이하게 함"
+        },
+        "spacing": {
+          "whitespace": "충분한 여백으로 각 항목을 시각적으로 분리",
+          "padding": "셀 내부 패딩으로 클릭 영역 확보 및 가독성 향상",
+          "rowHeight": "터치 친화적인 높이 (최소 44-48px)",
+          "context": "적절한 공간 활용은 인지 부하를 줄이고 인터랙션을 개선"
+        }
+      },
+      "responsiveness": {
+        "desktop": "전체 테이블 뷰, 모든 컬럼 표시",
+        "tablet": "중요도에 따라 일부 컬럼 숨김, 카드 형태 고려",
+        "mobile": "카드 또는 리스트 아이템으로 전환, 핵심 정보만 표시",
+        "context": "화면 크기에 따라 정보 밀도를 조절하여 사용성 유지"
+      }
+    },
+    "components": {
+      "principle": "일관성과 직관성을 위한 표준 컴포넌트 사용",
+      "elements": {
+        "avatar": {
+          "type": "circular",
+          "size": "32-40px",
+          "fallback": "이니셜 또는 기본 아이콘",
+          "purpose": "사용자를 시각적으로 빠르게 식별",
+          "context": "프로필 이미지는 개인화와 인지도를 높임"
+        },
+        "checkbox": {
+          "placement": "첫 번째 컬럼",
+          "states": ["unchecked", "checked", "indeterminate"],
+          "purpose": "대량 작업을 위한 다중 선택",
+          "context": "헤더 체크박스로 전체 선택/해제 기능 제공"
+        },
+        "badge": {
+          "usage": "상태, 역할, 카테고리 표시",
+          "style": "라운드 코너, 작은 패딩, 의미론적 색상",
+          "purpose": "중요한 메타정보를 시각적으로 강조",
+          "context": "색상 코딩으로 즉각적인 상태 인지 가능"
+        },
+        "actionButton": {
+          "types": ["icon button", "dropdown menu", "inline action"],
+          "placement": "행의 끝 또는 호버 시 표시",
+          "purpose": "편집, 삭제, 상세보기 등의 액션 제공",
+          "context": "필요할 때만 표시하여 UI 복잡도 감소"
+        },
+        "searchBar": {
+          "placement": "리스트 상단",
+          "features": ["실시간 검색", "필터링", "자동완성"],
+          "purpose": "대량의 데이터에서 원하는 항목 빠르게 찾기",
+          "context": "검색과 필터는 사용자의 작업 효율성을 크게 향상"
+        },
+        "pagination": {
+          "placement": "리스트 하단",
+          "options": ["페이지 번호", "무한 스크롤", "로드 모어"],
+          "purpose": "대량 데이터의 성능 최적화",
+          "context": "사용 맥락에 따라 적절한 페이지네이션 방식 선택"
+        }
+      }
+    },
+    "interactions": {
+      "principle": "직관적이고 피드백이 명확한 인터랙션",
+      "patterns": {
+        "hover": {
+          "effect": "배경색 변경, 액션 버튼 표시",
+          "purpose": "현재 포커스된 행을 명확히 표시",
+          "context": "사용자가 인터랙션 가능한 요소임을 즉각 인지"
+        },
+        "selection": {
+          "visual": "체크박스 선택, 행 하이라이트",
+          "feedback": "선택된 항목 수 표시, 대량 액션 버튼 활성화",
+          "purpose": "다중 선택 상태를 명확히 전달",
+          "context": "일괄 작업을 효율적으로 수행"
+        },
+        "sorting": {
+          "trigger": "컬럼 헤더 클릭",
+          "visual": "정렬 방향 아이콘 (화살표)",
+          "purpose": "사용자가 원하는 기준으로 데이터 정렬",
+          "context": "데이터 비교와 분석을 용이하게 함"
+        },
+        "filtering": {
+          "ui": ["드롭다운", "사이드바", "칩 형태의 적용된 필터"],
+          "purpose": "관련 데이터만 표시하여 정보 과부하 방지",
+          "context": "복잡한 데이터셋에서 필요한 항목만 추출"
+        },
+        "expandCollapse": {
+          "trigger": "행 클릭 또는 전용 버튼",
+          "purpose": "추가 정보를 필요 시에만 표시",
+          "context": "초기 뷰의 복잡도를 줄이면서 상세 정보 접근성 유지"
+        }
+      },
+      "feedback": {
+        "loading": "스켈레톤 UI 또는 스피너로 로딩 상태 표시",
+        "success": "토스트 메시지 또는 인라인 성공 표시",
+        "error": "명확한 에러 메시지와 복구 방법 제시",
+        "context": "모든 액션에 대한 즉각적인 피드백으로 사용자 신뢰 구축"
+      }
+    },
+    "dataVisualization": {
+      "principle": "복잡한 데이터를 이해하기 쉽게 시각화",
+      "techniques": {
+        "iconography": {
+          "usage": "상태, 역할, 액션 표현",
+          "style": "일관된 아이콘 세트 사용",
+          "purpose": "언어 장벽 없이 즉각적인 의미 전달",
+          "context": "텍스트보다 빠르게 인지 가능"
+        },
+        "progressIndicators": {
+          "types": ["프로그레스 바", "백분율", "단계 표시"],
+          "purpose": "완료도, 진행 상태 시각화",
+          "context": "정량적 정보를 직관적으로 표현"
+        },
+        "statusColors": {
+          "mapping": {
+            "green": "활성/성공/온라인",
+            "yellow": "대기/경고",
+            "red": "비활성/오류/오프라인",
+            "gray": "중립/보류"
+          },
+          "purpose": "시각적 스캔만으로 상태 파악",
+          "context": "색상은 보편적 의미 체계를 따름"
+        }
+      }
+    },
+    "accessibility": {
+      "principle": "모든 사용자가 접근 가능한 인터페이스",
+      "requirements": {
+        "colorContrast": {
+          "standard": "WCAG AA 이상 (4.5:1)",
+          "context": "텍스트와 배경 간 충분한 대비로 가독성 보장"
+        },
+        "keyboardNavigation": {
+          "support": [
+            "Tab 키로 요소 이동",
+            "Enter/Space로 선택",
+            "Arrow 키로 리스트 탐색"
+          ],
+          "context": "마우스 없이도 모든 기능 사용 가능"
+        },
+        "screenReader": {
+          "implementation": [
+            "의미있는 alt 텍스트",
+            "ARIA 레이블",
+            "테이블 헤더 연결"
+          ],
+          "context": "시각 장애인도 정보를 완전히 이해할 수 있도록"
+        },
+        "focusIndicator": {
+          "visual": "명확한 포커스 링 또는 아웃라인",
+          "context": "현재 키보드 포커스 위치를 명확히 표시"
+        }
+      }
+    },
+    "performance": {
+      "principle": "대량 데이터 처리 시에도 빠른 응답성 유지",
+      "optimization": {
+        "virtualization": {
+          "technique": "화면에 보이는 행만 렌더링",
+          "purpose": "수천 개 항목도 부드럽게 스크롤",
+          "context": "DOM 노드 수를 최소화하여 성능 향상"
+        },
+        "lazyLoading": {
+          "technique": "필요 시점에 데이터 로드",
+          "purpose": "초기 로딩 시간 단축",
+          "context": "사용자는 즉시 인터페이스를 사용 시작"
+        },
+        "debouncing": {
+          "application": "검색, 필터링 입력",
+          "purpose": "불필요한 API 호출 방지",
+          "context": "타이핑 완료 후 요청하여 서버 부하 감소"
+        }
+      }
+    },
+    "contentStrategy": {
+      "principle": "필수 정보 우선, 점진적 노출",
+      "guidelines": {
+        "informationPriority": {
+          "level1": "식별 정보 (이름, 아바타)",
+          "level2": "핵심 속성 (역할, 상태)",
+          "level3": "보조 정보 (이메일, 날짜)",
+          "level4": "상세 정보 (확장 시 표시)",
+          "context": "중요도에 따른 정보 계층으로 인지 부하 관리"
+        },
+        "textTruncation": {
+          "method": "말줄임표 (...) 사용",
+          "interaction": "툴팁 또는 확장으로 전체 내용 표시",
+          "purpose": "레이아웃 일관성 유지",
+          "context": "긴 텍스트가 디자인을 깨뜨리지 않도록"
+        },
+        "emptyState": {
+          "elements": ["일러스트레이션", "설명 텍스트", "CTA 버튼"],
+          "purpose": "데이터 없을 때 다음 액션 안내",
+          "context": "빈 화면을 교육과 온보딩 기회로 활용"
+        }
+      }
+    },
+    "designPatterns": {
+      "principle": "검증된 패턴으로 학습 곡선 최소화",
+      "commonPatterns": {
+        "masterDetail": {
+          "structure": "리스트 + 상세 패널",
+          "purpose": "컨텍스트 유지하며 상세 정보 탐색",
+          "context": "태블릿/데스크톱에서 효율적인 공간 활용"
+        },
+        "bulkActions": {
+          "ui": "선택 시 상단에 액션 바 표시",
+          "actions": ["삭제", "내보내기", "상태 변경"],
+          "purpose": "여러 항목에 대한 일괄 작업",
+          "context": "관리 효율성 극대화"
+        },
+        "inlineEditing": {
+          "trigger": "더블클릭 또는 편집 버튼",
+          "feedback": "즉시 저장 또는 확인/취소 버튼",
+          "purpose": "페이지 이동 없이 빠른 수정",
+          "context": "작은 변경사항에 대한 마찰 감소"
+        }
+      }
+    },
+    "designSystem": {
+      "principle": "일관성과 확장성을 위한 시스템적 접근",
+      "components": {
+        "atomicDesign": {
+          "atoms": "버튼, 입력 필드, 아이콘, 타이포그래피",
+          "molecules": "검색바, 필터 드롭다운, 페이지네이션",
+          "organisms": "테이블 헤더, 테이블 행, 액션 메뉴",
+          "templates": "전체 리스트 레이아웃",
+          "context": "재사용 가능한 컴포넌트로 개발 효율성 향상"
+        },
+        "designTokens": {
+          "categories": ["색상", "타이포그래피", "간격", "그림자", "반경"],
+          "purpose": "디자인 결정을 코드로 체계화",
+          "context": "테마 변경과 브랜딩 업데이트 용이"
+        }
+      }
+    }
+  }
+}

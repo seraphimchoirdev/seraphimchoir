@@ -1,0 +1,53 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(python3 -m json.tool:*)",
+      "Bash(python3:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run build:*)",
+      "Bash(source .venv/bin/activate)",
+      "Bash(pip install:*)",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_tabs",
+      "Bash(cat:*)",
+      "Bash(npm update:*)",
+      "Bash(npm show:*)",
+      "Bash(npm install:*)",
+      "Bash(lsof:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_network_requests",
+      "mcp__playwright__browser_handle_dialog",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_close",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: 출석 데이터 기본값 처리로 자리배치 인원 표시 버그 수정\n\n문제: 출석 레코드가 없는 대원이 자리배치 화면에서 표시되지 않음\n- MemberSidebar: 1명만 표시 \\(실제 83명 중\\)\n- AI 추천 분배 버튼: \"1명\" 표시\n\n원인: useAttendances\\({ is_service_available: true }\\) 호출 시\nDB에 명시적으로 저장된 레코드만 조회됨\n\n해결:\n- 모든 정대원\\(REGULAR\\) 조회 후 출석 데이터와 병합\n- 출석 레코드가 없으면 기본값 true\\(등단 가능\\)로 처리\n- attendanceMap으로 O\\(1\\) 조회 성능 최적화\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(pkill:*)",
+      "Bash(git commit:*)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "mcp__task-master-ai__get_tasks",
+      "Bash(kill:*)",
+      "Bash(rm:*)",
+      "mcp__playwright__browser_install",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_install",
+      "Bash(npx shadcn@latest add:*)",
+      "mcp__plugin_playwright_playwright__browser_close",
+      "Bash(xargs kill:*)",
+      "Bash(npx supabase db push:*)",
+      "mcp__playwright__browser_press_key"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "context7"
+  ]
+}

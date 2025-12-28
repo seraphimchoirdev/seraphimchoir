@@ -2,12 +2,20 @@
  * 과거 자리배치 적용 API
  * POST /api/arrangements/[id]/apply-past
  *
- * 과거 배치표의 좌석 정보를 현재 출석 가능 인원에게 매칭하여 반환
+ * 과거 배치표의 좌석 정보를 현재 출석 가능 인원에게 파트별 영역 유지하며 매핑
+ * - 각 파트가 과거에 차지한 영역을 현재 그리드에 비례적으로 매핑
+ * - PART_PLACEMENT_RULES 기반 타겟 영역 계산
  */
 
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+    applyPastArrangementWithZoneMapping,
+    type PastSeat,
+    type AvailableMember,
+    type GridLayout,
+} from '@/lib/past-arrangement-mapper';
 
 const applyPastSchema = z.object({
     sourceArrangementId: z.string().uuid('유효한 배치표 ID가 아닙니다'),
@@ -30,7 +38,7 @@ interface UnassignedMember {
     id: string;
     name: string;
     part: 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS' | 'SPECIAL';
-    reason: 'not_in_past' | 'out_of_grid' | 'seat_conflict';
+    reason: 'not_in_past' | 'out_of_grid' | 'seat_conflict' | 'zone_full';
 }
 
 export async function POST(
@@ -112,21 +120,38 @@ export async function POST(
             availableMembersList.map(m => [m.id, m])
         );
 
-        // 3. 과거 배치표의 좌석 정보 조회
-        const { data: pastSeats, error: pastError } = await supabase
-            .from('seats')
-            .select(`
-                member_id,
-                seat_row,
-                seat_column,
-                part,
-                member:members (
-                    name
-                )
-            `)
-            .eq('arrangement_id', sourceArrangementId);
+        // 3. 과거 배치표 정보 + 좌석 정보 병렬 조회
+        const [pastArrangementResult, pastSeatsResult] = await Promise.all([
+            supabase
+                .from('arrangements')
+                .select('grid_layout, grid_rows')
+                .eq('id', sourceArrangementId)
+                .single(),
+            supabase
+                .from('seats')
+                .select(`
+                    member_id,
+                    seat_row,
+                    seat_column,
+                    part,
+                    member:members (
+                        name
+                    )
+                `)
+                .eq('arrangement_id', sourceArrangementId),
+        ]);
 
-        if (pastError) {
+        const { data: pastArrangement, error: pastArrError } = pastArrangementResult;
+        const { data: pastSeatsData, error: pastSeatsError } = pastSeatsResult;
+
+        if (pastArrError || !pastArrangement) {
+            return NextResponse.json(
+                { error: '과거 배치표를 찾을 수 없습니다' },
+                { status: 404 }
+            );
+        }
+
+        if (pastSeatsError) {
             return NextResponse.json(
                 { error: '과거 배치 정보를 불러오는데 실패했습니다' },
                 { status: 500 }
@@ -134,147 +159,51 @@ export async function POST(
         }
 
         // 4. 그리드 레이아웃 정보 (클라이언트 전달값 우선, DB 값 fallback)
-        // 클라이언트에서 AI 추천 분배로 변경된 그리드를 사용하려면 clientGridLayout 전달 필요
-        const gridLayout = clientGridLayout || currentArrangement.grid_layout || {
+        const currentGridLayout: GridLayout = clientGridLayout || currentArrangement.grid_layout || {
             rows: currentArrangement.grid_rows || 6,
             rowCapacities: Array(currentArrangement.grid_rows || 6).fill(8),
-            zigzagPattern: 'even'
+            zigzagPattern: 'even' as const,
         };
 
-        // 5. 매칭 로직
-        const seats: SeatRecommendation[] = [];
-        const unassignedMembers: UnassignedMember[] = [];
-        const occupiedSeats = new Set<string>();
-        const assignedMemberIds = new Set<string>();
+        // 과거 배치표의 그리드 레이아웃
+        const pastGridLayout: GridLayout = pastArrangement.grid_layout || {
+            rows: pastArrangement.grid_rows || 6,
+            rowCapacities: Array(pastArrangement.grid_rows || 6).fill(8),
+            zigzagPattern: 'even' as const,
+        };
 
-        // 과거 좌석 데이터를 순회하며 매칭
-        for (const pastSeat of pastSeats || []) {
-            const memberId = pastSeat.member_id;
-            const memberName = (pastSeat.member as any)?.name || 'Unknown';
-            const part = pastSeat.part;
-            const row = pastSeat.seat_row;
-            const col = pastSeat.seat_column;
+        // 5. 과거 좌석 데이터 변환
+        type Part = 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS' | 'SPECIAL';
+        const pastSeats: PastSeat[] = (pastSeatsData || []).map(seat => ({
+            memberId: seat.member_id,
+            memberName: (seat.member as any)?.name || 'Unknown',
+            part: seat.part as Part,
+            row: seat.seat_row,
+            col: seat.seat_column,
+        }));
 
-            // 현재 출석 가능 인원인지 확인
-            if (!availableMemberIds.has(memberId)) {
-                continue; // 출석 불가 인원은 스킵
-            }
+        // 출석 가능 멤버 데이터 변환
+        const availableMemberList: AvailableMember[] = availableMembersList.map(m => ({
+            id: m.id,
+            name: m.name,
+            part: m.part as Part,
+        }));
 
-            // 좌석이 현재 그리드 범위 내인지 확인
-            if (row >= gridLayout.rows || col >= gridLayout.rowCapacities[row]) {
-                unassignedMembers.push({
-                    id: memberId,
-                    name: memberName,
-                    part,
-                    reason: 'out_of_grid'
-                });
-                assignedMemberIds.add(memberId);
-                continue;
-            }
-
-            // 좌석 충돌 확인
-            const seatKey = `${row}-${col}`;
-            if (occupiedSeats.has(seatKey)) {
-                unassignedMembers.push({
-                    id: memberId,
-                    name: memberName,
-                    part,
-                    reason: 'seat_conflict'
-                });
-                assignedMemberIds.add(memberId);
-                continue;
-            }
-
-            // 좌석 배치
-            seats.push({
-                memberId,
-                memberName,
-                row,
-                col,
-                part
-            });
-            occupiedSeats.add(seatKey);
-            assignedMemberIds.add(memberId);
-        }
-
-        // 6. 미배치 대원을 빈 좌석에 자동 배치
-        // 빈 좌석 목록 생성
-        const emptySeats: { row: number; col: number }[] = [];
-        for (let row = 0; row < gridLayout.rows; row++) {
-            const rowCapacity = gridLayout.rowCapacities[row] || 0;
-            for (let col = 0; col < rowCapacity; col++) {
-                const seatKey = `${row}-${col}`;
-                if (!occupiedSeats.has(seatKey)) {
-                    emptySeats.push({ row, col });
-                }
-            }
-        }
-
-        // 미배치 대원 수집 (파트별로 그룹화하여 파트 균형 유지)
-        const unassignedByPart: Map<string, { id: string; name: string; part: string }[]> = new Map();
-        for (const memberId of availableMemberIds) {
-            if (!assignedMemberIds.has(memberId)) {
-                const member = availableMembers.get(memberId) as any;
-                if (member) {
-                    if (!unassignedByPart.has(member.part)) {
-                        unassignedByPart.set(member.part, []);
-                    }
-                    unassignedByPart.get(member.part)!.push({
-                        id: memberId,
-                        name: member.name,
-                        part: member.part
-                    });
-                }
-            }
-        }
-
-        // 파트 순서대로 라운드 로빈 방식으로 빈 좌석에 배치
-        const partOrder = ['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'];
-        let emptyIndex = 0;
-        let hasMore = true;
-
-        while (hasMore && emptyIndex < emptySeats.length) {
-            hasMore = false;
-            for (const part of partOrder) {
-                const partMembers = unassignedByPart.get(part);
-                if (partMembers && partMembers.length > 0) {
-                    hasMore = true;
-                    const member = partMembers.shift()!;
-                    if (emptyIndex < emptySeats.length) {
-                        const { row, col } = emptySeats[emptyIndex++];
-                        seats.push({
-                            memberId: member.id,
-                            memberName: member.name,
-                            row,
-                            col,
-                            part: member.part as SeatRecommendation['part']
-                        });
-                        occupiedSeats.add(`${row}-${col}`);
-                        assignedMemberIds.add(member.id);
-                    }
-                }
-            }
-        }
-
-        // 좌석 부족으로 배치되지 못한 대원들
-        for (const [part, members] of unassignedByPart) {
-            for (const member of members) {
-                unassignedMembers.push({
-                    id: member.id,
-                    name: member.name,
-                    part: member.part as UnassignedMember['part'],
-                    reason: 'not_in_past'
-                });
-            }
-        }
+        // 6. 파트별 영역 유지 매핑 알고리즘 적용
+        const result = applyPastArrangementWithZoneMapping({
+            pastSeats,
+            pastGridLayout,
+            currentGridLayout,
+            availableMembers: availableMemberList,
+        });
 
         // 7. 응답
         return NextResponse.json({
-            seats,
-            matchedCount: seats.length,
+            seats: result.seats,
+            matchedCount: result.seats.length,
             totalAvailable: availableMemberIds.size,
-            unassignedMembers,
-            gridLayout: gridLayout
+            unassignedMembers: result.unassignedMembers,
+            gridLayout: currentGridLayout,
         });
 
     } catch (error: unknown) {

@@ -1,36 +1,180 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 찬양대 자리배치 시스템 (Choir Seat Arranger)
 
-## Getting Started
+AI 기반 자동 추천으로 찬양대 자리배치를 효율적으로 관리하는 웹 애플리케이션입니다.
 
-First, run the development server:
+## 주요 기능
+
+- **인원 관리**: 찬양대원 프로필 등록 및 주간 등단 현황 관리
+- **지휘자 전용 메모**: AES-256-GCM 암호화로 보호되는 CONDUCTOR 전용 메모 기능
+- **AI 자동 배치**: 과거 배치 데이터 학습을 통한 최적 자리배치 추천
+- **수동 미세 조정**: 드래그 앤 드롭으로 간편한 자리 조정
+- **배치표 생성**: 워드 스타일 표 형식으로 이미지 생성 및 공유
+- **카카오톡 연동**: 등단 현황 수집 및 배치표 공유 자동화
+
+## 기술 스택
+
+- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS
+- **Backend & Database**: Supabase (PostgreSQL + Auth + Storage + Realtime)
+- **Security**: AES-256-GCM Encryption (Node.js crypto)
+- **State Management**: Zustand, React Query
+- **Drag & Drop**: React DnD
+- **ML Service**: Python FastAPI (별도 구현 예정)
+
+## 시작하기
+
+### 사전 요구사항
+
+- Node.js 18.0 이상
+- Supabase 계정 및 프로젝트
+- npm 또는 yarn
+- Docker (로컬 Supabase 사용 시)
+
+### 설치
+
+1. 저장소 클론 및 의존성 설치
+
+```bash
+git clone <repository-url>
+cd choir-seat-app
+npm install
+```
+
+2. 환경 변수 설정
+
+```bash
+cp .env.example .env
+```
+
+`.env` 파일을 열고 Supabase 프로젝트 정보를 입력합니다:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+
+# 지휘자 메모 암호화 키 (64자리 16진수)
+CONDUCTOR_NOTES_ENCRYPTION_KEY="your-64-character-hex-key"
+```
+
+**암호화 키 생성 방법**:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+**Supabase 프로젝트 생성 방법**:
+1. [Supabase](https://supabase.com)에 가입 및 로그인
+2. "New Project" 클릭하여 프로젝트 생성
+3. Project Settings > API에서 URL과 API Keys 확인
+
+3. 데이터베이스 마이그레이션
+
+**옵션 A: 로컬 Supabase 사용 (Docker 필요)**
+
+```bash
+npx supabase init
+npx supabase start
+npx supabase db reset
+```
+
+**옵션 B: 원격 Supabase 사용**
+
+```bash
+npx supabase link --project-ref <your-project-ref>
+npx supabase db push
+```
+
+4. 개발 서버 실행
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 확인합니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 프로젝트 구조
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/                  # Next.js App Router 페이지
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/           # 재사용 가능한 컴포넌트
+│   ├── ui/              # 기본 UI 컴포넌트
+│   ├── layout/          # 레이아웃 컴포넌트
+│   └── features/        # 기능별 컴포넌트
+│       ├── members/
+│       ├── arrangements/
+│       └── seats/
+├── lib/                 # 유틸리티 함수
+│   ├── prisma.ts        # Prisma 클라이언트
+│   ├── providers.tsx    # React Query Provider
+│   └── utils.ts         # 공통 유틸리티
+├── types/               # TypeScript 타입 정의
+├── hooks/               # 커스텀 React 훅
+└── store/               # Zustand 상태 관리
 
-## Learn More
+prisma/
+├── schema.prisma        # 데이터베이스 스키마
+└── migrations/          # 마이그레이션 파일
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 데이터베이스 스키마
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **members**: 찬양대원 정보
+- **attendances**: 주간 등단 여부
+- **arrangements**: 자리배치표
+- **seats**: 개별 좌석 정보
+- **user_profiles**: 사용자 프로필 (Supabase Auth와 연동)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Row Level Security (RLS)**: 모든 테이블에 RLS가 활성화되어 인증된 사용자만 접근 가능합니다.
 
-## Deploy on Vercel
+## 개발 로드맵
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [x] Phase 1: 프로젝트 초기화 및 기본 구조
+- [x] Phase 1.5: 지휘자 전용 메모 기능 (암호화)
+- [x] Phase 2: 인원 관리 기능
+- [x] Phase 3: 자리배치 UI 구현
+- [ ] Phase 4: AI 자동 배치 알고리즘
+- [ ] Phase 5: 배치표 이미지 생성
+- [ ] Phase 6: 카카오톡 연동
+- [ ] Phase 7: 배포 및 최적화
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 주요 기능 상세
+
+### 지휘자 전용 메모
+
+CONDUCTOR 권한을 가진 사용자만 접근할 수 있는 암호화된 메모 시스템입니다.
+
+**보안 특징**:
+- AES-256-GCM 암호화 알고리즘 사용
+- 서버 측 환경 변수로 암호화 키 관리
+- ADMIN도 데이터베이스에서 평문을 확인할 수 없음
+- 데이터 무결성 검증 (변조 감지)
+
+**사용 방법**:
+```tsx
+import { ConductorNotes } from '@/components/features/members';
+
+<ConductorNotes
+  memberId={member.id}
+  memberName={member.name}
+  userRole={profile?.role}
+/>
+```
+
+**API 엔드포인트**:
+- `GET /api/members/[id]/conductor-notes` - 메모 조회
+- `PUT /api/members/[id]/conductor-notes` - 메모 저장
+- `DELETE /api/members/[id]/conductor-notes` - 메모 삭제
+
+**테스트**:
+```bash
+# 암호화 기능 테스트
+npx tsx scripts/test-crypto.ts
+```
+
+자세한 내용은 [docs/CONDUCTOR_NOTES.md](./docs/CONDUCTOR_NOTES.md)를 참고하세요.
+
+## 라이선스
+
+MIT License

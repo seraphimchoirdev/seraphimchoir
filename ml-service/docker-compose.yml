@@ -1,0 +1,67 @@
+# ML Service Docker Compose
+# 개발 환경에서 ML 서비스를 실행하기 위한 설정
+
+version: "3.8"
+
+services:
+  ml-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: choir-seat-ml
+    ports:
+      - "8000:8000"
+    environment:
+      # Supabase 연결 설정
+      - SUPABASE_URL=${SUPABASE_URL:-http://host.docker.internal:54321}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      # ML 서비스 설정
+      - MODEL_PATH=/app/models/seat_model.joblib
+      - MIN_TRAINING_SAMPLES=50
+      - DEBUG=false
+    volumes:
+      # 모델 파일 영속화
+      - ml-models:/app/models
+      # 개발 시 코드 핫 리로드 (선택적)
+      # - ./app:/app/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # macOS에서 host.docker.internal 사용을 위한 설정
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # 개발용 핫 리로드 서비스 (선택적)
+  ml-service-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: choir-seat-ml-dev
+    ports:
+      - "8001:8000"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL:-http://host.docker.internal:54321}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - MODEL_PATH=/app/models/seat_model.joblib
+      - MIN_TRAINING_SAMPLES=10
+      - DEBUG=true
+    volumes:
+      - ./app:/app/app
+      - ml-models-dev:/app/models
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    profiles:
+      - dev
+
+volumes:
+  ml-models:
+    name: choir-seat-ml-models
+  ml-models-dev:
+    name: choir-seat-ml-models-dev

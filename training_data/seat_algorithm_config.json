@@ -1,0 +1,71 @@
+{
+  "generated_at": "2025-12-03T08:31:42.157Z",
+  "training_summary": {
+    "totalFiles": 43,
+    "totalSeats": 3577,
+    "uniqueMembers": 103,
+    "dateRange": {
+      "start": "2025-01-05",
+      "end": "2025-11-09"
+    }
+  },
+  "part_placement_rules": {
+    "SOPRANO": {
+      "side": "left",
+      "preferredRows": [
+        1,
+        2,
+        3
+      ],
+      "overflowRows": [
+        4,
+        5,
+        6
+      ],
+      "sidePercentage": 92.01710620099787,
+      "frontRowPercentage": 78.04704205274412
+    },
+    "ALTO": {
+      "side": "right",
+      "preferredRows": [
+        1,
+        2,
+        3
+      ],
+      "overflowRows": [
+        4
+      ],
+      "sidePercentage": 99.79166666666667,
+      "frontRowPercentage": 86.5625
+    },
+    "TENOR": {
+      "side": "left",
+      "preferredRows": [
+        4,
+        5,
+        6
+      ],
+      "overflowRows": [],
+      "sidePercentage": 97.73123909249564,
+      "frontRowPercentage": 0.5235602094240838
+    },
+    "BASS": {
+      "side": "right",
+      "preferredRows": [
+        4,
+        5,
+        6
+      ],
+      "overflowRows": [],
+      "sidePercentage": 97.81591263650546,
+      "frontRowPercentage": 0.46801872074883
+    }
+  },
+  "fixed_seat_stats": {
+    "totalMembers": 103,
+    "fixedSeatMembers": 63,
+    "fixedSeatPercentage": 61.165048543689316,
+    "avgRowConsistency": 82.20949807462856,
+    "avgColConsistency": 92.48562105548159
+  }
+}

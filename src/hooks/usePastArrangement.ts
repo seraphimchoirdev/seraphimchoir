@@ -18,7 +18,7 @@ interface UnassignedMember {
     id: string;
     name: string;
     part: Part;
-    reason: 'not_in_past' | 'out_of_grid' | 'seat_conflict';
+    reason: 'not_in_past' | 'out_of_grid' | 'seat_conflict' | 'zone_full';
 }
 
 export interface ApplyPastResponse {
@@ -134,6 +134,8 @@ export function getUnassignedReasonText(reason: UnassignedMember['reason']): str
             return '그리드 범위 초과';
         case 'seat_conflict':
             return '좌석 충돌';
+        case 'zone_full':
+            return '파트 영역 부족';
         default:
             return '알 수 없음';
     }

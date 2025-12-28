@@ -1,0 +1,99 @@
+### Authentication API Test File
+### VS Code REST Client Extension 또는 IntelliJ HTTP Client에서 사용 가능
+
+### 변수 설정
+@baseUrl = http://localhost:3000
+@email = test@example.com
+@password = test123456
+@name = 테스트유저
+
+###############################################
+# 1. 회원가입 (Signup)
+###############################################
+
+POST {{baseUrl}}/api/auth/signup
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "name": "{{name}}"
+}
+
+###############################################
+# 2. 로그인 (Login)
+###############################################
+
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###############################################
+# 3. 현재 사용자 조회 (Get Current User)
+###############################################
+
+GET {{baseUrl}}/api/auth/me
+
+###############################################
+# 4. 역할 변경 (Update Role) - ADMIN 권한 필요
+###############################################
+
+PATCH {{baseUrl}}/api/auth/roles
+Content-Type: application/json
+
+{
+  "userId": "target-user-uuid-here",
+  "role": "CONDUCTOR"
+}
+
+###############################################
+# 5. 로그아웃 (Logout)
+###############################################
+
+POST {{baseUrl}}/api/auth/logout
+
+###############################################
+# 에러 케이스 테스트
+###############################################
+
+### 잘못된 이메일 형식
+POST {{baseUrl}}/api/auth/signup
+Content-Type: application/json
+
+{
+  "email": "invalid-email",
+  "password": "test123456",
+  "name": "테스트"
+}
+
+### 짧은 비밀번호
+POST {{baseUrl}}/api/auth/signup
+Content-Type: application/json
+
+{
+  "email": "test2@example.com",
+  "password": "123",
+  "name": "테스트"
+}
+
+### 잘못된 로그인 정보
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "wrongpassword"
+}
+
+### 인증 없이 역할 변경 시도 (실패해야 함)
+PATCH {{baseUrl}}/api/auth/roles
+Content-Type: application/json
+
+{
+  "userId": "some-uuid",
+  "role": "ADMIN"
+}

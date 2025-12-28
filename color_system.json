@@ -1,0 +1,64 @@
+{
+  "themeName": "New Blossom Grace",
+  "motif": "새롭게 피어나는 꽃의 생명, 천상의 빛, 평안, 경건, 공동체의 따뜻함",
+  "coreColors": {
+    "primary": {
+      "name": "Heavenly Blue",
+      "hex": "#6DA8E0",
+      "context": "웹의 주요 액션 버튼, 강조 영역에 사용. 밝고 청량한 하늘색은 성가의 경쾌함·소망·겸손함을 상징."
+    },
+    "secondary": {
+      "name": "Seraphim White",
+      "hex": "#F8FAFB",
+      "context": "배경/카드/모듈 바탕. 매우 밝고 순수한 화이트 계열로 경건함과 투명함, 가독성·여백 제공."
+    },
+    "accent": {
+      "name": "Grace Blossom Pink",
+      "hex": "#EBA7B2",
+      "context": "포인트(출석상태, 악보/자리배치 강조, 아이콘). 새로 피어나는 꽃잎의 생명·따스함·온기를 표현."
+    },
+    "success": {
+      "name": "Hope Green",
+      "hex": "#9CD6B0",
+      "context": "출석, 완료, 긍정상태 표시. 회복·성장·축복을 상징하는 부드러운 파스텔 그린."
+    },
+    "warning": {
+      "name": "Cheerful Yellow",
+      "hex": "#FFEE93",
+      "context": "주의/특이사항(자리 지각, 예외상태). 햇살처럼 따뜻한 노랑, 긴장 대신 부드러운 알림."
+    },
+    "error": {
+      "name": "Faithful Red",
+      "hex": "#EF8680",
+      "context": "결석·경고 등. 신호성 명확하지만, 너무 강하지 않게 화사한 레드."
+    },
+    "text": {
+      "primary": "#2A3440",
+      "secondary": "#6B6F76",
+      "context": "가독성을 살리는 차콜·그레이톤 텍스트."
+    },
+    "divider_border": {
+      "default": "#E4E9F2",
+      "context": "라인, 셀 구분 등, 은은함·조화"
+    }
+  },
+  "gradient": {
+    "name": "Blessed Sky",
+    "css": "linear-gradient(90deg, #B8D8EE 0%, #F3C6E8 100%)",
+    "context": "타이틀 영역·상단 바·강조 배너. 부드러우면서 영적인 고양감을 주는 경쾌한 하늘-핑크 그라데이션."
+  },
+  "usageGuidelines": [
+    "배경은 흰색(Seraphim White), 카드·모듈별로 약간 더 밝은 톤 분리",
+    "주요 버튼/확정 CTA는 Heavenly Blue, hover/active는 음영 혹은 gradient 처리",
+    "포인트 정보(좌석 강조, 대원 프로필)·상태 배지는 Grace Blossom Pink 또는 Hope Green",
+    "상태 메세지(출석/결석 등)는 색상만으로 구분하지 않고 아이콘·텍스트 함께 사용(접근성)",
+    "텍스트는 명확한 명도 대비(1.4:1 이상), headline엔 진한 청색/차콜, body/부연은 secondary gray",
+    "시각적 피로감 방지를 위해 너무 진한 색(강한 남색, 검정, 빨강)은 최소화하며, 밝고 부드러운 계열 위주",
+    "중요 섹션·통계·자리배치는 gradient 또는 accent color로 포인트",
+    "전체 톤은 화사하고 따뜻하게(봄꽃처럼 부드러운 파스텔계열), 얇은 border로 정돈감·단정함 유지"
+  ],
+  "reference_styles": [
+    "Gloria, 시온성과 같은 교회, 주만 의지합니다 등 본 합창대 주요 곡들의 품격 있고 은혜로우며 '부활·빛·평안'의 느낌 반영",
+    "새로핌의 영문 의미(Seraphim: 천사), 국문 의미(새롭게 피어남) 모두 살리는 컬러모티브"
+  ]
+}

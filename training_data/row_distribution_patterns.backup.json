@@ -1,0 +1,225 @@
+{
+  "45": {
+    "rows": 5,
+    "capacities": [
+      9,
+      9,
+      10,
+      9,
+      8
+    ],
+    "observations": 1
+  },
+  "52": {
+    "rows": 5,
+    "capacities": [
+      10,
+      11,
+      10,
+      11,
+      10
+    ],
+    "observations": 1
+  },
+  "53": {
+    "rows": 5,
+    "capacities": [
+      11,
+      12,
+      11,
+      10,
+      9
+    ],
+    "observations": 1
+  },
+  "55": {
+    "rows": 5,
+    "capacities": [
+      11,
+      12,
+      12,
+      11,
+      9
+    ],
+    "observations": 1
+  },
+  "57": {
+    "rows": 5,
+    "capacities": [
+      12,
+      12,
+      12,
+      11,
+      10
+    ],
+    "observations": 1
+  },
+  "59": {
+    "rows": 6,
+    "capacities": [
+      10,
+      11,
+      10,
+      11,
+      9,
+      8
+    ],
+    "observations": 1
+  },
+  "68": {
+    "rows": 6,
+    "capacities": [
+      12,
+      12,
+      13,
+      12,
+      10,
+      9
+    ],
+    "observations": 1
+  },
+  "72": {
+    "rows": 6,
+    "capacities": [
+      13,
+      13,
+      14,
+      13,
+      10,
+      9
+    ],
+    "observations": 1
+  },
+  "74": {
+    "rows": 6,
+    "capacities": [
+      13,
+      12,
+      14,
+      13,
+      12,
+      10
+    ],
+    "observations": 1
+  },
+  "79": {
+    "rows": 6,
+    "capacities": [
+      14,
+      13,
+      15,
+      14,
+      12,
+      11
+    ],
+    "observations": 2
+  },
+  "80": {
+    "rows": 6,
+    "capacities": [
+      15,
+      15,
+      14,
+      14,
+      12,
+      10
+    ],
+    "observations": 2
+  },
+  "82": {
+    "rows": 6,
+    "capacities": [
+      15,
+      15,
+      15,
+      14,
+      12,
+      11
+    ],
+    "observations": 5
+  },
+  "83": {
+    "rows": 6,
+    "capacities": [
+      15,
+      15,
+      15,
+      14,
+      13,
+      11
+    ],
+    "observations": 5
+  },
+  "84": {
+    "rows": 6,
+    "capacities": [
+      15,
+      15,
+      15,
+      15,
+      13,
+      11
+    ],
+    "observations": 4
+  },
+  "85": {
+    "rows": 6,
+    "capacities": [
+      16,
+      15,
+      15,
+      15,
+      13,
+      11
+    ],
+    "observations": 5
+  },
+  "86": {
+    "rows": 6,
+    "capacities": [
+      15,
+      16,
+      16,
+      15,
+      13,
+      11
+    ],
+    "observations": 4
+  },
+  "88": {
+    "rows": 6,
+    "capacities": [
+      15,
+      16,
+      17,
+      16,
+      13,
+      11
+    ],
+    "observations": 1
+  },
+  "89": {
+    "rows": 6,
+    "capacities": [
+      16,
+      16,
+      16,
+      15,
+      13,
+      13
+    ],
+    "observations": 2
+  },
+  "90": {
+    "rows": 6,
+    "capacities": [
+      16,
+      16,
+      16,
+      16,
+      14,
+      12
+    ],
+    "observations": 1
+  }
+}

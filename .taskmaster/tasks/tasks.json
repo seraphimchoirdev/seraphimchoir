@@ -1,0 +1,316 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Supabase Backend and Authentication",
+        "description": "Initialize Supabase backend with PostgreSQL, Auth, Storage, and configure Row Level Security (RLS) policies for user_profiles, members, attendances, arrangements, and seats tables.",
+        "details": "Create database schema as specified, including tables user_profiles, members, attendances, arrangements, seats, and arrangement_templates with constraints and indexes. Implement RLS policies for each table to enforce role-based access control. Configure Supabase Auth for email/password signup and login with email verification. Setup session management with cookie-based sessions and token expiration as per requirements.",
+        "testStrategy": "Verify database schema creation and constraints. Test RLS policies by simulating users with different roles and verifying access permissions. Test signup and login flows including email verification and error handling for duplicate emails and weak passwords.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement User Authentication and Role Management APIs",
+        "description": "Develop Next.js API routes and client-side logic for user signup, login (email/password), logout, and role assignment by ADMIN users.",
+        "details": "Use Supabase Auth client APIs for signUp, signInWithPassword, signOut, and getUser. Implement server-side API routes to allow ADMIN users to assign roles to user_profiles securely. Enforce role-based access control in API routes and client-side state management using Zustand and React Query.",
+        "testStrategy": "Unit test API routes with mocked Supabase client to verify correct role assignment and error handling. Test client signup and login flows including session persistence and token expiration. Verify unauthorized role assignment attempts are rejected.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Supabase Auth Client Integration",
+            "description": "Set up Supabase authentication client with signup, login, logout, and user session management functionality.",
+            "dependencies": [],
+            "details": "Create authentication service using Supabase Auth client APIs including signUp, signInWithPassword, signOut, and getUser methods. Implement session persistence and token refresh handling. Set up proper error handling for authentication failures and network issues.",
+            "status": "done",
+            "testStrategy": "Unit test each auth method with mocked Supabase client. Test session persistence across page refreshes. Verify error handling for invalid credentials and network failures."
+          },
+          {
+            "id": 2,
+            "title": "Create User Authentication API Routes",
+            "description": "Develop Next.js API routes for user registration, login, logout, and session validation endpoints.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement API routes /api/auth/signup, /api/auth/login, /api/auth/logout, and /api/auth/me. Handle request validation, password hashing, session management, and proper HTTP status codes. Include middleware for authentication state verification.",
+            "status": "done",
+            "testStrategy": "Test API endpoints with various input scenarios including valid/invalid credentials, missing fields, and malformed requests. Verify proper HTTP status codes and response formats."
+          },
+          {
+            "id": 3,
+            "title": "Implement Role-Based Access Control System",
+            "description": "Create role management system with ADMIN role assignment capabilities and access control enforcement.",
+            "dependencies": [
+              2
+            ],
+            "details": "Develop API routes for role assignment restricted to ADMIN users. Implement middleware to check user roles and permissions. Create functions to verify ADMIN privileges before allowing role modifications to user_profiles table.",
+            "status": "done",
+            "testStrategy": "Test role assignment by ADMIN users and verify unauthorized attempts are rejected. Test middleware enforcement across different user roles. Verify database updates for role assignments."
+          },
+          {
+            "id": 4,
+            "title": "Set up Zustand Authentication Store",
+            "description": "Create Zustand store for managing authentication state, user data, and role information across the application.",
+            "dependencies": [
+              1
+            ],
+            "details": "Design AuthStore with user state, authentication status, role information, and methods for login, logout, and state updates. Implement persistence using Zustand persist middleware. Include methods for checking user permissions and role-based UI rendering.",
+            "status": "done",
+            "testStrategy": "Test store state updates during auth operations. Verify persistence across browser sessions. Test role-based permission checks and UI state management."
+          },
+          {
+            "id": 5,
+            "title": "Integrate React Query for Authentication Data Management",
+            "description": "Set up React Query hooks and mutations for authentication operations with proper caching and error handling.",
+            "dependencies": [
+              2,
+              4
+            ],
+            "details": "Create React Query hooks for user authentication including useLogin, useSignup, useLogout, and useUser queries. Implement proper cache invalidation strategies and optimistic updates. Handle loading states and error management for authentication operations.",
+            "status": "done",
+            "testStrategy": "Test query caching behavior and cache invalidation. Verify loading states and error handling in UI components. Test optimistic updates and rollback scenarios."
+          },
+          {
+            "id": 6,
+            "title": "Build Authentication UI Components and Forms",
+            "description": "Create user interface components for login, signup, logout, and role management with form validation and user feedback.",
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "Develop login and signup forms with client-side validation using React Hook Form or similar. Create role management interface for ADMIN users. Implement loading states, error messages, and success feedback. Include responsive design and accessibility features.",
+            "status": "done",
+            "testStrategy": "Test form validation with various input scenarios. Verify UI feedback for loading, success, and error states. Test responsive design across different screen sizes and accessibility compliance."
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Develop Choir Member Management Features",
+        "description": "Implement CRUD operations for choir members including registration, listing with filtering/sorting/pagination, updating with optimistic locking, and deletion with cascade removal of related attendances and seats.",
+        "details": "Use Supabase Client API for database operations on members table. Validate inputs using Zod schemas as specified. Implement filtering by part, leader status, and name search; sorting by name, part, experience, and registration date; pagination with offset/limit. Implement optimistic locking using updated_at timestamps to detect concurrent edits. Confirm deletion with user and cascade delete related attendances and seats.",
+        "testStrategy": "Unit test member CRUD API calls with valid and invalid inputs. Test optimistic locking by simulating concurrent updates. Verify cascade deletion removes related records. Validate filtering, sorting, and pagination correctness.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Member Registration API and Form",
+            "description": "Implement API endpoint and UI form for registering new choir members with validation",
+            "dependencies": [],
+            "details": "Create Next.js API route for POST /api/members to insert new members into Supabase members table. Implement Zod schema validation for required fields (name, email, part, experience level). Build registration form component with form validation, error handling, and success feedback. Handle duplicate email validation.",
+            "status": "done",
+            "testStrategy": "Unit test API route with valid and invalid member data. Test form validation with missing fields, invalid email formats, and duplicate emails. Verify successful registration creates database record."
+          },
+          {
+            "id": 2,
+            "title": "Implement Member Listing with Filtering and Sorting",
+            "description": "Create member list view with filtering by part/leader status, sorting options, and search functionality",
+            "dependencies": [
+              1
+            ],
+            "details": "Build GET /api/members endpoint with query parameters for filtering (part, is_leader, name search), sorting (name, part, experience, registration_date), and pagination (offset, limit). Create member list UI component with filter controls, sort dropdown, search input, and member cards/table display. Implement debounced search and URL state management.",
+            "status": "done",
+            "testStrategy": "Test API endpoint with various filter/sort combinations. Verify search functionality with partial name matches. Test pagination with different page sizes. Confirm UI updates correctly when filters change."
+          },
+          {
+            "id": 3,
+            "title": "Build Member Profile Update with Optimistic Locking",
+            "description": "Create member editing functionality with optimistic locking to prevent concurrent update conflicts",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement PUT /api/members/[id] endpoint that checks updated_at timestamp for optimistic locking. Create member edit form with pre-populated data and conflict detection. Handle concurrent edit scenarios by showing conflict message and allowing user to refresh or force update. Include all editable fields: name, email, part, experience, leader status.",
+            "status": "done",
+            "testStrategy": "Simulate concurrent updates by modifying updated_at timestamp. Test conflict detection and user resolution options. Verify successful updates increment updated_at timestamp. Test form validation on edit."
+          },
+          {
+            "id": 4,
+            "title": "Implement Member Deletion with Cascade Operations",
+            "description": "Create member deletion functionality with confirmation dialog and cascade removal of related records",
+            "dependencies": [
+              3
+            ],
+            "details": "Build DELETE /api/members/[id] endpoint that cascades deletion to related attendances and seat assignments. Implement confirmation dialog showing impact (number of attendances/seats to be deleted). Create database transaction to ensure atomicity of cascade operations. Provide option to archive member instead of permanent deletion.",
+            "status": "done",
+            "testStrategy": "Test deletion of member with and without related records. Verify cascade deletion removes all attendances and seat assignments. Test transaction rollback on failure. Confirm confirmation dialog shows accurate impact counts."
+          },
+          {
+            "id": 5,
+            "title": "Add Pagination and Performance Optimization",
+            "description": "Implement efficient pagination system and optimize member list performance for large datasets",
+            "dependencies": [
+              4
+            ],
+            "details": "Enhance member listing API with cursor-based pagination for better performance. Implement virtual scrolling or infinite scroll in UI for large member lists. Add database indexes on commonly filtered/sorted columns (part, is_leader, name, created_at). Implement caching strategy using React Query for member data with appropriate stale times.",
+            "status": "done",
+            "testStrategy": "Test pagination with large datasets (1000+ members). Verify virtual scrolling performance and correct data loading. Test cache invalidation after CRUD operations. Measure query performance improvements with indexes."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Implement Attendance Management and Statistics",
+        "description": "Create features for inputting attendance status individually, bulk, and via calendar view; implement attendance statistics per part; and provide calendar UI with date-based attendance info and navigation.",
+        "details": "Use Supabase upsert API for attendances table with unique constraint on (member_id, date). Implement RPC function get_attendance_stats_by_date for statistics. Develop calendar UI using React DayPicker or custom implementation showing attendance counts and arrangement status per date. Enable navigation between months and date selection to detailed attendance pages.",
+        "testStrategy": "Test attendance input methods for correctness and uniqueness enforcement. Validate RPC function returns accurate statistics. Verify calendar UI displays correct data and navigation works as expected.",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Individual Attendance Input Feature",
+            "description": "Create UI and API functionality for inputting attendance status for individual choir members on specific dates.",
+            "dependencies": [],
+            "details": "Develop a form component for selecting member and date, with attendance status options (present, absent, late). Use Supabase upsert API with unique constraint on (member_id, date) to prevent duplicates. Include validation for required fields and date format.",
+            "status": "done",
+            "testStrategy": "Test form validation, successful upsert operations, and duplicate prevention. Verify error handling for invalid inputs."
+          },
+          {
+            "id": 2,
+            "title": "Implement Bulk Attendance Input Feature",
+            "description": "Create functionality for inputting attendance status for multiple members simultaneously for a specific date.",
+            "dependencies": [
+              1
+            ],
+            "details": "Build a bulk input interface showing all members with checkboxes or dropdown selectors for attendance status. Implement batch upsert operations using Supabase client. Include progress indicators and error handling for partial failures.",
+            "status": "done",
+            "testStrategy": "Test bulk operations with various member counts. Verify partial failure handling and rollback mechanisms. Confirm UI responsiveness during batch processing."
+          },
+          {
+            "id": 3,
+            "title": "Develop Calendar-based Attendance Input",
+            "description": "Create calendar interface for viewing and inputting attendance data with date-based navigation and visual indicators.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement calendar UI using React DayPicker showing attendance counts per date. Add click handlers for date selection leading to attendance input forms. Display visual indicators for dates with existing attendance data and arrangement status.",
+            "status": "done",
+            "testStrategy": "Test calendar navigation between months. Verify date selection triggers correct attendance forms. Confirm visual indicators display accurate data."
+          },
+          {
+            "id": 4,
+            "title": "Implement Attendance Statistics RPC Function",
+            "description": "Create Supabase RPC function to calculate and return attendance statistics grouped by choir parts for specific date ranges.",
+            "dependencies": [],
+            "details": "Develop get_attendance_stats_by_date RPC function in Supabase that aggregates attendance data by part, calculating present/absent/late counts and percentages. Include parameters for date range filtering and return structured JSON with part-wise statistics.",
+            "status": "done",
+            "testStrategy": "Test RPC function with various date ranges and verify accurate calculations. Confirm proper handling of edge cases like no data or invalid dates."
+          },
+          {
+            "id": 5,
+            "title": "Build Attendance Statistics Display UI",
+            "description": "Create user interface components to display attendance statistics per part with filtering and visualization options.",
+            "dependencies": [
+              4
+            ],
+            "details": "Develop React components to fetch and display statistics using the RPC function. Include date range selectors, part-wise breakdown tables, and optional charts/graphs. Implement real-time updates when attendance data changes.",
+            "status": "done",
+            "testStrategy": "Test statistics display accuracy against known data. Verify date range filtering works correctly. Confirm UI updates when underlying attendance data changes."
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Build Seat Arrangement UI with Drag-and-Drop",
+        "description": "Develop seat grid system with visual states and part-based color coding; implement drag-and-drop seat assignment and swapping with React DnD; enforce part-based drag constraints and provide visual feedback.",
+        "details": "Create seat grid with configurable rows and columns, max 20x30. Use React DnD for drag sources and drop targets representing seats and member list. Implement logic to allow dropping only within same part area, with ESC key to cancel drag. Show visual cues for drag state, drop validity, and selection. Display member name, leader icon, and optionally experience on seats.",
+        "testStrategy": "Unit test drag-and-drop interactions including valid and invalid drops. Verify visual feedback matches drag state. Test ESC key cancels drag. Confirm seat grid renders correctly with part color coding and member info.",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement Undo/Redo Functionality for Seat Arrangements",
+        "description": "Add undo and redo capabilities for seat arrangement actions using Command pattern and Zustand state management, supporting up to 50 history states with keyboard shortcuts.",
+        "details": "Design ArrangementStore in Zustand to maintain history array, current index, and methods undo, redo, and addHistory. Track actions such as placement, move, swap, and delete. Bind keyboard shortcuts Ctrl+Z / Cmd+Z for undo and Ctrl+Shift+Z / Cmd+Shift+Z for redo. Ensure UI updates accordingly on undo/redo.",
+        "testStrategy": "Test undo and redo operations for all action types. Verify history limit enforcement. Confirm keyboard shortcuts trigger correct behavior. Check UI consistency after undo/redo.",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Develop Arrangement Template Management",
+        "description": "Implement saving, loading, editing, and deleting seat arrangement templates with metadata, stored in arrangement_templates table.",
+        "details": "Create API routes and client UI to save current seat arrangement as template with name and optional description. Support listing templates, applying selected template to current arrangement with overwrite warning, editing template metadata and data, and deleting templates. Store template_data as JSONB in database.",
+        "testStrategy": "Test template CRUD operations via API and UI. Verify template data integrity and correct application to arrangements. Confirm overwrite warnings appear and function properly.",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Integrate AI-Based Seat Arrangement Recommendation",
+        "description": "Implement API route to request AI seat arrangement recommendations from ML service with input parameters and display ranked recommendations with scores and reasons.",
+        "details": "Develop Next.js API route POST /api/ai/recommend to accept date, available members, and rules, forwarding request to Python FastAPI ML service. Parse and return recommendations with rank, score, seat assignments, and rationale. Provide UI to trigger recommendation requests and display results for user selection.",
+        "testStrategy": "Mock ML service responses to test API route error handling and success cases. Validate UI displays recommendations correctly. Test input validation and error messages.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Implement Arrangement Image Generation and Sharing",
+        "description": "Create functionality to generate high-resolution arrangement images using html2canvas or Puppeteer, save to Supabase Storage, and enable download and clipboard copy; prepare for KakaoTalk sharing in Phase 6.",
+        "details": "Develop client-side function using html2canvas to capture arrangement DOM element at 2x scale with white background. Convert canvas to blob and upload PNG to Supabase Storage under choir-seat-images bucket with arrangement ID path. Provide UI for image preview, PNG download with formatted filename, and clipboard copy using Clipboard API. Implement Next.js API route POST /api/arrangements/[id]/generate-image for server-side generation fallback.",
+        "testStrategy": "Test image generation on various devices and screen sizes. Verify upload success and public URL retrieval. Confirm download and clipboard copy functionality. Prepare mocks for KakaoTalk sharing integration.",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Setup CI/CD Pipeline and Deployment Environment",
+        "description": "Configure development, staging, and production environments with separate Supabase projects and Vercel deployments; implement GitHub Actions for automated testing, build, and deployment; manage environment variables and database migrations.",
+        "details": "Establish environment separation with .env.local for local, Vercel environment variables for staging and production. Setup GitHub Actions workflow triggered on main branch push to run lint, type checks, unit tests, build, deploy to Vercel, and run E2E tests on staging. Manage Supabase migrations with npx supabase db push and implement rollback strategy using Point-in-Time Recovery. Integrate monitoring tools like Vercel Analytics, Sentry, and Supabase Dashboard.",
+        "testStrategy": "Validate CI pipeline runs successfully on commits. Test deployment to each environment. Verify environment variables are correctly applied. Confirm database migrations apply and rollback correctly. Monitor alerts and logs post-deployment.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-11-19T12:15:39.752Z",
+      "updated": "2025-11-20T05:03:14.555Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
