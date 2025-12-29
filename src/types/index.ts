@@ -28,8 +28,6 @@ export interface SeatWithMember extends Seat {
 export interface MemberFormData {
   name: string;
   part: Part;
-  height?: number;
-  experience?: number;
   isLeader?: boolean;
   phoneNumber?: string;
   email?: string;

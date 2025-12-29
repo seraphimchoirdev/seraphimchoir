@@ -86,16 +86,6 @@ export default function MemberCard({ member, onDelete }: MemberCardProps) {
 
       {/* 정보 */}
       <div className="space-y-1 text-sm text-gray-600 mb-3">
-        {member.height && (
-          <div className="flex items-center gap-2">
-            <span className="font-medium">키:</span>
-            <span>{member.height}cm</span>
-          </div>
-        )}
-        <div className="flex items-center gap-2">
-          <span className="font-medium">경력:</span>
-          <span>{member.experience}년</span>
-        </div>
         {member.phone_number && (
           <div className="flex items-center gap-2">
             <span className="font-medium">연락처:</span>

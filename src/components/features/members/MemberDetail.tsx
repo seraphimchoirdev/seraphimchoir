@@ -113,16 +113,6 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
             <h3 className="text-sm font-medium text-gray-500">대원 상태</h3>
             <p className="mt-1 text-base text-gray-900">{STATUS_LABELS[member.member_status]}</p>
           </div>
-          {member.height && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">키</h3>
-              <p className="mt-1 text-base text-gray-900">{member.height}cm</p>
-            </div>
-          )}
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">경력</h3>
-            <p className="mt-1 text-base text-gray-900">{member.experience}년</p>
-          </div>
           {member.phone_number && (
             <div>
               <h3 className="text-sm font-medium text-gray-500">연락처</h3>

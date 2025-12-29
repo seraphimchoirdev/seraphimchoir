@@ -146,8 +146,6 @@ export type Database = {
           created_at: string
           email: string | null
           encrypted_conductor_notes: string | null
-          experience: number
-          height: number | null
           id: string
           is_leader: boolean
           member_status: Database['public']['Enums']['member_status']
@@ -164,8 +162,6 @@ export type Database = {
           created_at?: string
           email?: string | null
           encrypted_conductor_notes?: string | null
-          experience?: number
-          height?: number | null
           id?: string
           is_leader?: boolean
           member_status?: Database['public']['Enums']['member_status']
@@ -182,8 +178,6 @@ export type Database = {
           created_at?: string
           email?: string | null
           encrypted_conductor_notes?: string | null
-          experience?: number
-          height?: number | null
           id?: string
           is_leader?: boolean
           member_status?: Database['public']['Enums']['member_status']

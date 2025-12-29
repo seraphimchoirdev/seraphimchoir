@@ -81,8 +81,6 @@ export default function MemberListItem({ member, onDelete }: MemberListItemProps
                                 {PART_LABELS[member.part]}
                             </span>
                             <span>{STATUS_LABELS[member.member_status]}</span>
-                            <span>•</span>
-                            <span>{member.experience}년차</span>
                         </div>
                     </div>
                 </Link>

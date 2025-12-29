@@ -17,7 +17,7 @@ const queryParamsSchema = z.object({
   part: PartEnum.optional().nullish(),
   search: z.string().optional().nullish(),
   member_status: MemberStatusEnum.optional().nullish(),
-  sortBy: z.enum(['name', 'part', 'experience', 'createdAt']).optional().default('createdAt'),
+  sortBy: z.enum(['name', 'part', 'createdAt']).optional().default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
@@ -25,8 +25,6 @@ const queryParamsSchema = z.object({
 const createMemberSchema = z.object({
   name: z.string().min(2, '이름은 최소 2자 이상이어야 합니다').max(50, '이름은 최대 50자까지 입력 가능합니다'),
   part: PartEnum,
-  height: z.number().min(100).max(250).nullable().optional(),
-  experience: z.number().min(0).default(0),
   is_leader: z.boolean().default(false),
   member_status: MemberStatusEnum.default('NEW'),
   phone_number: z.string().nullable().optional(),
@@ -45,7 +43,7 @@ const createMemberSchema = z.object({
  * - part: SOPRANO | ALTO | TENOR | BASS | SPECIAL (파트별 필터링)
  * - search: string (이름 검색)
  * - member_status: REGULAR | NEW | ON_LEAVE | RESIGNED (상태별 필터링)
- * - sortBy: name | part | experience | createdAt (정렬 기준, 기본값: createdAt)
+ * - sortBy: name | part | createdAt (정렬 기준, 기본값: createdAt)
  * - sortOrder: asc | desc (정렬 순서, 기본값: desc)
  */
 export async function GET(request: NextRequest) {
@@ -102,7 +100,6 @@ export async function GET(request: NextRequest) {
     const columnMap: Record<string, string> = {
       name: 'name',
       part: 'part',
-      experience: 'experience',
       createdAt: 'created_at',
     };
 

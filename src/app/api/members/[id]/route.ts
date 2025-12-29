@@ -14,8 +14,6 @@ const MemberStatusEnum = z.enum(['REGULAR', 'NEW', 'ON_LEAVE', 'RESIGNED']);
 const updateMemberSchema = z.object({
   name: z.string().min(2).max(50).optional(),
   part: PartEnum.optional(),
-  height: z.number().min(100).max(250).nullable().optional(),
-  experience: z.number().min(0).optional(),
   is_leader: z.boolean().optional(),
   member_status: MemberStatusEnum.optional(),
   phone_number: z.string().nullable().optional(),

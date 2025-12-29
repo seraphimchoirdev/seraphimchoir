@@ -48,8 +48,6 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
   const [formData, setFormData] = useState({
     name: member?.name || '',
     part: member?.part || ('SOPRANO' as Part),
-    height: member?.height?.toString() || '',
-    experience: member?.experience?.toString() || '0',
     is_leader: member?.is_leader || false,
     member_status: member?.member_status || ('NEW' as MemberStatus),
     phone_number: member?.phone_number || '',
@@ -106,14 +104,6 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
       newErrors.email = '올바른 이메일 형식이 아닙니다';
     }
 
-    if (formData.height && (parseInt(formData.height) < 100 || parseInt(formData.height) > 250)) {
-      newErrors.height = '키는 100~250cm 사이여야 합니다';
-    }
-
-    if (parseInt(formData.experience) < 0) {
-      newErrors.experience = '경력은 0 이상이어야 합니다';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -126,8 +116,6 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
     const submitData = {
       name: formData.name,
       part: formData.part,
-      height: formData.height ? parseInt(formData.height) : null,
-      experience: parseInt(formData.experience),
       is_leader: formData.is_leader,
       member_status: formData.member_status,
       phone_number: formData.phone_number || null,
@@ -263,51 +251,6 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            {/* 키 */}
-            <div className="space-y-2">
-              <Label htmlFor="height">키 (cm)</Label>
-              <Input
-                type="number"
-                id="height"
-                name="height"
-                value={formData.height}
-                onChange={handleChange}
-                min="100"
-                max="250"
-                placeholder="170"
-                className={errors.height ? 'border-[var(--color-error-300)] focus-visible:ring-[var(--color-error-500)]' : ''}
-              />
-              {errors.height ? (
-                <p className="text-sm text-[var(--color-error-600)]">{errors.height}</p>
-              ) : (
-                <p className="text-xs text-[var(--color-text-tertiary)]">
-                  자리배치 알고리즘에 활용됩니다 (선택사항)
-                </p>
-              )}
-            </div>
-
-            {/* 경력 */}
-            <div className="space-y-2">
-              <Label htmlFor="experience">경력 (년)</Label>
-              <Input
-                type="number"
-                id="experience"
-                name="experience"
-                value={formData.experience}
-                onChange={handleChange}
-                min="0"
-                placeholder="0"
-                className={errors.experience ? 'border-[var(--color-error-300)] focus-visible:ring-[var(--color-error-500)]' : ''}
-              />
-              {errors.experience ? (
-                <p className="text-sm text-[var(--color-error-600)]">{errors.experience}</p>
-              ) : (
-                <p className="text-xs text-[var(--color-text-tertiary)]">
-                  찬양대 활동 경력을 입력해주세요
-                </p>
-              )}
             </div>
 
             {/* 파트장 여부 */}
