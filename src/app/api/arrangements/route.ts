@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Basic query
-    let query = supabase
+    const query = supabase
         .from('arrangements')
         .select('*', { count: 'exact' })
         .order('date', { ascending: false })
@@ -56,6 +56,20 @@ export async function POST(request: NextRequest) {
         const json = await request.json();
         const body = createArrangementSchema.parse(json);
 
+        // 해당 날짜에 예배 일정이 있는지 확인
+        const { data: schedule } = await supabase
+            .from('service_schedules')
+            .select('id')
+            .eq('date', body.date)
+            .single();
+
+        if (!schedule) {
+            return NextResponse.json(
+                { error: '해당 날짜에 등록된 예배 일정이 없습니다. 먼저 예배 일정을 등록해주세요.' },
+                { status: 400 }
+            );
+        }
+
         const { data, error } = await supabase
             .from('arrangements')
             .insert({
@@ -72,10 +86,10 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json(data);
-    } catch (error: any) {
+    } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json(
-                { error: 'Validation Error', details: (error as any).errors },
+                { error: 'Validation Error', details: error.issues },
                 { status: 400 }
             );
         }

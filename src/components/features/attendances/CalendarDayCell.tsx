@@ -1,8 +1,9 @@
 'use client';
 
-import { format, isSameDay, isToday as isTodayFn } from 'date-fns';
+import { format, isToday as isTodayFn } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { Music } from 'lucide-react';
 
 interface CalendarDayCellProps {
   date: Date;
@@ -13,6 +14,10 @@ interface CalendarDayCellProps {
   } | null;
   isCurrentMonth: boolean;
   onClick: (date: Date) => void;
+  /** 해당 날짜에 예배 일정이 있는지 여부 */
+  hasServiceSchedule?: boolean;
+  /** 예배 유형 (예: "주일2부예배", "주일오후찬양예배") */
+  serviceType?: string;
 }
 
 export default function CalendarDayCell({
@@ -20,6 +25,8 @@ export default function CalendarDayCell({
   attendanceStats,
   isCurrentMonth,
   onClick,
+  hasServiceSchedule = false,
+  serviceType,
 }: CalendarDayCellProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -27,6 +34,9 @@ export default function CalendarDayCell({
   const dayOfWeek = date.getDay();
   const isSunday = dayOfWeek === 0;
   const isSaturday = dayOfWeek === 6;
+
+  // 클릭 가능 여부: 예배 일정이 있어야 함
+  const isClickable = isCurrentMonth && hasServiceSchedule;
 
   // 출석률 계산
   const attendanceRate =
@@ -37,6 +47,8 @@ export default function CalendarDayCell({
   // 배경색 결정 (출석률 기반)
   const getBgColor = () => {
     if (!isCurrentMonth) return 'bg-gray-50';
+    // 예배 일정이 없으면 연한 회색 배경
+    if (!hasServiceSchedule) return 'bg-gray-100/50';
     if (!attendanceStats || attendanceStats.total === 0) return 'bg-white';
 
     if (attendanceRate !== null) {
@@ -50,7 +62,9 @@ export default function CalendarDayCell({
 
   // 호버 시 배경색
   const getHoverBgColor = () => {
-    if (!isCurrentMonth) return 'hover:bg-gray-100';
+    if (!isCurrentMonth) return '';
+    // 예배 일정이 없으면 호버 효과 없음
+    if (!hasServiceSchedule) return '';
     if (!attendanceStats || attendanceStats.total === 0) return 'hover:bg-gray-50';
 
     if (attendanceRate !== null) {
@@ -65,6 +79,11 @@ export default function CalendarDayCell({
   // 날짜 텍스트 색상
   const getDateColor = () => {
     if (!isCurrentMonth) return 'text-gray-400';
+    // 예배 일정이 없으면 흐리게 표시
+    if (!hasServiceSchedule) {
+      if (isToday) return 'text-indigo-400 font-bold';
+      return 'text-gray-400';
+    }
     if (isToday) return 'text-indigo-600 font-bold';
     if (isSunday) return 'text-red-600';
     if (isSaturday) return 'text-blue-600';
@@ -74,24 +93,32 @@ export default function CalendarDayCell({
   return (
     <div
       className={cn(
-        'relative min-h-[100px] border border-gray-200 rounded-lg p-2 cursor-pointer transition-all',
+        'relative min-h-[100px] border border-gray-200 rounded-lg p-2 transition-all',
         getBgColor(),
         getHoverBgColor(),
-        isToday && 'ring-2 ring-indigo-500',
-        'group'
+        isToday && hasServiceSchedule && 'ring-2 ring-indigo-500',
+        isToday && !hasServiceSchedule && 'ring-1 ring-indigo-300',
+        isClickable ? 'cursor-pointer' : 'cursor-default',
+        isClickable && 'group'
       )}
-      onClick={() => onClick(date)}
+      onClick={() => isClickable && onClick(date)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 날짜 */}
+      {/* 날짜 및 예배 일정 표시 */}
       <div className="flex justify-between items-start mb-1">
-        <span className={cn('text-sm font-medium', getDateColor())}>
-          {format(date, 'd')}
-        </span>
+        <div className="flex items-center gap-1">
+          <span className={cn('text-sm font-medium', getDateColor())}>
+            {format(date, 'd')}
+          </span>
+          {/* 예배 일정이 있으면 아이콘 표시 */}
+          {isCurrentMonth && hasServiceSchedule && (
+            <Music className="h-3 w-3 text-indigo-500" />
+          )}
+        </div>
 
-        {/* 빠른 입력 버튼 (호버 시 표시) */}
-        {isCurrentMonth && isHovered && (
+        {/* 빠른 입력 버튼 (호버 시 표시, 예배 일정이 있을 때만) */}
+        {isClickable && isHovered && (
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -117,6 +144,13 @@ export default function CalendarDayCell({
         )}
       </div>
 
+      {/* 예배 유형 표시 (예배 일정이 있을 때) */}
+      {isCurrentMonth && hasServiceSchedule && serviceType && (
+        <div className="text-xs text-indigo-600 font-medium truncate mb-1">
+          {serviceType}
+        </div>
+      )}
+
       {/* 출석 통계 */}
       {isCurrentMonth && attendanceStats && attendanceStats.total > 0 && (
         <div className="space-y-1">
@@ -138,13 +172,26 @@ export default function CalendarDayCell({
         </div>
       )}
 
-      {/* 툴팁 (호버 시 표시) - 간단 버전 */}
-      {isCurrentMonth && isHovered && attendanceStats && attendanceStats.total > 0 && (
+      {/* 툴팁 (호버 시 표시) */}
+      {isCurrentMonth && isHovered && (
         <div className="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-md shadow-lg whitespace-nowrap pointer-events-none">
           <div className="space-y-1">
-            <div>출석: {attendanceStats.available}명</div>
-            <div>불참: {attendanceStats.unavailable}명</div>
-            <div>출석률: {attendanceRate}%</div>
+            {hasServiceSchedule ? (
+              <>
+                {serviceType && <div className="font-medium">{serviceType}</div>}
+                {attendanceStats && attendanceStats.total > 0 ? (
+                  <>
+                    <div>출석: {attendanceStats.available}명</div>
+                    <div>불참: {attendanceStats.unavailable}명</div>
+                    <div>출석률: {attendanceRate}%</div>
+                  </>
+                ) : (
+                  <div className="text-gray-300">클릭하여 출석 입력</div>
+                )}
+              </>
+            ) : (
+              <div className="text-gray-300">예배 일정 없음</div>
+            )}
           </div>
           {/* 툴팁 화살표 */}
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">

@@ -15,11 +15,12 @@ import {
 import { ko } from 'date-fns/locale';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
+import { useServiceSchedules } from '@/hooks/useServiceSchedules';
 import AttendanceInputModal from './AttendanceInputModal';
 import CalendarDayCell from './CalendarDayCell';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Music } from 'lucide-react';
 
 interface AttendanceCalendarProps {
   memberId?: string; // 특정 찬양대원의 출석만 표시
@@ -40,7 +41,25 @@ export default function AttendanceCalendar({ memberId }: AttendanceCalendarProps
     ...(memberId && { member_id: memberId }),
   });
 
-  const { data: members } = useMembers();
+  // members 훅은 현재 사용되지 않지만, 향후 확장을 위해 유지
+  useMembers();
+
+  // 현재 월의 예배 일정 조회
+  const { data: serviceSchedulesResponse } = useServiceSchedules({
+    startDate: startDate,
+    endDate: endDate,
+  });
+
+  // 예배 일정 날짜 Map (날짜 -> 예배 유형)
+  const serviceScheduleMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (serviceSchedulesResponse?.data) {
+      serviceSchedulesResponse.data.forEach((schedule) => {
+        map.set(schedule.date, schedule.service_type || '주일예배');
+      });
+    }
+    return map;
+  }, [serviceSchedulesResponse]);
 
   // 캘린더 날짜 생성 (이전/다음 달 포함하여 주 단위로 정렬)
   const monthStart = startOfMonth(currentMonth);
@@ -168,6 +187,9 @@ export default function AttendanceCalendar({ memberId }: AttendanceCalendarProps
           {calendarDays.map((day) => {
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const stats = getStatsForDate(day);
+            const dateStr = format(day, 'yyyy-MM-dd');
+            const serviceType = serviceScheduleMap.get(dateStr);
+            const hasServiceSchedule = serviceScheduleMap.has(dateStr);
 
             return (
               <CalendarDayCell
@@ -176,6 +198,8 @@ export default function AttendanceCalendar({ memberId }: AttendanceCalendarProps
                 attendanceStats={stats}
                 isCurrentMonth={isCurrentMonth}
                 onClick={handleDateClick}
+                hasServiceSchedule={hasServiceSchedule}
+                serviceType={serviceType}
               />
             );
           })}
@@ -186,16 +210,24 @@ export default function AttendanceCalendar({ memberId }: AttendanceCalendarProps
       <div className="px-6 py-4 border-t border-[var(--color-border-default)] bg-[var(--color-background-tertiary)]">
         <div className="flex flex-wrap items-center gap-4 text-sm">
           <div className="flex items-center gap-2">
+            <Music className="w-4 h-4 text-indigo-500" />
+            <span className="text-[var(--color-text-secondary)]">예배 일정 있음 (클릭 가능)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-gray-100/50 border border-gray-200 rounded-[var(--radius-xs)]"></div>
+            <span className="text-[var(--color-text-secondary)]">예배 일정 없음</span>
+          </div>
+          <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-[var(--color-success-50)] border border-[var(--color-success-200)] rounded-[var(--radius-xs)]"></div>
-            <span className="text-[var(--color-text-secondary)]">출석률 90% 이상</span>
+            <span className="text-[var(--color-text-secondary)]">출석률 90%+</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-[var(--color-warning-50)] border border-[var(--color-warning-200)] rounded-[var(--radius-xs)]"></div>
-            <span className="text-[var(--color-text-secondary)]">출석률 70-90%</span>
+            <span className="text-[var(--color-text-secondary)]">70-90%</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-[var(--color-error-50)] border border-[var(--color-error-200)] rounded-[var(--radius-xs)]"></div>
-            <span className="text-[var(--color-text-secondary)]">출석률 70% 미만</span>
+            <span className="text-[var(--color-text-secondary)]">70% 미만</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 ring-2 ring-[var(--color-primary-500)] rounded-[var(--radius-xs)]"></div>

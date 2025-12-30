@@ -22,6 +22,23 @@ async function checkFullDeadline(
   return data !== null;
 }
 
+/**
+ * 예배 일정 존재 여부 확인 헬퍼 함수
+ * @returns true if service schedule exists for the date
+ */
+async function checkServiceScheduleExists(
+  supabase: SupabaseClient<Database>,
+  date: string
+): Promise<boolean> {
+  const { data } = await supabase
+    .from('service_schedules')
+    .select('id')
+    .eq('date', date)
+    .single();
+
+  return data !== null;
+}
+
 // 단일 출석 기록 스키마
 const attendanceItemSchema = z.object({
   member_id: z.string().uuid('유효한 찬양대원 ID를 입력해주세요'),
@@ -115,9 +132,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = batchAttendanceSchema.parse(body);
 
-    // 3. 전체 마감 확인 (마감된 경우 ADMIN/CONDUCTOR만 수정 가능)
+    // 3. 예배 일정 존재 확인
     // 모든 출석 기록의 날짜가 동일하다고 가정 (BulkAttendanceForm에서 단일 날짜로 제출)
     const targetDate = validatedData.attendances[0].date;
+    const hasServiceSchedule = await checkServiceScheduleExists(supabase, targetDate);
+
+    if (!hasServiceSchedule) {
+      return NextResponse.json(
+        { error: '해당 날짜에 등록된 예배 일정이 없습니다. 먼저 예배 일정을 등록해주세요.' },
+        { status: 400 }
+      );
+    }
+
+    // 4. 전체 마감 확인 (마감된 경우 ADMIN/CONDUCTOR만 수정 가능)
     const isFullyClosed = await checkFullDeadline(supabase, targetDate);
 
     if (isFullyClosed && !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
@@ -127,7 +154,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. PART_LEADER인 경우, 요청된 모든 멤버가 본인 파트인지 검증
+    // 5. PART_LEADER인 경우, 요청된 모든 멤버가 본인 파트인지 검증
     if (leaderPart) {
       const memberIds = validatedData.attendances.map(a => a.member_id);
       const { data: targetMembers } = await supabase
@@ -293,7 +320,7 @@ export async function PATCH(request: NextRequest) {
     const results = await Promise.allSettled(updatePromises);
 
     // 결과 분석
-    const succeeded: any[] = [];
+    const succeeded: Array<{ id: string; data: unknown }> = [];
     const failed: Array<{ id: string; error: string }> = [];
 
     results.forEach((result, index) => {
