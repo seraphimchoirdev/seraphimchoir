@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, RefObject } from 'react';
-import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2 } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2, BarChart3 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,10 +19,13 @@ import { useImageGeneration } from '@/hooks/useImageGeneration';
 import { useArrangementStore } from '@/store/arrangement-store';
 import RecommendButton from './RecommendButton';
 import PastArrangementButton from './PastArrangementButton';
+import PerformanceReportModal from './PerformanceReportModal';
 import { ServiceScheduleBadge } from '@/components/features/service-schedules';
+import { useArrangementAnalysis } from '@/hooks/useArrangementAnalysis';
 import type { Database } from '@/types/database.types';
 import type { RecommendationResponse } from '@/hooks/useRecommendSeats';
 import type { ApplyPastResponse } from '@/hooks/usePastArrangement';
+import type { ArrangementAnalysisResponse } from '@/types/analysis';
 
 type Arrangement = Database['public']['Tables']['arrangements']['Row'];
 
@@ -62,6 +65,9 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
     const [title, setTitle] = useState(arrangement.title);
     const [conductor, setConductor] = useState(arrangement.conductor || '');
     const [isSaving, setIsSaving] = useState(false);
+    const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+    const [analysisResult, setAnalysisResult] = useState<ArrangementAnalysisResponse | null>(null);
+    const arrangementAnalysis = useArrangementAnalysis();
 
     // 이미지 내보내기 핸들러
     const handleDownloadImage = async () => {
@@ -183,6 +189,19 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         );
     };
 
+    const handleAnalyze = async () => {
+        try {
+            const result = await arrangementAnalysis.mutateAsync({
+                arrangementId: arrangement.id,
+            });
+            setAnalysisResult(result);
+            setShowAnalysisModal(true);
+        } catch (error) {
+            console.error('분석 실패:', error);
+            alert('배치 분석에 실패했습니다.');
+        }
+    };
+
     return (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 bg-[var(--color-surface)] border-b border-[var(--color-border-default)]">
             <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
@@ -270,6 +289,19 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                     <RotateCcw className="h-4 w-4" />
                     <span className="hidden sm:inline">초기화</span>
                 </Button>
+                <Button
+                    variant="outline"
+                    onClick={handleAnalyze}
+                    disabled={isSaving || arrangementAnalysis.isPending || Object.keys(assignments).length === 0}
+                    className="gap-2 h-11 sm:h-10 text-sm"
+                >
+                    {arrangementAnalysis.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        <BarChart3 className="h-4 w-4" />
+                    )}
+                    <span className="hidden sm:inline">분석</span>
+                </Button>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
@@ -311,6 +343,14 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                     저장
                 </Button>
             </div>
+
+            {/* 분석 리포트 모달 */}
+            {showAnalysisModal && analysisResult && (
+                <PerformanceReportModal
+                    analysis={analysisResult}
+                    onClose={() => setShowAnalysisModal(false)}
+                />
+            )}
         </div>
     );
 }

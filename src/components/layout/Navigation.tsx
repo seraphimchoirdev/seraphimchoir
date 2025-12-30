@@ -51,6 +51,7 @@ export default function Navigation() {
     { href: '/dashboard', label: '대시보드' },
     { href: '/members', label: '찬양대원 관리' },
     { href: '/attendances', label: '출석 관리' },
+    { href: '/statistics', label: '출석 통계' },
     { href: '/service-schedules', label: '예배 일정' },
     { href: '/arrangements', label: '자리배치' },
   ];

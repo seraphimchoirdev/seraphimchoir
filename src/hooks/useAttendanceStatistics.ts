@@ -1,10 +1,9 @@
 /**
  * 출석 통계 React Query Hooks
- * Supabase RPC 함수를 호출하여 출석 통계 데이터를 조회하는 커스텀 훅
+ * API Route를 통해 출석 통계 데이터를 조회하는 커스텀 훅
  */
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
 import type {
   AttendanceStatistics,
   PartAttendanceStatistics,
@@ -38,21 +37,19 @@ export function useAttendanceStatistics(
   startDate: string,
   endDate: string
 ): UseQueryResult<AttendanceStatistics, Error> {
-  const supabase = createClient();
-
   return useQuery({
     queryKey: ['attendance-statistics', startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_attendance_statistics', {
-        p_start_date: startDate,
-        p_end_date: endDate,
-      });
+      const response = await fetch(
+        `/api/attendances/stats?start_date=${startDate}&end_date=${endDate}&type=overall`
+      );
 
-      if (error) {
-        throw new Error(`출석 통계 조회 실패: ${error.message}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '출석 통계 조회 실패');
       }
 
-      return data as AttendanceStatistics;
+      return response.json() as Promise<AttendanceStatistics>;
     },
     enabled: !!startDate && !!endDate,
     staleTime: 1000 * 60 * 5, // 5분 동안 캐시 유지
@@ -88,21 +85,19 @@ export function usePartAttendanceStatistics(
   startDate: string,
   endDate: string
 ): UseQueryResult<PartAttendanceStatistics[], Error> {
-  const supabase = createClient();
-
   return useQuery({
     queryKey: ['part-attendance-statistics', startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_part_attendance_statistics', {
-        p_start_date: startDate,
-        p_end_date: endDate,
-      });
+      const response = await fetch(
+        `/api/attendances/stats?start_date=${startDate}&end_date=${endDate}&type=part`
+      );
 
-      if (error) {
-        throw new Error(`파트별 출석 통계 조회 실패: ${error.message}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '파트별 출석 통계 조회 실패');
       }
 
-      return data as PartAttendanceStatistics[];
+      return response.json() as Promise<PartAttendanceStatistics[]>;
     },
     enabled: !!startDate && !!endDate,
     staleTime: 1000 * 60 * 5, // 5분 동안 캐시 유지
@@ -142,22 +137,21 @@ export function useMemberAttendanceHistory(
   startDate?: string,
   endDate?: string
 ): UseQueryResult<MemberAttendanceHistory[], Error> {
-  const supabase = createClient();
-
   return useQuery({
     queryKey: ['member-attendance-history', memberId, startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_member_attendance_history', {
-        p_member_id: memberId,
-        p_start_date: startDate || null,
-        p_end_date: endDate || null,
-      });
+      const params = new URLSearchParams({ member_id: memberId });
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
 
-      if (error) {
-        throw new Error(`회원 출석 이력 조회 실패: ${error.message}`);
+      const response = await fetch(`/api/attendances/stats/history?${params}`);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '회원 출석 이력 조회 실패');
       }
 
-      return data as MemberAttendanceHistory[];
+      return response.json() as Promise<MemberAttendanceHistory[]>;
     },
     enabled: !!memberId,
     staleTime: 1000 * 60 * 5, // 5분 동안 캐시 유지
@@ -194,21 +188,19 @@ export function useAttendanceSummaryByDate(
   startDate: string,
   endDate: string
 ): UseQueryResult<AttendanceSummaryByDate[], Error> {
-  const supabase = createClient();
-
   return useQuery({
     queryKey: ['attendance-summary-by-date', startDate, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_attendance_summary_by_date', {
-        p_start_date: startDate,
-        p_end_date: endDate,
-      });
+      const response = await fetch(
+        `/api/attendances/stats?start_date=${startDate}&end_date=${endDate}&type=date`
+      );
 
-      if (error) {
-        throw new Error(`날짜별 출석 요약 조회 실패: ${error.message}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '날짜별 출석 요약 조회 실패');
       }
 
-      return data as AttendanceSummaryByDate[];
+      return response.json() as Promise<AttendanceSummaryByDate[]>;
     },
     enabled: !!startDate && !!endDate,
     staleTime: 1000 * 60 * 5, // 5분 동안 캐시 유지

@@ -3,6 +3,15 @@
  * 좌석 배치의 품질을 평가하는 메트릭들
  */
 
+import type {
+  PlacementRate,
+  PartDistributionInfo,
+  RowDistributionInfo,
+  AnalysisSummary,
+  ArrangementAnalysisResponse,
+} from '@/types/analysis';
+import type { GridLayout } from '@/types/grid';
+
 export interface SeatWithMember {
   memberId: string;
   memberName: string;
@@ -233,4 +242,172 @@ export function calculateOverallQualityScore(metrics: QualityMetrics): number {
     metrics.heightOrder * 0.2 +
     metrics.leaderPosition * 0.15
   );
+}
+
+// =============================================================================
+// 배치 분석 함수들
+// =============================================================================
+
+/**
+ * 배치율 상세 계산
+ */
+export function calculatePlacementRateDetail(
+  seats: SeatWithMember[],
+  availableMembers: number
+): PlacementRate {
+  const placed = seats.length;
+  const percentage = availableMembers > 0
+    ? Math.round((placed / availableMembers) * 100)
+    : 0;
+
+  return {
+    placed,
+    available: availableMembers,
+    percentage,
+  };
+}
+
+/**
+ * 파트별 분포 분석
+ */
+export function calculatePartDistributionDetail(
+  seats: SeatWithMember[]
+): Record<string, PartDistributionInfo> {
+  const partMap: Record<string, PartDistributionInfo> = {};
+
+  for (const seat of seats) {
+    if (!partMap[seat.part]) {
+      partMap[seat.part] = {
+        count: 0,
+        columns: [],
+        rows: [],
+        columnRange: null,
+      };
+    }
+
+    const info = partMap[seat.part];
+    info.count++;
+
+    if (!info.columns.includes(seat.col)) {
+      info.columns.push(seat.col);
+    }
+    if (!info.rows.includes(seat.row)) {
+      info.rows.push(seat.row);
+    }
+  }
+
+  // 각 파트의 열 범위 계산
+  for (const part of Object.keys(partMap)) {
+    const info = partMap[part];
+    info.columns.sort((a, b) => a - b);
+    info.rows.sort((a, b) => a - b);
+
+    if (info.columns.length > 0) {
+      info.columnRange = {
+        min: info.columns[0],
+        max: info.columns[info.columns.length - 1],
+      };
+    }
+  }
+
+  return partMap;
+}
+
+/**
+ * 행별 분포 분석
+ */
+export function calculateRowDistributionDetail(
+  seats: SeatWithMember[],
+  gridLayout: GridLayout
+): RowDistributionInfo[] {
+  const rowMap: Map<number, RowDistributionInfo> = new Map();
+
+  // 모든 행 초기화
+  for (let row = 0; row < gridLayout.rows; row++) {
+    rowMap.set(row, {
+      row,
+      totalSeats: gridLayout.rowCapacities[row] || 0,
+      occupied: 0,
+      partBreakdown: {},
+    });
+  }
+
+  // 좌석 데이터 집계
+  for (const seat of seats) {
+    const info = rowMap.get(seat.row);
+    if (info) {
+      info.occupied++;
+      info.partBreakdown[seat.part] = (info.partBreakdown[seat.part] || 0) + 1;
+    }
+  }
+
+  return Array.from(rowMap.values()).sort((a, b) => a.row - b.row);
+}
+
+/**
+ * 분석 요약 생성
+ */
+export function generateAnalysisSummary(
+  placementRate: PlacementRate,
+  rowDistribution: RowDistributionInfo[]
+): AnalysisSummary {
+  // 배치율 기반 점수 (0-100)
+  const placementScore = placementRate.percentage;
+
+  // 행별 균형도 점수 계산
+  const occupancyRates = rowDistribution
+    .filter(r => r.totalSeats > 0)
+    .map(r => r.occupied / r.totalSeats);
+
+  let balanceScore = 100;
+  if (occupancyRates.length > 1) {
+    const avgRate = occupancyRates.reduce((a, b) => a + b, 0) / occupancyRates.length;
+    const variance = occupancyRates.reduce(
+      (sum, rate) => sum + Math.pow(rate - avgRate, 2),
+      0
+    ) / occupancyRates.length;
+    // 분산이 작을수록 균형도가 높음
+    balanceScore = Math.max(0, Math.round((1 - Math.sqrt(variance)) * 100));
+  }
+
+  // 종합 점수 (배치율 70%, 균형도 30%)
+  const overallScore = Math.round(placementScore * 0.7 + balanceScore * 0.3);
+
+  // 메시지 생성
+  let message: string;
+  if (overallScore >= 90) {
+    message = '훌륭한 배치입니다!';
+  } else if (overallScore >= 70) {
+    message = '좋은 배치입니다.';
+  } else if (overallScore >= 50) {
+    message = '적절한 배치입니다.';
+  } else {
+    message = '배치를 더 추가해보세요.';
+  }
+
+  return {
+    overallScore,
+    message,
+  };
+}
+
+/**
+ * 전체 배치 분석 실행
+ */
+export function analyzeArrangement(
+  seats: SeatWithMember[],
+  availableMembers: number,
+  gridLayout: GridLayout
+): ArrangementAnalysisResponse {
+  const placementRate = calculatePlacementRateDetail(seats, availableMembers);
+  const partDistribution = calculatePartDistributionDetail(seats);
+  const rowDistribution = calculateRowDistributionDetail(seats, gridLayout);
+  const summary = generateAnalysisSummary(placementRate, rowDistribution);
+
+  return {
+    placementRate,
+    partDistribution,
+    rowDistribution,
+    summary,
+  };
 }
