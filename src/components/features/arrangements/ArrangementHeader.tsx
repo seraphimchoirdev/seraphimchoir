@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, RefObject } from 'react';
-import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,7 +37,18 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
     const updateArrangement = useUpdateArrangement();
     const updateSeats = useUpdateSeats();
     const { isGenerating, downloadAsImage, copyToClipboard } = useImageGeneration();
-    const { assignments, gridLayout, clearArrangement, setAssignments, rowLeaderMode, toggleRowLeaderMode } = useArrangementStore();
+    const {
+        assignments,
+        gridLayout,
+        clearArrangement,
+        setAssignments,
+        rowLeaderMode,
+        toggleRowLeaderMode,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
+    } = useArrangementStore();
 
     // 현재 활성화된 캡처 ref 선택 (뷰포트 기반)
     const getActiveCaptureRef = () => {
@@ -228,6 +239,28 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                     <Crown className="h-4 w-4" />
                     <span className="hidden sm:inline">{rowLeaderMode ? '줄반장 지정 중' : '줄반장 지정'}</span>
                 </Button>
+                <div className="flex items-center gap-1">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={undo}
+                        disabled={isSaving || !canUndo()}
+                        className="h-11 w-11 sm:h-10 sm:w-10"
+                        title="실행 취소 (Ctrl+Z)"
+                    >
+                        <Undo2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={redo}
+                        disabled={isSaving || !canRedo()}
+                        className="h-11 w-11 sm:h-10 sm:w-10"
+                        title="다시 실행 (Ctrl+Shift+Z)"
+                    >
+                        <Redo2 className="h-4 w-4" />
+                    </Button>
+                </div>
                 <Button
                     variant="outline"
                     onClick={handleReset}

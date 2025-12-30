@@ -14,6 +14,24 @@ export interface SeatAssignment {
     isRowLeader?: boolean;
 }
 
+// History management types
+interface HistoryState {
+    assignments: Record<string, SeatAssignment>;
+}
+
+interface HistoryManager {
+    past: HistoryState[];
+    future: HistoryState[];
+}
+
+const MAX_HISTORY_SIZE = 50;
+
+// Helper function to save current state to history
+const saveToHistory = (state: ArrangementState): HistoryManager => ({
+    past: [...state._history.past, { assignments: { ...state.assignments } }].slice(-MAX_HISTORY_SIZE),
+    future: [], // Clear future on new action
+});
+
 interface ArrangementState {
     // Key format: "row-col" (e.g., "0-1")
     assignments: Record<string, SeatAssignment>;
@@ -30,6 +48,9 @@ interface ArrangementState {
 
     // Row leader mode state
     rowLeaderMode: boolean;
+
+    // History state for undo/redo
+    _history: HistoryManager;
 
     // Actions
     setAssignments: (assignments: SeatAssignment[]) => void;
@@ -48,6 +69,13 @@ interface ArrangementState {
     // Row leader actions
     toggleRowLeaderMode: () => void;
     toggleRowLeader: (row: number, col: number) => void;
+
+    // History actions for undo/redo
+    undo: () => void;
+    redo: () => void;
+    canUndo: () => boolean;
+    canRedo: () => boolean;
+    clearHistory: () => void;
 }
 
 export const useArrangementStore = create<ArrangementState>((set, get) => ({
@@ -59,13 +87,17 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
     selectedSource: null,
     selectedPosition: null,
     rowLeaderMode: false,
+    _history: { past: [], future: [] },
 
     setAssignments: (assignmentsList) => {
         const newAssignments: Record<string, SeatAssignment> = {};
         assignmentsList.forEach((a) => {
             newAssignments[`${a.row}-${a.col}`] = a;
         });
-        set({ assignments: newAssignments });
+        set((state) => ({
+            _history: saveToHistory(state),
+            assignments: newAssignments,
+        }));
     },
 
     setGridLayout: (layout) => set({ gridLayout: layout }),
@@ -75,6 +107,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
             const key = `${row}-${col}`;
             // If seat is occupied, we overwrite it (or could swap, but overwrite is simpler for now)
             return {
+                _history: saveToHistory(state),
                 assignments: {
                     ...state.assignments,
                     [key]: { ...member, row, col },
@@ -86,7 +119,10 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         set((state) => {
             const key = `${row}-${col}`;
             const { [key]: removed, ...rest } = state.assignments;
-            return { assignments: rest };
+            return {
+                _history: saveToHistory(state),
+                assignments: rest,
+            };
         }),
 
     moveMember: (fromRow, fromCol, toRow, toCol) =>
@@ -111,10 +147,18 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
                 delete newAssignments[fromKey];
             }
 
-            return { assignments: newAssignments };
+            return {
+                _history: saveToHistory(state),
+                assignments: newAssignments,
+            };
         }),
 
-    clearArrangement: () => set({ assignments: {}, gridLayout: null }),
+    clearArrangement: () =>
+        set((state) => ({
+            _history: saveToHistory(state),
+            assignments: {},
+            gridLayout: null,
+        })),
 
     // Click-click interaction methods
     selectMemberFromSidebar: (memberId, memberName, part) =>
@@ -267,6 +311,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
             if (!assignment) return state; // No member at this seat
 
             return {
+                _history: saveToHistory(state),
                 assignments: {
                     ...state.assignments,
                     [key]: {
@@ -276,4 +321,62 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
                 },
             };
         }),
+
+    // Undo action - restore previous state
+    undo: () =>
+        set((state) => {
+            if (state._history.past.length === 0) return state;
+
+            const previous = state._history.past[state._history.past.length - 1];
+            const newPast = state._history.past.slice(0, -1);
+            const currentSnapshot: HistoryState = { assignments: { ...state.assignments } };
+
+            return {
+                assignments: previous.assignments,
+                _history: {
+                    past: newPast,
+                    future: [currentSnapshot, ...state._history.future],
+                },
+                // Clear selection to prevent invalid state
+                selectedMemberId: null,
+                selectedMemberName: null,
+                selectedMemberPart: null,
+                selectedSource: null,
+                selectedPosition: null,
+            };
+        }),
+
+    // Redo action - restore next state
+    redo: () =>
+        set((state) => {
+            if (state._history.future.length === 0) return state;
+
+            const next = state._history.future[0];
+            const newFuture = state._history.future.slice(1);
+            const currentSnapshot: HistoryState = { assignments: { ...state.assignments } };
+
+            return {
+                assignments: next.assignments,
+                _history: {
+                    past: [...state._history.past, currentSnapshot],
+                    future: newFuture,
+                },
+                // Clear selection to prevent invalid state
+                selectedMemberId: null,
+                selectedMemberName: null,
+                selectedMemberPart: null,
+                selectedSource: null,
+                selectedPosition: null,
+            };
+        }),
+
+    // Check if undo is available
+    canUndo: () => get()._history.past.length > 0,
+
+    // Check if redo is available
+    canRedo: () => get()._history.future.length > 0,
+
+    // Clear history (used when loading new arrangement)
+    clearHistory: () =>
+        set({ _history: { past: [], future: [] } }),
 }));

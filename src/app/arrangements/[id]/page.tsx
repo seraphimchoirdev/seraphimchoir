@@ -10,6 +10,7 @@ import ArrangementHeader from '@/components/features/arrangements/ArrangementHea
 import GridSettingsPanel from '@/components/features/arrangements/GridSettingsPanel';
 import { useArrangement } from '@/hooks/useArrangements';
 import { useArrangementStore } from '@/store/arrangement-store';
+import { useUndoRedoShortcuts } from '@/hooks/useUndoRedoShortcuts';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
 import { DEFAULT_GRID_LAYOUT } from '@/types/grid';
@@ -20,7 +21,10 @@ import SeatsGrid from '@/components/features/seats/SeatsGrid';
 export default function ArrangementEditorPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const { data: arrangement, isLoading, error } = useArrangement(id);
-    const { setAssignments, setGridLayout, gridLayout } = useArrangementStore();
+    const { setAssignments, setGridLayout, gridLayout, clearHistory } = useArrangementStore();
+
+    // 키보드 단축키 훅 초기화 (Ctrl+Z/Y for Undo/Redo)
+    useUndoRedoShortcuts();
     const [showSettingsSheet, setShowSettingsSheet] = useState(false);
     const [showGridSettings, setShowGridSettings] = useState(true); // 데스크톱 그리드 설정 패널 토글
     const [showMobileSidebar, setShowMobileSidebar] = useState(true);
@@ -64,6 +68,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     // Initialize store with fetched seats and grid layout
     useEffect(() => {
         if (arrangement) {
+            // 새 배치표 로드 시 히스토리 초기화
+            clearHistory();
+
             // Load seats
             if (arrangement.seats && arrangement.seats.length > 0) {
                 const formattedSeats = arrangement.seats.map((seat) => ({
@@ -80,8 +87,12 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             // Load grid layout with fallback to default
             const layout = arrangement.grid_layout || DEFAULT_GRID_LAYOUT;
             setGridLayout(layout);
+
+            // setAssignments가 히스토리를 저장하므로 로드 직후 다시 클리어
+            // (초기 로드 상태는 히스토리에 포함되지 않도록)
+            clearHistory();
         }
-    }, [arrangement, setAssignments, setGridLayout]);
+    }, [arrangement, setAssignments, setGridLayout, clearHistory]);
 
     if (isLoading) {
         return (
