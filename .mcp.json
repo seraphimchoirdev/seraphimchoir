@@ -6,6 +6,15 @@
         "-y",
         "@upstash/context7-mcp"
       ]
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_0982eb9aa336221d13dde5ac2575c18a51ce57b8"
+      ]
     }
   }
 }

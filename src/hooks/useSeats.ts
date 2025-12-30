@@ -9,6 +9,7 @@ interface BulkSeatData {
     row: number;
     column: number;
     part: Database['public']['Enums']['part'];
+    isRowLeader?: boolean;
 }
 
 interface BulkUpdateSeatsPayload {

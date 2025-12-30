@@ -25,7 +25,7 @@ export interface MemberFilters {
 }
 
 // API 응답 타입
-interface MembersResponse extends PaginatedResponse<Member> {}
+type MembersResponse = PaginatedResponse<Member>;
 
 interface MemberResponse {
   data: Member;
@@ -137,7 +137,7 @@ export function useUpdateMember() {
 
         // 버전 충돌 에러 객체 생성 (code 포함)
         if (response.status === 409 && errorData.code === 'VERSION_CONFLICT') {
-          const error: any = new Error(errorData.error || '버전 충돌이 발생했습니다');
+          const error = new Error(errorData.error || '버전 충돌이 발생했습니다') as Error & { code: string; status: number };
           error.code = 'VERSION_CONFLICT';
           error.status = 409;
           throw error;

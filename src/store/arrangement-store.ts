@@ -11,6 +11,7 @@ export interface SeatAssignment {
     part: Part;
     row: number;
     col: number;
+    isRowLeader?: boolean;
 }
 
 interface ArrangementState {
@@ -27,6 +28,9 @@ interface ArrangementState {
     selectedSource: 'sidebar' | 'grid' | null;
     selectedPosition: { row: number; col: number } | null;
 
+    // Row leader mode state
+    rowLeaderMode: boolean;
+
     // Actions
     setAssignments: (assignments: SeatAssignment[]) => void;
     setGridLayout: (layout: GridLayout | null) => void;
@@ -40,6 +44,10 @@ interface ArrangementState {
     selectMemberFromGrid: (row: number, col: number) => void;
     clearSelection: () => void;
     handleSeatClick: (row: number, col: number) => void;
+
+    // Row leader actions
+    toggleRowLeaderMode: () => void;
+    toggleRowLeader: (row: number, col: number) => void;
 }
 
 export const useArrangementStore = create<ArrangementState>((set, get) => ({
@@ -50,6 +58,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
     selectedMemberPart: null,
     selectedSource: null,
     selectedPosition: null,
+    rowLeaderMode: false,
 
     setAssignments: (assignmentsList) => {
         const newAssignments: Record<string, SeatAssignment> = {};
@@ -236,4 +245,35 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
             }
         }
     },
+
+    // Row leader mode toggle
+    toggleRowLeaderMode: () =>
+        set((state) => ({
+            rowLeaderMode: !state.rowLeaderMode,
+            // Clear selection when entering/exiting row leader mode
+            selectedMemberId: null,
+            selectedMemberName: null,
+            selectedMemberPart: null,
+            selectedSource: null,
+            selectedPosition: null,
+        })),
+
+    // Toggle row leader status for a specific seat
+    toggleRowLeader: (row, col) =>
+        set((state) => {
+            const key = `${row}-${col}`;
+            const assignment = state.assignments[key];
+
+            if (!assignment) return state; // No member at this seat
+
+            return {
+                assignments: {
+                    ...state.assignments,
+                    [key]: {
+                        ...assignment,
+                        isRowLeader: !assignment.isRowLeader,
+                    },
+                },
+            };
+        }),
 }));

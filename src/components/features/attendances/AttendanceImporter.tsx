@@ -149,7 +149,7 @@ export default function AttendanceImporter() {
       // 각 청크별로 요청
       let totalSucceeded = 0;
       let totalFailed = 0;
-      const allErrors: any[] = [];
+      const allErrors: Array<{ chunk?: number; error?: string; message?: string }> = [];
 
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
@@ -161,11 +161,11 @@ export default function AttendanceImporter() {
           if (result.errors) {
             allErrors.push(...result.errors);
           }
-        } catch (error: any) {
+        } catch (error) {
           totalFailed += chunk.length;
           allErrors.push({
             chunk: i,
-            error: error.message,
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
         }
       }
@@ -187,13 +187,13 @@ export default function AttendanceImporter() {
           fileInputRef.current.value = '';
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       setUploadResult({
         success: false,
         total: parsedData.length,
         succeeded: 0,
         failed: parsedData.length,
-        errors: [{ message: error.message }],
+        errors: [{ message: error instanceof Error ? error.message : 'Unknown error' }],
       });
     } finally {
       setIsProcessing(false);

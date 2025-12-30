@@ -98,18 +98,6 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
               </th>
               <th
                 scope="col"
-                className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider"
-              >
-                경력
-              </th>
-              <th
-                scope="col"
-                className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider"
-              >
-                키
-              </th>
-              <th
-                scope="col"
                 className="px-4 py-3 text-right text-xs font-semibold text-neutral-700 uppercase tracking-wider"
               >
                 액션
@@ -174,16 +162,6 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
                   >
                     {STATUS_LABELS[member.member_status]}
                   </span>
-                </td>
-
-                {/* 경력 */}
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-900">
-                  {member.experience}년
-                </td>
-
-                {/* 키 */}
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-500">
-                  {member.height ? `${member.height}cm` : '-'}
                 </td>
 
                 {/* 액션 버튼 */}

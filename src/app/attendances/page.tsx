@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Navigation from '@/components/layout/Navigation';
 import { useAuth } from '@/hooks/useAuth';
 import AttendanceList from '@/components/features/attendances/AttendanceList';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
-import { format, addWeeks, subWeeks, startOfWeek, nextSunday, isSunday } from 'date-fns';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Music } from 'lucide-react';
+import { format, addWeeks, subWeeks, nextSunday, isSunday, subMonths, addMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { useServiceSchedules } from '@/hooks/useServiceSchedules';
 
 export default function AttendancesPage() {
   const { hasRole, profile } = useAuth();
@@ -26,6 +27,40 @@ export default function AttendancesPage() {
   const handlePrevWeek = () => setSelectedDate(prev => subWeeks(prev, 1));
   const handleNextWeek = () => setSelectedDate(prev => addWeeks(prev, 1));
 
+  // 캘린더에 표시될 범위의 예배 일정 조회 (전후 3개월)
+  const calendarStartDate = format(subMonths(selectedDate, 3), 'yyyy-MM-dd');
+  const calendarEndDate = format(addMonths(selectedDate, 3), 'yyyy-MM-dd');
+
+  const { data: serviceSchedulesResponse } = useServiceSchedules({
+    startDate: calendarStartDate,
+    endDate: calendarEndDate,
+  });
+
+  // 예배 일정이 있는 날짜들의 Set (O(1) 조회)
+  const serviceScheduleDates = useMemo(() => {
+    const dates = new Set<string>();
+    if (serviceSchedulesResponse?.data) {
+      serviceSchedulesResponse.data.forEach((schedule) => {
+        dates.add(schedule.date);
+      });
+    }
+    return dates;
+  }, [serviceSchedulesResponse]);
+
+  // 선택한 날짜의 예배 일정 정보
+  const selectedSchedule = useMemo(() => {
+    if (!serviceSchedulesResponse?.data) return null;
+    return serviceSchedulesResponse.data.find(
+      (schedule) => schedule.date === format(selectedDate, 'yyyy-MM-dd')
+    );
+  }, [serviceSchedulesResponse, selectedDate]);
+
+  // 예배 일정이 없는 날짜는 비활성화
+  const isDateDisabled = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return !serviceScheduleDates.has(dateStr);
+  };
+
   return (
     <div className="min-h-screen bg-[var(--color-background-tertiary)]">
       <Navigation />
@@ -39,6 +74,15 @@ export default function AttendancesPage() {
               <p className="mt-1 body-base text-[var(--color-text-secondary)]">
                 주일 예배 등단 및 연습 참석 현황을 관리합니다.
               </p>
+              {selectedSchedule && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-indigo-600">
+                  <Music className="h-4 w-4" />
+                  <span className="font-medium">{selectedSchedule.service_type || '주일예배'}</span>
+                  {selectedSchedule.hymn_name && (
+                    <span className="text-indigo-500">• {selectedSchedule.hymn_name}</span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-4 bg-gray-50 p-2 rounded-lg">
@@ -58,12 +102,17 @@ export default function AttendancesPage() {
                     mode="single"
                     selected={selectedDate}
                     onSelect={(date) => {
-                      if (date instanceof Date) {
+                      if (date instanceof Date && !isDateDisabled(date)) {
                         setSelectedDate(date);
                       }
                     }}
+                    disabled={isDateDisabled}
                     initialFocus
                   />
+                  <div className="px-3 py-2 border-t text-xs text-muted-foreground">
+                    <Music className="inline h-3 w-3 mr-1" />
+                    예배 일정이 등록된 날짜만 선택 가능
+                  </div>
                 </PopoverContent>
               </Popover>
 

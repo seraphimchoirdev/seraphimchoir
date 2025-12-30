@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useEffect, use, useState, useMemo } from 'react';
+import { useEffect, use, useState, useMemo, useRef } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Users, Settings, ChevronUp, ChevronDown } from 'lucide-react';
+import { Settings, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ArrangementHeader from '@/components/features/arrangements/ArrangementHeader';
 import GridSettingsPanel from '@/components/features/arrangements/GridSettingsPanel';
@@ -21,10 +21,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     const { id } = use(params);
     const { data: arrangement, isLoading, error } = useArrangement(id);
     const { setAssignments, setGridLayout, gridLayout } = useArrangementStore();
-    const [showMemberSheet, setShowMemberSheet] = useState(false);
     const [showSettingsSheet, setShowSettingsSheet] = useState(false);
     const [showGridSettings, setShowGridSettings] = useState(true); // 데스크톱 그리드 설정 패널 토글
     const [showMobileSidebar, setShowMobileSidebar] = useState(true);
+
+    // 이미지 캡처를 위한 ref (데스크톱/모바일 각각)
+    const desktopCaptureRef = useRef<HTMLDivElement>(null);
+    const mobileCaptureRef = useRef<HTMLDivElement>(null);
 
     // 모든 정대원 조회 (AI 추천 분배 인원수 계산용)
     const { data: membersData } = useMembers({
@@ -63,12 +66,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         if (arrangement) {
             // Load seats
             if (arrangement.seats && arrangement.seats.length > 0) {
-                const formattedSeats = arrangement.seats.map((seat: any) => ({
+                const formattedSeats = arrangement.seats.map((seat) => ({
                     memberId: seat.member_id,
                     memberName: seat.member?.name || 'Unknown',
                     part: seat.part,
                     row: seat.seat_row,
                     col: seat.seat_column,
+                    isRowLeader: seat.is_row_leader || false,
                 }));
                 setAssignments(formattedSeats);
             }
@@ -103,7 +107,11 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
     return (
         <div className="flex flex-col h-screen bg-[var(--color-background-primary)]">
-            <ArrangementHeader arrangement={arrangement} />
+            <ArrangementHeader
+                arrangement={arrangement}
+                desktopCaptureRef={desktopCaptureRef}
+                mobileCaptureRef={mobileCaptureRef}
+            />
 
             {/* 데스크톱: 3패널 가로 배치 */}
             <div className="hidden lg:flex flex-1 overflow-hidden gap-4 p-4">
@@ -147,14 +155,32 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 <MemberSidebar date={arrangement.date} hidePlaced={true} />
 
                 {/* Seats Grid */}
-                <SeatsGrid gridLayout={gridLayout} />
+                <SeatsGrid
+                    ref={desktopCaptureRef}
+                    gridLayout={gridLayout}
+                    arrangementInfo={{
+                        date: arrangement.date,
+                        title: arrangement.title,
+                        conductor: arrangement.conductor || undefined,
+                    }}
+                    showCaptureInfo={true}
+                />
             </div>
 
             {/* 모바일/태블릿: 상단 그리드 + 하단 대원 목록 (Split View) */}
             <div className="flex lg:hidden flex-col flex-1 overflow-hidden relative">
                 {/* 상단: 좌석 그리드 (Scrollable) */}
                 <div className="flex-1 overflow-hidden relative">
-                    <SeatsGrid gridLayout={gridLayout} />
+                    <SeatsGrid
+                        ref={mobileCaptureRef}
+                        gridLayout={gridLayout}
+                        arrangementInfo={{
+                            date: arrangement.date,
+                            title: arrangement.title,
+                            conductor: arrangement.conductor || undefined,
+                        }}
+                        showCaptureInfo={true}
+                    />
 
                     {/* 그리드 설정 버튼 (Floating) */}
                     <Button

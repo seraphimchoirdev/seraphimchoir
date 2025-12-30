@@ -12,12 +12,14 @@ export interface ArrangementFilters {
     limit?: number;
 }
 
-interface ArrangementsResponse extends PaginatedResponse<Arrangement> { }
+type ArrangementsResponse = PaginatedResponse<Arrangement>;
 
-interface ArrangementResponse {
-    data: Arrangement & {
-        seats?: Database['public']['Tables']['seats']['Row'][];
-    };
+type SeatWithMember = Database['public']['Tables']['seats']['Row'] & {
+    member?: { id: string; name: string } | null;
+};
+
+interface ArrangementWithSeats extends Arrangement {
+    seats?: SeatWithMember[];
 }
 
 /**
@@ -60,7 +62,7 @@ export function useArrangement(id: string | undefined) {
                 throw new Error(error.error || '배치표 정보를 불러오는데 실패했습니다');
             }
 
-            return response.json() as Promise<Arrangement & { seats: Database['public']['Tables']['seats']['Row'][] }>;
+            return response.json() as Promise<ArrangementWithSeats>;
         },
         enabled: !!id,
         staleTime: 1000 * 60 * 5,

@@ -131,7 +131,7 @@ export function recommendRowDistribution(
     );
 
     // 합계 맞추기
-    let sum = adjustedCapacities.reduce((a, b) => a + b, 0);
+    const sum = adjustedCapacities.reduce((a, b) => a + b, 0);
     let remainder = totalMembers - sum;
 
     // 나머지를 앞쪽 행부터 분배 (학습 패턴에 따라 앞쪽이 더 많음)
@@ -202,7 +202,7 @@ function calculate5RowDistribution(
   ];
 
   // 합계 맞추기
-  let sum = rowCapacities.reduce((a, b) => a + b, 0);
+  const sum = rowCapacities.reduce((a, b) => a + b, 0);
   let diff = totalMembers - sum;
 
   // 나머지를 앞쪽 행 중심으로 분배
@@ -253,7 +253,7 @@ function calculate6RowDistribution(
   ];
 
   // 합계 맞추기
-  let sum = rowCapacities.reduce((a, b) => a + b, 0);
+  const sum = rowCapacities.reduce((a, b) => a + b, 0);
   let diff = totalMembers - sum;
 
   // 나머지를 앞쪽 행 중심으로 분배

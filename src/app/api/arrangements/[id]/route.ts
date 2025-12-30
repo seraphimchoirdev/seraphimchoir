@@ -59,7 +59,7 @@ export async function PATCH(
         const json = await request.json();
         const body = updateArrangementSchema.parse(json);
 
-        const updateData: any = { ...body };
+        const updateData: Record<string, unknown> = { ...body };
         if (body.serviceInfo !== undefined) updateData.service_info = body.serviceInfo;
         if (body.isPublished !== undefined) updateData.is_published = body.isPublished;
 
@@ -79,10 +79,10 @@ export async function PATCH(
         }
 
         return NextResponse.json(data);
-    } catch (error: any) {
+    } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json(
-                { error: 'Validation Error', details: (error as any).errors },
+                { error: 'Validation Error', details: error.issues },
                 { status: 400 }
             );
         }

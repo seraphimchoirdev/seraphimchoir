@@ -27,9 +27,11 @@ function createWrapper() {
     },
   });
 
-  return ({ children }: { children: ReactNode }) => (
+  const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+  Wrapper.displayName = 'QueryClientWrapper';
+  return Wrapper;
 }
 
 describe('useAttendances', () => {
@@ -222,7 +224,7 @@ describe('useUpdateAttendance', () => {
     result.current.mutate({
       id: '1',
       data: {
-        is_available: false,
+        is_service_available: false,
         notes: '결석',
       },
     });

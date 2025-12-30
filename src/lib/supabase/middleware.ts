@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  * Next.js 미들웨어에서 인증 상태를 확인하고 쿠키를 관리합니다.
  */
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
+  const supabaseResponse = NextResponse.next({
     request,
   });
 

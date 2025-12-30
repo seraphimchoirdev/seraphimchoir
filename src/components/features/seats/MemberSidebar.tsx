@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Search, ChevronDown } from 'lucide-react';
+import { useMemo, useState, useCallback } from 'react';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useAttendances } from '@/hooks/useAttendances';
@@ -39,9 +39,9 @@ export default function MemberSidebar({ date, hidePlaced = false, compact = fals
     const isLoading = membersLoading || attendancesLoading;
 
     // Check if member is already placed
-    const isMemberPlaced = (memberId: string) => {
+    const isMemberPlaced = useCallback((memberId: string) => {
         return Object.values(assignments).some((a) => a.memberId === memberId);
-    };
+    }, [assignments]);
 
     // 출석 데이터를 memberId로 빠르게 조회하기 위한 Map
     const attendanceMap = useMemo(() => {
@@ -53,13 +53,13 @@ export default function MemberSidebar({ date, hidePlaced = false, compact = fals
     }, [attendances]);
 
     // 멤버가 등단 가능한지 확인 (출석 레코드가 없거나 is_service_available이 true인 경우)
-    const isServiceAvailable = (memberId: string) => {
+    const isServiceAvailable = useCallback((memberId: string) => {
         const attendance = attendanceMap.get(memberId);
         // 출석 레코드가 없으면 기본값 true (등단 가능)
         if (!attendance) return true;
         // 출석 레코드가 있으면 is_service_available 값 사용
         return attendance.is_service_available === true;
-    };
+    }, [attendanceMap]);
 
     // 멤버 리스트 (정대원만)
     const members = membersData?.data || [];
@@ -87,7 +87,7 @@ export default function MemberSidebar({ date, hidePlaced = false, compact = fals
         });
 
         return groups;
-    }, [members, attendanceMap, searchTerm, hidePlaced, assignments]);
+    }, [members, isServiceAvailable, searchTerm, hidePlaced, isMemberPlaced]);
 
     // Calculate unplaced members count
     const unplacedCount = useMemo(() => {
@@ -99,7 +99,7 @@ export default function MemberSidebar({ date, hidePlaced = false, compact = fals
             if (searchTerm && !member.name.includes(searchTerm)) return false;
             return !isMemberPlaced(member.id);
         }).length;
-    }, [members, attendanceMap, searchTerm, assignments]);
+    }, [members, isServiceAvailable, searchTerm, isMemberPlaced]);
 
     if (isLoading) {
         return (

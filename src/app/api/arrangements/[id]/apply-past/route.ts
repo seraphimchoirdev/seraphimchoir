@@ -176,7 +176,7 @@ export async function POST(
         type Part = 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS' | 'SPECIAL';
         const pastSeats: PastSeat[] = (pastSeatsData || []).map(seat => ({
             memberId: seat.member_id,
-            memberName: (seat.member as any)?.name || 'Unknown',
+            memberName: (seat.member as { name?: string } | null)?.name || 'Unknown',
             part: seat.part as Part,
             row: seat.seat_row,
             col: seat.seat_column,

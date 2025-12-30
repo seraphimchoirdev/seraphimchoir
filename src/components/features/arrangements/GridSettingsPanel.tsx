@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,18 +20,10 @@ export default function GridSettingsPanel({
   onChange,
   totalMembers,
 }: GridSettingsPanelProps) {
-  const [localRows, setLocalRows] = useState(gridLayout?.rows || GRID_CONSTRAINTS.DEFAULT_ROWS);
-  const [localCapacities, setLocalCapacities] = useState<number[]>(
-    gridLayout?.rowCapacities || Array(GRID_CONSTRAINTS.DEFAULT_ROWS).fill(8)
-  );
-
-  // gridLayout이 변경되면 로컬 상태 동기화
-  useEffect(() => {
-    if (gridLayout) {
-      setLocalRows(gridLayout.rows);
-      setLocalCapacities(gridLayout.rowCapacities);
-    }
-  }, [gridLayout]);
+  // gridLayout에서 직접 값을 읽고, 없으면 기본값 사용
+  const currentRows = gridLayout?.rows ?? GRID_CONSTRAINTS.DEFAULT_ROWS;
+  const currentCapacities = gridLayout?.rowCapacities ?? Array(GRID_CONSTRAINTS.DEFAULT_ROWS).fill(8);
+  const currentZigzag = gridLayout?.zigzagPattern ?? 'even';
 
   // 행 수 변경
   const handleRowsChange = (newRows: number) => {
@@ -40,19 +31,15 @@ export default function GridSettingsPanel({
       return;
     }
 
-    setLocalRows(newRows);
-
     // 기존 capacities 유지하되, 부족하면 8로 채우고, 넘치면 자름
     const newCapacities = Array(newRows)
       .fill(0)
-      .map((_, idx) => localCapacities[idx] || 8);
-
-    setLocalCapacities(newCapacities);
+      .map((_, idx) => currentCapacities[idx] || 8);
 
     onChange({
       rows: newRows,
       rowCapacities: newCapacities,
-      zigzagPattern: gridLayout?.zigzagPattern || 'even',
+      zigzagPattern: currentZigzag,
     });
   };
 
@@ -63,26 +50,24 @@ export default function GridSettingsPanel({
       return;
     }
 
-    const newCapacities = [...localCapacities];
+    const newCapacities = [...currentCapacities];
     newCapacities[rowIndex] = numValue;
-    setLocalCapacities(newCapacities);
 
     onChange({
-      rows: localRows,
+      rows: currentRows,
       rowCapacities: newCapacities,
-      zigzagPattern: gridLayout?.zigzagPattern || 'even',
+      zigzagPattern: currentZigzag,
     });
   };
 
   // 자동 균등 분배 (기존 방식)
   const handleAutoDistribute = () => {
-    const distributed = autoDistributeSeats(totalMembers, localRows);
-    setLocalCapacities(distributed);
+    const distributed = autoDistributeSeats(totalMembers, currentRows);
 
     onChange({
-      rows: localRows,
+      rows: currentRows,
       rowCapacities: distributed,
-      zigzagPattern: gridLayout?.zigzagPattern || 'even',
+      zigzagPattern: currentZigzag,
     });
   };
 
@@ -90,19 +75,16 @@ export default function GridSettingsPanel({
   const handleAIRecommend = () => {
     const recommendation = recommendRowDistribution(totalMembers);
 
-    setLocalRows(recommendation.rows);
-    setLocalCapacities(recommendation.rowCapacities);
-
     onChange({
       rows: recommendation.rows,
       rowCapacities: recommendation.rowCapacities,
-      zigzagPattern: gridLayout?.zigzagPattern || 'even',
+      zigzagPattern: currentZigzag,
     });
   };
 
   const totalSeats = calculateTotalSeats({
-    rows: localRows,
-    rowCapacities: localCapacities,
+    rows: currentRows,
+    rowCapacities: currentCapacities,
     zigzagPattern: 'even',
   });
 
@@ -121,7 +103,7 @@ export default function GridSettingsPanel({
               type="number"
               min={GRID_CONSTRAINTS.MIN_ROWS}
               max={GRID_CONSTRAINTS.MAX_ROWS}
-              value={localRows}
+              value={currentRows}
               onChange={(e) => handleRowsChange(parseInt(e.target.value) || GRID_CONSTRAINTS.DEFAULT_ROWS)}
               className="w-20 h-11 text-base" // 터치 영역 확대
             />
@@ -157,7 +139,7 @@ export default function GridSettingsPanel({
         <div className="space-y-2">
           <Label className="text-sm sm:text-base">줄별 인원 수</Label>
           <div className="space-y-2">
-            {localCapacities.map((capacity, idx) => (
+            {currentCapacities.map((capacity, idx) => (
               <div key={idx} className="flex items-center gap-2">
                 <span className="text-sm font-medium w-12 sm:w-14">
                   {idx + 1}줄:
@@ -181,11 +163,11 @@ export default function GridSettingsPanel({
           <Label className="text-sm sm:text-base">지그재그 패턴</Label>
           <div className="flex gap-2">
             <Button
-              variant={gridLayout?.zigzagPattern === 'even' || !gridLayout?.zigzagPattern ? 'default' : 'outline'}
+              variant={currentZigzag === 'even' ? 'default' : 'outline'}
               size="sm"
               onClick={() => onChange({
-                rows: localRows,
-                rowCapacities: localCapacities,
+                rows: currentRows,
+                rowCapacities: currentCapacities,
                 zigzagPattern: 'even',
               })}
               className="flex-1"
@@ -193,11 +175,11 @@ export default function GridSettingsPanel({
               짝수줄 이동
             </Button>
             <Button
-              variant={gridLayout?.zigzagPattern === 'odd' ? 'default' : 'outline'}
+              variant={currentZigzag === 'odd' ? 'default' : 'outline'}
               size="sm"
               onClick={() => onChange({
-                rows: localRows,
-                rowCapacities: localCapacities,
+                rows: currentRows,
+                rowCapacities: currentCapacities,
                 zigzagPattern: 'odd',
               })}
               className="flex-1"
@@ -205,11 +187,11 @@ export default function GridSettingsPanel({
               홀수줄 이동
             </Button>
             <Button
-              variant={gridLayout?.zigzagPattern === 'none' ? 'default' : 'outline'}
+              variant={currentZigzag === 'none' ? 'default' : 'outline'}
               size="sm"
               onClick={() => onChange({
-                rows: localRows,
-                rowCapacities: localCapacities,
+                rows: currentRows,
+                rowCapacities: currentCapacities,
                 zigzagPattern: 'none',
               })}
               className="flex-1"

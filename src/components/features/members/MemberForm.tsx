@@ -133,11 +133,12 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
       }
       setVersionConflict(false); // 성공 시 충돌 상태 초기화
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Form submission error:', error);
 
       // 버전 충돌 감지 (409 Conflict)
-      if (error?.message?.includes('다른 곳에서 수정') || error?.code === 'VERSION_CONFLICT') {
+      const err = error as Error & { code?: string };
+      if (err?.message?.includes('다른 곳에서 수정') || err?.code === 'VERSION_CONFLICT') {
         setVersionConflict(true);
       }
     }

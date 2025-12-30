@@ -28,15 +28,25 @@ type Arrangement = Database['public']['Tables']['arrangements']['Row'];
 
 interface ArrangementHeaderProps {
     arrangement: Arrangement;
-    captureRef?: RefObject<HTMLDivElement | null>;
+    desktopCaptureRef?: RefObject<HTMLDivElement | null>;
+    mobileCaptureRef?: RefObject<HTMLDivElement | null>;
 }
 
-export default function ArrangementHeader({ arrangement, captureRef }: ArrangementHeaderProps) {
+export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobileCaptureRef }: ArrangementHeaderProps) {
     const router = useRouter();
     const updateArrangement = useUpdateArrangement();
     const updateSeats = useUpdateSeats();
     const { isGenerating, downloadAsImage, copyToClipboard } = useImageGeneration();
     const { assignments, gridLayout, clearArrangement, setAssignments, rowLeaderMode, toggleRowLeaderMode } = useArrangementStore();
+
+    // 현재 활성화된 캡처 ref 선택 (뷰포트 기반)
+    const getActiveCaptureRef = () => {
+        // lg breakpoint (1024px) 기준으로 데스크톱/모바일 구분
+        if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+            return desktopCaptureRef;
+        }
+        return mobileCaptureRef;
+    };
 
     const [title, setTitle] = useState(arrangement.title);
     const [conductor, setConductor] = useState(arrangement.conductor || '');
@@ -44,6 +54,7 @@ export default function ArrangementHeader({ arrangement, captureRef }: Arrangeme
 
     // 이미지 내보내기 핸들러
     const handleDownloadImage = async () => {
+        const captureRef = getActiveCaptureRef();
         if (!captureRef?.current) {
             alert('캡처할 영역을 찾을 수 없습니다.');
             return;
@@ -59,6 +70,7 @@ export default function ArrangementHeader({ arrangement, captureRef }: Arrangeme
     };
 
     const handleCopyToClipboard = async () => {
+        const captureRef = getActiveCaptureRef();
         if (!captureRef?.current) {
             alert('캡처할 영역을 찾을 수 없습니다.');
             return;
@@ -177,19 +189,18 @@ export default function ArrangementHeader({ arrangement, captureRef }: Arrangeme
                             {arrangement.is_published ? '발행됨' : '작성중'}
                         </Badge>
                     </div>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-secondary)]">
-                        <span className="flex-shrink-0">{arrangement.date}</span>
-                        <span>•</span>
-                        <Input
-                            value={conductor}
-                            onChange={(e) => setConductor(e.target.value)}
-                            placeholder="지휘자 입력"
-                            className="h-7 sm:h-6 text-xs sm:text-sm border-transparent hover:border-[var(--color-border-default)] focus:border-[var(--color-primary-400)] px-2 -ml-2 w-28 sm:w-32"
-                        />
-                        <span className="hidden sm:inline">•</span>
-                        <div className="hidden sm:block">
-                            <ServiceScheduleBadge date={arrangement.date} compact />
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-secondary)]">
+                            <span className="flex-shrink-0">{arrangement.date}</span>
+                            <span>•</span>
+                            <Input
+                                value={conductor}
+                                onChange={(e) => setConductor(e.target.value)}
+                                placeholder="지휘자 입력"
+                                className="h-7 sm:h-6 text-xs sm:text-sm border-transparent hover:border-[var(--color-border-default)] focus:border-[var(--color-primary-400)] px-2 -ml-2 w-28 sm:w-32"
+                            />
                         </div>
+                        <ServiceScheduleBadge date={arrangement.date} compact />
                     </div>
                 </div>
             </div>

@@ -157,7 +157,7 @@ export default function AttendanceInputModal({
           }));
 
       // 병렬로 생성과 업데이트 실행
-      const promises: Promise<any>[] = [];
+      const promises: Promise<unknown>[] = [];
 
       if (attendancesToCreate.length > 0) {
         promises.push(bulkCreateMutation.mutateAsync(attendancesToCreate));

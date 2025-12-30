@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+interface SeatInput {
+    member_id: string;
+    seat_row: number;
+    seat_column: number;
+    part: string;
+    is_row_leader?: boolean;
+}
+
 /**
  * POST /api/arrangements/[id]/seats
  * 좌석 배치 저장 (일괄 업데이트)
@@ -34,12 +42,13 @@ export async function POST(
 
         // 2. 새 좌석 추가
         if (seats.length > 0) {
-            const seatsToInsert = seats.map((seat: any) => ({
+            const seatsToInsert = seats.map((seat: SeatInput) => ({
                 arrangement_id: id,
                 member_id: seat.member_id,
                 seat_row: seat.seat_row,
                 seat_column: seat.seat_column,
                 part: seat.part,
+                is_row_leader: seat.is_row_leader || false,
             }));
 
             const { error: insertError } = await supabase
@@ -52,7 +61,7 @@ export async function POST(
         }
 
         return NextResponse.json({ message: 'Seats updated successfully' });
-    } catch (error) {
+    } catch {
         return NextResponse.json(
             { error: 'Internal Server Error' },
             { status: 500 }

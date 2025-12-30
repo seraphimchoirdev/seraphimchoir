@@ -8,6 +8,7 @@ const seatSchema = z.object({
     row: z.number().int().min(0),
     column: z.number().int().min(0),
     part: z.enum(['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL']),
+    isRowLeader: z.boolean().optional(),
 });
 
 const bulkSeatsSchema = z.object({
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
                 seat_row: seat.row,
                 seat_column: seat.column,
                 part: seat.part,
+                is_row_leader: seat.isRowLeader || false,
             }));
 
             const { data, error: insertError } = await supabase
@@ -55,10 +57,10 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json([]);
-    } catch (error: any) {
+    } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json(
-                { error: 'Validation Error', details: (error as any).errors },
+                { error: 'Validation Error', details: error.issues },
                 { status: 400 }
             );
         }

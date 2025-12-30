@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     // closer 정보 조회 (user_profiles에서)
     const closerIds = [...new Set(data?.map(d => d.closed_by) || [])];
-    let closerMap: Record<string, { id: string; name: string; email: string }> = {};
+    const closerMap: Record<string, { id: string; name: string; email: string }> = {};
 
     if (closerIds.length > 0) {
       const { data: closers } = await supabase
