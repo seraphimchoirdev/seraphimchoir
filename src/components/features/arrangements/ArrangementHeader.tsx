@@ -1,18 +1,25 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Save, ArrowLeft, Loader2, RotateCcw } from 'lucide-react';
+import { useState, useEffect, RefObject } from 'react';
+import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-// import { useToast } from '@/components/ui/use-toast'; // Removed as it's missing
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useUpdateArrangement } from '@/hooks/useArrangements';
 import { useUpdateSeats } from '@/hooks/useSeats';
+import { useImageGeneration } from '@/hooks/useImageGeneration';
 import { useArrangementStore } from '@/store/arrangement-store';
 import RecommendButton from './RecommendButton';
 import PastArrangementButton from './PastArrangementButton';
+import { ServiceScheduleBadge } from '@/components/features/service-schedules';
 import type { Database } from '@/types/database.types';
 import type { RecommendationResponse } from '@/hooks/useRecommendSeats';
 import type { ApplyPastResponse } from '@/hooks/usePastArrangement';
@@ -21,17 +28,49 @@ type Arrangement = Database['public']['Tables']['arrangements']['Row'];
 
 interface ArrangementHeaderProps {
     arrangement: Arrangement;
+    captureRef?: RefObject<HTMLDivElement | null>;
 }
 
-export default function ArrangementHeader({ arrangement }: ArrangementHeaderProps) {
+export default function ArrangementHeader({ arrangement, captureRef }: ArrangementHeaderProps) {
     const router = useRouter();
     const updateArrangement = useUpdateArrangement();
     const updateSeats = useUpdateSeats();
-    const { assignments, gridLayout, clearArrangement, setAssignments } = useArrangementStore();
+    const { isGenerating, downloadAsImage, copyToClipboard } = useImageGeneration();
+    const { assignments, gridLayout, clearArrangement, setAssignments, rowLeaderMode, toggleRowLeaderMode } = useArrangementStore();
 
     const [title, setTitle] = useState(arrangement.title);
     const [conductor, setConductor] = useState(arrangement.conductor || '');
     const [isSaving, setIsSaving] = useState(false);
+
+    // 이미지 내보내기 핸들러
+    const handleDownloadImage = async () => {
+        if (!captureRef?.current) {
+            alert('캡처할 영역을 찾을 수 없습니다.');
+            return;
+        }
+        try {
+            const filename = `배치표_${arrangement.date}_${title.replace(/\s+/g, '_')}`;
+            await downloadAsImage(captureRef.current, filename);
+            alert('이미지가 다운로드되었습니다.');
+        } catch (error) {
+            console.error('이미지 다운로드 실패:', error);
+            alert('이미지 다운로드에 실패했습니다.');
+        }
+    };
+
+    const handleCopyToClipboard = async () => {
+        if (!captureRef?.current) {
+            alert('캡처할 영역을 찾을 수 없습니다.');
+            return;
+        }
+        try {
+            await copyToClipboard(captureRef.current);
+            alert('이미지가 클립보드에 복사되었습니다.');
+        } catch (error) {
+            console.error('클립보드 복사 실패:', error);
+            alert('클립보드 복사에 실패했습니다. 브라우저 설정을 확인해주세요.');
+        }
+    };
 
     // Sync local state if props change (e.g. refetch)
     useEffect(() => {
@@ -59,6 +98,7 @@ export default function ArrangementHeader({ arrangement }: ArrangementHeaderProp
                 row: a.row,
                 column: a.col,
                 part: a.part,
+                isRowLeader: a.isRowLeader || false,
             }));
 
             await updateSeats.mutateAsync({
@@ -146,6 +186,10 @@ export default function ArrangementHeader({ arrangement }: ArrangementHeaderProp
                             placeholder="지휘자 입력"
                             className="h-7 sm:h-6 text-xs sm:text-sm border-transparent hover:border-[var(--color-border-default)] focus:border-[var(--color-primary-400)] px-2 -ml-2 w-28 sm:w-32"
                         />
+                        <span className="hidden sm:inline">•</span>
+                        <div className="hidden sm:block">
+                            <ServiceScheduleBadge date={arrangement.date} compact />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -165,6 +209,15 @@ export default function ArrangementHeader({ arrangement }: ArrangementHeaderProp
                     />
                 )}
                 <Button
+                    variant={rowLeaderMode ? "default" : "outline"}
+                    onClick={toggleRowLeaderMode}
+                    disabled={isSaving}
+                    className={`gap-2 h-11 sm:h-10 text-sm ${rowLeaderMode ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                >
+                    <Crown className="h-4 w-4" />
+                    <span className="hidden sm:inline">{rowLeaderMode ? '줄반장 지정 중' : '줄반장 지정'}</span>
+                </Button>
+                <Button
                     variant="outline"
                     onClick={handleReset}
                     disabled={isSaving || Object.keys(assignments).length === 0}
@@ -173,6 +226,38 @@ export default function ArrangementHeader({ arrangement }: ArrangementHeaderProp
                     <RotateCcw className="h-4 w-4" />
                     <span className="hidden sm:inline">초기화</span>
                 </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="outline"
+                            disabled={isSaving || isGenerating || Object.keys(assignments).length === 0}
+                            className="gap-2 h-11 sm:h-10 text-sm"
+                        >
+                            {isGenerating ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Download className="h-4 w-4" />
+                            )}
+                            <span className="hidden sm:inline">이미지</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                            onClick={isGenerating ? undefined : handleDownloadImage}
+                            className={isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                        >
+                            <Download className="mr-2 h-4 w-4" />
+                            PNG 다운로드
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={isGenerating ? undefined : handleCopyToClipboard}
+                            className={isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                        >
+                            <Copy className="mr-2 h-4 w-4" />
+                            클립보드 복사
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 <Button onClick={handleSave} disabled={isSaving} className="gap-2 h-11 sm:h-10 text-sm">
                     {isSaving ? (
                         <Loader2 className="h-4 w-4 animate-spin" />

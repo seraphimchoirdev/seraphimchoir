@@ -1,0 +1,120 @@
+'use client';
+
+import { useState } from 'react';
+import Navigation from '@/components/layout/Navigation';
+import { QuarterSelector, QuarterlyCalendar, ServiceScheduleDialog, ServiceScheduleImporter } from '@/components/features/service-schedules';
+import { useServiceSchedules } from '@/hooks/useServiceSchedules';
+import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, Plus, FileSpreadsheet } from 'lucide-react';
+
+export default function ServiceSchedulesPage() {
+  const currentDate = new Date();
+  const [year, setYear] = useState(currentDate.getFullYear());
+  const [quarter, setQuarter] = useState(
+    Math.ceil((currentDate.getMonth() + 1) / 3)
+  );
+
+  // 특별예배 추가 다이얼로그 상태
+  const [isSpecialServiceDialogOpen, setIsSpecialServiceDialogOpen] = useState(false);
+
+  // 일괄 등록 다이얼로그 상태
+  const [isImporterOpen, setIsImporterOpen] = useState(false);
+
+  const { data, isLoading, error, refetch } = useServiceSchedules({
+    year,
+    quarter,
+  });
+
+  return (
+    <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+      <Navigation />
+
+      <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {/* 헤더 */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">
+                예배 일정 관리
+              </h1>
+              <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+                분기별 예배 일정을 관리합니다
+              </p>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <Button
+                onClick={() => setIsImporterOpen(true)}
+                variant="outline"
+                className="gap-2"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                <span className="hidden sm:inline">일괄 등록</span>
+              </Button>
+              <Button
+                onClick={() => setIsSpecialServiceDialogOpen(true)}
+                variant="outline"
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">특별예배 추가</span>
+              </Button>
+              <QuarterSelector
+                year={year}
+                quarter={quarter}
+                onChange={(y, q) => {
+                  setYear(y);
+                  setQuarter(q);
+                }}
+              />
+            </div>
+          </div>
+
+          {/* 로딩 */}
+          {isLoading && (
+            <div className="flex justify-center py-12">
+              <Spinner className="h-8 w-8" />
+            </div>
+          )}
+
+          {/* 에러 */}
+          {error && (
+            <Alert variant="error">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {error.message || '예배 일정을 불러오는데 실패했습니다.'}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* 캘린더 */}
+          {!isLoading && !error && data && (
+            <QuarterlyCalendar
+              year={year}
+              quarter={quarter}
+              schedules={data.data}
+              onRefresh={refetch}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* 특별예배 추가 다이얼로그 */}
+      <ServiceScheduleDialog
+        open={isSpecialServiceDialogOpen}
+        onOpenChange={setIsSpecialServiceDialogOpen}
+        schedule={null}
+        date={null}
+        onSuccess={refetch}
+      />
+
+      {/* 일괄 등록 다이얼로그 */}
+      <ServiceScheduleImporter
+        open={isImporterOpen}
+        onOpenChange={setIsImporterOpen}
+        onSuccess={refetch}
+      />
+    </div>
+  );
+}

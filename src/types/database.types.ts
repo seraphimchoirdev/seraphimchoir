@@ -195,6 +195,7 @@ export type Database = {
           arrangement_id: string
           created_at: string
           id: string
+          is_row_leader: boolean
           member_id: string
           part: Database['public']['Enums']['part']
           seat_column: number
@@ -204,6 +205,7 @@ export type Database = {
           arrangement_id: string
           created_at?: string
           id?: string
+          is_row_leader?: boolean
           member_id: string
           part: Database['public']['Enums']['part']
           seat_column: number
@@ -213,6 +215,7 @@ export type Database = {
           arrangement_id?: string
           created_at?: string
           id?: string
+          is_row_leader?: boolean
           member_id?: string
           part?: Database['public']['Enums']['part']
           seat_column?: number
@@ -269,6 +272,39 @@ export type Database = {
             referencedColumns: ["id"]
           }
         ]
+      }
+      service_schedules: {
+        Row: {
+          id: string
+          date: string
+          service_type: string | null
+          hymn_name: string | null
+          offertory_performer: string | null
+          notes: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          date: string
+          service_type?: string | null
+          hymn_name?: string | null
+          offertory_performer?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          date?: string
+          service_type?: string | null
+          hymn_name?: string | null
+          offertory_performer?: string | null
+          notes?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
