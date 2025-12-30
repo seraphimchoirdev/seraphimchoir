@@ -20,6 +20,8 @@ export default function SeatSlot({ row, col }: SeatSlotProps) {
         selectedPosition,
         handleSeatClick,
         removeMember,
+        rowLeaderMode,
+        toggleRowLeader,
     } = useArrangementStore();
 
     const assignment = assignments[`${row}-${col}`];
@@ -38,15 +40,24 @@ export default function SeatSlot({ row, col }: SeatSlotProps) {
     // Double click handler to remove member
     const handleDoubleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (assignment) {
+        if (assignment && !rowLeaderMode) {
             removeMember(row, col);
+        }
+    };
+
+    // Click handler - either toggle row leader or normal seat click
+    const handleClick = () => {
+        if (rowLeaderMode && assignment) {
+            toggleRowLeader(row, col);
+        } else {
+            handleSeatClick(row, col);
         }
     };
 
     return (
         <button
             type="button"
-            onClick={() => handleSeatClick(row, col)}
+            onClick={handleClick}
             onDoubleClick={handleDoubleClick}
             className={cn(
                 'w-[48px] h-[36px] sm:w-16 sm:h-12 lg:w-[72px] lg:h-[54px]',
@@ -79,6 +90,8 @@ export default function SeatSlot({ row, col }: SeatSlotProps) {
                     row={row}
                     col={col}
                     isSelected={isSelectedSeat}
+                    isRowLeader={assignment.isRowLeader}
+                    rowLeaderMode={rowLeaderMode}
                 />
             ) : (
                 <div className="text-[10px] sm:text-xs text-gray-300 pointer-events-none">빈 좌석</div>
@@ -95,6 +108,8 @@ function GridClickableMember({
     row,
     col,
     isSelected,
+    isRowLeader,
+    rowLeaderMode,
 }: {
     memberId: string;
     name: string;
@@ -102,20 +117,22 @@ function GridClickableMember({
     row: number;
     col: number;
     isSelected: boolean;
+    isRowLeader?: boolean;
+    rowLeaderMode?: boolean;
 }) {
-    // Part color mapping
+    // Part color mapping - 악보 스티커 색상 기준
     const getPartColor = (p: Part) => {
         switch (p) {
             case 'SOPRANO':
-                return 'bg-purple-100 text-purple-800 border-purple-200';
+                return 'bg-orange-600 text-white border-orange-700';  // 오렌지
             case 'ALTO':
-                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                return 'bg-amber-500 text-white border-amber-600';    // 앰버
             case 'TENOR':
-                return 'bg-blue-100 text-blue-800 border-blue-200';
+                return 'bg-sky-600 text-white border-sky-700';        // 스카이
             case 'BASS':
-                return 'bg-green-100 text-green-800 border-green-200';
+                return 'bg-green-600 text-white border-green-700';    // 그린
             default:
-                return 'bg-gray-100 text-gray-800 border-gray-200';
+                return 'bg-gray-500 text-white border-gray-600';
         }
     };
 
@@ -126,14 +143,22 @@ function GridClickableMember({
                 'pointer-events-none', // Parent button handles all clicks
                 'touch-manipulation transition-all duration-200',
                 getPartColor(part),
+                // 줄반장 표시: 오렌지 테두리 강조
+                isRowLeader && 'ring-2 ring-orange-500 ring-offset-1',
+                // 줄반장 지정 모드일 때 호버 효과
+                rowLeaderMode && 'cursor-pointer',
             )}
-            title="더블 클릭하여 제거"
+            title={isRowLeader ? "줄반장 (클릭하여 해제)" : (rowLeaderMode ? "클릭하여 줄반장 지정" : "더블 클릭하여 제거")}
             role="presentation"
-            aria-label={`${name} - ${part} 파트, ${row + 1}행 ${col + 1}열 배치됨`}
+            aria-label={`${name} - ${part} 파트, ${row + 1}행 ${col + 1}열 배치됨${isRowLeader ? ' (줄반장)' : ''}`}
         >
-            <span className="font-bold text-[10px] sm:text-xs lg:text-sm text-center leading-tight px-0.5 truncate max-w-full">
+            <span className="font-bold text-xs sm:text-sm lg:text-base text-center leading-tight px-0.5 truncate max-w-full drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
                 {name}
             </span>
+            {/* 줄반장 아이콘 표시 */}
+            {isRowLeader && (
+                <span className="absolute -top-1 -right-1 text-orange-500 text-xs">👑</span>
+            )}
         </div>
     );
 }
