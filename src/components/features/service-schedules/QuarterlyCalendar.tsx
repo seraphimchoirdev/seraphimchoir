@@ -141,11 +141,9 @@ export default function QuarterlyCalendar({
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-medium flex items-center gap-2">
                   {formatDate(dateStr)}
-                  {isSpecialService && (
-                    <span className="text-xs text-[var(--color-text-tertiary)]">
-                      ({getDayName(dateStr)})
-                    </span>
-                  )}
+                  <span className="text-xs text-[var(--color-text-tertiary)]">
+                    ({isSpecialService ? getDayName(dateStr) : '주일'})
+                  </span>
                   {today && (
                     <span className="text-xs bg-[var(--color-primary-500)] text-white px-2 py-0.5 rounded-full">
                       오늘
