@@ -50,7 +50,8 @@ export async function GET(request: NextRequest) {
         const schedule = scheduleMap.get(a.date);
         return {
             ...a,
-            service_type: schedule?.service_type || null,
+            // 자리배치 자체의 service_info가 있으면 우선 사용, 없으면 service_schedules에서 가져옴
+            service_type: a.service_info || schedule?.service_type || null,
             hymn_name: schedule?.hymn_name || null,
             offertory_performer: schedule?.offertory_performer || null,
         };

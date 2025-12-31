@@ -9,9 +9,10 @@ type ArrangementUpdate = Database['public']['Tables']['arrangements']['Update'];
 
 // service_schedules에서 JOIN된 필드를 포함한 확장 타입
 export interface ArrangementWithSchedule extends Arrangement {
-    service_type?: string | null;
-    hymn_name?: string | null;
-    offertory_performer?: string | null;
+    service_type?: string | null;  // service_schedules에서 조회
+    hymn_name?: string | null;     // service_schedules에서 조회
+    offertory_performer?: string | null;  // service_schedules에서 조회
+    // service_info는 Arrangement에서 상속됨
 }
 
 export interface ArrangementFilters {

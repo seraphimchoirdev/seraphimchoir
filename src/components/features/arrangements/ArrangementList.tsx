@@ -78,7 +78,7 @@ export default function ArrangementList({ arrangements }: ArrangementListProps) 
                         <CardHeader className="pb-3">
                             <div className="flex justify-between items-start gap-2">
                                 <CardTitle className="text-lg font-bold text-[var(--color-text-primary)] line-clamp-1">
-                                    {format(new Date(arrangement.date), 'yyyy년 M월 d일', { locale: ko })} {arrangement.service_type || '예배'}
+                                    {format(new Date(arrangement.date), 'yyyy년 M월 d일', { locale: ko })} {arrangement.service_type || arrangement.service_info || '예배'}
                                 </CardTitle>
                                 <Badge variant={arrangement.is_published ? 'default' : 'secondary'}>
                                     {arrangement.is_published ? '발행됨' : '작성중'}
@@ -140,7 +140,7 @@ export default function ArrangementList({ arrangements }: ArrangementListProps) 
                     <DialogHeader>
                         <DialogTitle>배치표 삭제</DialogTitle>
                         <DialogDescription>
-                            정말 &quot;{selectedArrangement ? format(new Date(selectedArrangement.date), 'yyyy년 M월 d일', { locale: ko }) : ''} {selectedArrangement?.service_type || '예배'}&quot; 배치표를 삭제하시겠습니까?
+                            정말 &quot;{selectedArrangement ? format(new Date(selectedArrangement.date), 'yyyy년 M월 d일', { locale: ko }) : ''} {selectedArrangement?.service_type || selectedArrangement?.service_info || '예배'}&quot; 배치표를 삭제하시겠습니까?
                             <br />
                             이 작업은 되돌릴 수 없으며, 해당 배치표의 모든 좌석 정보도 함께 삭제됩니다.
                         </DialogDescription>
