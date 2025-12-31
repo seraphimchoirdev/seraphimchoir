@@ -5,8 +5,8 @@ import { z } from 'zod';
 
 const seatSchema = z.object({
     memberId: z.string().uuid(),
-    row: z.number().int().min(0),
-    column: z.number().int().min(0),
+    row: z.number().int().min(1),      // 1-based index
+    column: z.number().int().min(1),   // 1-based index
     part: z.enum(['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL']),
     isRowLeader: z.boolean().optional(),
 });

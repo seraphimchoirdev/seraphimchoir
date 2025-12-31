@@ -66,8 +66,8 @@ export function calculateAllSeatPositions(
 
     for (let colIndex = 0; colIndex < capacity; colIndex++) {
       positions.push({
-        row: rowIndex,
-        col: colIndex,
+        row: rowIndex + 1,      // 1-based row index
+        col: colIndex + 1,      // 1-based column index
         visualCol: colIndex + offset,
       });
     }
@@ -79,8 +79,8 @@ export function calculateAllSeatPositions(
 /**
  * 특정 논리적 좌표(row, col)의 화면상 위치 계산
  *
- * @param row 논리적 행 번호 (0-based)
- * @param col 논리적 열 번호 (0-based)
+ * @param row 논리적 행 번호 (1-based)
+ * @param col 논리적 열 번호 (1-based)
  * @param gridLayout 그리드 레이아웃
  * @returns 좌석 위치 정보 또는 null (범위를 벗어난 경우)
  */
@@ -89,21 +89,25 @@ export function calculateSeatPosition(
   col: number,
   gridLayout: GridLayout
 ): SeatPosition | null {
+  // 1-based to 0-based for array access
+  const rowIndex = row - 1;
+  const colIndex = col - 1;
+
   // 범위 검사
-  if (row < 0 || row >= gridLayout.rows) {
+  if (rowIndex < 0 || rowIndex >= gridLayout.rows) {
     return null;
   }
 
-  if (col < 0 || col >= gridLayout.rowCapacities[row]) {
+  if (colIndex < 0 || colIndex >= gridLayout.rowCapacities[rowIndex]) {
     return null;
   }
 
-  const offset = getZigzagOffset(row, gridLayout.zigzagPattern, gridLayout.rowCapacities[row]);
+  const offset = getZigzagOffset(rowIndex, gridLayout.zigzagPattern, gridLayout.rowCapacities[rowIndex]);
 
   return {
-    row,
-    col,
-    visualCol: col + offset,
+    row,       // Keep 1-based
+    col,       // Keep 1-based
+    visualCol: colIndex + offset,
   };
 }
 
@@ -123,14 +127,14 @@ export function calculateSeatsByRow(
 
     for (let colIndex = 0; colIndex < capacity; colIndex++) {
       seats.push({
-        row: rowIndex,
-        col: colIndex,
+        row: rowIndex + 1,      // 1-based row index
+        col: colIndex + 1,      // 1-based column index
         visualCol: colIndex + offset,
       });
     }
 
     rowsData.push({
-      rowIndex,
+      rowIndex: rowIndex + 1,   // 1-based row index for display
       seats,
       capacity,
       offset,

@@ -33,7 +33,7 @@ const saveToHistory = (state: ArrangementState): HistoryManager => ({
 });
 
 interface ArrangementState {
-    // Key format: "row-col" (e.g., "0-1")
+    // Key format: "row-col" (e.g., "1-1") - 1-based index
     assignments: Record<string, SeatAssignment>;
 
     // Grid layout configuration

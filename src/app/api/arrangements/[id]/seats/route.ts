@@ -3,8 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 
 interface SeatInput {
     member_id: string;
-    seat_row: number;
-    seat_column: number;
+    seat_row: number;      // 1-based index
+    seat_column: number;   // 1-based index
     part: string;
     is_row_leader?: boolean;
 }

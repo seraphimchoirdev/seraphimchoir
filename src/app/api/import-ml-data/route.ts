@@ -49,30 +49,64 @@ export async function POST(request: NextRequest) {
         const fileContent = fs.readFileSync(filePath, 'utf-8');
         const mlData: MLData = JSON.parse(fileContent);
 
-        // 1. 예배 일정이 있는지 확인, 없으면 생성
-        const { data: existingSchedule } = await supabase
+        // 1. 예배 일정 upsert (date 기준)
+        const { error: scheduleError } = await supabase
             .from('service_schedules')
-            .select('id')
-            .eq('date', mlData.date)
-            .single();
+            .upsert({
+                date: mlData.date,
+                service_type: mlData.metadata.service,
+                hymn_name: mlData.metadata.anthem,
+                offertory_performer: mlData.metadata.offering_hymn_leader || null,
+            }, { onConflict: 'date' });
 
-        if (!existingSchedule) {
-            const { error: scheduleError } = await supabase
-                .from('service_schedules')
-                .insert({
-                    date: mlData.date,
-                    service_type: mlData.metadata.service,
-                    title: mlData.metadata.anthem,
-                    is_active: true,
+        if (scheduleError) {
+            console.error('Schedule upsert error:', scheduleError);
+        }
+
+        // 2. 출석 데이터 처리 - 배치된 대원은 등단 가능, 나머지는 등단 불가
+        // 2-1. 모든 정대원 조회 (REGULAR 상태인 대원만)
+        const { data: allMembers, error: membersError } = await supabase
+            .from('members')
+            .select('id')
+            .eq('member_status', 'REGULAR');
+
+        if (membersError) {
+            console.error('Members fetch error:', membersError);
+        }
+
+        // 2-2. seats에 있는 member_id 추출 (배치된 대원 = 등단 가능)
+        const presentMemberIds = new Set(
+            mlData.seats
+                .filter(s => !s.member_id.startsWith('unknown_'))
+                .map(s => s.member_id)
+        );
+
+        // 2-3. 전체 대원에 대해 출석 레코드 생성
+        let attendanceCount = 0;
+        if (allMembers && allMembers.length > 0) {
+            const attendancesToInsert = allMembers.map(member => ({
+                member_id: member.id,
+                date: mlData.date,
+                is_service_available: presentMemberIds.has(member.id),
+                is_practice_attended: presentMemberIds.has(member.id),
+            }));
+
+            // 2-4. upsert (member_id + date 기준)
+            const { error: attendanceError } = await supabase
+                .from('attendances')
+                .upsert(attendancesToInsert, {
+                    onConflict: 'member_id,date',
+                    ignoreDuplicates: false
                 });
 
-            if (scheduleError) {
-                console.error('Schedule creation error:', scheduleError);
-                // 이미 존재하면 무시
+            if (attendanceError) {
+                console.error('Attendance upsert error:', attendanceError);
+            } else {
+                attendanceCount = attendancesToInsert.length;
             }
         }
 
-        // 2. 기존 arrangement가 있는지 확인
+        // 3. 자리배치(arrangement) 처리 - 기존 arrangement가 있는지 확인
         const { data: existingArrangement } = await supabase
             .from('arrangements')
             .select('id')
@@ -123,16 +157,15 @@ export async function POST(request: NextRequest) {
             arrangementId = newArrangement.id;
         }
 
-        // 3. seats 데이터 입력
-        // ML 데이터는 1-based 인덱스, UI는 0-based 인덱스를 사용하므로 변환 필요
+        // 4. seats 데이터 입력 (ML 데이터와 UI 모두 1-based 인덱스 사용)
         const seatsToInsert = mlData.seats
             .filter(seat => !seat.member_id.startsWith('unknown_'))
             .map(seat => ({
                 arrangement_id: arrangementId,
                 member_id: seat.member_id,
                 part: seat.part,
-                seat_row: seat.row - 1,      // Convert to 0-based index
-                seat_column: seat.col - 1,   // Convert to 0-based index
+                seat_row: seat.row,          // 1-based index
+                seat_column: seat.col,       // 1-based index
                 is_row_leader: false,
             }));
 
@@ -149,6 +182,8 @@ export async function POST(request: NextRequest) {
             arrangementId,
             date: mlData.date,
             title: mlData.metadata.anthem,
+            service: mlData.metadata.service,
+            attendanceCount,
             seatsCount: seatsToInsert.length,
         });
     } catch (error) {

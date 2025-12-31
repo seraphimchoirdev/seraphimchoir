@@ -9,13 +9,13 @@
 
 type Part = 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS' | 'SPECIAL';
 
-/** 파트별 배치 규칙 (ai-seat-algorithm.ts에서 가져온 규칙) */
+/** 파트별 배치 규칙 (ai-seat-algorithm.ts에서 가져온 규칙) - 1-based row index */
 const PART_PLACEMENT_RULES = {
-    SOPRANO: { side: 'left' as const, preferredRows: [0, 1, 2], overflowRows: [3, 4, 5] },
-    ALTO: { side: 'right' as const, preferredRows: [0, 1, 2], overflowRows: [3] }, // 4, 5행 (0-based) 금지!
-    TENOR: { side: 'left' as const, preferredRows: [3, 4, 5], overflowRows: [] },
-    BASS: { side: 'right' as const, preferredRows: [3, 4, 5], overflowRows: [] },
-    SPECIAL: { side: 'left' as const, preferredRows: [0, 1, 2, 3, 4, 5], overflowRows: [] },
+    SOPRANO: { side: 'left' as const, preferredRows: [1, 2, 3], overflowRows: [4, 5, 6] },
+    ALTO: { side: 'right' as const, preferredRows: [1, 2, 3], overflowRows: [4] }, // 5, 6행 (1-based) 금지!
+    TENOR: { side: 'left' as const, preferredRows: [4, 5, 6], overflowRows: [] },
+    BASS: { side: 'right' as const, preferredRows: [4, 5, 6], overflowRows: [] },
+    SPECIAL: { side: 'left' as const, preferredRows: [1, 2, 3, 4, 5, 6], overflowRows: [] },
 } as const;
 
 /** 그리드 레이아웃 */
@@ -30,8 +30,8 @@ export interface PastSeat {
     memberId: string;
     memberName: string;
     part: Part;
-    row: number;  // 0-based
-    col: number;  // 0-based
+    row: number;  // 1-based
+    col: number;  // 1-based
 }
 
 /** 현재 출석 가능한 멤버 */
@@ -61,11 +61,11 @@ export interface UnassignedMember {
 /** 파트별 타겟 영역 */
 interface PartZoneTarget {
     part: Part;
-    rows: number[];           // 사용 가능한 행 목록 (0-based)
-    colStart: number;         // 열 시작 (0-based)
-    colEnd: number;           // 열 끝 (0-based, exclusive)
-    preferredRows: number[];  // 선호 행
-    overflowRows: number[];   // 오버플로우 행
+    rows: number[];           // 사용 가능한 행 목록 (1-based)
+    colStart: number;         // 열 시작 (1-based)
+    colEnd: number;           // 열 끝 (1-based, exclusive)
+    preferredRows: number[];  // 선호 행 (1-based)
+    overflowRows: number[];   // 오버플로우 행 (1-based)
 }
 
 /**
@@ -78,22 +78,22 @@ function calculatePartZones(gridLayout: GridLayout): Map<Part, PartZoneTarget> {
     // 행별 최대 열 계산
     const maxCols = Math.max(...rowCapacities);
 
-    // 중앙 기준점 (좌/우 분할)
-    const midCol = Math.floor(maxCols / 2);
+    // 중앙 기준점 (좌/우 분할) - 1-based
+    const midCol = Math.floor(maxCols / 2) + 1;
 
     // 각 파트별 영역 계산
     for (const [partName, rules] of Object.entries(PART_PLACEMENT_RULES)) {
         const part = partName as Part;
 
-        // 열 범위: 좌측 파트는 0 ~ midCol, 우측 파트는 midCol ~ maxCols
-        const colStart = rules.side === 'left' ? 0 : midCol;
-        const colEnd = rules.side === 'left' ? midCol : maxCols;
+        // 열 범위 (1-based): 좌측 파트는 1 ~ midCol, 우측 파트는 midCol ~ maxCols
+        const colStart = rules.side === 'left' ? 1 : midCol;
+        const colEnd = rules.side === 'left' ? midCol : maxCols + 1;
 
-        // 선호 행 (그리드 범위 내)
-        const preferredRows = rules.preferredRows.filter(r => r < rows);
+        // 선호 행 (그리드 범위 내, 1-based이므로 rows 이하인지 확인)
+        const preferredRows = rules.preferredRows.filter(r => r <= rows);
 
         // 오버플로우 행 (그리드 범위 내)
-        const overflowRows = rules.overflowRows.filter(r => r < rows);
+        const overflowRows = rules.overflowRows.filter(r => r <= rows);
 
         // 사용 가능한 모든 행
         const allRows = [...new Set([...preferredRows, ...overflowRows])].sort((a, b) => a - b);
@@ -121,18 +121,19 @@ function getAvailableSeatsInZone(
 ): { row: number; col: number }[] {
     const seats: { row: number; col: number; priority: number }[] = [];
 
-    // 선호 행 먼저, 그 다음 오버플로우 행
+    // 선호 행 먼저, 그 다음 오버플로우 행 (모두 1-based)
     const orderedRows = [
         ...zone.preferredRows.map(r => ({ row: r, priority: 0 })),
         ...zone.overflowRows.map(r => ({ row: r, priority: 1 })),
     ];
 
     for (const { row, priority } of orderedRows) {
-        const rowCapacity = gridLayout.rowCapacities[row] || 0;
+        // 1-based row를 0-based index로 변환하여 배열 접근
+        const rowCapacity = gridLayout.rowCapacities[row - 1] || 0;
 
-        // 해당 행에서 영역 내 열만 사용
-        const colStart = Math.max(0, zone.colStart);
-        const colEnd = Math.min(rowCapacity, zone.colEnd);
+        // 해당 행에서 영역 내 열만 사용 (1-based)
+        const colStart = Math.max(1, zone.colStart);
+        const colEnd = Math.min(rowCapacity + 1, zone.colEnd);
 
         for (let col = colStart; col < colEnd; col++) {
             const seatKey = `${row}-${col}`;
