@@ -22,24 +22,42 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const limit = parseInt(searchParams.get('limit') || '100');
     const offset = (page - 1) * limit;
 
-    // Basic query
-    const query = supabase
+    // 1. arrangements 조회
+    const { data: arrangements, error, count } = await supabase
         .from('arrangements')
         .select('*', { count: 'exact' })
         .order('date', { ascending: false })
         .range(offset, offset + limit - 1);
 
-    const { data, error, count } = await query;
-
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // 2. service_schedules 조회 (hymn_name, offertory_performer, service_type)
+    const { data: schedules } = await supabase
+        .from('service_schedules')
+        .select('date, service_type, hymn_name, offertory_performer');
+
+    // 3. 날짜 기준으로 병합
+    const scheduleMap = new Map(
+        (schedules || []).map(s => [s.date, s])
+    );
+
+    const enrichedArrangements = (arrangements || []).map(a => {
+        const schedule = scheduleMap.get(a.date);
+        return {
+            ...a,
+            service_type: schedule?.service_type || null,
+            hymn_name: schedule?.hymn_name || null,
+            offertory_performer: schedule?.offertory_performer || null,
+        };
+    });
+
     return NextResponse.json({
-        data,
+        data: enrichedArrangements,
         meta: {
             total: count,
             page,

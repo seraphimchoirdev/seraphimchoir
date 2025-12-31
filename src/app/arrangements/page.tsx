@@ -13,7 +13,7 @@ import { useArrangements } from '@/hooks/useArrangements';
 
 export default function ArrangementsPage() {
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-    const { data, isLoading, error } = useArrangements({ limit: 50 });
+    const { data, isLoading, error } = useArrangements({ limit: 100 });
 
     return (
         <div className="min-h-screen bg-[var(--color-background-tertiary)]">

@@ -7,12 +7,19 @@ type Arrangement = Database['public']['Tables']['arrangements']['Row'];
 type ArrangementInsert = Database['public']['Tables']['arrangements']['Insert'];
 type ArrangementUpdate = Database['public']['Tables']['arrangements']['Update'];
 
+// service_schedules에서 JOIN된 필드를 포함한 확장 타입
+export interface ArrangementWithSchedule extends Arrangement {
+    service_type?: string | null;
+    hymn_name?: string | null;
+    offertory_performer?: string | null;
+}
+
 export interface ArrangementFilters {
     page?: number;
     limit?: number;
 }
 
-type ArrangementsResponse = PaginatedResponse<Arrangement>;
+type ArrangementsResponse = PaginatedResponse<ArrangementWithSchedule>;
 
 type SeatWithMember = Database['public']['Tables']['seats']['Row'] & {
     member?: { id: string; name: string } | null;
