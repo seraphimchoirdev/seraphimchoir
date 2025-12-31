@@ -8,13 +8,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Music } from 'lucide-react';
 import { format, addWeeks, subWeeks, nextSunday, isSunday, subMonths, addMonths } from 'date-fns';
-import { ko } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
 
 export default function AttendancesPage() {
-  const { hasRole, profile } = useAuth();
+  const { profile } = useAuth();
 
   // 기본값: 다가오는 주일 (오늘이 주일이면 오늘)
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
@@ -67,59 +66,65 @@ export default function AttendancesPage() {
 
       <div className="py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* 헤더 & 날짜 선택 */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm">
-            <div>
-              <h2 className="heading-2 text-[var(--color-text-primary)]">출석 관리</h2>
-              <p className="mt-1 body-base text-[var(--color-text-secondary)]">
-                주일 예배 등단 및 연습 참석 현황을 관리합니다.
-              </p>
-              {selectedSchedule && (
-                <div className="mt-2 flex items-center gap-2 text-sm text-indigo-600">
-                  <Music className="h-4 w-4" />
-                  <span className="font-medium">{selectedSchedule.service_type || '주일예배'}</span>
-                  {selectedSchedule.hymn_name && (
-                    <span className="text-indigo-500">• {selectedSchedule.hymn_name}</span>
-                  )}
-                </div>
-              )}
+          {/* 헤더 */}
+          <div className="bg-white p-6 rounded-xl shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 className="heading-2 text-[var(--color-text-primary)]">출석 관리</h2>
+                <p className="mt-1 body-base text-[var(--color-text-secondary)]">
+                  주일 예배 등단 및 연습 참석 현황을 관리합니다.
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-4 bg-gray-50 p-2 rounded-lg">
-              <Button variant="ghost" size="icon" onClick={handlePrevWeek}>
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="min-w-[160px] font-medium text-lg border-none bg-transparent hover:bg-white shadow-sm">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {format(selectedDate, 'yyyy-MM-dd')}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={(date) => {
-                      if (date instanceof Date && !isDateDisabled(date)) {
-                        setSelectedDate(date);
-                      }
-                    }}
-                    disabled={isDateDisabled}
-                    initialFocus
-                  />
-                  <div className="px-3 py-2 border-t text-xs text-muted-foreground">
-                    <Music className="inline h-3 w-3 mr-1" />
-                    예배 일정이 등록된 날짜만 선택 가능
+            {/* 날짜 선택 UI */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 border-t border-gray-100">
+                {selectedSchedule && (
+                  <div className="flex items-center gap-2 text-sm text-indigo-600">
+                    <Music className="h-4 w-4" />
+                    <span className="font-medium">{selectedSchedule.service_type || '주일예배'}</span>
+                    {selectedSchedule.hymn_name && (
+                      <span className="text-indigo-500">• {selectedSchedule.hymn_name}</span>
+                    )}
                   </div>
-                </PopoverContent>
-              </Popover>
+                )}
 
-              <Button variant="ghost" size="icon" onClick={handleNextWeek}>
-                <ChevronRight className="w-5 h-5" />
-              </Button>
-            </div>
+                <div className="flex items-center gap-4 bg-gray-50 p-2 rounded-lg">
+                  <Button variant="ghost" size="icon" onClick={handlePrevWeek}>
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="min-w-[160px] font-medium text-lg border-none bg-transparent hover:bg-white shadow-sm">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {format(selectedDate, 'yyyy-MM-dd')}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => {
+                          if (date instanceof Date && !isDateDisabled(date)) {
+                            setSelectedDate(date);
+                          }
+                        }}
+                        disabled={isDateDisabled}
+                        initialFocus
+                      />
+                      <div className="px-3 py-2 border-t text-xs text-muted-foreground">
+                        <Music className="inline h-3 w-3 mr-1" />
+                        예배 일정이 등록된 날짜만 선택 가능
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  <Button variant="ghost" size="icon" onClick={handleNextWeek}>
+                    <ChevronRight className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
           </div>
 
           {/* 권한 없음 메시지 */}
@@ -131,7 +136,7 @@ export default function AttendancesPage() {
             </Alert>
           )}
 
-          {/* 출석 리스트 뷰 */}
+          {/* 출석 목록 */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <AttendanceList date={selectedDate} />
           </div>
