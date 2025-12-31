@@ -16,19 +16,19 @@
   "grid_layout": {
     "rows": 5,
     "row_capacities": [
+      9,
+      10,
       11,
       12,
-      11,
-      10,
-      9
+      11
     ],
     "zigzag_pattern": "even"
   },
   "seats": [
     {
-      "member_id": "8b20ec0d-d3c7-4da0-afda-9987a9eacd3b",
-      "member_name": "김소라",
-      "part": "SOPRANO",
+      "member_id": "d91e69e1-96da-491f-86f2-903e34e15ac6",
+      "member_name": "황봉식",
+      "part": "TENOR",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -36,9 +36,9 @@
       "col": 1
     },
     {
-      "member_id": "e09947c5-fb15-4b58-ab81-ca5ee44b3748",
-      "member_name": "서헌숙",
-      "part": "SOPRANO",
+      "member_id": "77af715f-ca5e-4309-be94-3d4e87ea3109",
+      "member_name": "김학영",
+      "part": "TENOR",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -46,9 +46,9 @@
       "col": 2
     },
     {
-      "member_id": "9fcc9951-2158-47c5-a833-df1a5ef0627e",
-      "member_name": "김문희",
-      "part": "SOPRANO",
+      "member_id": "01dc2272-facb-4209-bd17-b259742b78a9",
+      "member_name": "정현석",
+      "part": "TENOR",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -56,9 +56,9 @@
       "col": 3
     },
     {
-      "member_id": "3f50ca7f-6873-4d60-b77d-0e80166ea0e8",
-      "member_name": "김정희",
-      "part": "SOPRANO",
+      "member_id": "91051cd8-191e-4b44-a947-b42e73153129",
+      "member_name": "최창운",
+      "part": "TENOR",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -66,9 +66,9 @@
       "col": 4
     },
     {
-      "member_id": "a82defbb-615d-4280-84fc-2793d7a81350",
-      "member_name": "김향숙",
-      "part": "SOPRANO",
+      "member_id": "b91dac44-55bc-48c5-b158-546c25c62dfc",
+      "member_name": "이승균",
+      "part": "TENOR",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -76,9 +76,9 @@
       "col": 5
     },
     {
-      "member_id": "23d9b1ea-729f-4890-b6a9-cb282ec12b67",
-      "member_name": "김혜선",
-      "part": "SOPRANO",
+      "member_id": "c59a63b5-dfe9-4973-80cc-bae13a02fe3d",
+      "member_name": "김창동",
+      "part": "BASS",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -86,9 +86,9 @@
       "col": 6
     },
     {
-      "member_id": "24586c3f-b507-4891-8f23-c00fd6b3ab0f",
-      "member_name": "강혜선",
-      "part": "ALTO",
+      "member_id": "c95491d5-d146-4d3f-926d-a188949f560e",
+      "member_name": "박재용",
+      "part": "BASS",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -96,9 +96,9 @@
       "col": 7
     },
     {
-      "member_id": "aafc7de7-11bd-4baa-ab60-6c3ad348de44",
-      "member_name": "심희숙",
-      "part": "ALTO",
+      "member_id": "34c40bed-3457-4a6f-bd3a-b6b5ca284f19",
+      "member_name": "하범",
+      "part": "BASS",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -106,9 +106,9 @@
       "col": 8
     },
     {
-      "member_id": "30e839a2-45f1-4680-ad56-43e1994e09ee",
-      "member_name": "김소옥",
-      "part": "ALTO",
+      "member_id": "d147fff1-b04c-4f19-9714-3e25e19dea2a",
+      "member_name": "안형준",
+      "part": "BASS",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -116,28 +116,8 @@
       "col": 9
     },
     {
-      "member_id": "338af00b-a855-4ab6-8eeb-bfd18a4e9363",
-      "member_name": "이지영",
-      "part": "ALTO",
-      "height": null,
-      "experience_years": 0,
-      "is_part_leader": false,
-      "row": 1,
-      "col": 10
-    },
-    {
-      "member_id": "6ba6680a-fe5d-4e24-a7f0-a918c5fdca96",
-      "member_name": "최명희",
-      "part": "ALTO",
-      "height": null,
-      "experience_years": 0,
-      "is_part_leader": false,
-      "row": 1,
-      "col": 11
-    },
-    {
-      "member_id": "1bc52640-34d9-4f04-8924-35148be6a10c",
-      "member_name": "김지영",
+      "member_id": "46e6b790-ae99-4f2c-b271-af71aa81cdb3",
+      "member_name": "신나래",
       "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
@@ -146,9 +126,9 @@
       "col": 1
     },
     {
-      "member_id": "e14ba908-f39d-4d3e-a57c-26244bd900c5",
-      "member_name": "이광숙",
-      "part": "SOPRANO",
+      "member_id": "024c842b-0818-47eb-bdc6-c2dd4ddf5fcc",
+      "member_name": "최광열",
+      "part": "TENOR",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -156,9 +136,9 @@
       "col": 2
     },
     {
-      "member_id": "21fe177f-7d18-4841-be60-cf71d49f7230",
-      "member_name": "이선미",
-      "part": "SOPRANO",
+      "member_id": "c2b38a03-5853-4c22-93e8-4cda01083a41",
+      "member_name": "이상조",
+      "part": "TENOR",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -166,9 +146,9 @@
       "col": 3
     },
     {
-      "member_id": "1e5a9347-9cc1-4d67-9d08-10f2e851c3a7",
-      "member_name": "손기순",
-      "part": "SOPRANO",
+      "member_id": "9abee5d5-86c7-4bc4-8379-e7e8b92c7439",
+      "member_name": "안강현",
+      "part": "TENOR",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -176,9 +156,9 @@
       "col": 4
     },
     {
-      "member_id": "c023a373-54a2-42a5-a5c2-35a539bb019e",
-      "member_name": "문희",
-      "part": "SOPRANO",
+      "member_id": "91be141f-82e6-4d17-8209-7b7f5d42b079",
+      "member_name": "권인영",
+      "part": "TENOR",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -186,9 +166,9 @@
       "col": 5
     },
     {
-      "member_id": "ed555475-fa3d-4fac-ab61-4cd2aae9ddc4",
-      "member_name": "오연분",
-      "part": "SOPRANO",
+      "member_id": "bed5894d-5b4e-451a-a0d8-39c5682d3f40",
+      "member_name": "김대영",
+      "part": "BASS",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -196,9 +176,9 @@
       "col": 6
     },
     {
-      "member_id": "9352769c-1efa-42f7-9ad7-fcf7e3acb645",
-      "member_name": "이영란",
-      "part": "SOPRANO",
+      "member_id": "2a34976e-b300-46f8-8b30-a2f28c8745c0",
+      "member_name": "남승호",
+      "part": "BASS",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -206,9 +186,9 @@
       "col": 7
     },
     {
-      "member_id": "ca4eef10-84dd-474f-b846-82a37c3eac51",
-      "member_name": "이윤옥",
-      "part": "ALTO",
+      "member_id": "5c969616-846f-4627-bf28-163c35d9730c",
+      "member_name": "이기형",
+      "part": "BASS",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -216,9 +196,9 @@
       "col": 8
     },
     {
-      "member_id": "43d60188-705f-4b38-b00b-40b3a0ac65e4",
-      "member_name": "김영정",
-      "part": "ALTO",
+      "member_id": "f9000126-918e-4a84-b5bb-119031d619e5",
+      "member_name": "안상은",
+      "part": "BASS",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -226,34 +206,14 @@
       "col": 9
     },
     {
-      "member_id": "05a953d7-52dc-4838-9e55-f1e6360751d1",
-      "member_name": "백성원",
-      "part": "ALTO",
+      "member_id": "d1de8297-09a2-4b3e-8b11-cbd8925dc12d",
+      "member_name": "이경진",
+      "part": "BASS",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
       "col": 10
-    },
-    {
-      "member_id": "211a621d-aaeb-4019-b036-f4ed0681a698",
-      "member_name": "이상미",
-      "part": "ALTO",
-      "height": null,
-      "experience_years": 0,
-      "is_part_leader": false,
-      "row": 2,
-      "col": 11
-    },
-    {
-      "member_id": "f2295256-ece2-44e0-8101-f73d48e7f850",
-      "member_name": "최유진",
-      "part": "ALTO",
-      "height": null,
-      "experience_years": 0,
-      "is_part_leader": false,
-      "row": 2,
-      "col": 12
     },
     {
       "member_id": "8a9a8fc0-b27d-42d0-b4d9-cf92c7384611",
@@ -366,8 +326,8 @@
       "col": 11
     },
     {
-      "member_id": "46e6b790-ae99-4f2c-b271-af71aa81cdb3",
-      "member_name": "신나래",
+      "member_id": "1bc52640-34d9-4f04-8924-35148be6a10c",
+      "member_name": "김지영",
       "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
@@ -376,9 +336,9 @@
       "col": 1
     },
     {
-      "member_id": "024c842b-0818-47eb-bdc6-c2dd4ddf5fcc",
-      "member_name": "최광열",
-      "part": "TENOR",
+      "member_id": "e14ba908-f39d-4d3e-a57c-26244bd900c5",
+      "member_name": "이광숙",
+      "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -386,9 +346,9 @@
       "col": 2
     },
     {
-      "member_id": "c2b38a03-5853-4c22-93e8-4cda01083a41",
-      "member_name": "이상조",
-      "part": "TENOR",
+      "member_id": "21fe177f-7d18-4841-be60-cf71d49f7230",
+      "member_name": "이선미",
+      "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -396,9 +356,9 @@
       "col": 3
     },
     {
-      "member_id": "9abee5d5-86c7-4bc4-8379-e7e8b92c7439",
-      "member_name": "안강현",
-      "part": "TENOR",
+      "member_id": "1e5a9347-9cc1-4d67-9d08-10f2e851c3a7",
+      "member_name": "손기순",
+      "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -406,9 +366,9 @@
       "col": 4
     },
     {
-      "member_id": "91be141f-82e6-4d17-8209-7b7f5d42b079",
-      "member_name": "권인영",
-      "part": "TENOR",
+      "member_id": "c023a373-54a2-42a5-a5c2-35a539bb019e",
+      "member_name": "문희",
+      "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -416,9 +376,9 @@
       "col": 5
     },
     {
-      "member_id": "bed5894d-5b4e-451a-a0d8-39c5682d3f40",
-      "member_name": "김대영",
-      "part": "BASS",
+      "member_id": "ed555475-fa3d-4fac-ab61-4cd2aae9ddc4",
+      "member_name": "오연분",
+      "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -426,9 +386,9 @@
       "col": 6
     },
     {
-      "member_id": "2a34976e-b300-46f8-8b30-a2f28c8745c0",
-      "member_name": "남승호",
-      "part": "BASS",
+      "member_id": "9352769c-1efa-42f7-9ad7-fcf7e3acb645",
+      "member_name": "이영란",
+      "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -436,9 +396,9 @@
       "col": 7
     },
     {
-      "member_id": "5c969616-846f-4627-bf28-163c35d9730c",
-      "member_name": "이기형",
-      "part": "BASS",
+      "member_id": "ca4eef10-84dd-474f-b846-82a37c3eac51",
+      "member_name": "이윤옥",
+      "part": "ALTO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -446,9 +406,9 @@
       "col": 8
     },
     {
-      "member_id": "f9000126-918e-4a84-b5bb-119031d619e5",
-      "member_name": "안상은",
-      "part": "BASS",
+      "member_id": "43d60188-705f-4b38-b00b-40b3a0ac65e4",
+      "member_name": "김영정",
+      "part": "ALTO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -456,9 +416,9 @@
       "col": 9
     },
     {
-      "member_id": "d1de8297-09a2-4b3e-8b11-cbd8925dc12d",
-      "member_name": "이경진",
-      "part": "BASS",
+      "member_id": "05a953d7-52dc-4838-9e55-f1e6360751d1",
+      "member_name": "백성원",
+      "part": "ALTO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -466,9 +426,29 @@
       "col": 10
     },
     {
-      "member_id": "d91e69e1-96da-491f-86f2-903e34e15ac6",
-      "member_name": "황봉식",
-      "part": "TENOR",
+      "member_id": "211a621d-aaeb-4019-b036-f4ed0681a698",
+      "member_name": "이상미",
+      "part": "ALTO",
+      "height": null,
+      "experience_years": 0,
+      "is_part_leader": false,
+      "row": 4,
+      "col": 11
+    },
+    {
+      "member_id": "f2295256-ece2-44e0-8101-f73d48e7f850",
+      "member_name": "최유진",
+      "part": "ALTO",
+      "height": null,
+      "experience_years": 0,
+      "is_part_leader": false,
+      "row": 4,
+      "col": 12
+    },
+    {
+      "member_id": "8b20ec0d-d3c7-4da0-afda-9987a9eacd3b",
+      "member_name": "김소라",
+      "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -476,9 +456,9 @@
       "col": 1
     },
     {
-      "member_id": "77af715f-ca5e-4309-be94-3d4e87ea3109",
-      "member_name": "김학영",
-      "part": "TENOR",
+      "member_id": "e09947c5-fb15-4b58-ab81-ca5ee44b3748",
+      "member_name": "서헌숙",
+      "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -486,9 +466,9 @@
       "col": 2
     },
     {
-      "member_id": "01dc2272-facb-4209-bd17-b259742b78a9",
-      "member_name": "정현석",
-      "part": "TENOR",
+      "member_id": "9fcc9951-2158-47c5-a833-df1a5ef0627e",
+      "member_name": "김문희",
+      "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -496,9 +476,9 @@
       "col": 3
     },
     {
-      "member_id": "91051cd8-191e-4b44-a947-b42e73153129",
-      "member_name": "최창운",
-      "part": "TENOR",
+      "member_id": "3f50ca7f-6873-4d60-b77d-0e80166ea0e8",
+      "member_name": "김정희",
+      "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -506,9 +486,9 @@
       "col": 4
     },
     {
-      "member_id": "b91dac44-55bc-48c5-b158-546c25c62dfc",
-      "member_name": "이승균",
-      "part": "TENOR",
+      "member_id": "a82defbb-615d-4280-84fc-2793d7a81350",
+      "member_name": "김향숙",
+      "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -516,9 +496,9 @@
       "col": 5
     },
     {
-      "member_id": "c59a63b5-dfe9-4973-80cc-bae13a02fe3d",
-      "member_name": "김창동",
-      "part": "BASS",
+      "member_id": "23d9b1ea-729f-4890-b6a9-cb282ec12b67",
+      "member_name": "김혜선",
+      "part": "SOPRANO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -526,9 +506,9 @@
       "col": 6
     },
     {
-      "member_id": "c95491d5-d146-4d3f-926d-a188949f560e",
-      "member_name": "박재용",
-      "part": "BASS",
+      "member_id": "24586c3f-b507-4891-8f23-c00fd6b3ab0f",
+      "member_name": "강혜선",
+      "part": "ALTO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -536,9 +516,9 @@
       "col": 7
     },
     {
-      "member_id": "34c40bed-3457-4a6f-bd3a-b6b5ca284f19",
-      "member_name": "하범",
-      "part": "BASS",
+      "member_id": "aafc7de7-11bd-4baa-ab60-6c3ad348de44",
+      "member_name": "심희숙",
+      "part": "ALTO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -546,14 +526,34 @@
       "col": 8
     },
     {
-      "member_id": "d147fff1-b04c-4f19-9714-3e25e19dea2a",
-      "member_name": "안형준",
-      "part": "BASS",
+      "member_id": "30e839a2-45f1-4680-ad56-43e1994e09ee",
+      "member_name": "김소옥",
+      "part": "ALTO",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
       "row": 5,
       "col": 9
+    },
+    {
+      "member_id": "338af00b-a855-4ab6-8eeb-bfd18a4e9363",
+      "member_name": "이지영",
+      "part": "ALTO",
+      "height": null,
+      "experience_years": 0,
+      "is_part_leader": false,
+      "row": 5,
+      "col": 10
+    },
+    {
+      "member_id": "6ba6680a-fe5d-4e24-a7f0-a918c5fdca96",
+      "member_name": "최명희",
+      "part": "ALTO",
+      "height": null,
+      "experience_years": 0,
+      "is_part_leader": false,
+      "row": 5,
+      "col": 11
     }
   ]
 }
