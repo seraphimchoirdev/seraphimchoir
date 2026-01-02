@@ -48,6 +48,14 @@ export default function ServiceScheduleDialog({
             hymn_name: data.hymn_name,
             offertory_performer: data.offertory_performer,
             notes: data.notes,
+            // 연습 설정 필드
+            has_post_practice: data.has_post_practice,
+            post_practice_start_time: data.post_practice_start_time,
+            post_practice_duration: data.post_practice_duration,
+            has_pre_practice: data.has_pre_practice,
+            pre_practice_minutes_before: data.pre_practice_minutes_before,
+            pre_practice_location: data.pre_practice_location,
+            post_practice_location: data.post_practice_location,
           },
         });
       } else {

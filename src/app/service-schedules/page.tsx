@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Navigation from '@/components/layout/Navigation';
 import { QuarterSelector, QuarterlyCalendar, ServiceScheduleDialog, ServiceScheduleImporter } from '@/components/features/service-schedules';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
+import { useChoirEvents } from '@/hooks/useChoirEvents';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,23 @@ export default function ServiceSchedulesPage() {
     year,
     quarter,
   });
+
+  // 행사 데이터 조회
+  const {
+    data: eventsData,
+    isLoading: eventsLoading,
+    error: eventsError,
+    refetch: refetchEvents,
+  } = useChoirEvents({
+    year,
+    quarter,
+  });
+
+  // 예배 일정과 행사 모두 refetch
+  const handleRefresh = useCallback(() => {
+    refetch();
+    refetchEvents();
+  }, [refetch, refetchEvents]);
 
   return (
     <div className="min-h-screen bg-[var(--color-background-tertiary)]">
@@ -72,29 +90,30 @@ export default function ServiceSchedulesPage() {
           </div>
 
           {/* 로딩 */}
-          {isLoading && (
+          {(isLoading || eventsLoading) && (
             <div className="flex justify-center py-12">
               <Spinner className="h-8 w-8" />
             </div>
           )}
 
           {/* 에러 */}
-          {error && (
+          {(error || eventsError) && (
             <Alert variant="error">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                {error.message || '예배 일정을 불러오는데 실패했습니다.'}
+                {error?.message || eventsError?.message || '일정을 불러오는데 실패했습니다.'}
               </AlertDescription>
             </Alert>
           )}
 
           {/* 캘린더 */}
-          {!isLoading && !error && data && (
+          {!isLoading && !eventsLoading && !error && !eventsError && data && (
             <QuarterlyCalendar
               year={year}
               quarter={quarter}
               schedules={data.data}
-              onRefresh={refetch}
+              events={eventsData?.data || []}
+              onRefresh={handleRefresh}
             />
           )}
         </div>
@@ -106,14 +125,14 @@ export default function ServiceSchedulesPage() {
         onOpenChange={setIsSpecialServiceDialogOpen}
         schedule={null}
         date={null}
-        onSuccess={refetch}
+        onSuccess={handleRefresh}
       />
 
       {/* 일괄 등록 다이얼로그 */}
       <ServiceScheduleImporter
         open={isImporterOpen}
         onOpenChange={setIsImporterOpen}
-        onSuccess={refetch}
+        onSuccess={handleRefresh}
       />
     </div>
   );

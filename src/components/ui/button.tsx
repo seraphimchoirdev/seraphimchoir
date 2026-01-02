@@ -5,49 +5,42 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        // 기본 Variants - Design System Colors
         default:
-          "bg-[var(--color-primary-400)] text-white hover:bg-[var(--color-primary-500)] active:bg-[var(--color-primary-600)] focus-visible:ring-[var(--color-primary-200)]",
-        secondary:
-          "bg-[var(--color-primary-100)] text-[var(--color-primary-700)] hover:bg-[var(--color-primary-200)] active:bg-[var(--color-primary-300)] border border-[var(--color-primary-200)] focus-visible:ring-[var(--color-primary-300)]",
-        outline:
-          "border border-[var(--color-border-default)] bg-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-background-tertiary)] hover:border-[var(--color-border-strong)] active:bg-[var(--color-background-secondary)] focus-visible:ring-[var(--color-primary-200)]",
-        ghost:
-          "bg-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-background-tertiary)] active:bg-[var(--color-background-secondary)] focus-visible:ring-[var(--color-primary-200)]",
+          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
         destructive:
-          "bg-[var(--color-error-500)] text-white hover:bg-[var(--color-error-600)] active:bg-[var(--color-error-700)] focus-visible:ring-[var(--color-error-200)]",
-        link:
-          "text-[var(--color-primary-600)] underline-offset-4 hover:underline hover:text-[var(--color-primary-700)] bg-transparent",
-
-        // Design System Color Variants
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
         success:
-          "bg-[var(--color-success-500)] text-white hover:bg-[var(--color-success-600)] active:bg-[var(--color-success-700)] focus-visible:ring-[var(--color-success-200)]",
+          "bg-green-600 text-white shadow hover:bg-green-700",
         warning:
-          "bg-[var(--color-warning-500)] text-[var(--color-warning-900)] hover:bg-[var(--color-warning-600)] active:bg-[var(--color-warning-700)] focus-visible:ring-[var(--color-warning-200)]",
+          "bg-yellow-500 text-white shadow hover:bg-yellow-600",
         accent:
-          "bg-[var(--color-accent-500)] text-white hover:bg-[var(--color-accent-600)] active:bg-[var(--color-accent-700)] focus-visible:ring-[var(--color-accent-200)]",
+          "bg-[var(--color-primary-500)] text-white shadow hover:bg-[var(--color-primary-600)]",
         primarySubtle:
-          "bg-[var(--color-primary-100)] text-[var(--color-primary-700)] hover:bg-[var(--color-primary-200)] active:bg-[var(--color-primary-300)] focus-visible:ring-[var(--color-primary-300)] border border-[var(--color-primary-200)]",
+          "bg-[var(--color-primary-100)] text-[var(--color-primary-700)] hover:bg-[var(--color-primary-200)]",
         successSubtle:
-          "bg-[var(--color-success-100)] text-[var(--color-success-700)] hover:bg-[var(--color-success-200)] active:bg-[var(--color-success-300)] focus-visible:ring-[var(--color-success-300)] border border-[var(--color-success-200)]",
+          "bg-green-100 text-green-700 hover:bg-green-200",
         warningSubtle:
-          "bg-[var(--color-warning-100)] text-[var(--color-warning-700)] hover:bg-[var(--color-warning-200)] active:bg-[var(--color-warning-300)] focus-visible:ring-[var(--color-warning-300)] border border-[var(--color-warning-200)]",
+          "bg-yellow-100 text-yellow-700 hover:bg-yellow-200",
         errorSubtle:
-          "bg-[var(--color-error-100)] text-[var(--color-error-700)] hover:bg-[var(--color-error-200)] active:bg-[var(--color-error-300)] focus-visible:ring-[var(--color-error-300)] border border-[var(--color-error-200)]",
+          "bg-red-100 text-red-700 hover:bg-red-200",
         accentSubtle:
-          "bg-[var(--color-accent-100)] text-[var(--color-accent-700)] hover:bg-[var(--color-accent-200)] active:bg-[var(--color-accent-300)] focus-visible:ring-[var(--color-accent-300)] border border-[var(--color-accent-200)]",
+          "bg-[var(--color-primary-50)] text-[var(--color-primary-600)] hover:bg-[var(--color-primary-100)]",
       },
       size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
-        "icon-sm": "size-8",
-        "icon-lg": "size-10",
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-8",
+        icon: "h-9 w-9",
       },
     },
     defaultVariants: {
@@ -57,25 +50,24 @@ const buttonVariants = cva(
   }
 )
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot : "button"
-
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
 }
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Button.displayName = "Button"
 
 export { Button, buttonVariants }

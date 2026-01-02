@@ -158,6 +158,45 @@ export type Database = {
           },
         ]
       }
+      choir_events: {
+        Row: {
+          created_at: string | null
+          date: string
+          description: string | null
+          end_time: string | null
+          event_type: string
+          id: string
+          location: string | null
+          start_time: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          description?: string | null
+          end_time?: string | null
+          event_type: string
+          id?: string
+          location?: string | null
+          start_time?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          description?: string | null
+          end_time?: string | null
+          event_type?: string
+          id?: string
+          location?: string | null
+          start_time?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           created_at: string
@@ -450,30 +489,51 @@ export type Database = {
         Row: {
           created_at: string | null
           date: string
+          has_post_practice: boolean | null
+          has_pre_practice: boolean | null
           hymn_name: string | null
           id: string
           notes: string | null
           offertory_performer: string | null
+          post_practice_duration: number | null
+          post_practice_location: string | null
+          post_practice_start_time: string | null
+          pre_practice_location: string | null
+          pre_practice_minutes_before: number | null
           service_type: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           date: string
+          has_post_practice?: boolean | null
+          has_pre_practice?: boolean | null
           hymn_name?: string | null
           id?: string
           notes?: string | null
           offertory_performer?: string | null
+          post_practice_duration?: number | null
+          post_practice_location?: string | null
+          post_practice_start_time?: string | null
+          pre_practice_location?: string | null
+          pre_practice_minutes_before?: number | null
           service_type?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           date?: string
+          has_post_practice?: boolean | null
+          has_pre_practice?: boolean | null
           hymn_name?: string | null
           id?: string
           notes?: string | null
           offertory_performer?: string | null
+          post_practice_duration?: number | null
+          post_practice_location?: string | null
+          post_practice_start_time?: string | null
+          pre_practice_location?: string | null
+          pre_practice_minutes_before?: number | null
           service_type?: string | null
           updated_at?: string | null
         }
