@@ -3,12 +3,19 @@
 import { useState, useCallback } from 'react';
 import Navigation from '@/components/layout/Navigation';
 import { QuarterSelector, QuarterlyCalendar, ServiceScheduleDialog, ServiceScheduleImporter } from '@/components/features/service-schedules';
+import EventDialog from '@/components/features/service-schedules/EventDialog';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
 import { useChoirEvents } from '@/hooks/useChoirEvents';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Plus, FileSpreadsheet } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { AlertCircle, Plus, FileSpreadsheet, Music, PartyPopper } from 'lucide-react';
 
 export default function ServiceSchedulesPage() {
   const currentDate = new Date();
@@ -17,8 +24,11 @@ export default function ServiceSchedulesPage() {
     Math.ceil((currentDate.getMonth() + 1) / 3)
   );
 
-  // 특별예배 추가 다이얼로그 상태
-  const [isSpecialServiceDialogOpen, setIsSpecialServiceDialogOpen] = useState(false);
+  // 예배 일정 추가 다이얼로그 상태
+  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
+
+  // 행사 일정 추가 다이얼로그 상태
+  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
 
   // 일괄 등록 다이얼로그 상태
   const [isImporterOpen, setIsImporterOpen] = useState(false);
@@ -70,14 +80,24 @@ export default function ServiceSchedulesPage() {
                 <FileSpreadsheet className="h-4 w-4" />
                 <span className="hidden sm:inline">일괄 등록</span>
               </Button>
-              <Button
-                onClick={() => setIsSpecialServiceDialogOpen(true)}
-                variant="outline"
-                className="gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">특별예배 추가</span>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">일정 추가</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setIsServiceDialogOpen(true)} className="gap-2 cursor-pointer">
+                    <Music className="h-4 w-4 text-blue-600" />
+                    예배 일정
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsEventDialogOpen(true)} className="gap-2 cursor-pointer">
+                    <PartyPopper className="h-4 w-4 text-purple-600" />
+                    행사 일정
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <QuarterSelector
                 year={year}
                 quarter={quarter}
@@ -119,11 +139,20 @@ export default function ServiceSchedulesPage() {
         </div>
       </div>
 
-      {/* 특별예배 추가 다이얼로그 */}
+      {/* 예배 일정 추가 다이얼로그 */}
       <ServiceScheduleDialog
-        open={isSpecialServiceDialogOpen}
-        onOpenChange={setIsSpecialServiceDialogOpen}
+        open={isServiceDialogOpen}
+        onOpenChange={setIsServiceDialogOpen}
         schedule={null}
+        date={null}
+        onSuccess={handleRefresh}
+      />
+
+      {/* 행사 일정 추가 다이얼로그 */}
+      <EventDialog
+        open={isEventDialogOpen}
+        onOpenChange={setIsEventDialogOpen}
+        event={null}
         date={null}
         onSuccess={handleRefresh}
       />
