@@ -20,7 +20,8 @@ import type { Database } from '@/types/database.types';
 const SERVICE_TYPE_OPTIONS = [
   { value: '주일2부예배', label: '주일 2부 예배' },
   { value: '주일오후찬양예배', label: '주일 오후 찬양예배' },
-  { value: '새벽기도회', label: '새벽기도회' },
+  { value: '절기찬양예배', label: '절기 찬양예배' },
+  { value: '기도회', label: '기도회' },
   { value: '기타', label: '기타' },
 ] as const;
 
