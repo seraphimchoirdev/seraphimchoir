@@ -65,10 +65,10 @@ export default function ServiceSchedulesPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">
-                예배 일정 관리
+                찬양대 일정 관리
               </h1>
               <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-                분기별 예배 일정을 관리합니다
+                분기별 예배 및 행사 일정을 관리합니다
               </p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">

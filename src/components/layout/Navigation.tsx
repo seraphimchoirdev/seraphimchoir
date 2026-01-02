@@ -65,7 +65,7 @@ export default function Navigation() {
     { href: '/members', label: '찬양대원 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
     { href: '/attendances', label: '출석 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
     { href: '/statistics', label: '출석 통계', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
-    { href: '/service-schedules', label: '예배 일정', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
+    { href: '/service-schedules', label: '찬양대 일정', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
     { href: '/arrangements', label: '자리배치', show: hasRole(['ADMIN', 'CONDUCTOR']) },
 
     // 문서 아카이브 (MANAGER 이상)
