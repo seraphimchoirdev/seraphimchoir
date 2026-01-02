@@ -12,12 +12,15 @@ import { persist, devtools } from 'zustand/middleware';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
-// UserProfile 타입 정의
+// UserProfile 타입 정의 (대원 연결 정보 포함)
 export interface UserProfile {
   id: string;
   email: string;
   name: string;
   role: string | null;
+  // 대원 연결 정보
+  linked_member_id: string | null;
+  link_status: 'pending' | 'approved' | 'rejected' | null;
 }
 
 // Auth Store 상태 인터페이스
@@ -35,6 +38,7 @@ interface AuthState {
 interface AuthActions {
   // 인증 메서드
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithKakao: () => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<{ error: Error | null }>;
   fetchUser: () => Promise<void>;
@@ -52,6 +56,10 @@ interface AuthActions {
   // 권한 확인 메서드
   hasRole: (requiredRoles: string[]) => boolean;
   isAdmin: () => boolean;
+
+  // 대원 연결 확인 메서드
+  isMemberLinked: () => boolean;
+  isLinkPending: () => boolean;
 }
 
 // Auth Store 전체 타입
@@ -105,6 +113,34 @@ export const useAuthStore = create<AuthStore>()(
           } catch (error) {
             const err = error as Error;
             set({ error: err, isLoading: false }, false, 'auth/signIn/catch');
+            return { error: err };
+          }
+        },
+
+        // 카카오 로그인
+        signInWithKakao: async () => {
+          const supabase = createClient();
+
+          try {
+            set({ isLoading: true, error: null }, false, 'auth/signInWithKakao/start');
+
+            const { error } = await supabase.auth.signInWithOAuth({
+              provider: 'kakao',
+              options: {
+                redirectTo: `${window.location.origin}/auth/callback`,
+              },
+            });
+
+            if (error) {
+              set({ error, isLoading: false }, false, 'auth/signInWithKakao/error');
+              return { error };
+            }
+
+            // OAuth는 리다이렉트되므로 여기서 상태 변경하지 않음
+            return { error: null };
+          } catch (error) {
+            const err = error as Error;
+            set({ error: err, isLoading: false }, false, 'auth/signInWithKakao/catch');
             return { error: err };
           }
         },
@@ -188,17 +224,21 @@ export const useAuthStore = create<AuthStore>()(
         // 현재 사용자 정보 가져오기
         fetchUser: async () => {
           const supabase = createClient();
+          console.log('[fetchUser] 시작');
 
           try {
             set({ isLoading: true, error: null }, false, 'auth/fetchUser/start');
 
+            console.log('[fetchUser] getSession 호출');
             const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            console.log('[fetchUser] getSession 완료:', { hasSession: !!session, sessionError });
 
             if (sessionError) {
               throw sessionError;
             }
 
             if (!session?.user) {
+              console.log('[fetchUser] 세션 없음');
               set({
                 user: null,
                 profile: null,
@@ -208,15 +248,17 @@ export const useAuthStore = create<AuthStore>()(
               return;
             }
 
-            // 프로필 정보 가져오기
+            // 프로필 정보 가져오기 (대원 연결 정보 포함)
+            console.log('[fetchUser] 프로필 조회 시작:', session.user.id);
             const { data: profile, error: profileError } = await supabase
               .from('user_profiles')
-              .select('*')
+              .select('id, email, name, role, linked_member_id, link_status')
               .eq('id', session.user.id)
               .single();
+            console.log('[fetchUser] 프로필 조회 완료:', { profile, profileError });
 
             if (profileError) {
-              console.error('프로필 로드 에러:', profileError);
+              console.error('[fetchUser] 프로필 로드 에러:', profileError);
             }
 
             set({
@@ -225,8 +267,9 @@ export const useAuthStore = create<AuthStore>()(
               isAuthenticated: true,
               isLoading: false
             }, false, 'auth/fetchUser/success');
+            console.log('[fetchUser] 완료');
           } catch (error) {
-            console.error('fetchUser error:', error);
+            console.error('[fetchUser] 예외:', error);
             set({
               user: null,
               profile: null,
@@ -282,6 +325,18 @@ export const useAuthStore = create<AuthStore>()(
           const { profile } = get();
           return profile?.role === 'ADMIN';
         },
+
+        // 대원 연결 확인
+        isMemberLinked: () => {
+          const { profile } = get();
+          return profile?.linked_member_id !== null && profile?.link_status === 'approved';
+        },
+
+        // 연결 대기 중 확인
+        isLinkPending: () => {
+          const { profile } = get();
+          return profile?.link_status === 'pending';
+        },
       }),
       {
         name: 'auth-storage', // localStorage key
@@ -291,6 +346,14 @@ export const useAuthStore = create<AuthStore>()(
           profile: state.profile,
           isAuthenticated: state.isAuthenticated,
         }),
+        // Hydration 완료 시 콜백
+        onRehydrateStorage: () => (state) => {
+          if (state) {
+            // Hydration 완료 후 로딩 상태 해제
+            state.setLoading(false);
+            state.setHasHydrated(true);
+          }
+        },
         // Hydration 시 상태 병합 로직
         merge: (persistedState, currentState) => {
           const persisted = persistedState as Partial<AuthState>;

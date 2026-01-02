@@ -47,14 +47,36 @@ export default function Navigation() {
     }
   };
 
+  // 역할에 따른 메뉴 구성
+  const hasRole = (roles: string[]) => {
+    if (!profile?.role) return false;
+    return roles.includes(profile.role);
+  };
+
+  const isMemberLinked = () => {
+    return profile?.linked_member_id && profile?.link_status === 'approved';
+  };
+
   const navLinks = [
-    { href: '/dashboard', label: '대시보드' },
-    { href: '/members', label: '찬양대원 관리' },
-    { href: '/attendances', label: '출석 관리' },
-    { href: '/statistics', label: '출석 통계' },
-    { href: '/service-schedules', label: '예배 일정' },
-    { href: '/arrangements', label: '자리배치' },
-  ];
+    // 모든 로그인 사용자
+    { href: '/dashboard', label: '대시보드', show: true },
+
+    // 관리자/파트장용 메뉴
+    { href: '/members', label: '찬양대원 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
+    { href: '/attendances', label: '출석 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
+    { href: '/statistics', label: '출석 통계', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
+    { href: '/service-schedules', label: '예배 일정', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
+    { href: '/arrangements', label: '자리배치', show: hasRole(['ADMIN', 'CONDUCTOR']) },
+
+    // 문서 아카이브 (MANAGER 이상)
+    { href: '/documents', label: '문서 아카이브', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']) },
+
+    // 연결 승인 (PART_LEADER 이상)
+    { href: '/admin/member-links', label: '연결 승인', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
+
+    // 대원 연결된 사용자용 메뉴 (역할 무관, 대원 연결됨)
+    { href: '/my-attendance', label: '내 출석', show: isMemberLinked() },
+  ].filter(link => link.show);
 
   return (
     <>

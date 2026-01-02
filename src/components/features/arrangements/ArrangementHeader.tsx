@@ -22,7 +22,7 @@ import PastArrangementButton from './PastArrangementButton';
 import PerformanceReportModal from './PerformanceReportModal';
 import { ServiceScheduleBadge } from '@/components/features/service-schedules';
 import { useArrangementAnalysis } from '@/hooks/useArrangementAnalysis';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 import type { RecommendationResponse } from '@/hooks/useRecommendSeats';
 import type { ApplyPastResponse } from '@/hooks/usePastArrangement';
 import type { ArrangementAnalysisResponse } from '@/types/analysis';
@@ -116,7 +116,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 data: {
                     title,
                     conductor: conductor || null,
-                    grid_layout: gridLayout,
+                    grid_layout: gridLayout as Json,
                     grid_rows: gridLayout?.rows || 6,
                 },
             });

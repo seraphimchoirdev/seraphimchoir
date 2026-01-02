@@ -53,7 +53,6 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
     phone_number: member?.phone_number || '',
     email: member?.email || '',
     notes: member?.notes || '',
-    version: member?.version || 1, // 낙관적 잠금을 위한 버전
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -121,8 +120,6 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
       phone_number: formData.phone_number || null,
       email: formData.email || null,
       notes: formData.notes || null,
-      // 낙관적 잠금: 수정 모드이고 강제 업데이트가 아닐 때만 version 포함
-      ...(isEditMode && !forceUpdate && { version: formData.version }),
     };
 
     try {

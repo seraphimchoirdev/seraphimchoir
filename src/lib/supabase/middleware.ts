@@ -36,7 +36,19 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // 인증이 필요한 페이지 보호
-  const protectedPaths = ['/dashboard', '/members', '/attendances', '/arrangements'];
+  const protectedPaths = [
+    '/dashboard',
+    '/members',
+    '/attendances',
+    '/arrangements',
+    '/statistics',
+    '/service-schedules',
+    // 새로운 경로들
+    '/my-attendance',
+    '/documents',
+    '/member-link',
+    '/admin',
+  ];
   const isProtectedPath = protectedPaths.some(path =>
     request.nextUrl.pathname.startsWith(path)
   );
@@ -57,6 +69,11 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
+  }
+
+  // OAuth 콜백은 인증 체크 없이 통과
+  if (request.nextUrl.pathname.startsWith('/auth/callback')) {
+    return supabaseResponse;
   }
 
   return supabaseResponse;

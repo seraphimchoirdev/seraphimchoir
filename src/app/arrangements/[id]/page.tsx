@@ -13,10 +13,11 @@ import { useArrangementStore } from '@/store/arrangement-store';
 import { useUndoRedoShortcuts } from '@/hooks/useUndoRedoShortcuts';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
-import { DEFAULT_GRID_LAYOUT } from '@/types/grid';
+import { DEFAULT_GRID_LAYOUT, GridLayout } from '@/types/grid';
 
 import MemberSidebar from '@/components/features/seats/MemberSidebar';
 import SeatsGrid from '@/components/features/seats/SeatsGrid';
+import Navigation from '@/components/layout/Navigation';
 
 export default function ArrangementEditorPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -85,7 +86,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             }
 
             // Load grid layout with fallback to default
-            const layout = arrangement.grid_layout || DEFAULT_GRID_LAYOUT;
+            const layout = (arrangement.grid_layout as GridLayout | null) || DEFAULT_GRID_LAYOUT;
             setGridLayout(layout);
 
             // setAssignments가 히스토리를 저장하므로 로드 직후 다시 클리어
@@ -118,6 +119,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
     return (
         <div className="flex flex-col h-screen bg-[var(--color-background-primary)]">
+            <Navigation />
             <ArrangementHeader
                 arrangement={arrangement}
                 desktopCaptureRef={desktopCaptureRef}

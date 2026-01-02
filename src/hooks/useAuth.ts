@@ -16,6 +16,9 @@ export interface UserProfile {
   email: string;
   name: string;
   role: string | null;
+  // 대원 연결 정보
+  linked_member_id: string | null;
+  link_status: 'pending' | 'approved' | 'rejected' | null;
 }
 
 export interface UseAuthReturn {
@@ -28,9 +31,12 @@ export interface UseAuthReturn {
 
   // 메서드
   signIn: (email: string, password: string) => Promise<{ data: unknown; error: Error | null }>;
+  signInWithKakao: () => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string) => Promise<{ data: unknown; error: Error | null }>;
   signOut: () => Promise<{ error: Error | null }>;
   hasRole: (requiredRoles: string[]) => boolean;
+  isMemberLinked: () => boolean;
+  isLinkPending: () => boolean;
 }
 
 /**
@@ -59,9 +65,12 @@ export function useAuth(): UseAuthReturn {
 
   // Store 액션 가져오기
   const signInAction = useAuthStore((state) => state.signIn);
+  const signInWithKakaoAction = useAuthStore((state) => state.signInWithKakao);
   const signUpAction = useAuthStore((state) => state.signUp);
   const signOutAction = useAuthStore((state) => state.signOut);
   const hasRole = useAuthStore((state) => state.hasRole);
+  const isMemberLinked = useAuthStore((state) => state.isMemberLinked);
+  const isLinkPending = useAuthStore((state) => state.isLinkPending);
 
   /**
    * 로그인
@@ -69,6 +78,15 @@ export function useAuth(): UseAuthReturn {
   const signIn = async (email: string, password: string) => {
     const { error } = await signInAction(email, password);
     return { data: error ? null : {}, error };
+  };
+
+  /**
+   * 카카오 로그인
+   * - OAuth 리다이렉트 방식
+   * - 로그인 후 /auth/callback으로 이동
+   */
+  const signInWithKakao = async () => {
+    return await signInWithKakaoAction();
   };
 
   /**
@@ -109,9 +127,12 @@ export function useAuth(): UseAuthReturn {
 
     // 메서드
     signIn,
+    signInWithKakao,
     signUp,
     signOut,
     hasRole,
+    isMemberLinked,
+    isLinkPending,
   };
 }
 
