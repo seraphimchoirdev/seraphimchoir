@@ -2,6 +2,7 @@
 'use memo';
 
 import { useMemo, useState, useCallback, memo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
@@ -21,17 +22,23 @@ interface MemberSidebarProps {
 
 const PARTS: Part[] = ['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'];
 
-// 배치된 멤버 ID Set을 반환하는 selector (성능 최적화)
-const selectPlacedMemberIds = (state: { assignments: Record<string, { memberId: string }> }) => {
-    return new Set(Object.values(state.assignments).map(a => a.memberId));
+// 배치된 멤버 ID 배열을 반환하는 selector (stable reference를 위해 useShallow 사용)
+const selectPlacedMemberIdsArray = (state: { assignments: Record<string, { memberId: string }> }) => {
+    return Object.values(state.assignments).map(a => a.memberId);
 };
 
 const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, compact = false }: MemberSidebarProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPart, setSelectedPart] = useState<Part | 'ALL'>('ALL');
 
-    // 선택적 상태 구독 - 배치된 멤버 ID만 추적
-    const placedMemberIds = useArrangementStore(selectPlacedMemberIds);
+    // 선택적 상태 구독 - 배치된 멤버 ID 배열 추적 (useShallow로 shallow 비교)
+    const placedMemberIdsArray = useArrangementStore(useShallow(selectPlacedMemberIdsArray));
+
+    // 배열을 Set으로 변환 (O(1) 조회를 위해)
+    const placedMemberIds = useMemo(
+        () => new Set(placedMemberIdsArray),
+        [placedMemberIdsArray]
+    );
 
     // 모든 정대원 조회 (API limit 최대값: 100)
     const { data: membersData, isLoading: membersLoading } = useMembers({

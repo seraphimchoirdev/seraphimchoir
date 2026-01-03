@@ -12,8 +12,8 @@ const gridLayoutSchema = z.object({
 const createArrangementSchema = z.object({
     title: z.string().min(1, '제목을 입력해주세요'),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '유효한 날짜 형식이 아닙니다'),
-    conductor: z.string().optional(),
-    serviceInfo: z.string().optional(),
+    conductor: z.string().nullable().optional(),
+    service_info: z.string().nullable().optional(),
     grid_rows: z.number().int().min(4).max(8).default(6),
     grid_layout: gridLayoutSchema.optional(),
 });
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
                 title: body.title,
                 date: body.date,
                 conductor: body.conductor,
-                service_info: body.serviceInfo,
+                service_info: body.service_info,
             })
             .select()
             .single();

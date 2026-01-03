@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns/format';
-import { addMonths } from 'date-fns/addMonths';
+import { addWeeks } from 'date-fns/addWeeks';
 import { ko } from 'date-fns/locale/ko';
 import { Loader2, Calendar, AlertCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
@@ -47,12 +47,12 @@ export default function CreateArrangementDialog({
     const router = useRouter();
     const createArrangement = useCreateArrangement();
 
-    // 향후 3개월간의 예배 일정 조회
+    // 향후 4주간의 예배 일정 조회
     const today = new Date();
-    const threeMonthsLater = addMonths(today, 3);
+    const fourWeeksLater = addWeeks(today, 4);
     const { data: schedulesResponse, isLoading: isSchedulesLoading } = useServiceSchedules({
         startDate: format(today, 'yyyy-MM-dd'),
-        endDate: format(threeMonthsLater, 'yyyy-MM-dd'),
+        endDate: format(fourWeeksLater, 'yyyy-MM-dd'),
     });
 
     // 예배 일정 목록 (날짜순 정렬)
