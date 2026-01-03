@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { format } from 'date-fns/format';
 import { startOfMonth } from 'date-fns/startOfMonth';
 import { endOfMonth } from 'date-fns/endOfMonth';
@@ -19,8 +20,33 @@ import {
   usePartAttendanceStatistics,
   useAttendanceSummaryByDate,
 } from '@/hooks/useAttendanceStatistics';
-import { DonutChart, PartBarChart, TrendLineChart } from './AttendanceChart';
 import AttendanceStatsCard from './AttendanceStatsCard';
+
+// 차트 컴포넌트 동적 임포트 (recharts 368K 번들 분리)
+const DonutChart = dynamic(
+  () => import('./AttendanceChart').then(mod => ({ default: mod.DonutChart })),
+  {
+    loading: () => <div className="h-[300px] bg-gray-100 animate-pulse rounded-lg" />,
+    ssr: false
+  }
+);
+
+const PartBarChart = dynamic(
+  () => import('./AttendanceChart').then(mod => ({ default: mod.PartBarChart })),
+  {
+    loading: () => <div className="h-[300px] bg-gray-100 animate-pulse rounded-lg" />,
+    ssr: false
+  }
+);
+
+const TrendLineChart = dynamic(
+  () => import('./AttendanceChart').then(mod => ({ default: mod.TrendLineChart })),
+  {
+    loading: () => <div className="h-[300px] bg-gray-100 animate-pulse rounded-lg" />,
+    ssr: false
+  }
+);
+
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

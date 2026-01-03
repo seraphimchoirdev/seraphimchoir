@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
+// xlsx는 동적 임포트로 변경 (312K 번들 분리)
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -257,8 +257,10 @@ export default function ServiceScheduleImporter({
     } else if (extension === 'xlsx' || extension === 'xls') {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           try {
+            // xlsx 동적 임포트 (312K 번들 분리)
+            const XLSX = await import('xlsx');
             const data = e.target?.result;
             const workbook = XLSX.read(data, { type: 'binary' });
             const sheetName = workbook.SheetNames[0];
