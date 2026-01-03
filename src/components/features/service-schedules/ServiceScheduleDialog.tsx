@@ -48,6 +48,10 @@ export default function ServiceScheduleDialog({
             hymn_name: data.hymn_name,
             offertory_performer: data.offertory_performer,
             notes: data.notes,
+            // 선곡표 필드
+            hood_color: data.hood_color,
+            composer: data.composer,
+            music_source: data.music_source,
             // 연습 설정 필드
             has_post_practice: data.has_post_practice,
             post_practice_start_time: data.post_practice_start_time,

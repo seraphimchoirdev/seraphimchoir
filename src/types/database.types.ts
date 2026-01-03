@@ -487,12 +487,15 @@ export type Database = {
       }
       service_schedules: {
         Row: {
+          composer: string | null
           created_at: string | null
           date: string
           has_post_practice: boolean | null
           has_pre_practice: boolean | null
+          hood_color: string | null
           hymn_name: string | null
           id: string
+          music_source: string | null
           notes: string | null
           offertory_performer: string | null
           post_practice_duration: number | null
@@ -504,12 +507,15 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          composer?: string | null
           created_at?: string | null
           date: string
           has_post_practice?: boolean | null
           has_pre_practice?: boolean | null
+          hood_color?: string | null
           hymn_name?: string | null
           id?: string
+          music_source?: string | null
           notes?: string | null
           offertory_performer?: string | null
           post_practice_duration?: number | null
@@ -521,12 +527,15 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          composer?: string | null
           created_at?: string | null
           date?: string
           has_post_practice?: boolean | null
           has_pre_practice?: boolean | null
+          hood_color?: string | null
           hymn_name?: string | null
           id?: string
+          music_source?: string | null
           notes?: string | null
           offertory_performer?: string | null
           post_practice_duration?: number | null

@@ -6,7 +6,13 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, startOfYear } from 'date-fns';
+import { format } from 'date-fns/format';
+import { startOfMonth } from 'date-fns/startOfMonth';
+import { endOfMonth } from 'date-fns/endOfMonth';
+import { subMonths } from 'date-fns/subMonths';
+import { startOfWeek } from 'date-fns/startOfWeek';
+import { endOfWeek } from 'date-fns/endOfWeek';
+import { startOfYear } from 'date-fns/startOfYear';
 import { Users, UserCheck, UserX, TrendingUp, Calendar, BarChart3 } from 'lucide-react';
 import {
   useAttendanceStatistics,

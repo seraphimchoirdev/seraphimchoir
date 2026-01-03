@@ -1,9 +1,13 @@
 
 'use client';
+'use memo';
 
+import { memo, useCallback } from 'react';
+import { Crown } from 'lucide-react';
 import { useArrangementStore } from '@/store/arrangement-store';
 import type { Database } from '@/types/database.types';
 import { cn } from '@/lib/utils';
+import { useShallow } from 'zustand/react/shallow';
 
 type Part = Database['public']['Enums']['part'];
 
@@ -12,47 +16,50 @@ interface SeatSlotProps {
     col: number;
 }
 
-export default function SeatSlot({ row, col }: SeatSlotProps) {
-    const {
-        assignments,
-        selectedMemberId,
-        selectedSource,
-        selectedPosition,
-        handleSeatClick,
-        removeMember,
-        rowLeaderMode,
-        toggleRowLeader,
-    } = useArrangementStore();
+// 메모이제이션된 SeatSlot 컴포넌트
+const SeatSlot = memo(function SeatSlot({ row, col }: SeatSlotProps) {
+    const seatKey = `${row}-${col}`;
 
-    const assignment = assignments[`${row}-${col}`];
+    // 선택적 상태 구독 - 이 좌석과 관련된 상태만 구독
+    const assignment = useArrangementStore((state) => state.assignments[seatKey]);
+    const selectedMemberId = useArrangementStore((state) => state.selectedMemberId);
+    const rowLeaderMode = useArrangementStore((state) => state.rowLeaderMode);
+
+    // 선택된 위치가 이 좌석인지 확인 (shallow 비교)
+    const isSelectedSeat = useArrangementStore(
+        useShallow((state) =>
+            state.selectedSource === 'grid' &&
+            state.selectedPosition?.row === row &&
+            state.selectedPosition?.col === col
+        )
+    );
+
+    // 액션 함수들
+    const handleSeatClickAction = useArrangementStore((state) => state.handleSeatClick);
+    const removeMemberAction = useArrangementStore((state) => state.removeMember);
+    const toggleRowLeaderAction = useArrangementStore((state) => state.toggleRowLeader);
+
     const isOccupied = !!assignment;
-
-    // Check if this seat is the selected one (from grid)
-    const isSelectedSeat =
-        selectedSource === 'grid' &&
-        selectedPosition?.row === row &&
-        selectedPosition?.col === col;
 
     // Determine visual feedback based on state
     const hasSelection = !!selectedMemberId;
-    const isTargetSeat = hasSelection && !isSelectedSeat;
 
-    // Double click handler to remove member
-    const handleDoubleClick = (e: React.MouseEvent) => {
+    // Double click handler to remove member (메모이제이션)
+    const handleDoubleClick = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         if (assignment && !rowLeaderMode) {
-            removeMember(row, col);
+            removeMemberAction(row, col);
         }
-    };
+    }, [assignment, rowLeaderMode, removeMemberAction, row, col]);
 
-    // Click handler - either toggle row leader or normal seat click
-    const handleClick = () => {
+    // Click handler - either toggle row leader or normal seat click (메모이제이션)
+    const handleClick = useCallback(() => {
         if (rowLeaderMode && assignment) {
-            toggleRowLeader(row, col);
+            toggleRowLeaderAction(row, col);
         } else {
-            handleSeatClick(row, col);
+            handleSeatClickAction(row, col);
         }
-    };
+    }, [rowLeaderMode, assignment, toggleRowLeaderAction, handleSeatClickAction, row, col]);
 
     return (
         <button
@@ -84,12 +91,10 @@ export default function SeatSlot({ row, col }: SeatSlotProps) {
 
             {assignment ? (
                 <GridClickableMember
-                    memberId={assignment.memberId}
                     name={assignment.memberName}
                     part={assignment.part}
                     row={row}
                     col={col}
-                    isSelected={isSelectedSeat}
                     isRowLeader={assignment.isRowLeader}
                     rowLeaderMode={rowLeaderMode}
                 />
@@ -98,25 +103,23 @@ export default function SeatSlot({ row, col }: SeatSlotProps) {
             )}
         </button>
     );
-}
+});
 
-// Internal component for Grid Clickable Member
-function GridClickableMember({
-    memberId,
+export default SeatSlot;
+
+// Internal component for Grid Clickable Member (메모이제이션)
+const GridClickableMember = memo(function GridClickableMember({
     name,
     part,
     row,
     col,
-    isSelected,
     isRowLeader,
     rowLeaderMode,
 }: {
-    memberId: string;
     name: string;
     part: Part;
     row: number;
     col: number;
-    isSelected: boolean;
     isRowLeader?: boolean;
     rowLeaderMode?: boolean;
 }) {
@@ -157,8 +160,8 @@ function GridClickableMember({
             </span>
             {/* 줄반장 아이콘 표시 */}
             {isRowLeader && (
-                <span className="absolute -top-1 -right-1 text-orange-500 text-xs">👑</span>
+                <Crown className="absolute -top-1 -right-1 w-4 h-4 text-orange-500" />
             )}
         </div>
     );
-}
+});

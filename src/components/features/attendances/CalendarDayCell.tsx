@@ -1,6 +1,7 @@
 'use client';
 
-import { format, isToday as isTodayFn } from 'date-fns';
+import { format } from 'date-fns/format';
+import { isToday as isTodayFn } from 'date-fns/isToday';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { Music } from 'lucide-react';

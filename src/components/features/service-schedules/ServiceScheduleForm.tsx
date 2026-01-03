@@ -25,6 +25,16 @@ const SERVICE_TYPE_OPTIONS = [
   { value: '기타', label: '기타' },
 ] as const;
 
+// 후드 색상 옵션
+const HOOD_COLOR_OPTIONS = [
+  { value: '', label: '선택 안함' },
+  { value: '백', label: '백색' },
+  { value: '녹', label: '녹색' },
+  { value: '보라', label: '보라색' },
+  { value: '적', label: '적색' },
+  { value: '검정', label: '검정색' },
+] as const;
+
 // 특별예배 여부 확인 (주일2부예배가 아닌 경우)
 function isSpecialService(serviceType: string | null | undefined): boolean {
   return !!serviceType && serviceType !== '주일2부예배';
@@ -69,6 +79,10 @@ export default function ServiceScheduleForm({
       hymn_name: initialData?.hymn_name || '',
       offertory_performer: initialData?.offertory_performer || '',
       notes: initialData?.notes || '',
+      // 신규 필드 (선곡표 관련)
+      hood_color: initialData?.hood_color || '',
+      composer: initialData?.composer || '',
+      music_source: initialData?.music_source || '',
       // 연습 설정 필드
       // 특별예배는 예배 후 연습 기본값 false, 일반예배는 true
       has_post_practice: initialData?.has_post_practice ?? !isSpecial,
@@ -160,6 +174,28 @@ export default function ServiceScheduleForm({
         </div>
       </div>
 
+      {/* 후드 색상 */}
+      <div>
+        <Label htmlFor="hood_color">후드 색상</Label>
+        <Select
+          value={formData.hood_color || ''}
+          onValueChange={(value) =>
+            setFormData({ ...formData, hood_color: value || null })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="후드 색상 선택" />
+          </SelectTrigger>
+          <SelectContent>
+            {HOOD_COLOR_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value || 'none'}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div>
         <Label htmlFor="hymn_name">찬양곡명</Label>
         <Input
@@ -169,6 +205,32 @@ export default function ServiceScheduleForm({
             setFormData({ ...formData, hymn_name: e.target.value })
           }
           placeholder="예: 나 같은 죄인 살리신"
+        />
+      </div>
+
+      {/* 작곡가/편곡자 */}
+      <div>
+        <Label htmlFor="composer">작곡가/편곡자</Label>
+        <Input
+          id="composer"
+          value={formData.composer || ''}
+          onChange={(e) =>
+            setFormData({ ...formData, composer: e.target.value })
+          }
+          placeholder="예: 김영수 편곡"
+        />
+      </div>
+
+      {/* 악보 출처 */}
+      <div>
+        <Label htmlFor="music_source">악보 출처</Label>
+        <Input
+          id="music_source"
+          value={formData.music_source || ''}
+          onChange={(e) =>
+            setFormData({ ...formData, music_source: e.target.value })
+          }
+          placeholder="예: 성가대곡집 3권 p.45"
         />
       </div>
 

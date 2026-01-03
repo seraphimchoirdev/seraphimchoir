@@ -5,7 +5,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, subMonths, startOfYear } from 'date-fns';
+import { format } from 'date-fns/format';
+import { startOfMonth } from 'date-fns/startOfMonth';
+import { endOfMonth } from 'date-fns/endOfMonth';
+import { subMonths } from 'date-fns/subMonths';
+import { startOfYear } from 'date-fns/startOfYear';
 import {
   Users,
   TrendingUp,

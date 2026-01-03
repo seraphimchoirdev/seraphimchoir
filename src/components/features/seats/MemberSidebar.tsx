@@ -1,6 +1,7 @@
 'use client';
+'use memo';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, memo } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
@@ -20,10 +21,17 @@ interface MemberSidebarProps {
 
 const PARTS: Part[] = ['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'];
 
-export default function MemberSidebar({ date, hidePlaced = false, compact = false }: MemberSidebarProps) {
+// 배치된 멤버 ID Set을 반환하는 selector (성능 최적화)
+const selectPlacedMemberIds = (state: { assignments: Record<string, { memberId: string }> }) => {
+    return new Set(Object.values(state.assignments).map(a => a.memberId));
+};
+
+const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, compact = false }: MemberSidebarProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPart, setSelectedPart] = useState<Part | 'ALL'>('ALL');
-    const { assignments } = useArrangementStore();
+
+    // 선택적 상태 구독 - 배치된 멤버 ID만 추적
+    const placedMemberIds = useArrangementStore(selectPlacedMemberIds);
 
     // 모든 정대원 조회 (API limit 최대값: 100)
     const { data: membersData, isLoading: membersLoading } = useMembers({
@@ -38,10 +46,10 @@ export default function MemberSidebar({ date, hidePlaced = false, compact = fals
 
     const isLoading = membersLoading || attendancesLoading;
 
-    // Check if member is already placed
+    // Check if member is already placed (Set 기반으로 O(1) 조회)
     const isMemberPlaced = useCallback((memberId: string) => {
-        return Object.values(assignments).some((a) => a.memberId === memberId);
-    }, [assignments]);
+        return placedMemberIds.has(memberId);
+    }, [placedMemberIds]);
 
     // 출석 데이터를 memberId로 빠르게 조회하기 위한 Map
     const attendanceMap = useMemo(() => {
@@ -217,4 +225,6 @@ export default function MemberSidebar({ date, hidePlaced = false, compact = fals
             </div>
         </div>
     );
-}
+});
+
+export default MemberSidebar;

@@ -3,8 +3,9 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { format, addMonths } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { format } from 'date-fns/format';
+import { addMonths } from 'date-fns/addMonths';
+import { ko } from 'date-fns/locale/ko';
 import { Loader2, Calendar, AlertCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 

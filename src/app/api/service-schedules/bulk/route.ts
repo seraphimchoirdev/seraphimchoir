@@ -10,6 +10,18 @@ const bulkUpsertSchema = z.object({
       hymn_name: z.string().nullable().optional(),
       offertory_performer: z.string().nullable().optional(),
       notes: z.string().nullable().optional(),
+      // 신규 필드 (이미지 OCR 파싱용)
+      hood_color: z.string().nullable().optional(),
+      composer: z.string().nullable().optional(),
+      music_source: z.string().nullable().optional(),
+      // 연습 관련 필드
+      has_pre_practice: z.boolean().nullable().optional(),
+      has_post_practice: z.boolean().nullable().optional(),
+      pre_practice_minutes_before: z.number().nullable().optional(),
+      post_practice_start_time: z.string().nullable().optional(),
+      post_practice_duration: z.number().nullable().optional(),
+      pre_practice_location: z.string().nullable().optional(),
+      post_practice_location: z.string().nullable().optional(),
     })
   ),
 });
@@ -17,7 +29,7 @@ const bulkUpsertSchema = z.object({
 /**
  * POST /api/service-schedules/bulk
  * 예배 일정 일괄 생성/수정 (upsert)
- * 같은 날짜가 있으면 업데이트, 없으면 생성
+ * 같은 날짜 + 예배 유형이 있으면 업데이트, 없으면 생성
  */
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -26,9 +38,10 @@ export async function POST(request: NextRequest) {
     const json = await request.json();
     const { schedules } = bulkUpsertSchema.parse(json);
 
+    // onConflict: 'date,service_type' - 같은 날짜에 다른 예배 유형은 별도 저장
     const { data, error } = await supabase
       .from('service_schedules')
-      .upsert(schedules, { onConflict: 'date' })
+      .upsert(schedules, { onConflict: 'date,service_type' })
       .select();
 
     if (error) {

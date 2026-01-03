@@ -9,8 +9,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { createClient } from '@/lib/supabase/client';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { format } from 'date-fns/format';
+import { ko } from 'date-fns/locale/ko';
 import { Save, RotateCcw, ChevronsDown, ChevronsUp } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 

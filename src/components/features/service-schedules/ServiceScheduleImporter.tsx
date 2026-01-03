@@ -30,6 +30,7 @@ import {
   XCircle,
   AlertCircle,
   Loader2,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 // 파싱된 예배 일정 타입
@@ -39,8 +40,28 @@ interface ParsedSchedule {
   hymn_name: string;
   offertory_performer: string;
   notes: string;
+  // 신규 필드 (이미지 파싱용)
+  hood_color?: string;
+  composer?: string;
+  music_source?: string;
   valid: boolean;
   errors: string[];
+}
+
+// 이미지 파일인지 확인
+function isImageFile(file: File): boolean {
+  const imageTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+  return imageTypes.includes(file.type);
+}
+
+// PDF 파일인지 확인
+function isPdfFile(file: File): boolean {
+  return file.type === 'application/pdf';
+}
+
+// Vision API로 처리해야 하는 파일인지 확인 (이미지 또는 PDF)
+function isVisionFile(file: File): boolean {
+  return isImageFile(file) || isPdfFile(file);
 }
 
 // 검증 결과 타입
@@ -216,8 +237,8 @@ export default function ServiceScheduleImporter({
     downloadFile(csv, 'service_schedule_template.csv', 'text/csv;charset=utf-8');
   };
 
-  // 파일 파싱
-  const parseFile = async (file: File): Promise<Record<string, string>[]> => {
+  // CSV/Excel 파일 파싱
+  const parseSpreadsheetFile = async (file: File): Promise<Record<string, string>[]> => {
     const extension = file.name.split('.').pop()?.toLowerCase();
 
     if (extension === 'csv') {
@@ -252,8 +273,65 @@ export default function ServiceScheduleImporter({
         reader.readAsBinaryString(file);
       });
     } else {
-      throw new Error('지원하지 않는 파일 형식입니다. CSV 또는 Excel 파일만 업로드 가능합니다.');
+      throw new Error('지원하지 않는 파일 형식입니다.');
     }
+  };
+
+  // 이미지/PDF 파일 파싱 (Clova OCR 또는 PDF 텍스트 추출)
+  const parseImageFile = async (file: File): Promise<ParsedSchedule[]> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('year', new Date().getFullYear().toString());
+
+    console.log('Clova OCR로 이미지 파싱 시작...');
+
+    const response = await fetch('/api/vision/parse-schedule', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: '알 수 없는 오류' }));
+      throw new Error(errorData.error || `API 오류: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Vision API 응답:', result);
+    console.log('추출된 원본 스케줄:', result.rawSchedules);
+    console.log('디버그 정보:', result.debug);
+
+    if (!result.success) {
+      console.error('파싱 실패:', result.errors, result.warnings);
+      console.log('디버그 정보:', result.debug);
+
+      // OCR은 성공했지만 일정 파싱이 안 된 경우
+      if (result.debug?.wordCount > 0 && (!result.data || result.data.length === 0)) {
+        throw new Error(
+          `Clova OCR로 ${result.debug.wordCount}개의 텍스트를 추출했지만, 예배 일정 표 형식을 인식하지 못했습니다. ` +
+          `날짜 컬럼이 포함된 표 형식의 이미지를 사용해주세요.`
+        );
+      }
+
+      // 경고만 있고 에러가 없으면 rawSchedules라도 표시
+      if (result.rawSchedules?.length > 0) {
+        console.log('부분 파싱 결과:', result.rawSchedules);
+      }
+      throw new Error(result.error || result.errors?.join(', ') || '파일 파싱 실패');
+    }
+
+    // Vision API 결과를 ParsedSchedule 형식으로 변환
+    return (result.data || []).map((schedule: Record<string, unknown>) => ({
+      date: schedule.date as string || '',
+      service_type: schedule.service_type as string || '주일2부예배',
+      hymn_name: schedule.hymn_name as string || '',
+      offertory_performer: schedule.offertory_performer as string || '',
+      notes: schedule.notes as string || '',
+      hood_color: schedule.hood_color as string || '',
+      composer: schedule.composer as string || '',
+      music_source: schedule.music_source as string || '',
+      valid: !!(schedule.date as string),
+      errors: (schedule.date as string) ? [] : ['날짜를 인식할 수 없습니다'],
+    }));
   };
 
   // 파일 선택 핸들러
@@ -263,10 +341,26 @@ export default function ServiceScheduleImporter({
     setUploadResult(null);
 
     try {
-      const rawData = await parseFile(file);
-      const validation = parseAndValidateData(rawData);
-      setParsedData(validation.data);
-      setValidationResult(validation);
+      let data: ParsedSchedule[];
+
+      if (isVisionFile(file)) {
+        // 이미지/PDF 파일: Vision API 또는 PDF 텍스트 추출
+        data = await parseImageFile(file);
+        setParsedData(data);
+        setValidationResult({
+          valid: data.every(d => d.valid),
+          data,
+          errors: data
+            .filter(d => !d.valid)
+            .map((d, idx) => ({ row: idx + 1, message: d.errors.join(', ') })),
+        });
+      } else {
+        // CSV/Excel 파일: 기존 로직
+        const rawData = await parseSpreadsheetFile(file);
+        const validation = parseAndValidateData(rawData);
+        setParsedData(validation.data);
+        setValidationResult(validation);
+      }
     } catch (error) {
       alert(`파일 파싱 실패: ${error instanceof Error ? error.message : 'Unknown error'}`);
       resetState();
@@ -301,10 +395,11 @@ export default function ServiceScheduleImporter({
     const file = e.dataTransfer.files[0];
     if (file) {
       const ext = file.name.split('.').pop()?.toLowerCase();
-      if (['csv', 'xlsx', 'xls'].includes(ext || '')) {
+      const supportedExts = ['csv', 'xlsx', 'xls', 'png', 'jpg', 'jpeg', 'webp', 'pdf'];
+      if (supportedExts.includes(ext || '') || isVisionFile(file)) {
         handleFileSelect(file);
       } else {
-        alert('CSV 또는 Excel 파일만 업로드 가능합니다');
+        alert('CSV, Excel, 이미지(PNG, JPG) 또는 PDF 파일만 업로드 가능합니다');
       }
     }
   };
@@ -334,6 +429,10 @@ export default function ServiceScheduleImporter({
         hymn_name: d.hymn_name || null,
         offertory_performer: d.offertory_performer || null,
         notes: d.notes || null,
+        // 신규 필드
+        hood_color: d.hood_color || null,
+        composer: d.composer || null,
+        music_source: d.music_source || null,
       }));
 
       const result = await bulkUpsertMutation.mutateAsync(schedules);
@@ -413,7 +512,7 @@ export default function ServiceScheduleImporter({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,.xlsx,.xls"
+                accept=".csv,.xlsx,.xls,.png,.jpg,.jpeg,.webp,.pdf"
                 onChange={handleFileInputChange}
                 className="hidden"
               />
@@ -431,12 +530,25 @@ export default function ServiceScheduleImporter({
                 `}
                 onClick={handleButtonClick}
               >
-                <Upload className="h-10 w-10 mx-auto text-[var(--color-text-tertiary)] mb-3" />
+                <div className="flex justify-center gap-3 mb-3">
+                  <Upload className="h-10 w-10 text-[var(--color-text-tertiary)]" />
+                  <ImageIcon className="h-10 w-10 text-[var(--color-text-tertiary)]" />
+                </div>
                 <p className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
                   파일을 드래그하거나 클릭하여 선택
                 </p>
                 <p className="text-xs text-[var(--color-text-tertiary)]">
-                  CSV, Excel (.xlsx, .xls) 파일 지원
+                  CSV, Excel, <span className="text-[var(--color-primary-600)]">이미지</span>(PNG, JPG), <span className="text-[var(--color-primary-600)]">PDF</span> 지원
+                </p>
+              </div>
+
+              {/* Clova OCR 안내 */}
+              <div className="mt-4 p-3 bg-[var(--color-background-secondary)] rounded-lg border border-[var(--color-border-default)]">
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  <span className="font-medium text-[var(--color-text-primary)]">Clova OCR</span>을 사용하여 이미지/PDF에서 텍스트를 추출합니다.
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    한글 최적화
+                  </Badge>
                 </p>
               </div>
 
@@ -502,10 +614,12 @@ export default function ServiceScheduleImporter({
                       <TableRow>
                         <TableHead className="w-12">상태</TableHead>
                         <TableHead>날짜</TableHead>
-                        <TableHead>예배 유형</TableHead>
+                        <TableHead>후드</TableHead>
                         <TableHead>찬양곡명</TableHead>
-                        <TableHead>봉헌송 연주자</TableHead>
-                        <TableHead>비고</TableHead>
+                        <TableHead>작곡가</TableHead>
+                        <TableHead>악보</TableHead>
+                        <TableHead>봉헌송</TableHead>
+                        <TableHead>절기</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -521,11 +635,19 @@ export default function ServiceScheduleImporter({
                               <XCircle className="h-4 w-4 text-red-600" />
                             )}
                           </TableCell>
-                          <TableCell className="font-medium">{item.date}</TableCell>
-                          <TableCell>{item.service_type}</TableCell>
-                          <TableCell>{item.hymn_name || '-'}</TableCell>
-                          <TableCell>{item.offertory_performer || '-'}</TableCell>
-                          <TableCell className="max-w-32 truncate">{item.notes || '-'}</TableCell>
+                          <TableCell className="font-medium whitespace-nowrap">{item.date}</TableCell>
+                          <TableCell>
+                            {item.hood_color ? (
+                              <Badge variant="outline" className="text-xs">
+                                {item.hood_color}
+                              </Badge>
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell className="max-w-24 truncate">{item.hymn_name || '-'}</TableCell>
+                          <TableCell className="max-w-20 truncate text-xs">{item.composer || '-'}</TableCell>
+                          <TableCell className="max-w-20 truncate text-xs">{item.music_source || '-'}</TableCell>
+                          <TableCell className="max-w-20 truncate text-xs">{item.offertory_performer || '-'}</TableCell>
+                          <TableCell className="max-w-20 truncate text-xs">{item.notes || '-'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

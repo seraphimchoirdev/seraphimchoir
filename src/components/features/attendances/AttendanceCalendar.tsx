@@ -1,18 +1,16 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  isSameMonth,
-  addMonths,
-  subMonths,
-  startOfWeek,
-  endOfWeek,
-} from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { format } from 'date-fns/format';
+import { startOfMonth } from 'date-fns/startOfMonth';
+import { endOfMonth } from 'date-fns/endOfMonth';
+import { eachDayOfInterval } from 'date-fns/eachDayOfInterval';
+import { isSameMonth } from 'date-fns/isSameMonth';
+import { addMonths } from 'date-fns/addMonths';
+import { subMonths } from 'date-fns/subMonths';
+import { startOfWeek } from 'date-fns/startOfWeek';
+import { endOfWeek } from 'date-fns/endOfWeek';
+import { ko } from 'date-fns/locale/ko';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';

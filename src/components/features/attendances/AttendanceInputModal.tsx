@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { format } from 'date-fns/format';
+import { ko } from 'date-fns/locale/ko';
 import { useMembers } from '@/hooks/useMembers';
 import {
   useAttendances,
