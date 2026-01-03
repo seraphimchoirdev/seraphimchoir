@@ -2,9 +2,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Eye, Edit2, Trash2 } from 'lucide-react';
+import { Eye, Edit2, Trash2, ChevronDown, Loader2 } from 'lucide-react';
 import MemberAvatar from './MemberAvatar';
-import { useDeleteMember } from '@/hooks/useMembers';
+import { useDeleteMember, useUpdateMember } from '@/hooks/useMembers';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import type { Database } from '@/types/database.types';
 
 type Member = Database['public']['Tables']['members']['Row'];
@@ -52,9 +58,14 @@ const STATUS_COLORS: Record<MemberStatus, string> = {
  * MemberTable 컴포넌트
  * 데스크톱에서 사용하는 테이블 형태의 찬양대원 목록
  */
+// 상태 변경 순서 정의 (드롭다운 메뉴 순서)
+const STATUS_OPTIONS: MemberStatus[] = ['REGULAR', 'NEW', 'ON_LEAVE', 'RESIGNED'];
+
 export default function MemberTable({ members, onRefetch }: MemberTableProps) {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const deleteMutation = useDeleteMember();
+  const updateMutation = useUpdateMember();
 
   const handleDelete = async (id: string) => {
     try {
@@ -63,6 +74,21 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
       setDeleteConfirmId(null);
     } catch (error) {
       console.error('Delete error:', error);
+    }
+  };
+
+  const handleStatusChange = async (memberId: string, newStatus: MemberStatus) => {
+    setUpdatingStatusId(memberId);
+    try {
+      await updateMutation.mutateAsync({
+        id: memberId,
+        data: { member_status: newStatus },
+      });
+      onRefetch?.();
+    } catch (error) {
+      console.error('Status update error:', error);
+    } finally {
+      setUpdatingStatusId(null);
     }
   };
 
@@ -152,16 +178,53 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
                   )}
                 </td>
 
-                {/* 상태 */}
+                {/* 상태 (드롭다운) */}
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <span
-                    className={`
-                      inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border
-                      ${STATUS_COLORS[member.member_status]}
-                    `}
-                  >
-                    {STATUS_LABELS[member.member_status]}
-                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className={`
+                          inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-medium border
+                          cursor-pointer hover:opacity-80 transition-opacity
+                          ${STATUS_COLORS[member.member_status]}
+                        `}
+                        disabled={updatingStatusId === member.id}
+                      >
+                        {updatingStatusId === member.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : null}
+                        {STATUS_LABELS[member.member_status]}
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-32">
+                      {STATUS_OPTIONS.map((status) => (
+                        <DropdownMenuItem
+                          key={status}
+                          onClick={() => {
+                            if (status !== member.member_status) {
+                              handleStatusChange(member.id, status);
+                            }
+                          }}
+                          className={`
+                            cursor-pointer text-xs
+                            ${status === member.member_status ? 'bg-slate-100 font-semibold' : ''}
+                          `}
+                        >
+                          <span
+                            className={`
+                              inline-block w-2 h-2 rounded-full mr-2
+                              ${status === 'REGULAR' ? 'bg-green-500' : ''}
+                              ${status === 'NEW' ? 'bg-blue-500' : ''}
+                              ${status === 'ON_LEAVE' ? 'bg-gray-500' : ''}
+                              ${status === 'RESIGNED' ? 'bg-red-500' : ''}
+                            `}
+                          />
+                          {STATUS_LABELS[status]}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </td>
 
                 {/* 액션 버튼 */}
