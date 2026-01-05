@@ -26,7 +26,7 @@ import AttendanceStatsCard from './AttendanceStatsCard';
 const DonutChart = dynamic(
   () => import('./AttendanceChart').then(mod => ({ default: mod.DonutChart })),
   {
-    loading: () => <div className="h-[300px] bg-gray-100 animate-pulse rounded-lg" />,
+    loading: () => <div className="h-[300px] bg-[var(--color-background-tertiary)] animate-pulse rounded-lg" />,
     ssr: false
   }
 );
@@ -34,7 +34,7 @@ const DonutChart = dynamic(
 const PartBarChart = dynamic(
   () => import('./AttendanceChart').then(mod => ({ default: mod.PartBarChart })),
   {
-    loading: () => <div className="h-[300px] bg-gray-100 animate-pulse rounded-lg" />,
+    loading: () => <div className="h-[300px] bg-[var(--color-background-tertiary)] animate-pulse rounded-lg" />,
     ssr: false
   }
 );
@@ -42,7 +42,7 @@ const PartBarChart = dynamic(
 const TrendLineChart = dynamic(
   () => import('./AttendanceChart').then(mod => ({ default: mod.TrendLineChart })),
   {
-    loading: () => <div className="h-[300px] bg-gray-100 animate-pulse rounded-lg" />,
+    loading: () => <div className="h-[300px] bg-[var(--color-background-tertiary)] animate-pulse rounded-lg" />,
     ssr: false
   }
 );
@@ -52,36 +52,37 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+// 파트별 색상 (악보 스티커 색상 기준 - 자리배치와 통일)
 const PART_COLORS = {
   SOPRANO: {
-    bg: 'bg-purple-50',
-    text: 'text-purple-700',
-    border: 'border-purple-200',
-    bar: 'bg-purple-500',
+    bg: 'bg-[var(--color-part-soprano-50)]',
+    text: 'text-[var(--color-part-soprano-700)]',
+    border: 'border-[var(--color-part-soprano-200)]',
+    bar: 'bg-[var(--color-part-soprano-500)]',
   },
   ALTO: {
-    bg: 'bg-yellow-50',
-    text: 'text-yellow-700',
-    border: 'border-yellow-200',
-    bar: 'bg-yellow-500',
+    bg: 'bg-[var(--color-part-alto-50)]',
+    text: 'text-[var(--color-part-alto-700)]',
+    border: 'border-[var(--color-part-alto-200)]',
+    bar: 'bg-[var(--color-part-alto-500)]',
   },
   TENOR: {
-    bg: 'bg-blue-50',
-    text: 'text-blue-700',
-    border: 'border-blue-200',
-    bar: 'bg-blue-500',
+    bg: 'bg-[var(--color-part-tenor-50)]',
+    text: 'text-[var(--color-part-tenor-700)]',
+    border: 'border-[var(--color-part-tenor-200)]',
+    bar: 'bg-[var(--color-part-tenor-500)]',
   },
   BASS: {
-    bg: 'bg-green-50',
-    text: 'text-green-700',
-    border: 'border-green-200',
-    bar: 'bg-green-500',
+    bg: 'bg-[var(--color-part-bass-50)]',
+    text: 'text-[var(--color-part-bass-700)]',
+    border: 'border-[var(--color-part-bass-200)]',
+    bar: 'bg-[var(--color-part-bass-500)]',
   },
   SPECIAL: {
-    bg: 'bg-amber-50',
-    text: 'text-amber-700',
-    border: 'border-amber-200',
-    bar: 'bg-amber-500',
+    bg: 'bg-[var(--color-part-special-50)]',
+    text: 'text-[var(--color-part-special-700)]',
+    border: 'border-[var(--color-part-special-200)]',
+    bar: 'bg-[var(--color-part-special-500)]',
   },
 } as const;
 

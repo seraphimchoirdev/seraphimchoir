@@ -22,14 +22,14 @@ export default function ClickableMember({ memberId, name, part, isPlaced }: Clic
     // Check if this member is currently selected
     const isSelected = selectedMemberId === memberId && selectedSource === 'sidebar';
 
-    // Part color mapping - 악보 스티커 색상 기준
+    // Part color mapping - 악보 스티커 색상 기준 (CSS 변수 사용)
     const getPartColor = (p: Part) => {
         switch (p) {
-            case 'SOPRANO': return 'bg-orange-600 text-white border-orange-700';  // 오렌지
-            case 'ALTO': return 'bg-amber-500 text-white border-amber-600';        // 앰버
-            case 'TENOR': return 'bg-sky-600 text-white border-sky-700';          // 스카이
-            case 'BASS': return 'bg-green-600 text-white border-green-700';       // 그린
-            default: return 'bg-gray-500 text-white border-gray-600';
+            case 'SOPRANO': return 'bg-[var(--color-part-soprano-600)] text-white border-[var(--color-part-soprano-700)]';
+            case 'ALTO': return 'bg-[var(--color-part-alto-500)] text-white border-[var(--color-part-alto-600)]';
+            case 'TENOR': return 'bg-[var(--color-part-tenor-600)] text-white border-[var(--color-part-tenor-700)]';
+            case 'BASS': return 'bg-[var(--color-part-bass-600)] text-white border-[var(--color-part-bass-700)]';
+            default: return 'bg-[var(--color-part-special-500)] text-white border-[var(--color-part-special-600)]';
         }
     };
 
@@ -49,20 +49,20 @@ export default function ClickableMember({ memberId, name, part, isPlaced }: Clic
                 'transition-all duration-200 touch-manipulation',
                 'relative',
                 // Normal state
-                !isPlaced && !isSelected && 'bg-white border border-gray-200 hover:shadow-md hover:border-primary/50 active:scale-[0.98]',
+                !isPlaced && !isSelected && 'bg-[var(--color-background-primary)] border border-[var(--color-border-default)] hover:shadow-md hover:border-[var(--color-primary-400)] active:scale-[0.98]',
                 // Selected state
-                isSelected && 'bg-primary-50 border-2 border-primary-500 ring-2 ring-primary-200',
+                isSelected && 'bg-[var(--color-primary-50)] border-2 border-[var(--color-primary-500)] ring-2 ring-[var(--color-primary-200)]',
                 // Disabled state
-                isPlaced && 'opacity-50 cursor-not-allowed bg-gray-50 border border-gray-200',
+                isPlaced && 'opacity-50 cursor-not-allowed bg-[var(--color-background-secondary)] border border-[var(--color-border-default)]',
             )}
             aria-label={`${name} - ${part} 파트 ${isPlaced ? '(이미 배치됨)' : isSelected ? '(선택됨)' : '클릭하여 선택'}`}
             aria-pressed={isSelected}
         >
             <div className="flex items-center gap-2 min-w-0 flex-1">
                 {isSelected ? (
-                    <CheckCircle2 className="h-4 w-4 text-primary-600 flex-shrink-0 animate-in fade-in zoom-in duration-200" />
+                    <CheckCircle2 className="h-4 w-4 text-[var(--color-primary-600)] flex-shrink-0 animate-in fade-in zoom-in duration-200" />
                 ) : (
-                    <GripVertical className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <GripVertical className="h-4 w-4 text-[var(--color-text-tertiary)] flex-shrink-0" />
                 )}
                 <span className="font-medium text-sm truncate">{name}</span>
             </div>

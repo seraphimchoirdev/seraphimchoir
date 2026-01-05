@@ -84,18 +84,18 @@ export default function AttendancesPage() {
             </div>
 
             {/* 날짜 선택 UI */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 border-t border-gray-100">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 border-t border-[var(--color-border-subtle)]">
                 {selectedSchedule && (
-                  <div className="flex items-center gap-2 text-sm text-indigo-600">
+                  <div className="flex items-center gap-2 text-sm text-[var(--color-primary-600)]">
                     <Music className="h-4 w-4" />
                     <span className="font-medium">{selectedSchedule.service_type || '주일예배'}</span>
                     {selectedSchedule.hymn_name && (
-                      <span className="text-indigo-500">• {selectedSchedule.hymn_name}</span>
+                      <span className="text-[var(--color-primary-500)]">• {selectedSchedule.hymn_name}</span>
                     )}
                   </div>
                 )}
 
-                <div className="flex items-center gap-4 bg-gray-50 p-2 rounded-lg">
+                <div className="flex items-center gap-4 bg-[var(--color-background-secondary)] p-2 rounded-lg">
                   <Button variant="ghost" size="icon" onClick={handlePrevWeek}>
                     <ChevronLeft className="w-5 h-5" />
                   </Button>

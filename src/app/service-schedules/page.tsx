@@ -89,11 +89,11 @@ export default function ServiceSchedulesPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setIsServiceDialogOpen(true)} className="gap-2 cursor-pointer">
-                    <Music className="h-4 w-4 text-blue-600" />
+                    <Music className="h-4 w-4 text-[var(--color-primary-600)]" />
                     예배 일정
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsEventDialogOpen(true)} className="gap-2 cursor-pointer">
-                    <PartyPopper className="h-4 w-4 text-purple-600" />
+                    <PartyPopper className="h-4 w-4 text-[var(--color-accent-600)]" />
                     행사 일정
                   </DropdownMenuItem>
                 </DropdownMenuContent>

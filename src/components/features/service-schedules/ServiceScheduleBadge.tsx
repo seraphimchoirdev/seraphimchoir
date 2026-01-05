@@ -34,7 +34,7 @@ export default function ServiceScheduleBadge({
         </span>
         {schedule.hymn_name && (
           <>
-            <span className="text-gray-300">•</span>
+            <span className="text-[var(--color-border-default)]">•</span>
             <span className="flex items-center gap-1 text-[var(--color-primary-600)]">
               <Music className="h-3 w-3" />
               <span className="truncate max-w-[150px]">{schedule.hymn_name}</span>
@@ -43,7 +43,7 @@ export default function ServiceScheduleBadge({
         )}
         {schedule.offertory_performer && (
           <>
-            <span className="text-gray-300">•</span>
+            <span className="text-[var(--color-border-default)]">•</span>
             <span className="text-[var(--color-text-tertiary)]">
               봉헌: {schedule.offertory_performer}
             </span>

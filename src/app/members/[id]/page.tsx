@@ -10,13 +10,13 @@ export default function MemberDetailPage() {
   const memberId = params.id as string;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--color-background-tertiary)] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* 헤더 */}
         <div className="mb-6">
           <button
             onClick={() => router.back()}
-            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
+            className="inline-flex items-center text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] mb-4"
           >
             <svg
               className="w-5 h-5 mr-1"
@@ -33,7 +33,7 @@ export default function MemberDetailPage() {
             </svg>
             목록으로 돌아가기
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">찬양대원 상세 정보</h1>
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">찬양대원 상세 정보</h1>
         </div>
 
         {/* 상세 정보 */}

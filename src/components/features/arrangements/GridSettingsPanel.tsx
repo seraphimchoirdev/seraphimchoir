@@ -5,9 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GridLayout, GRID_CONSTRAINTS } from '@/types/grid';
-import { autoDistributeSeats, calculateTotalSeats } from '@/lib/utils/gridUtils';
+import { calculateTotalSeats } from '@/lib/utils/gridUtils';
 import { recommendRowDistribution } from '@/lib/row-distribution-recommender';
-import { Sparkles, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 interface GridSettingsPanelProps {
   gridLayout: GridLayout | null;
@@ -60,17 +60,6 @@ export default function GridSettingsPanel({
     });
   };
 
-  // 자동 균등 분배 (기존 방식)
-  const handleAutoDistribute = () => {
-    const distributed = autoDistributeSeats(totalMembers, currentRows);
-
-    onChange({
-      rows: currentRows,
-      rowCapacities: distributed,
-      zigzagPattern: currentZigzag,
-    });
-  };
-
   // AI 추천 분배 (학습 데이터 기반)
   const handleAIRecommend = () => {
     const recommendation = recommendRowDistribution(totalMembers);
@@ -113,7 +102,7 @@ export default function GridSettingsPanel({
           </div>
         </div>
 
-        {/* 자동 분배 버튼 */}
+        {/* AI 추천 분배 버튼 */}
         <div className="space-y-2">
           <Button
             onClick={handleAIRecommend}
@@ -123,15 +112,6 @@ export default function GridSettingsPanel({
           >
             <Zap className="w-4 h-4" />
             AI 추천 분배 ({totalMembers}명)
-          </Button>
-          <Button
-            onClick={handleAutoDistribute}
-            variant="outline"
-            className="w-full gap-2"
-            disabled={totalMembers === 0}
-          >
-            <Sparkles className="w-4 h-4" />
-            균등 분배
           </Button>
         </div>
 

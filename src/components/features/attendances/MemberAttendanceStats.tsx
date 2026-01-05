@@ -25,37 +25,37 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-// 파트 색상 정의
+// 파트 색상 정의 (악보 스티커 색상 기준 - 자리배치와 통일)
 const PART_COLORS = {
   SOPRANO: {
-    bg: 'bg-pink-50',
-    text: 'text-pink-700',
-    border: 'border-pink-200',
-    badge: 'bg-pink-100 text-pink-700',
+    bg: 'bg-[var(--color-part-soprano-50)]',
+    text: 'text-[var(--color-part-soprano-700)]',
+    border: 'border-[var(--color-part-soprano-200)]',
+    badge: 'bg-[var(--color-part-soprano-100)] text-[var(--color-part-soprano-700)]',
   },
   ALTO: {
-    bg: 'bg-purple-50',
-    text: 'text-purple-700',
-    border: 'border-purple-200',
-    badge: 'bg-purple-100 text-purple-700',
+    bg: 'bg-[var(--color-part-alto-50)]',
+    text: 'text-[var(--color-part-alto-700)]',
+    border: 'border-[var(--color-part-alto-200)]',
+    badge: 'bg-[var(--color-part-alto-100)] text-[var(--color-part-alto-700)]',
   },
   TENOR: {
-    bg: 'bg-blue-50',
-    text: 'text-blue-700',
-    border: 'border-blue-200',
-    badge: 'bg-blue-100 text-blue-700',
+    bg: 'bg-[var(--color-part-tenor-50)]',
+    text: 'text-[var(--color-part-tenor-700)]',
+    border: 'border-[var(--color-part-tenor-200)]',
+    badge: 'bg-[var(--color-part-tenor-100)] text-[var(--color-part-tenor-700)]',
   },
   BASS: {
-    bg: 'bg-green-50',
-    text: 'text-green-700',
-    border: 'border-green-200',
-    badge: 'bg-green-100 text-green-700',
+    bg: 'bg-[var(--color-part-bass-50)]',
+    text: 'text-[var(--color-part-bass-700)]',
+    border: 'border-[var(--color-part-bass-200)]',
+    badge: 'bg-[var(--color-part-bass-100)] text-[var(--color-part-bass-700)]',
   },
   SPECIAL: {
-    bg: 'bg-amber-50',
-    text: 'text-amber-700',
-    border: 'border-amber-200',
-    badge: 'bg-amber-100 text-amber-700',
+    bg: 'bg-[var(--color-part-special-50)]',
+    text: 'text-[var(--color-part-special-700)]',
+    border: 'border-[var(--color-part-special-200)]',
+    badge: 'bg-[var(--color-part-special-100)] text-[var(--color-part-special-700)]',
   },
 } as const;
 
@@ -152,9 +152,9 @@ export default function MemberAttendanceStats() {
 
   // 출석률에 따른 색상
   const getAttendanceRateColor = (rate: number) => {
-    if (rate >= 90) return 'text-green-600';
-    if (rate >= 70) return 'text-yellow-600';
-    return 'text-red-600';
+    if (rate >= 90) return 'text-[var(--color-success-600)]';
+    if (rate >= 70) return 'text-[var(--color-warning-600)]';
+    return 'text-[var(--color-error-600)]';
   };
 
   // 순위 메달 색상
@@ -172,11 +172,11 @@ export default function MemberAttendanceStats() {
     return (
       <Card className="p-6 shadow-sm border-none">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-gray-200 rounded w-48"></div>
-          <div className="h-10 bg-gray-200 rounded w-full"></div>
+          <div className="h-6 bg-[var(--color-background-secondary)] rounded w-48"></div>
+          <div className="h-10 bg-[var(--color-background-secondary)] rounded w-full"></div>
           <div className="space-y-2">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-12 bg-gray-200 rounded"></div>
+              <div key={i} className="h-12 bg-[var(--color-background-secondary)] rounded"></div>
             ))}
           </div>
         </div>
@@ -189,8 +189,8 @@ export default function MemberAttendanceStats() {
     return (
       <Card className="p-6 shadow-sm border-none">
         <div className="text-center py-8">
-          <div className="text-red-500 mb-2">통계 조회 실패</div>
-          <p className="text-gray-600 text-sm">{error.message}</p>
+          <div className="text-[var(--color-error-500)] mb-2">통계 조회 실패</div>
+          <p className="text-[var(--color-text-secondary)] text-sm">{error.message}</p>
           <Button onClick={() => window.location.reload()} className="mt-4">
             다시 시도
           </Button>
@@ -200,11 +200,11 @@ export default function MemberAttendanceStats() {
   }
 
   return (
-    <Card className="p-6 shadow-sm border-none bg-white">
+    <Card className="p-6 shadow-sm border-none bg-[var(--color-background-primary)]">
       {/* 헤더 */}
       <div className="mb-6">
-        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
-          <Users className="h-5 w-5 text-indigo-600" />
+        <h2 className="text-lg font-bold text-[var(--color-text-primary)] flex items-center gap-2 mb-4">
+          <Users className="h-5 w-5 text-[var(--color-primary-600)]" />
           대원별 출석 통계
         </h2>
 
@@ -230,8 +230,8 @@ export default function MemberAttendanceStats() {
 
         {/* 커스텀 날짜 선택 */}
         {dateRangePreset === 'custom' && (
-          <div className="flex flex-wrap items-center gap-3 p-4 bg-gray-50 rounded-lg mb-4">
-            <Calendar className="h-5 w-5 text-gray-500" />
+          <div className="flex flex-wrap items-center gap-3 p-4 bg-[var(--color-background-secondary)] rounded-lg mb-4">
+            <Calendar className="h-5 w-5 text-[var(--color-text-tertiary)]" />
             <div className="flex items-center gap-2">
               <Label className="text-sm text-gray-600 whitespace-nowrap">시작일:</Label>
               <Input

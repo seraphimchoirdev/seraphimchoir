@@ -33,21 +33,21 @@ type Attendance = Database['public']['Tables']['attendances']['Row'];
 
 const PARTS: Part[] = ['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'];
 
-// 파트별 그라데이션 배경색
+// 파트별 그라데이션 배경색 (악보 스티커 색상 기준 - 자리배치와 통일)
 const partGradients: Record<Part, string> = {
-    SOPRANO: 'from-purple-50 to-purple-100/50',
-    ALTO: 'from-yellow-50 to-yellow-100/50',
-    TENOR: 'from-blue-50 to-blue-100/50',
-    BASS: 'from-green-50 to-green-100/50',
-    SPECIAL: 'from-gray-50 to-gray-100/50',
+    SOPRANO: 'from-[var(--color-part-soprano-50)] to-[var(--color-part-soprano-100)]/50',
+    ALTO: 'from-[var(--color-part-alto-50)] to-[var(--color-part-alto-100)]/50',
+    TENOR: 'from-[var(--color-part-tenor-50)] to-[var(--color-part-tenor-100)]/50',
+    BASS: 'from-[var(--color-part-bass-50)] to-[var(--color-part-bass-100)]/50',
+    SPECIAL: 'from-[var(--color-part-special-50)] to-[var(--color-part-special-100)]/50',
 };
 
 const partAccentColors: Record<Part, string> = {
-    SOPRANO: 'text-purple-700',
-    ALTO: 'text-yellow-700',
-    TENOR: 'text-blue-700',
-    BASS: 'text-green-700',
-    SPECIAL: 'text-gray-700',
+    SOPRANO: 'text-[var(--color-part-soprano-700)]',
+    ALTO: 'text-[var(--color-part-alto-700)]',
+    TENOR: 'text-[var(--color-part-tenor-700)]',
+    BASS: 'text-[var(--color-part-bass-700)]',
+    SPECIAL: 'text-[var(--color-part-special-700)]',
 };
 
 export default function AttendanceList({ date }: AttendanceListProps) {
@@ -298,7 +298,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
     return (
         <div className="space-y-4">
             {/* 헤더 */}
-            <div className="flex justify-between items-center sticky top-0 bg-white z-10 py-4 border-b">
+            <div className="flex justify-between items-center sticky top-0 bg-[var(--color-background-primary)] z-10 py-4 border-b border-[var(--color-border-default)]">
                 <h3 className="text-lg font-semibold">
                     {format(date, 'M월 d일 (E)', { locale: ko })} 출석 체크
                 </h3>
@@ -391,7 +391,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                             const isExpanded = openParts[part];
 
                             return (
-                                <div key={part} className="rounded-xl overflow-hidden border border-[var(--color-border-default)] bg-white shadow-sm">
+                                <div key={part} className="rounded-xl overflow-hidden border border-[var(--color-border-default)] bg-[var(--color-background-primary)] shadow-sm">
                                     {/* 파트 헤더 */}
                                     <button
                                         type="button"
@@ -430,7 +430,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
 
                                     {/* 펼쳐진 내용 */}
                                     {isExpanded && (
-                                        <div className="p-4 space-y-3 bg-white">
+                                        <div className="p-4 space-y-3 bg-[var(--color-background-primary)]">
                                             {/* 빠른 액션 버튼들 */}
                                             {!(isFullyClosed && !canEditAfterClose) && (
                                                 <div className="flex gap-2 justify-end">
@@ -454,8 +454,8 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                                                             handleSelectAllPart(part, false);
                                                         }}
                                                         className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md
-                                                            text-[var(--color-text-tertiary)] bg-gray-100
-                                                            hover:bg-gray-200 transition-colors"
+                                                            text-[var(--color-text-tertiary)] bg-[var(--color-background-tertiary)]
+                                                            hover:bg-[var(--color-border-subtle)] transition-colors"
                                                     >
                                                         <XCircle className="w-3.5 h-3.5" />
                                                         전체 불참
@@ -509,7 +509,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
 
                                     {/* 접힌 상태에서 미니 프리뷰 */}
                                     {!isExpanded && partAbsentCount > 0 && (
-                                        <div className="px-4 py-2 bg-gray-50 border-t border-[var(--color-border-default)]">
+                                        <div className="px-4 py-2 bg-[var(--color-background-secondary)] border-t border-[var(--color-border-default)]">
                                             <p className="text-xs text-[var(--color-text-tertiary)]">
                                                 불참: {allPartMembers
                                                     .filter(m => !getMemberAttendingStatus(m.id))

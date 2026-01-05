@@ -238,6 +238,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
                 <PastArrangementButton
                     arrangementId={arrangement.id}
+                    date={arrangement.date}
                     onApply={handleApplyPastArrangement}
                     disabled={isSaving}
                 />

@@ -58,6 +58,15 @@ export interface UnassignedMember {
     reason: 'not_in_past' | 'out_of_grid' | 'seat_conflict' | 'zone_full';
 }
 
+/** ML 기반 멤버별 선호 좌석 정보 */
+export interface MemberSeatPreference {
+    preferred_row: number;       // 가장 많이 앉은 행 (1-based)
+    preferred_col: number;       // 평균 열 위치 (1-based)
+    is_fixed_seat: boolean;      // 고정석 여부 (row/col 일관성 둘 다 ≥90%)
+    row_consistency: number;     // 행 일관성 (0-100)
+    col_consistency: number;     // 열 일관성 (0-100)
+}
+
 /** 파트별 타겟 영역 */
 interface PartZoneTarget {
     part: Part;
@@ -215,18 +224,65 @@ function findClosestSeat(
 }
 
 /**
+ * ML 선호 좌석을 고려한 최적 좌석 탐색
+ *
+ * 우선순위:
+ * 1. 선호 좌석이 비어있으면 즉시 반환
+ * 2. 선호 좌석과 동일 행 내 빈 좌석 탐색 (열 거리 가까운 순)
+ * 3. 기존 상대적 위치 기반 거리 계산 (fallback)
+ */
+function findBestSeat(
+    availableSeats: { row: number; col: number }[],
+    relativePos: { relativeRow: number; relativeCol: number },
+    zone: PartZoneTarget,
+    gridLayout: GridLayout,
+    memberPreference?: MemberSeatPreference
+): { row: number; col: number } | null {
+    if (availableSeats.length === 0) return null;
+
+    // ML 선호 좌석이 있는 경우
+    if (memberPreference) {
+        // 1단계: 선호 좌석이 사용 가능한가?
+        const preferredSeat = availableSeats.find(
+            s => s.row === memberPreference.preferred_row &&
+                 s.col === memberPreference.preferred_col
+        );
+        if (preferredSeat) {
+            return preferredSeat;
+        }
+
+        // 2단계: 선호 좌석과 동일 행 내 검색 (열 거리 가까운 순)
+        const sameRowSeats = availableSeats
+            .filter(s => s.row === memberPreference.preferred_row)
+            .sort((a, b) =>
+                Math.abs(a.col - memberPreference.preferred_col) -
+                Math.abs(b.col - memberPreference.preferred_col)
+            );
+
+        if (sameRowSeats.length > 0) {
+            return sameRowSeats[0]; // 열 거리가 가장 가까운 좌석
+        }
+    }
+
+    // 3단계: 기존 로직 (상대적 위치 기반 거리 계산)
+    return findClosestSeat(relativePos, availableSeats, zone, gridLayout);
+}
+
+/**
  * 과거 배치를 현재 그리드에 파트별 영역 유지하며 매핑
+ * ML 선호 좌석 데이터를 활용하여 멤버별 익숙한 위치에 배치
  */
 export function applyPastArrangementWithZoneMapping(params: {
     pastSeats: PastSeat[];
     pastGridLayout: GridLayout;
     currentGridLayout: GridLayout;
     availableMembers: AvailableMember[];
+    memberPreferences?: Map<string, MemberSeatPreference>;  // ML 선호 좌석 데이터
 }): {
     seats: SeatRecommendation[];
     unassignedMembers: UnassignedMember[];
 } {
-    const { pastSeats, pastGridLayout, currentGridLayout, availableMembers } = params;
+    const { pastSeats, pastGridLayout, currentGridLayout, availableMembers, memberPreferences } = params;
 
     const seats: SeatRecommendation[] = [];
     const unassignedMembers: UnassignedMember[] = [];
@@ -276,11 +332,22 @@ export function applyPastArrangementWithZoneMapping(params: {
                 continue;
             }
 
-            // 상대적 위치 계산
-            const relativePos = calculateRelativePosition(pastSeat, partPastSeats, pastGridLayout);
+            // 1순위: 과거와 동일 좌표에 배치 시도
+            const sameCoord = availableSeats.find(
+                s => s.row === pastSeat.row && s.col === pastSeat.col
+            );
 
-            // 가장 가까운 좌석 찾기
-            const bestSeat = findClosestSeat(relativePos, availableSeats, zone, currentGridLayout);
+            let bestSeat: { row: number; col: number } | null = null;
+
+            if (sameCoord) {
+                // 과거와 동일 좌표 사용 가능
+                bestSeat = sameCoord;
+            } else {
+                // 2순위 이하: ML 선호 좌석 → 동일 행 탐색 → 상대적 위치 기반
+                const relativePos = calculateRelativePosition(pastSeat, partPastSeats, pastGridLayout);
+                const pref = memberPreferences?.get(pastSeat.memberId);
+                bestSeat = findBestSeat(availableSeats, relativePos, zone, currentGridLayout, pref);
+            }
 
             if (bestSeat) {
                 seats.push({
@@ -296,9 +363,22 @@ export function applyPastArrangementWithZoneMapping(params: {
         }
 
         // 2단계: 해당 파트의 신규 멤버 (과거 배치에 없던) 배치
-        const newMembersOfPart = availableMembers.filter(
-            m => m.part === part && !assignedMemberIds.has(m.id)
-        );
+        // 고정석 멤버 우선, 일관성 높은 멤버 우선 정렬
+        const newMembersOfPart = availableMembers
+            .filter(m => m.part === part && !assignedMemberIds.has(m.id))
+            .sort((a, b) => {
+                const aPref = memberPreferences?.get(a.id);
+                const bPref = memberPreferences?.get(b.id);
+
+                // 고정석 멤버 우선
+                if (aPref?.is_fixed_seat && !bPref?.is_fixed_seat) return -1;
+                if (!aPref?.is_fixed_seat && bPref?.is_fixed_seat) return 1;
+
+                // 일관성 높은 멤버 우선
+                const aScore = (aPref?.row_consistency || 0) + (aPref?.col_consistency || 0);
+                const bScore = (bPref?.row_consistency || 0) + (bPref?.col_consistency || 0);
+                return bScore - aScore;
+            });
 
         for (const member of newMembersOfPart) {
             const availableSeats = getAvailableSeatsInZone(zone, currentGridLayout, occupiedSeats);
@@ -314,8 +394,24 @@ export function applyPastArrangementWithZoneMapping(params: {
                 continue;
             }
 
-            // 신규 멤버는 남은 좌석 중 첫 번째에 배치 (선호 행 우선)
-            const seat = availableSeats[0];
+            // ML 선호 좌석 기반 배치 (선호 좌석 → 동일 행 → 첫 번째 빈 좌석)
+            const pref = memberPreferences?.get(member.id);
+            let seat: { row: number; col: number } | null = null;
+
+            if (pref) {
+                // 선호 좌석 또는 동일 행 탐색
+                seat = findBestSeat(
+                    availableSeats,
+                    { relativeRow: 0, relativeCol: 0 },  // 신규 멤버는 상대 위치 없음
+                    zone,
+                    currentGridLayout,
+                    pref
+                );
+            }
+
+            // fallback: 첫 번째 빈 좌석
+            seat = seat || availableSeats[0];
+
             seats.push({
                 memberId: member.id,
                 memberName: member.name,

@@ -628,13 +628,13 @@ export default function ServiceScheduleImporter({
                       {parsedData.slice(0, 50).map((item, idx) => (
                         <TableRow
                           key={idx}
-                          className={item.valid ? '' : 'bg-red-50'}
+                          className={item.valid ? '' : 'bg-[var(--color-error-50)]'}
                         >
                           <TableCell>
                             {item.valid ? (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              <CheckCircle className="h-4 w-4 text-[var(--color-success-600)]" />
                             ) : (
-                              <XCircle className="h-4 w-4 text-red-600" />
+                              <XCircle className="h-4 w-4 text-[var(--color-error-600)]" />
                             )}
                           </TableCell>
                           <TableCell className="font-medium whitespace-nowrap">{item.date}</TableCell>
@@ -680,7 +680,7 @@ export default function ServiceScheduleImporter({
                   전체: {uploadResult.total}건 / 성공: {uploadResult.succeeded}건 / 실패: {uploadResult.failed}건
                 </p>
                 {uploadResult.error && (
-                  <p className="text-sm text-red-600 mt-1">{uploadResult.error}</p>
+                  <p className="text-sm text-[var(--color-error-600)] mt-1">{uploadResult.error}</p>
                 )}
               </AlertDescription>
             </Alert>

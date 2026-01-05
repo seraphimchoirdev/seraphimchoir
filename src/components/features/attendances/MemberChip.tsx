@@ -29,13 +29,13 @@ export default function MemberChip({
   disabled,
   onToggle,
 }: MemberChipProps) {
-  // 파트별 좌측 테두리 색상
+  // 파트별 좌측 테두리 색상 (악보 스티커 색상 기준)
   const partBorderColors: Record<Part, string> = {
-    SOPRANO: 'border-l-purple-400',
-    ALTO: 'border-l-yellow-400',
-    TENOR: 'border-l-blue-400',
-    BASS: 'border-l-green-400',
-    SPECIAL: 'border-l-gray-400',
+    SOPRANO: 'border-l-[var(--color-part-soprano-500)]',
+    ALTO: 'border-l-[var(--color-part-alto-500)]',
+    TENOR: 'border-l-[var(--color-part-tenor-500)]',
+    BASS: 'border-l-[var(--color-part-bass-500)]',
+    SPECIAL: 'border-l-[var(--color-part-special-500)]',
   };
 
   const handleClick = () => {
@@ -68,8 +68,8 @@ export default function MemberChip({
           : [
               "bg-[var(--color-background-tertiary)] border border-[var(--color-border-default)]",
               "text-[var(--color-text-tertiary)]",
-              !disabled && "hover:bg-gray-200",
-              "focus:ring-gray-300",
+              !disabled && "hover:bg-[var(--color-background-secondary)]",
+              "focus:ring-[var(--color-border-default)]",
             ],
         // 변경됨 표시
         isChanged && "ring-2 ring-[var(--color-primary-300)] ring-offset-1",

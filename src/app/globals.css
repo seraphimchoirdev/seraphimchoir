@@ -187,6 +187,47 @@
     --gradient-blessed-sky-vertical: linear-gradient(180deg, #B8D8EE 0%, #F3C6E8 100%);
     --gradient-primary-subtle: linear-gradient(135deg, #E1EFF9 0%, #F0F7FC 100%);
     --gradient-accent-subtle: linear-gradient(135deg, #FEF6F7 0%, #FDECEF 100%);
+
+    /* Part Colors (악보 스티커 색상 기준) */
+    /* SOPRANO - Orange */
+    --color-part-soprano-50: #FFF7ED;
+    --color-part-soprano-100: #FFEDD5;
+    --color-part-soprano-200: #FED7AA;
+    --color-part-soprano-500: #F97316;
+    --color-part-soprano-600: #EA580C;
+    --color-part-soprano-700: #C2410C;
+
+    /* ALTO - Amber */
+    --color-part-alto-50: #FFFBEB;
+    --color-part-alto-100: #FEF3C7;
+    --color-part-alto-200: #FDE68A;
+    --color-part-alto-500: #F59E0B;
+    --color-part-alto-600: #D97706;
+    --color-part-alto-700: #B45309;
+
+    /* TENOR - Sky */
+    --color-part-tenor-50: #F0F9FF;
+    --color-part-tenor-100: #E0F2FE;
+    --color-part-tenor-200: #BAE6FD;
+    --color-part-tenor-500: #0EA5E9;
+    --color-part-tenor-600: #0284C7;
+    --color-part-tenor-700: #0369A1;
+
+    /* BASS - Green */
+    --color-part-bass-50: #F0FDF4;
+    --color-part-bass-100: #DCFCE7;
+    --color-part-bass-200: #BBF7D0;
+    --color-part-bass-500: #22C55E;
+    --color-part-bass-600: #16A34A;
+    --color-part-bass-700: #15803D;
+
+    /* SPECIAL - Gray */
+    --color-part-special-50: #F9FAFB;
+    --color-part-special-100: #F3F4F6;
+    --color-part-special-200: #E5E7EB;
+    --color-part-special-500: #6B7280;
+    --color-part-special-600: #4B5563;
+    --color-part-special-700: #374151;
   }
 
   .dark {

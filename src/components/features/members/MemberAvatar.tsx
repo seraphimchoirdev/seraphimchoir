@@ -8,12 +8,13 @@ interface MemberAvatarProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-// 파트별 아바타 배경색 (UXUI_DESIGN_SYSTEM.md 기준)
+// 파트별 아바타 배경색 (악보 스티커 색상 기준 - 자리배치와 통일)
 const PART_AVATAR_COLORS: Partial<Record<Part, string>> = {
-  SOPRANO: 'bg-purple-400',
-  ALTO: 'bg-yellow-400',
-  TENOR: 'bg-blue-400',
-  BASS: 'bg-green-500',
+  SOPRANO: 'bg-[var(--color-part-soprano-500)]',
+  ALTO: 'bg-[var(--color-part-alto-500)]',
+  TENOR: 'bg-[var(--color-part-tenor-500)]',
+  BASS: 'bg-[var(--color-part-bass-500)]',
+  SPECIAL: 'bg-[var(--color-part-special-500)]',
 };
 
 // 크기별 스타일

@@ -165,7 +165,7 @@ export default function MemberLinksAdminPage() {
                         variant="outline"
                         onClick={() => handleReject(request.id)}
                         disabled={rejectMutation.isPending}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="text-[var(--color-error-600)] hover:text-[var(--color-error-700)] hover:bg-[var(--color-error-50)]"
                       >
                         {rejectMutation.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />

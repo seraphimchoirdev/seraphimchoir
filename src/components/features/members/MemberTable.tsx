@@ -23,12 +23,12 @@ interface MemberTableProps {
   onRefetch?: () => void;
 }
 
-// 파트별 색상 (UXUI_DESIGN_SYSTEM.md 기준)
+// 파트별 색상 (악보 스티커 색상 기준 - 자리배치와 통일)
 const PART_COLORS: Partial<Record<Part, { bg: string; text: string; border: string }>> = {
-  SOPRANO: { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-400' },
-  ALTO: { bg: 'bg-yellow-50', text: 'text-yellow-600', border: 'border-yellow-400' },
-  TENOR: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-400' },
-  BASS: { bg: 'bg-green-50', text: 'text-green-600', border: 'border-green-500' },
+  SOPRANO: { bg: 'bg-[var(--color-part-soprano-50)]', text: 'text-[var(--color-part-soprano-600)]', border: 'border-[var(--color-part-soprano-500)]' },
+  ALTO: { bg: 'bg-[var(--color-part-alto-50)]', text: 'text-[var(--color-part-alto-600)]', border: 'border-[var(--color-part-alto-500)]' },
+  TENOR: { bg: 'bg-[var(--color-part-tenor-50)]', text: 'text-[var(--color-part-tenor-600)]', border: 'border-[var(--color-part-tenor-500)]' },
+  BASS: { bg: 'bg-[var(--color-part-bass-50)]', text: 'text-[var(--color-part-bass-600)]', border: 'border-[var(--color-part-bass-500)]' },
 };
 
 // 파트명 한글
@@ -47,12 +47,12 @@ const STATUS_LABELS: Record<MemberStatus, string> = {
   RESIGNED: '사직대원',
 };
 
-// 상태별 색상 (시맨틱 컬러)
+// 상태별 색상 (시맨틱 컬러 - 디자인 시스템 변수 사용)
 const STATUS_COLORS: Record<MemberStatus, string> = {
-  REGULAR: 'bg-green-100 text-green-800 border-green-300',
-  NEW: 'bg-blue-100 text-blue-800 border-blue-300',
-  ON_LEAVE: 'bg-gray-100 text-gray-800 border-gray-300',
-  RESIGNED: 'bg-red-100 text-red-800 border-red-300',
+  REGULAR: 'bg-[var(--color-success-100)] text-[var(--color-success-700)] border-[var(--color-success-200)]',
+  NEW: 'bg-[var(--color-primary-100)] text-[var(--color-primary-700)] border-[var(--color-primary-200)]',
+  ON_LEAVE: 'bg-[var(--color-part-special-100)] text-[var(--color-part-special-700)] border-[var(--color-part-special-200)]',
+  RESIGNED: 'bg-[var(--color-error-100)] text-[var(--color-error-700)] border-[var(--color-error-200)]',
 };
 
 /**
@@ -102,9 +102,9 @@ const MemberRow = memo(function MemberRow({
         <span
           className={`
             inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border
-            ${PART_COLORS[member.part]?.bg || 'bg-gray-50'}
-            ${PART_COLORS[member.part]?.text || 'text-gray-600'}
-            ${PART_COLORS[member.part]?.border || 'border-gray-400'}
+            ${PART_COLORS[member.part]?.bg || 'bg-[var(--color-part-special-50)]'}
+            ${PART_COLORS[member.part]?.text || 'text-[var(--color-part-special-600)]'}
+            ${PART_COLORS[member.part]?.border || 'border-[var(--color-part-special-500)]'}
           `}
         >
           {PART_LABELS[member.part] || member.part}
@@ -114,11 +114,11 @@ const MemberRow = memo(function MemberRow({
       {/* 역할 */}
       <td className="px-4 py-4 whitespace-nowrap">
         {member.is_leader ? (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-800 border border-blue-300">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[var(--color-primary-100)] text-[var(--color-primary-700)] border border-[var(--color-primary-200)]">
             파트장
           </span>
         ) : (
-          <span className="text-sm text-neutral-500">대원</span>
+          <span className="text-sm text-[var(--color-text-tertiary)]">대원</span>
         )}
       </td>
 
@@ -152,16 +152,16 @@ const MemberRow = memo(function MemberRow({
                 }}
                 className={`
                   cursor-pointer text-xs
-                  ${status === member.member_status ? 'bg-slate-100 font-semibold' : ''}
+                  ${status === member.member_status ? 'bg-[var(--color-background-tertiary)] font-semibold' : ''}
                 `}
               >
                 <span
                   className={`
                     inline-block w-2 h-2 rounded-full mr-2
-                    ${status === 'REGULAR' ? 'bg-green-500' : ''}
-                    ${status === 'NEW' ? 'bg-blue-500' : ''}
-                    ${status === 'ON_LEAVE' ? 'bg-gray-500' : ''}
-                    ${status === 'RESIGNED' ? 'bg-red-500' : ''}
+                    ${status === 'REGULAR' ? 'bg-[var(--color-success-500)]' : ''}
+                    ${status === 'NEW' ? 'bg-[var(--color-primary-500)]' : ''}
+                    ${status === 'ON_LEAVE' ? 'bg-[var(--color-part-special-500)]' : ''}
+                    ${status === 'RESIGNED' ? 'bg-[var(--color-error-500)]' : ''}
                   `}
                 />
                 {STATUS_LABELS[status]}

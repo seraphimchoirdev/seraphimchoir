@@ -1,23 +1,29 @@
 /**
  * 과거 자리배치 불러오기 버튼
  * 현재 그리드 레이아웃(AI 추천 분배 등)을 유지하면서 과거 배치 적용
+ * - 현재 날짜의 출석 가능 인원 파트별 구성으로 유사도 매칭
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { History, Loader2 } from 'lucide-react';
-import { useApplyPastArrangement, type ApplyPastResponse } from '@/hooks/usePastArrangement';
+import { useApplyPastArrangement, type ApplyPastResponse, type PartComposition } from '@/hooks/usePastArrangement';
 import { useArrangementStore } from '@/store/arrangement-store';
+import { useMembers } from '@/hooks/useMembers';
+import { useAttendances } from '@/hooks/useAttendances';
 import PastArrangementModal from './PastArrangementModal';
 
 interface PastArrangementButtonProps {
     arrangementId: string;
+    /** 현재 배치표의 날짜 (유사도 계산에 필요) */
+    date?: string;
     onApply: (result: ApplyPastResponse) => void;
     disabled?: boolean;
 }
 
 export default function PastArrangementButton({
     arrangementId,
+    date,
     onApply,
     disabled
 }: PastArrangementButtonProps) {
@@ -25,6 +31,50 @@ export default function PastArrangementButton({
     const applyMutation = useApplyPastArrangement();
     // 현재 그리드 레이아웃 (AI 추천 분배로 변경된 값 포함)
     const gridLayout = useArrangementStore((state) => state.gridLayout);
+
+    // 현재 날짜의 출석 가능 인원 조회 (유사도 계산용)
+    const { data: membersData } = useMembers({
+        member_status: 'REGULAR',
+        limit: 100,
+    });
+    const { data: attendances } = useAttendances({
+        date: date || '',
+    });
+
+    // 현재 날짜의 파트별 구성 계산
+    const currentComposition = useMemo<PartComposition | undefined>(() => {
+        if (!date || !membersData?.data) return undefined;
+
+        const members = membersData.data;
+
+        // 출석 Map 생성
+        const attendanceMap = new Map<string, boolean>();
+        attendances?.forEach((a) => {
+            attendanceMap.set(a.member_id, a.is_service_available === true);
+        });
+
+        // 파트별 등단 가능 인원 카운트
+        const composition: PartComposition = {
+            SOPRANO: 0,
+            ALTO: 0,
+            TENOR: 0,
+            BASS: 0,
+            SPECIAL: 0,
+        };
+
+        members.forEach((member) => {
+            // 출석 레코드가 없으면 기본값 true (등단 가능)
+            const isAvailable = attendanceMap.has(member.id)
+                ? attendanceMap.get(member.id)
+                : true;
+
+            if (isAvailable && member.part in composition) {
+                composition[member.part as keyof PartComposition]++;
+            }
+        });
+
+        return composition;
+    }, [date, membersData?.data, attendances]);
 
     const handleSelect = async (sourceArrangementId: string) => {
         try {
@@ -74,6 +124,7 @@ export default function PastArrangementButton({
                     onCancel={handleCancel}
                     isApplying={applyMutation.isPending}
                     error={applyMutation.error?.message}
+                    currentComposition={currentComposition}
                 />
             )}
         </>

@@ -102,14 +102,11 @@ export const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentPro
                 ref={ref}
                 className={`
         absolute z-50 mt-2 min-w-[200px]
-        rounded-lg bg-white
+        rounded-[var(--radius-base)] bg-[var(--color-background-primary)]
+        border border-[var(--color-border-default)] shadow-[var(--shadow-md)]
         ${alignmentClass}
         ${className}
       `}
-                style={{
-                    border: '1px solid var(--color-border-default)',
-                    boxShadow: 'var(--shadow-md)',
-                }}
             >
                 {children}
             </div>

@@ -37,12 +37,12 @@ export default async function BulkAttendancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-[var(--color-background-tertiary)] py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">일괄 출석 입력</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">일괄 출석 입력</h1>
+          <p className="mt-2 text-[var(--color-text-secondary)]">
             찬양대원 출석을 날짜별로 일괄 입력하거나 CSV 파일로 업로드할 수
             있습니다.
           </p>

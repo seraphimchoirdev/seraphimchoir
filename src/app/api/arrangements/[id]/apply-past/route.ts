@@ -15,6 +15,7 @@ import {
     type PastSeat,
     type AvailableMember,
     type GridLayout,
+    type MemberSeatPreference,
 } from '@/lib/past-arrangement-mapper';
 
 const applyPastSchema = z.object({
@@ -120,6 +121,23 @@ export async function POST(
             availableMembersList.map(m => [m.id, m])
         );
 
+        // 2-1. ML 선호 좌석 데이터 조회 (member_seat_statistics)
+        const { data: memberPreferencesData } = await supabase
+            .from('member_seat_statistics')
+            .select('member_id, preferred_row, preferred_col, is_fixed_seat, row_consistency, col_consistency')
+            .in('member_id', Array.from(availableMemberIds));
+
+        // Map으로 변환 (O(1) 조회)
+        const memberPreferences = new Map<string, MemberSeatPreference>(
+            (memberPreferencesData || []).map(p => [p.member_id, {
+                preferred_row: p.preferred_row,
+                preferred_col: p.preferred_col,
+                is_fixed_seat: p.is_fixed_seat,
+                row_consistency: p.row_consistency,
+                col_consistency: p.col_consistency,
+            }])
+        );
+
         // 3. 과거 배치표 정보 + 좌석 정보 병렬 조회
         const [pastArrangementResult, pastSeatsResult] = await Promise.all([
             supabase
@@ -189,12 +207,13 @@ export async function POST(
             part: m.part as Part,
         }));
 
-        // 6. 파트별 영역 유지 매핑 알고리즘 적용
+        // 6. 파트별 영역 유지 매핑 알고리즘 적용 (ML 선호 좌석 포함)
         const result = applyPastArrangementWithZoneMapping({
             pastSeats,
             pastGridLayout,
             currentGridLayout,
             availableMembers: availableMemberList,
+            memberPreferences,  // ML 선호 좌석 데이터 전달
         });
 
         // 7. 응답

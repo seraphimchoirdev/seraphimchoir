@@ -63,7 +63,7 @@ export default function DashboardPage() {
                                         <p className="font-medium text-[var(--color-text-primary)]">주일 오전 연습</p>
                                         <p className="text-sm text-[var(--color-text-secondary)]">11월 24일 (일) 09:30</p>
                                     </div>
-                                    <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                                    <span className="text-xs font-medium px-2 py-1 bg-[var(--color-primary-100)] text-[var(--color-primary-700)] rounded">
                                         예정
                                     </span>
                                 </div>
@@ -72,7 +72,7 @@ export default function DashboardPage() {
                                         <p className="font-medium text-[var(--color-text-primary)]">주일 오후 연습</p>
                                         <p className="text-sm text-[var(--color-text-secondary)]">11월 24일 (일) 13:30</p>
                                     </div>
-                                    <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                                    <span className="text-xs font-medium px-2 py-1 bg-[var(--color-primary-100)] text-[var(--color-primary-700)] rounded">
                                         예정
                                     </span>
                                 </div>

@@ -22,11 +22,11 @@ export default function EditMemberPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[var(--color-background-tertiary)] py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
           <div className="text-center py-12">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
-            <p className="mt-2 text-sm text-gray-600">로딩 중...</p>
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[var(--color-primary-600)] border-r-transparent"></div>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">로딩 중...</p>
           </div>
         </div>
       </div>
@@ -35,10 +35,10 @@ export default function EditMemberPage() {
 
   if (error || !member) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[var(--color-background-tertiary)] py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-sm text-red-800">
+          <div className="bg-[var(--color-error-50)] border border-[var(--color-error-200)] rounded-lg p-4">
+            <p className="text-sm text-[var(--color-error-800)]">
               {error?.message || '찬양대원 정보를 불러오는데 실패했습니다.'}
             </p>
           </div>
@@ -48,12 +48,12 @@ export default function EditMemberPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--color-background-tertiary)] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <button
             onClick={() => router.back()}
-            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
+            className="inline-flex items-center text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] mb-4"
           >
             <svg
               className="w-5 h-5 mr-1"
@@ -70,8 +70,8 @@ export default function EditMemberPage() {
             </svg>
             뒤로 가기
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">찬양대원 정보 수정</h1>
-          <p className="mt-2 text-sm text-gray-600">{member.name} 찬양대원의 정보를 수정합니다.</p>
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">찬양대원 정보 수정</h1>
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{member.name} 찬양대원의 정보를 수정합니다.</p>
         </div>
 
         <div className="bg-white shadow rounded-lg p-6">

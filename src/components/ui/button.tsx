@@ -5,41 +5,41 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-base)] text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-400)] focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+          "bg-[var(--color-primary-600)] text-white shadow-[var(--shadow-sm)] hover:bg-[var(--color-primary-700)]",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-[var(--color-error-600)] text-white shadow-[var(--shadow-sm)] hover:bg-[var(--color-error-700)]",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+          "border border-[var(--color-border-default)] bg-[var(--color-background-primary)] shadow-[var(--shadow-xs)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-text-primary)]",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-[var(--color-background-tertiary)] text-[var(--color-text-primary)] shadow-[var(--shadow-xs)] hover:bg-[var(--color-border-subtle)]",
+        ghost: "hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-text-primary)]",
+        link: "text-[var(--color-primary-600)] underline-offset-4 hover:underline",
         success:
-          "bg-green-600 text-white shadow hover:bg-green-700",
+          "bg-[var(--color-success-600)] text-white shadow-[var(--shadow-sm)] hover:bg-[var(--color-success-700)]",
         warning:
-          "bg-yellow-500 text-white shadow hover:bg-yellow-600",
+          "bg-[var(--color-warning-500)] text-[var(--color-text-primary)] shadow-[var(--shadow-sm)] hover:bg-[var(--color-warning-600)]",
         accent:
-          "bg-[var(--color-primary-500)] text-white shadow hover:bg-[var(--color-primary-600)]",
+          "bg-[var(--color-primary-500)] text-white shadow-[var(--shadow-sm)] hover:bg-[var(--color-primary-600)]",
         primarySubtle:
           "bg-[var(--color-primary-100)] text-[var(--color-primary-700)] hover:bg-[var(--color-primary-200)]",
         successSubtle:
-          "bg-green-100 text-green-700 hover:bg-green-200",
+          "bg-[var(--color-success-100)] text-[var(--color-success-700)] hover:bg-[var(--color-success-200)]",
         warningSubtle:
-          "bg-yellow-100 text-yellow-700 hover:bg-yellow-200",
+          "bg-[var(--color-warning-100)] text-[var(--color-warning-600)] hover:bg-[var(--color-warning-200)]",
         errorSubtle:
-          "bg-red-100 text-red-700 hover:bg-red-200",
+          "bg-[var(--color-error-100)] text-[var(--color-error-700)] hover:bg-[var(--color-error-200)]",
         accentSubtle:
           "bg-[var(--color-primary-50)] text-[var(--color-primary-600)] hover:bg-[var(--color-primary-100)]",
       },
       size: {
         default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
+        sm: "h-8 rounded-[var(--radius-sm)] px-3 text-xs",
+        lg: "h-10 rounded-[var(--radius-base)] px-8",
         icon: "h-9 w-9",
       },
     },

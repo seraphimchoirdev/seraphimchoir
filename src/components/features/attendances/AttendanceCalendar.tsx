@@ -208,11 +208,11 @@ export default function AttendanceCalendar({ memberId }: AttendanceCalendarProps
       <div className="px-6 py-4 border-t border-[var(--color-border-default)] bg-[var(--color-background-tertiary)]">
         <div className="flex flex-wrap items-center gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <Music className="w-4 h-4 text-indigo-500" />
+            <Music className="w-4 h-4 text-[var(--color-primary-600)]" />
             <span className="text-[var(--color-text-secondary)]">예배 일정 있음 (클릭 가능)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-100/50 border border-gray-200 rounded-[var(--radius-xs)]"></div>
+            <div className="w-4 h-4 bg-[var(--color-background-tertiary)]/50 border border-[var(--color-border-default)] rounded-[var(--radius-xs)]"></div>
             <span className="text-[var(--color-text-secondary)]">예배 일정 없음</span>
           </div>
           <div className="flex items-center gap-2">

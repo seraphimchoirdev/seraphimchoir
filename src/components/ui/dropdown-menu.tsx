@@ -16,7 +16,7 @@ const DropdownMenuContent = React.forwardRef<
         ref={ref}
         align={align}
         className={cn(
-            'z-50 min-w-[8rem] overflow-hidden rounded-md border bg-white p-1 text-slate-950 shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+            'z-50 min-w-[8rem] overflow-hidden rounded-[var(--radius-base)] border border-[var(--color-border-default)] bg-[var(--color-background-primary)] p-1 text-[var(--color-text-primary)] shadow-[var(--shadow-md)]',
             className
         )}
         {...props}
@@ -28,25 +28,20 @@ const DropdownMenuItem = React.forwardRef<
     HTMLDivElement,
     React.HTMLAttributes<HTMLDivElement> & { asChild?: boolean }
 >(({ className, asChild = false, ...props }, ref) => {
+    const itemStyles = 'relative flex cursor-pointer select-none items-center rounded-[var(--radius-sm)] px-2 py-1.5 text-sm outline-none transition-colors focus:bg-[var(--color-background-tertiary)] focus:text-[var(--color-text-primary)] data-[disabled]:pointer-events-none data-[disabled]:opacity-50 hover:bg-[var(--color-background-tertiary)]';
+
     // If asChild is true, we need to clone the child to add the className and other props
     if (asChild && React.isValidElement(props.children)) {
         const child = props.children as React.ReactElement<{ className?: string }>;
         return React.cloneElement(child, {
-            className: cn(
-                'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-slate-100 focus:text-slate-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 hover:bg-slate-100',
-                className,
-                child.props.className
-            ),
+            className: cn(itemStyles, className, child.props.className),
         });
     }
 
     return (
         <div
             ref={ref}
-            className={cn(
-                'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-slate-100 focus:text-slate-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 hover:bg-slate-100',
-                className
-            )}
+            className={cn(itemStyles, className)}
             {...props}
         />
     );

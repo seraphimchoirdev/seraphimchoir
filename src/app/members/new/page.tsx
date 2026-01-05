@@ -15,11 +15,11 @@ export default function NewMemberPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--color-background-tertiary)] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">찬양대원 등록</h1>
-          <p className="mt-2 text-sm text-gray-600">새로운 찬양대원의 정보를 입력해주세요.</p>
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">찬양대원 등록</h1>
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">새로운 찬양대원의 정보를 입력해주세요.</p>
         </div>
 
         <div className="bg-white shadow rounded-lg p-6">

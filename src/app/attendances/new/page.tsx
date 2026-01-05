@@ -12,11 +12,11 @@ export default function NewAttendancePage() {
 
   if (!canCreate) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--color-background-tertiary)] flex items-center justify-center">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
           <div className="text-center">
             <svg
-              className="mx-auto h-12 w-12 text-red-400"
+              className="mx-auto h-12 w-12 text-[var(--color-error-400)]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -28,14 +28,14 @@ export default function NewAttendancePage() {
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
               />
             </svg>
-            <h2 className="mt-4 text-xl font-semibold text-gray-900">권한 없음</h2>
-            <p className="mt-2 text-sm text-gray-600">
+            <h2 className="mt-4 text-xl font-semibold text-[var(--color-text-primary)]">권한 없음</h2>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
               출석 등록 권한이 없습니다. PART_LEADER 이상의 권한이 필요합니다.
             </p>
             <div className="mt-6">
               <Link
                 href="/attendances"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)]"
               >
                 출석 관리로 돌아가기
               </Link>
@@ -47,12 +47,12 @@ export default function NewAttendancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--color-background-tertiary)] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <Link
             href="/attendances"
-            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+            className="inline-flex items-center text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
           >
             <svg
               className="w-4 h-4 mr-2"
@@ -72,7 +72,7 @@ export default function NewAttendancePage() {
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">출석 등록</h1>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mb-6">출석 등록</h1>
           <AttendanceForm />
         </div>
       </div>

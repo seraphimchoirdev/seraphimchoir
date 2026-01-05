@@ -47,18 +47,18 @@ export default function CalendarDayCell({
 
   // 배경색 결정 (출석률 기반)
   const getBgColor = () => {
-    if (!isCurrentMonth) return 'bg-gray-50';
+    if (!isCurrentMonth) return 'bg-[var(--color-background-tertiary)]';
     // 예배 일정이 없으면 연한 회색 배경
-    if (!hasServiceSchedule) return 'bg-gray-100/50';
-    if (!attendanceStats || attendanceStats.total === 0) return 'bg-white';
+    if (!hasServiceSchedule) return 'bg-[var(--color-background-secondary)]/50';
+    if (!attendanceStats || attendanceStats.total === 0) return 'bg-[var(--color-background-primary)]';
 
     if (attendanceRate !== null) {
-      if (attendanceRate >= 90) return 'bg-green-50';
-      if (attendanceRate >= 70) return 'bg-yellow-50';
-      return 'bg-red-50';
+      if (attendanceRate >= 90) return 'bg-[var(--color-success-50)]';
+      if (attendanceRate >= 70) return 'bg-[var(--color-warning-50)]';
+      return 'bg-[var(--color-error-50)]';
     }
 
-    return 'bg-white';
+    return 'bg-[var(--color-background-primary)]';
   };
 
   // 호버 시 배경색
@@ -66,39 +66,39 @@ export default function CalendarDayCell({
     if (!isCurrentMonth) return '';
     // 예배 일정이 없으면 호버 효과 없음
     if (!hasServiceSchedule) return '';
-    if (!attendanceStats || attendanceStats.total === 0) return 'hover:bg-gray-50';
+    if (!attendanceStats || attendanceStats.total === 0) return 'hover:bg-[var(--color-background-secondary)]';
 
     if (attendanceRate !== null) {
-      if (attendanceRate >= 90) return 'hover:bg-green-100';
-      if (attendanceRate >= 70) return 'hover:bg-yellow-100';
-      return 'hover:bg-red-100';
+      if (attendanceRate >= 90) return 'hover:bg-[var(--color-success-100)]';
+      if (attendanceRate >= 70) return 'hover:bg-[var(--color-warning-100)]';
+      return 'hover:bg-[var(--color-error-100)]';
     }
 
-    return 'hover:bg-gray-50';
+    return 'hover:bg-[var(--color-background-secondary)]';
   };
 
   // 날짜 텍스트 색상
   const getDateColor = () => {
-    if (!isCurrentMonth) return 'text-gray-400';
+    if (!isCurrentMonth) return 'text-[var(--color-text-disabled)]';
     // 예배 일정이 없으면 흐리게 표시
     if (!hasServiceSchedule) {
-      if (isToday) return 'text-indigo-400 font-bold';
-      return 'text-gray-400';
+      if (isToday) return 'text-[var(--color-primary-400)] font-bold';
+      return 'text-[var(--color-text-disabled)]';
     }
-    if (isToday) return 'text-indigo-600 font-bold';
-    if (isSunday) return 'text-red-600';
-    if (isSaturday) return 'text-blue-600';
-    return 'text-gray-900';
+    if (isToday) return 'text-[var(--color-primary-600)] font-bold';
+    if (isSunday) return 'text-[var(--color-error-600)]';
+    if (isSaturday) return 'text-[var(--color-primary-600)]';
+    return 'text-[var(--color-text-primary)]';
   };
 
   return (
     <div
       className={cn(
-        'relative min-h-[100px] border border-gray-200 rounded-lg p-2 transition-all',
+        'relative min-h-[100px] border border-[var(--color-border-default)] rounded-lg p-2 transition-all',
         getBgColor(),
         getHoverBgColor(),
-        isToday && hasServiceSchedule && 'ring-2 ring-indigo-500',
-        isToday && !hasServiceSchedule && 'ring-1 ring-indigo-300',
+        isToday && hasServiceSchedule && 'ring-2 ring-[var(--color-primary-500)]',
+        isToday && !hasServiceSchedule && 'ring-1 ring-[var(--color-primary-300)]',
         isClickable ? 'cursor-pointer' : 'cursor-default',
         isClickable && 'group'
       )}
@@ -114,7 +114,7 @@ export default function CalendarDayCell({
           </span>
           {/* 예배 일정이 있으면 아이콘 표시 */}
           {isCurrentMonth && hasServiceSchedule && (
-            <Music className="h-3 w-3 text-indigo-500" />
+            <Music className="h-3 w-3 text-[var(--color-primary-500)]" />
           )}
         </div>
 
@@ -125,7 +125,7 @@ export default function CalendarDayCell({
               e.stopPropagation();
               onClick(date);
             }}
-            className="p-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors opacity-0 group-hover:opacity-100"
+            className="p-1 bg-[var(--color-primary-600)] text-white rounded-md hover:bg-[var(--color-primary-700)] transition-colors opacity-0 group-hover:opacity-100"
             aria-label="출석 입력"
           >
             <svg
@@ -147,7 +147,7 @@ export default function CalendarDayCell({
 
       {/* 예배 유형 표시 (예배 일정이 있을 때) */}
       {isCurrentMonth && hasServiceSchedule && serviceType && (
-        <div className="text-xs text-indigo-600 font-medium truncate mb-1">
+        <div className="text-xs text-[var(--color-primary-600)] font-medium truncate mb-1">
           {serviceType}
         </div>
       )}
@@ -156,17 +156,17 @@ export default function CalendarDayCell({
       {isCurrentMonth && attendanceStats && attendanceStats.total > 0 && (
         <div className="space-y-1">
           {attendanceStats.available > 0 && (
-            <div className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200">
+            <div className="text-xs bg-[var(--color-success-100)] text-[var(--color-success-800)] px-2 py-1 rounded border border-[var(--color-success-200)]">
               출석: {attendanceStats.available}명
             </div>
           )}
           {attendanceStats.unavailable > 0 && (
-            <div className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded border border-red-200">
+            <div className="text-xs bg-[var(--color-error-100)] text-[var(--color-error-800)] px-2 py-1 rounded border border-[var(--color-error-200)]">
               불참: {attendanceStats.unavailable}명
             </div>
           )}
           {attendanceRate !== null && (
-            <div className="text-xs text-gray-600 font-medium mt-1">
+            <div className="text-xs text-[var(--color-text-secondary)] font-medium mt-1">
               {attendanceRate}%
             </div>
           )}
@@ -175,7 +175,7 @@ export default function CalendarDayCell({
 
       {/* 툴팁 (호버 시 표시) */}
       {isCurrentMonth && isHovered && (
-        <div className="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-md shadow-lg whitespace-nowrap pointer-events-none">
+        <div className="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[var(--color-neutral-900)] text-white text-xs rounded-md shadow-lg whitespace-nowrap pointer-events-none">
           <div className="space-y-1">
             {hasServiceSchedule ? (
               <>
@@ -187,16 +187,16 @@ export default function CalendarDayCell({
                     <div>출석률: {attendanceRate}%</div>
                   </>
                 ) : (
-                  <div className="text-gray-300">클릭하여 출석 입력</div>
+                  <div className="text-[var(--color-neutral-300)]">클릭하여 출석 입력</div>
                 )}
               </>
             ) : (
-              <div className="text-gray-300">예배 일정 없음</div>
+              <div className="text-[var(--color-neutral-300)]">예배 일정 없음</div>
             )}
           </div>
           {/* 툴팁 화살표 */}
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
-            <div className="border-4 border-transparent border-t-gray-900"></div>
+            <div className="border-4 border-transparent border-t-[var(--color-neutral-900)]"></div>
           </div>
         </div>
       )}
