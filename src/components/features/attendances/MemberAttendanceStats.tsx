@@ -348,11 +348,11 @@ export default function MemberAttendanceStats() {
                 <th className="text-center py-3 px-4 text-sm font-medium text-gray-600">
                   등단
                 </th>
-                <th className="text-center py-3 px-4 text-sm font-medium text-gray-600">
+                <th className="text-center py-3 px-4 text-sm font-medium text-gray-600" title="실제 미등단으로 기록된 횟수">
                   미등단
                 </th>
-                <th className="text-center py-3 px-4 text-sm font-medium text-gray-600">
-                  누락
+                <th className="text-center py-3 px-4 text-sm font-medium text-gray-600" title="출석 기록이 없는 날짜 (미입력)">
+                  미입력
                 </th>
                 <th
                   className="text-center py-3 px-4 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
@@ -406,12 +406,20 @@ export default function MemberAttendanceStats() {
                     <td className="py-3 px-4 text-center text-sm text-green-600 font-medium">
                       {member.availableCount}
                     </td>
-                    <td className="py-3 px-4 text-center text-sm text-red-600 font-medium">
-                      {member.unavailableCount}
+                    <td className="py-3 px-4 text-center text-sm">
+                      {/* 실제 미등단 = 전체 미등단 - 미입력 */}
+                      {(member.unavailableCount - member.missingRecords) > 0 ? (
+                        <span className="text-red-600 font-medium">
+                          {member.unavailableCount - member.missingRecords}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-center text-sm">
+                      {/* 미입력 = 출석 기록이 없는 날짜 */}
                       {member.missingRecords > 0 ? (
-                        <span className="text-orange-600 font-medium">{member.missingRecords}</span>
+                        <span className="text-orange-500 font-medium">{member.missingRecords}</span>
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
@@ -468,9 +476,12 @@ export default function MemberAttendanceStats() {
               </span>
             </div>
           </div>
-          <p className="mt-2 text-xs text-gray-400">
-            * 출석률 = 등단 횟수 / 총 예배 횟수 × 100 (누락된 기록은 미등단으로 처리)
-          </p>
+          <div className="mt-3 text-xs text-gray-400 space-y-1">
+            <p>* <span className="text-green-600 font-medium">등단</span>: 실제 등단 기록 횟수</p>
+            <p>* <span className="text-red-600 font-medium">미등단</span>: 실제 미등단으로 기록된 횟수</p>
+            <p>* <span className="text-orange-500 font-medium">미입력</span>: 출석 기록이 없는 날짜 (출석률 계산 시 미등단으로 처리)</p>
+            <p>* 출석률 = 등단 / 총 예배 횟수 × 100</p>
+          </div>
         </div>
       )}
     </Card>
