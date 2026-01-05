@@ -18,6 +18,10 @@ export interface ArrangementWithSchedule extends Arrangement {
 export interface ArrangementFilters {
     page?: number;
     limit?: number;
+    startDate?: string;    // YYYY-MM-DD 형식
+    endDate?: string;      // YYYY-MM-DD 형식
+    serviceType?: string;  // 예배 유형
+    search?: string;       // 검색어
 }
 
 type ArrangementsResponse = PaginatedResponse<ArrangementWithSchedule>;
@@ -38,8 +42,22 @@ export function useArrangements(filters?: ArrangementFilters) {
         queryKey: ['arrangements', filters],
         queryFn: async () => {
             const params = new URLSearchParams();
+
+            // 페이지네이션
             if (filters?.page) params.append('page', filters.page.toString());
             if (filters?.limit) params.append('limit', filters.limit.toString());
+
+            // 날짜 범위 필터
+            if (filters?.startDate) params.append('startDate', filters.startDate);
+            if (filters?.endDate) params.append('endDate', filters.endDate);
+
+            // 예배 유형 필터
+            if (filters?.serviceType) params.append('serviceType', filters.serviceType);
+
+            // 검색어
+            if (filters?.search && filters.search.trim()) {
+                params.append('search', filters.search.trim());
+            }
 
             const response = await fetch(`/api/arrangements?${params.toString()}`);
 
