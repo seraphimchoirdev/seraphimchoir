@@ -69,24 +69,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 1. 해당 기간의 모든 예배 날짜 조회 (service_schedules 테이블 사용)
-    const { data: serviceDatesData, error: serviceDatesError } = await supabase
-      .from('service_schedules')
+    // 1. 해당 기간의 모든 예배 날짜 조회 (실제 출석 기록 기준)
+    // Supabase 기본 1000행 제한 해제를 위해 range 사용
+    const { data: allAttendanceDates, error: datesError } = await supabase
+      .from('attendances')
       .select('date')
       .gte('date', startDate)
       .lte('date', endDate)
-      .order('date', { ascending: true });
+      .range(0, 9999);
 
-    if (serviceDatesError) {
-      console.error('Service dates query error:', serviceDatesError);
+    if (datesError) {
+      console.error('Service dates query error:', datesError);
       return NextResponse.json(
         { error: '예배 날짜 조회에 실패했습니다' },
         { status: 500 }
       );
     }
 
-    // 예배 날짜 목록 생성
-    const serviceDates = (serviceDatesData || []).map(row => row.date);
+    // 중복 제거하여 예배 날짜 목록 생성
+    const serviceDatesSet = new Set<string>();
+    for (const row of allAttendanceDates || []) {
+      serviceDatesSet.add(row.date);
+    }
+    const serviceDates = Array.from(serviceDatesSet).sort();
     const totalServiceDates = serviceDates.length;
 
     // 2. 모든 정대원 목록 조회
