@@ -317,6 +317,7 @@ export type Database = {
           encrypted_conductor_notes: string | null
           id: string
           is_leader: boolean
+          joined_date: string
           member_status: Database["public"]["Enums"]["member_status"]
           name: string
           notes: string | null
@@ -332,6 +333,7 @@ export type Database = {
           encrypted_conductor_notes?: string | null
           id?: string
           is_leader?: boolean
+          joined_date: string
           member_status?: Database["public"]["Enums"]["member_status"]
           name: string
           notes?: string | null
@@ -347,6 +349,7 @@ export type Database = {
           encrypted_conductor_notes?: string | null
           id?: string
           is_leader?: boolean
+          joined_date?: string
           member_status?: Database["public"]["Enums"]["member_status"]
           name?: string
           notes?: string | null
@@ -503,6 +506,7 @@ export type Database = {
           post_practice_start_time: string | null
           pre_practice_location: string | null
           pre_practice_minutes_before: number | null
+          pre_practice_start_time: string | null
           service_type: string | null
           updated_at: string | null
         }
@@ -523,6 +527,7 @@ export type Database = {
           post_practice_start_time?: string | null
           pre_practice_location?: string | null
           pre_practice_minutes_before?: number | null
+          pre_practice_start_time?: string | null
           service_type?: string | null
           updated_at?: string | null
         }
@@ -543,6 +548,7 @@ export type Database = {
           post_practice_start_time?: string | null
           pre_practice_location?: string | null
           pre_practice_minutes_before?: number | null
+          pre_practice_start_time?: string | null
           service_type?: string | null
           updated_at?: string | null
         }

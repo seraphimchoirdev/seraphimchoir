@@ -50,6 +50,7 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
     part: member?.part || ('SOPRANO' as Part),
     is_leader: member?.is_leader || false,
     member_status: member?.member_status || ('NEW' as MemberStatus),
+    joined_date: member?.joined_date || new Date().toISOString().split('T')[0],
     phone_number: member?.phone_number || '',
     email: member?.email || '',
     notes: member?.notes || '',
@@ -117,6 +118,7 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
       part: formData.part,
       is_leader: formData.is_leader,
       member_status: formData.member_status,
+      joined_date: formData.joined_date,
       phone_number: formData.phone_number || null,
       email: formData.email || null,
       notes: formData.notes || null,
@@ -271,26 +273,46 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
         {/* 대원 상태 섹션 */}
         <div className="pt-6 border-t border-[var(--color-border-default)]">
           <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-4">대원 상태</h3>
-          <div className="space-y-2">
-            <Label htmlFor="member_status">상태 구분</Label>
-            <Select
-              value={formData.member_status}
-              onValueChange={(value) => handleSelectChange('member_status', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="상태 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {MEMBER_STATUSES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-[var(--color-text-tertiary)]">
-              신입대원은 3개월 후 자동으로 정대원으로 전환됩니다
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="member_status">상태 구분</Label>
+              <Select
+                value={formData.member_status}
+                onValueChange={(value) => handleSelectChange('member_status', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="상태 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MEMBER_STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-[var(--color-text-tertiary)]">
+                신입대원은 3개월 후 자동으로 정대원으로 전환됩니다
+              </p>
+            </div>
+
+            {/* 정대원 임명일 */}
+            <div className="space-y-2">
+              <Label htmlFor="joined_date">
+                정대원 임명일 <span className="text-[var(--color-error-600)]">*</span>
+              </Label>
+              <Input
+                type="date"
+                id="joined_date"
+                name="joined_date"
+                value={formData.joined_date}
+                onChange={handleChange}
+                required
+              />
+              <p className="text-xs text-[var(--color-text-tertiary)]">
+                이 날짜 이후의 배치표에만 표시됩니다
+              </p>
+            </div>
           </div>
         </div>
 

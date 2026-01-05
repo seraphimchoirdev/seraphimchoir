@@ -86,6 +86,9 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
         const groups: Record<string, typeof members> = {};
 
         members.forEach((member) => {
+            // 정대원 임명일 기준 필터링 (배치표 날짜 이전에 임명된 대원만 표시)
+            if (member.joined_date && member.joined_date > date) return;
+
             // 등단 불가능한 멤버 제외
             if (!isServiceAvailable(member.id)) return;
 
@@ -102,19 +105,21 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
         });
 
         return groups;
-    }, [members, isServiceAvailable, searchTerm, hidePlaced, isMemberPlaced]);
+    }, [members, isServiceAvailable, searchTerm, hidePlaced, isMemberPlaced, date]);
 
     // Calculate unplaced members count
     const unplacedCount = useMemo(() => {
         if (!members.length) return 0;
         return members.filter((member) => {
+            // 정대원 임명일 기준 필터링
+            if (member.joined_date && member.joined_date > date) return false;
             // 등단 불가능한 멤버 제외
             if (!isServiceAvailable(member.id)) return false;
             // Filter by search term
             if (searchTerm && !member.name.includes(searchTerm)) return false;
             return !isMemberPlaced(member.id);
         }).length;
-    }, [members, isServiceAvailable, searchTerm, isMemberPlaced]);
+    }, [members, isServiceAvailable, searchTerm, isMemberPlaced, date]);
 
     if (isLoading) {
         return (
