@@ -14,6 +14,8 @@ import { subMonths } from 'date-fns/subMonths';
 import { startOfWeek } from 'date-fns/startOfWeek';
 import { endOfWeek } from 'date-fns/endOfWeek';
 import { startOfYear } from 'date-fns/startOfYear';
+import { endOfYear } from 'date-fns/endOfYear';
+import { subYears } from 'date-fns/subYears';
 import { Users, UserCheck, UserX, TrendingUp, Calendar, BarChart3 } from 'lucide-react';
 import {
   useAttendanceStatistics,
@@ -88,7 +90,7 @@ const PART_COLORS = {
 
 type Part = keyof typeof PART_COLORS;
 
-type DateRangePreset = 'this_week' | 'this_month' | 'last_month' | 'this_year' | 'custom';
+type DateRangePreset = 'this_week' | 'this_month' | 'last_month' | 'this_year' | 'last_year' | 'custom';
 
 /**
  * 출석 통계 대시보드
@@ -127,6 +129,12 @@ export default function AttendanceStatistics() {
         return {
           startDate: format(startOfYear(today), 'yyyy-MM-dd'),
           endDate: format(today, 'yyyy-MM-dd'),
+        };
+      case 'last_year':
+        const lastYear = subYears(today, 1);
+        return {
+          startDate: format(startOfYear(lastYear), 'yyyy-MM-dd'),
+          endDate: format(endOfYear(lastYear), 'yyyy-MM-dd'),
         };
       case 'custom':
         return {
@@ -248,6 +256,7 @@ export default function AttendanceStatistics() {
               { value: 'this_month', label: '이번 달' },
               { value: 'last_month', label: '지난 달' },
               { value: 'this_year', label: '올해' },
+              { value: 'last_year', label: '작년' },
               { value: 'custom', label: '직접 선택' },
             ].map((preset) => (
               <Button

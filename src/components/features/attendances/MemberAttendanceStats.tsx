@@ -10,6 +10,8 @@ import { startOfMonth } from 'date-fns/startOfMonth';
 import { endOfMonth } from 'date-fns/endOfMonth';
 import { subMonths } from 'date-fns/subMonths';
 import { startOfYear } from 'date-fns/startOfYear';
+import { endOfYear } from 'date-fns/endOfYear';
+import { subYears } from 'date-fns/subYears';
 import {
   Users,
   TrendingUp,
@@ -60,7 +62,7 @@ const PART_COLORS = {
 } as const;
 
 type Part = keyof typeof PART_COLORS;
-type DateRangePreset = 'this_month' | 'last_month' | 'last_3_months' | 'this_year' | 'custom';
+type DateRangePreset = 'this_month' | 'last_month' | 'last_3_months' | 'this_year' | 'last_year' | 'custom';
 type SortBy = 'attendance_rate' | 'name' | 'total_records';
 type SortOrder = 'asc' | 'desc';
 
@@ -104,6 +106,12 @@ export default function MemberAttendanceStats() {
         return {
           startDate: format(startOfYear(today), 'yyyy-MM-dd'),
           endDate: format(today, 'yyyy-MM-dd'),
+        };
+      case 'last_year':
+        const lastYear = subYears(today, 1);
+        return {
+          startDate: format(startOfYear(lastYear), 'yyyy-MM-dd'),
+          endDate: format(endOfYear(lastYear), 'yyyy-MM-dd'),
         };
       case 'custom':
         return {
@@ -215,6 +223,7 @@ export default function MemberAttendanceStats() {
             { value: 'last_month', label: '지난 달' },
             { value: 'last_3_months', label: '최근 3개월' },
             { value: 'this_year', label: '올해' },
+            { value: 'last_year', label: '작년' },
             { value: 'custom', label: '직접 선택' },
           ].map((preset) => (
             <Button
@@ -286,6 +295,11 @@ export default function MemberAttendanceStats() {
         {/* 기간 표시 */}
         <div className="mt-3 text-sm text-gray-500">
           기간: {startDate} ~ {endDate}
+          {data?.period?.totalServiceDates !== undefined && (
+            <span className="ml-4">
+              • 총 예배 횟수: <span className="font-semibold text-[var(--color-text-primary)]">{data.period.totalServiceDates}회</span>
+            </span>
+          )}
           {data?.summary && (
             <span className="ml-4">
               • 평균 출석률:{' '}
@@ -327,7 +341,7 @@ export default function MemberAttendanceStats() {
                   onClick={() => handleSortToggle('total_records')}
                 >
                   <div className="flex items-center justify-center gap-1">
-                    기록 수
+                    기록/예배
                     <ArrowUpDown className="h-4 w-4" />
                   </div>
                 </th>
@@ -336,6 +350,9 @@ export default function MemberAttendanceStats() {
                 </th>
                 <th className="text-center py-3 px-4 text-sm font-medium text-gray-600">
                   미등단
+                </th>
+                <th className="text-center py-3 px-4 text-sm font-medium text-gray-600">
+                  누락
                 </th>
                 <th
                   className="text-center py-3 px-4 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
@@ -381,14 +398,23 @@ export default function MemberAttendanceStats() {
                         {member.part}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center text-sm text-gray-600">
-                      {member.totalRecords}
+                    <td className="py-3 px-4 text-center text-sm">
+                      <span className={member.totalRecords < member.expectedRecords ? 'text-orange-600' : 'text-gray-600'}>
+                        {member.totalRecords}/{member.expectedRecords}
+                      </span>
                     </td>
                     <td className="py-3 px-4 text-center text-sm text-green-600 font-medium">
                       {member.availableCount}
                     </td>
                     <td className="py-3 px-4 text-center text-sm text-red-600 font-medium">
                       {member.unavailableCount}
+                    </td>
+                    <td className="py-3 px-4 text-center text-sm">
+                      {member.missingRecords > 0 ? (
+                        <span className="text-orange-600 font-medium">{member.missingRecords}</span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-center gap-2">
@@ -433,12 +459,18 @@ export default function MemberAttendanceStats() {
               <span className="font-medium">총 대원:</span> {data.summary.totalMembers}명
             </div>
             <div>
+              <span className="font-medium">총 예배:</span> {data.period?.totalServiceDates || 0}회
+            </div>
+            <div>
               <span className="font-medium">평균 출석률:</span>{' '}
               <span className={getAttendanceRateColor(data.summary.averageAttendanceRate)}>
                 {data.summary.averageAttendanceRate}%
               </span>
             </div>
           </div>
+          <p className="mt-2 text-xs text-gray-400">
+            * 출석률 = 등단 횟수 / 총 예배 횟수 × 100 (누락된 기록은 미등단으로 처리)
+          </p>
         </div>
       )}
     </Card>
