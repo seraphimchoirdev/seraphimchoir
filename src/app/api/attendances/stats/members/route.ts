@@ -69,12 +69,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 1. 해당 기간의 모든 예배 날짜 조회 (distinct)
+    // 1. 해당 기간의 모든 예배 날짜 조회 (service_schedules 테이블 사용)
     const { data: serviceDatesData, error: serviceDatesError } = await supabase
-      .from('attendances')
+      .from('service_schedules')
       .select('date')
       .gte('date', startDate)
-      .lte('date', endDate);
+      .lte('date', endDate)
+      .order('date', { ascending: true });
 
     if (serviceDatesError) {
       console.error('Service dates query error:', serviceDatesError);
@@ -84,12 +85,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 중복 제거하여 예배 날짜 목록 생성
-    const serviceDatesSet = new Set<string>();
-    for (const row of serviceDatesData || []) {
-      serviceDatesSet.add(row.date);
-    }
-    const serviceDates = Array.from(serviceDatesSet).sort();
+    // 예배 날짜 목록 생성
+    const serviceDates = (serviceDatesData || []).map(row => row.date);
     const totalServiceDates = serviceDates.length;
 
     // 2. 모든 정대원 목록 조회
@@ -112,12 +109,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 3. 해당 기간의 출석 데이터 조회
+    // 3. 해당 기간의 출석 데이터 조회 (Supabase 기본 1000행 제한 해제)
     const { data: attendances, error: attendancesError } = await supabase
       .from('attendances')
       .select('member_id, date, is_service_available')
       .gte('date', startDate)
-      .lte('date', endDate);
+      .lte('date', endDate)
+      .range(0, 9999);
 
     if (attendancesError) {
       console.error('Attendances query error:', attendancesError);
