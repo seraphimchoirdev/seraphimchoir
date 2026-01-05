@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, RefObject } from 'react';
-import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2, BarChart3 } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2, BarChart3, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,6 +52,9 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         canUndo,
         canRedo,
     } = useArrangementStore();
+
+    // 발행된 배치표는 읽기 전용
+    const isReadOnly = arrangement.is_published;
 
     // 현재 활성화된 캡처 ref 선택 (뷰포트 기반)
     const getActiveCaptureRef = () => {
@@ -213,7 +216,8 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                         <Input
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="h-9 sm:h-8 font-bold text-base sm:text-lg border-transparent hover:border-[var(--color-border-default)] focus:border-[var(--color-primary-400)] px-2 -ml-2 w-full sm:w-64"
+                            readOnly={isReadOnly}
+                            className={`h-9 sm:h-8 font-bold text-base sm:text-lg border-transparent px-2 -ml-2 w-full sm:w-64 ${isReadOnly ? 'cursor-default' : 'hover:border-[var(--color-border-default)] focus:border-[var(--color-primary-400)]'}`}
                         />
                         <Badge variant={arrangement.is_published ? 'default' : 'secondary'} className="flex-shrink-0 text-xs">
                             {arrangement.is_published ? '발행됨' : '작성중'}
@@ -227,7 +231,8 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                                 value={conductor}
                                 onChange={(e) => setConductor(e.target.value)}
                                 placeholder="지휘자 입력"
-                                className="h-7 sm:h-6 text-xs sm:text-sm border-transparent hover:border-[var(--color-border-default)] focus:border-[var(--color-primary-400)] px-2 -ml-2 w-28 sm:w-32"
+                                readOnly={isReadOnly}
+                                className={`h-7 sm:h-6 text-xs sm:text-sm border-transparent px-2 -ml-2 w-28 sm:w-32 ${isReadOnly ? 'cursor-default' : 'hover:border-[var(--color-border-default)] focus:border-[var(--color-primary-400)]'}`}
                             />
                         </div>
                         <ServiceScheduleBadge date={arrangement.date} compact />
@@ -236,13 +241,15 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                <PastArrangementButton
-                    arrangementId={arrangement.id}
-                    date={arrangement.date}
-                    onApply={handleApplyPastArrangement}
-                    disabled={isSaving}
-                />
-                {gridLayout && (
+{!isReadOnly && (
+                    <PastArrangementButton
+                        arrangementId={arrangement.id}
+                        date={arrangement.date}
+                        onApply={handleApplyPastArrangement}
+                        disabled={isSaving}
+                    />
+                )}
+                {!isReadOnly && gridLayout && (
                     <RecommendButton
                         arrangementId={arrangement.id}
                         gridLayout={gridLayout}
@@ -250,46 +257,52 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                         disabled={isSaving}
                     />
                 )}
-                <Button
-                    variant={rowLeaderMode ? "default" : "outline"}
-                    onClick={toggleRowLeaderMode}
-                    disabled={isSaving}
-                    className={`gap-2 h-11 sm:h-10 text-sm ${rowLeaderMode ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
-                >
-                    <Crown className="h-4 w-4" />
-                    <span className="hidden sm:inline">{rowLeaderMode ? '줄반장 지정 중' : '줄반장 지정'}</span>
-                </Button>
-                <div className="flex items-center gap-1">
+{!isReadOnly && (
+                    <Button
+                        variant={rowLeaderMode ? "default" : "outline"}
+                        onClick={toggleRowLeaderMode}
+                        disabled={isSaving}
+                        className={`gap-2 h-11 sm:h-10 text-sm ${rowLeaderMode ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                    >
+                        <Crown className="h-4 w-4" />
+                        <span className="hidden sm:inline">{rowLeaderMode ? '줄반장 지정 중' : '줄반장 지정'}</span>
+                    </Button>
+                )}
+                {!isReadOnly && (
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={undo}
+                            disabled={isSaving || !canUndo()}
+                            className="h-11 w-11 sm:h-10 sm:w-10"
+                            title="실행 취소 (Ctrl+Z)"
+                        >
+                            <Undo2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={redo}
+                            disabled={isSaving || !canRedo()}
+                            className="h-11 w-11 sm:h-10 sm:w-10"
+                            title="다시 실행 (Ctrl+Shift+Z)"
+                        >
+                            <Redo2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+                {!isReadOnly && (
                     <Button
                         variant="outline"
-                        size="icon"
-                        onClick={undo}
-                        disabled={isSaving || !canUndo()}
-                        className="h-11 w-11 sm:h-10 sm:w-10"
-                        title="실행 취소 (Ctrl+Z)"
+                        onClick={handleReset}
+                        disabled={isSaving || Object.keys(assignments).length === 0}
+                        className="gap-2 h-11 sm:h-10 text-sm"
                     >
-                        <Undo2 className="h-4 w-4" />
+                        <RotateCcw className="h-4 w-4" />
+                        <span className="hidden sm:inline">초기화</span>
                     </Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={redo}
-                        disabled={isSaving || !canRedo()}
-                        className="h-11 w-11 sm:h-10 sm:w-10"
-                        title="다시 실행 (Ctrl+Shift+Z)"
-                    >
-                        <Redo2 className="h-4 w-4" />
-                    </Button>
-                </div>
-                <Button
-                    variant="outline"
-                    onClick={handleReset}
-                    disabled={isSaving || Object.keys(assignments).length === 0}
-                    className="gap-2 h-11 sm:h-10 text-sm"
-                >
-                    <RotateCcw className="h-4 w-4" />
-                    <span className="hidden sm:inline">초기화</span>
-                </Button>
+                )}
                 <Button
                     variant="outline"
                     onClick={handleAnalyze}
@@ -335,14 +348,21 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <Button onClick={handleSave} disabled={isSaving} className="gap-2 h-11 sm:h-10 text-sm">
-                    {isSaving ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                        <Save className="h-4 w-4" />
-                    )}
-                    저장
-                </Button>
+{isReadOnly ? (
+                    <Button disabled className="gap-2 h-11 sm:h-10 text-sm bg-[var(--color-text-tertiary)]">
+                        <Lock className="h-4 w-4" />
+                        읽기 전용
+                    </Button>
+                ) : (
+                    <Button onClick={handleSave} disabled={isSaving} className="gap-2 h-11 sm:h-10 text-sm">
+                        {isSaving ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Save className="h-4 w-4" />
+                        )}
+                        저장
+                    </Button>
+                )}
             </div>
 
             {/* 분석 리포트 모달 */}

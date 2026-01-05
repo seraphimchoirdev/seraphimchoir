@@ -6,7 +6,7 @@ import { useState, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns/format';
 import { ko } from 'date-fns/locale/ko';
-import { Calendar, User, Music, Edit, Trash2 } from 'lucide-react';
+import { Calendar, User, Music, Edit, Trash2, Eye, Lock } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -79,18 +79,40 @@ const ArrangementCard = memo(function ArrangementCard({
                         className="flex-1 gap-1.5"
                         onClick={() => onEdit(arrangement.id)}
                     >
-                        <Edit className="h-3.5 w-3.5" />
-                        수정
+                        {arrangement.is_published ? (
+                            <>
+                                <Eye className="h-3.5 w-3.5" />
+                                보기
+                            </>
+                        ) : (
+                            <>
+                                <Edit className="h-3.5 w-3.5" />
+                                수정
+                            </>
+                        )}
                     </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 border-[var(--color-error-200)] text-[var(--color-error-600)] hover:bg-[var(--color-error-50)] hover:text-[var(--color-error-700)]"
-                        onClick={(e) => onDeleteClick(e, arrangement)}
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        삭제
-                    </Button>
+                    {arrangement.is_published ? (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5 text-[var(--color-text-tertiary)] cursor-not-allowed"
+                            disabled
+                            title="발행된 배치표는 삭제할 수 없습니다"
+                        >
+                            <Lock className="h-3.5 w-3.5" />
+                            잠금
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5 border-[var(--color-error-200)] text-[var(--color-error-600)] hover:bg-[var(--color-error-50)] hover:text-[var(--color-error-700)]"
+                            onClick={(e) => onDeleteClick(e, arrangement)}
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            삭제
+                        </Button>
+                    )}
                 </div>
             </CardFooter>
         </Card>
