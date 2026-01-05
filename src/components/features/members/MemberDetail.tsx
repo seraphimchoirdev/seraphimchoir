@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { format } from 'date-fns/format';
 import { useMember, useDeleteMember } from '@/hooks/useMembers';
 import type { Database } from '@/types/database.types';
 import { useState } from 'react';
@@ -126,6 +127,48 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
             </div>
           )}
         </div>
+
+        {/* 휴직 정보 (휴직대원일 때만 표시) */}
+        {member.member_status === 'ON_LEAVE' && (
+          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <h3 className="text-sm font-semibold text-amber-800 mb-3 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              휴직 정보
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {member.leave_reason && (
+                <div className="md:col-span-2">
+                  <h4 className="text-xs font-medium text-amber-700">휴직 사유</h4>
+                  <p className="mt-1 text-sm text-amber-900">{member.leave_reason}</p>
+                </div>
+              )}
+              {member.leave_start_date && (
+                <div>
+                  <h4 className="text-xs font-medium text-amber-700">휴직 시작일</h4>
+                  <p className="mt-1 text-sm text-amber-900">
+                    {format(new Date(member.leave_start_date), 'yyyy년 MM월 dd일')}
+                  </p>
+                </div>
+              )}
+              {member.leave_duration_months && (
+                <div>
+                  <h4 className="text-xs font-medium text-amber-700">휴직 기간</h4>
+                  <p className="mt-1 text-sm text-amber-900">{member.leave_duration_months}개월</p>
+                </div>
+              )}
+              {member.expected_return_date && (
+                <div>
+                  <h4 className="text-xs font-medium text-amber-700">복직 예정일</h4>
+                  <p className="mt-1 text-sm font-semibold text-amber-900">
+                    {format(new Date(member.expected_return_date), 'yyyy년 MM월 dd일')}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 특이사항 */}
         {member.notes && (

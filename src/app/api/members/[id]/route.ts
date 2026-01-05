@@ -20,6 +20,12 @@ const updateMemberSchema = z.object({
   email: z.string().email().nullable().optional(),
   notes: z.string().nullable().optional(),
   version: z.number().int().positive().optional(), // 낙관적 잠금을 위한 버전
+  // 휴직 관련 필드
+  leave_reason: z.string().nullable().optional(),
+  leave_start_date: z.string().nullable().optional(), // YYYY-MM-DD 형식
+  leave_duration_months: z.number().int().min(1).max(24).nullable().optional(),
+  expected_return_date: z.string().nullable().optional(), // YYYY-MM-DD 형식
+  joined_date: z.string().nullable().optional(), // 임명일
 });
 
 /**
