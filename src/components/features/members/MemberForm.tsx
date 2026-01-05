@@ -51,9 +51,15 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
     is_leader: member?.is_leader || false,
     member_status: member?.member_status || ('NEW' as MemberStatus),
     joined_date: member?.joined_date || new Date().toISOString().split('T')[0],
+    height: member?.height?.toString() || '',
     phone_number: member?.phone_number || '',
     email: member?.email || '',
     notes: member?.notes || '',
+    // 휴직 관련 필드
+    leave_reason: member?.leave_reason || '',
+    leave_start_date: member?.leave_start_date || '',
+    leave_duration_months: member?.leave_duration_months?.toString() || '',
+    expected_return_date: member?.expected_return_date || '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -113,15 +119,24 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
 
     if (!validate()) return;
 
+    // 휴직 상태가 아니면 휴직 관련 필드를 null로 설정
+    const isOnLeave = formData.member_status === 'ON_LEAVE';
+
     const submitData = {
       name: formData.name,
       part: formData.part,
       is_leader: formData.is_leader,
       member_status: formData.member_status,
       joined_date: formData.joined_date,
+      height: formData.height ? parseInt(formData.height, 10) : null,
       phone_number: formData.phone_number || null,
       email: formData.email || null,
       notes: formData.notes || null,
+      // 휴직 관련 필드 (휴직 상태일 때만 값 저장)
+      leave_reason: isOnLeave && formData.leave_reason ? formData.leave_reason : null,
+      leave_start_date: isOnLeave && formData.leave_start_date ? formData.leave_start_date : null,
+      leave_duration_months: isOnLeave && formData.leave_duration_months ? parseInt(formData.leave_duration_months, 10) : null,
+      expected_return_date: isOnLeave && formData.expected_return_date ? formData.expected_return_date : null,
     };
 
     try {
@@ -253,6 +268,24 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
               </Select>
             </div>
 
+            {/* 키 */}
+            <div className="space-y-2">
+              <Label htmlFor="height">키 (cm)</Label>
+              <Input
+                type="number"
+                id="height"
+                name="height"
+                value={formData.height}
+                onChange={handleChange}
+                placeholder="170"
+                min={100}
+                max={250}
+              />
+              <p className="text-xs text-[var(--color-text-tertiary)]">
+                자리배치 AI 추천에 활용됩니다
+              </p>
+            </div>
+
             {/* 파트장 여부 */}
             <div className="flex items-center gap-2 pt-2 md:col-span-2">
               <input
@@ -314,6 +347,69 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
               </p>
             </div>
           </div>
+
+          {/* 휴직 정보 (휴직대원일 때만 표시) */}
+          {formData.member_status === 'ON_LEAVE' && (
+            <div className="mt-6 p-4 bg-[var(--color-warning-50)] border border-[var(--color-warning-200)] rounded-lg">
+              <h4 className="text-sm font-semibold text-[var(--color-warning-700)] mb-4">휴직 정보</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 휴직 사유 */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="leave_reason">휴직 사유</Label>
+                  <Input
+                    type="text"
+                    id="leave_reason"
+                    name="leave_reason"
+                    value={formData.leave_reason}
+                    onChange={handleChange}
+                    placeholder="예: 해외 출장, 건강 문제, 개인 사정 등"
+                  />
+                </div>
+
+                {/* 휴직 시작일 */}
+                <div className="space-y-2">
+                  <Label htmlFor="leave_start_date">휴직 시작일</Label>
+                  <Input
+                    type="date"
+                    id="leave_start_date"
+                    name="leave_start_date"
+                    value={formData.leave_start_date}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                {/* 휴직 기간 */}
+                <div className="space-y-2">
+                  <Label htmlFor="leave_duration_months">휴직 기간 (개월)</Label>
+                  <Input
+                    type="number"
+                    id="leave_duration_months"
+                    name="leave_duration_months"
+                    value={formData.leave_duration_months}
+                    onChange={handleChange}
+                    placeholder="3"
+                    min={1}
+                    max={24}
+                  />
+                </div>
+
+                {/* 복직 예정일 */}
+                <div className="space-y-2">
+                  <Label htmlFor="expected_return_date">복직 예정일</Label>
+                  <Input
+                    type="date"
+                    id="expected_return_date"
+                    name="expected_return_date"
+                    value={formData.expected_return_date}
+                    onChange={handleChange}
+                  />
+                  <p className="text-xs text-[var(--color-text-tertiary)]">
+                    복직 예정일이 지나면 알림이 표시됩니다
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 연락처 정보 섹션 */}

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { format } from 'date-fns/format';
 import { useDeleteMember } from '@/hooks/useMembers';
 import type { Database } from '@/types/database.types';
 import { useState } from 'react';
@@ -87,6 +88,12 @@ export default function MemberCard({ member, onDelete }: MemberCardProps) {
 
       {/* 정보 */}
       <div className="space-y-1 text-sm text-[var(--color-text-secondary)] mb-3">
+        {member.joined_date && (
+          <div className="flex items-center gap-2">
+            <span className="font-medium">임명일:</span>
+            <span>{format(new Date(member.joined_date), 'yyyy.MM.dd')}</span>
+          </div>
+        )}
         {member.phone_number && (
           <div className="flex items-center gap-2">
             <span className="font-medium">연락처:</span>
@@ -105,6 +112,39 @@ export default function MemberCard({ member, onDelete }: MemberCardProps) {
           </div>
         )}
       </div>
+
+      {/* 휴직 정보 (휴직대원일 때만 표시) */}
+      {member.member_status === 'ON_LEAVE' && (
+        <div className="mb-3 p-3 bg-[var(--color-warning-50)] border border-[var(--color-warning-200)] rounded-lg">
+          <div className="text-xs font-semibold text-[var(--color-warning-700)] mb-2">휴직 정보</div>
+          <div className="space-y-1 text-xs text-[var(--color-warning-600)]">
+            {member.leave_reason && (
+              <div className="flex items-start gap-2">
+                <span className="font-medium shrink-0">사유:</span>
+                <span>{member.leave_reason}</span>
+              </div>
+            )}
+            {member.leave_start_date && (
+              <div className="flex items-center gap-2">
+                <span className="font-medium">시작일:</span>
+                <span>{format(new Date(member.leave_start_date), 'yyyy.MM.dd')}</span>
+              </div>
+            )}
+            {member.leave_duration_months && (
+              <div className="flex items-center gap-2">
+                <span className="font-medium">기간:</span>
+                <span>{member.leave_duration_months}개월</span>
+              </div>
+            )}
+            {member.expected_return_date && (
+              <div className="flex items-center gap-2">
+                <span className="font-medium">복직 예정:</span>
+                <span className="font-semibold">{format(new Date(member.expected_return_date), 'yyyy.MM.dd')}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 액션 버튼 */}
       <div className="flex gap-2 pt-3 border-t border-[var(--color-border-light)]">

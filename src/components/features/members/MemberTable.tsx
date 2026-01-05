@@ -3,7 +3,9 @@
 
 import { useState, useCallback, useMemo, memo } from 'react';
 import Link from 'next/link';
-import { Eye, Edit2, Trash2, ChevronDown, Loader2 } from 'lucide-react';
+import { format } from 'date-fns/format';
+import { addMonths } from 'date-fns/addMonths';
+import { Eye, Edit2, Trash2, ChevronDown, Loader2, X } from 'lucide-react';
 import MemberAvatar from './MemberAvatar';
 import { useDeleteMember, useUpdateMember } from '@/hooks/useMembers';
 import {
@@ -12,11 +14,21 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import type { Database } from '@/types/database.types';
 
 type Member = Database['public']['Tables']['members']['Row'];
 type Part = Database['public']['Enums']['part'];
 type MemberStatus = Database['public']['Enums']['member_status'];
+
+// 휴직 정보 폼 데이터
+interface LeaveInfoFormData {
+  leave_reason: string;
+  leave_start_date: string;
+  leave_duration_months: number | null;
+  expected_return_date: string;
+}
 
 interface MemberTableProps {
   members: Member[];
@@ -124,51 +136,66 @@ const MemberRow = memo(function MemberRow({
 
       {/* 상태 (드롭다운) */}
       <td className="px-4 py-4 whitespace-nowrap">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={`
-                inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-medium border
-                cursor-pointer hover:opacity-80 transition-opacity
-                ${STATUS_COLORS[member.member_status]}
-              `}
-              disabled={updatingStatusId === member.id}
-            >
-              {updatingStatusId === member.id ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : null}
-              {STATUS_LABELS[member.member_status]}
-              <ChevronDown className="w-3 h-3" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-32">
-            {STATUS_OPTIONS.map((status) => (
-              <DropdownMenuItem
-                key={status}
-                onClick={() => {
-                  if (status !== member.member_status) {
-                    onStatusChange(member.id, status);
-                  }
-                }}
+        <div className="flex flex-col gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
                 className={`
-                  cursor-pointer text-xs
-                  ${status === member.member_status ? 'bg-[var(--color-background-tertiary)] font-semibold' : ''}
+                  inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-medium border
+                  cursor-pointer hover:opacity-80 transition-opacity
+                  ${STATUS_COLORS[member.member_status]}
                 `}
+                disabled={updatingStatusId === member.id}
               >
-                <span
+                {updatingStatusId === member.id ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : null}
+                {STATUS_LABELS[member.member_status]}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-32">
+              {STATUS_OPTIONS.map((status) => (
+                <DropdownMenuItem
+                  key={status}
+                  onClick={() => {
+                    if (status !== member.member_status) {
+                      onStatusChange(member.id, status);
+                    }
+                  }}
                   className={`
-                    inline-block w-2 h-2 rounded-full mr-2
-                    ${status === 'REGULAR' ? 'bg-[var(--color-success-500)]' : ''}
-                    ${status === 'NEW' ? 'bg-[var(--color-primary-500)]' : ''}
-                    ${status === 'ON_LEAVE' ? 'bg-[var(--color-part-special-500)]' : ''}
-                    ${status === 'RESIGNED' ? 'bg-[var(--color-error-500)]' : ''}
+                    cursor-pointer text-xs
+                    ${status === member.member_status ? 'bg-[var(--color-background-tertiary)] font-semibold' : ''}
                   `}
-                />
-                {STATUS_LABELS[status]}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                >
+                  <span
+                    className={`
+                      inline-block w-2 h-2 rounded-full mr-2
+                      ${status === 'REGULAR' ? 'bg-[var(--color-success-500)]' : ''}
+                      ${status === 'NEW' ? 'bg-[var(--color-primary-500)]' : ''}
+                      ${status === 'ON_LEAVE' ? 'bg-[var(--color-part-special-500)]' : ''}
+                      ${status === 'RESIGNED' ? 'bg-[var(--color-error-500)]' : ''}
+                    `}
+                  />
+                  {STATUS_LABELS[status]}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {/* 휴직대원일 때 복직 예정일 표시 */}
+          {member.member_status === 'ON_LEAVE' && member.expected_return_date && (
+            <span className="text-[10px] text-[var(--color-warning-600)]" title={member.leave_reason || '휴직 중'}>
+              복직: {format(new Date(member.expected_return_date), 'yy.MM.dd')}
+            </span>
+          )}
+        </div>
+      </td>
+
+      {/* 정대원 임명일 */}
+      <td className="px-4 py-4 whitespace-nowrap">
+        <span className="text-sm text-neutral-600">
+          {member.joined_date ? format(new Date(member.joined_date), 'yyyy.MM.dd') : '-'}
+        </span>
       </td>
 
       {/* 액션 버튼 */}
@@ -208,6 +235,15 @@ const MemberRow = memo(function MemberRow({
 export default function MemberTable({ members, onRefetch }: MemberTableProps) {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  // 휴직 정보 모달 상태
+  const [leaveModalMemberId, setLeaveModalMemberId] = useState<string | null>(null);
+  const [leaveFormData, setLeaveFormData] = useState<LeaveInfoFormData>({
+    leave_reason: '',
+    leave_start_date: format(new Date(), 'yyyy-MM-dd'),
+    leave_duration_months: 3,
+    expected_return_date: format(addMonths(new Date(), 3), 'yyyy-MM-dd'),
+  });
+
   const deleteMutation = useDeleteMember();
   const updateMutation = useUpdateMember();
 
@@ -216,6 +252,12 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
     if (!deleteConfirmId) return null;
     return members.find((m) => m.id === deleteConfirmId);
   }, [deleteConfirmId, members]);
+
+  // 휴직 대상 멤버 메모이제이션
+  const memberToLeave = useMemo(() => {
+    if (!leaveModalMemberId) return null;
+    return members.find((m) => m.id === leaveModalMemberId);
+  }, [leaveModalMemberId, members]);
 
   // 콜백 함수들 메모이제이션
   const handleDelete = useCallback(async (id: string) => {
@@ -229,11 +271,37 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
   }, [deleteMutation, onRefetch]);
 
   const handleStatusChange = useCallback(async (memberId: string, newStatus: MemberStatus) => {
+    // 휴직으로 변경할 때는 모달을 띄움
+    if (newStatus === 'ON_LEAVE') {
+      setLeaveModalMemberId(memberId);
+      // 폼 초기화
+      const today = new Date();
+      setLeaveFormData({
+        leave_reason: '',
+        leave_start_date: format(today, 'yyyy-MM-dd'),
+        leave_duration_months: 3,
+        expected_return_date: format(addMonths(today, 3), 'yyyy-MM-dd'),
+      });
+      return;
+    }
+
+    // 휴직에서 다른 상태로 변경할 때는 휴직 정보 초기화
     setUpdatingStatusId(memberId);
     try {
+      const updateData: Partial<Member> = { member_status: newStatus };
+
+      // 휴직 상태에서 벗어날 때 휴직 정보 초기화
+      const currentMember = members.find((m) => m.id === memberId);
+      if (currentMember?.member_status === 'ON_LEAVE') {
+        updateData.leave_reason = null;
+        updateData.leave_start_date = null;
+        updateData.leave_duration_months = null;
+        updateData.expected_return_date = null;
+      }
+
       await updateMutation.mutateAsync({
         id: memberId,
-        data: { member_status: newStatus },
+        data: updateData,
       });
       onRefetch?.();
     } catch (error) {
@@ -241,7 +309,57 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
     } finally {
       setUpdatingStatusId(null);
     }
-  }, [updateMutation, onRefetch]);
+  }, [updateMutation, onRefetch, members]);
+
+  // 휴직 정보 제출 핸들러
+  const handleLeaveSubmit = useCallback(async () => {
+    if (!leaveModalMemberId) return;
+
+    setUpdatingStatusId(leaveModalMemberId);
+    try {
+      await updateMutation.mutateAsync({
+        id: leaveModalMemberId,
+        data: {
+          member_status: 'ON_LEAVE',
+          leave_reason: leaveFormData.leave_reason || null,
+          leave_start_date: leaveFormData.leave_start_date || null,
+          leave_duration_months: leaveFormData.leave_duration_months,
+          expected_return_date: leaveFormData.expected_return_date || null,
+        },
+      });
+      onRefetch?.();
+      setLeaveModalMemberId(null);
+    } catch (error) {
+      console.error('Leave status update error:', error);
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  }, [leaveModalMemberId, leaveFormData, updateMutation, onRefetch]);
+
+  // 휴직 기간 변경 시 복직 예정일 자동 계산
+  const handleLeaveDurationChange = useCallback((months: number) => {
+    const startDate = leaveFormData.leave_start_date
+      ? new Date(leaveFormData.leave_start_date)
+      : new Date();
+
+    setLeaveFormData((prev) => ({
+      ...prev,
+      leave_duration_months: months,
+      expected_return_date: format(addMonths(startDate, months), 'yyyy-MM-dd'),
+    }));
+  }, [leaveFormData.leave_start_date]);
+
+  // 휴직 시작일 변경 시 복직 예정일 자동 계산
+  const handleLeaveStartDateChange = useCallback((date: string) => {
+    const startDate = new Date(date);
+    const months = leaveFormData.leave_duration_months || 3;
+
+    setLeaveFormData((prev) => ({
+      ...prev,
+      leave_start_date: date,
+      expected_return_date: format(addMonths(startDate, months), 'yyyy-MM-dd'),
+    }));
+  }, [leaveFormData.leave_duration_months]);
 
   const handleDeleteClick = useCallback((id: string) => {
     setDeleteConfirmId(id);
@@ -249,6 +367,10 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
 
   const handleCancelDelete = useCallback(() => {
     setDeleteConfirmId(null);
+  }, []);
+
+  const handleCancelLeave = useCallback(() => {
+    setLeaveModalMemberId(null);
   }, []);
 
   return (
@@ -280,6 +402,12 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
                 className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider"
               >
                 상태
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider"
+              >
+                임명일
               </th>
               <th
                 scope="col"
@@ -342,6 +470,151 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
                 disabled={deleteMutation.isPending}
               >
                 {deleteMutation.isPending ? '삭제 중...' : '삭제'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 휴직 정보 입력 모달 */}
+      {leaveModalMemberId && memberToLeave && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={handleCancelLeave}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 모달 헤더 */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-neutral-900">
+                휴직 처리
+              </h3>
+              <button
+                onClick={handleCancelLeave}
+                className="p-1 text-neutral-400 hover:text-neutral-600 transition-colors"
+                aria-label="닫기"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 대원 정보 */}
+            <div className="flex items-center gap-3 p-3 bg-[var(--color-warning-50)] border border-[var(--color-warning-200)] rounded-lg mb-4">
+              <MemberAvatar name={memberToLeave.name} part={memberToLeave.part} />
+              <div>
+                <div className="text-sm font-medium text-neutral-900">
+                  {memberToLeave.name}
+                </div>
+                <div className="text-xs text-[var(--color-warning-600)]">
+                  휴직대원으로 변경됩니다
+                </div>
+              </div>
+            </div>
+
+            {/* 휴직 정보 폼 */}
+            <div className="space-y-4">
+              {/* 휴직 사유 */}
+              <div className="space-y-1.5">
+                <Label htmlFor="leave_reason" className="text-sm font-medium">
+                  휴직 사유
+                </Label>
+                <Input
+                  type="text"
+                  id="leave_reason"
+                  placeholder="예: 해외 출장, 건강 문제, 개인 사정 등"
+                  value={leaveFormData.leave_reason}
+                  onChange={(e) =>
+                    setLeaveFormData((prev) => ({
+                      ...prev,
+                      leave_reason: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              {/* 휴직 시작일 & 기간 */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="leave_start_date" className="text-sm font-medium">
+                    휴직 시작일
+                  </Label>
+                  <Input
+                    type="date"
+                    id="leave_start_date"
+                    value={leaveFormData.leave_start_date}
+                    onChange={(e) => handleLeaveStartDateChange(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="leave_duration_months" className="text-sm font-medium">
+                    휴직 기간 (개월)
+                  </Label>
+                  <Input
+                    type="number"
+                    id="leave_duration_months"
+                    min={1}
+                    max={24}
+                    value={leaveFormData.leave_duration_months || ''}
+                    onChange={(e) =>
+                      handleLeaveDurationChange(parseInt(e.target.value, 10) || 0)
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* 복직 예정일 */}
+              <div className="space-y-1.5">
+                <Label htmlFor="expected_return_date" className="text-sm font-medium">
+                  복직 예정일
+                </Label>
+                <Input
+                  type="date"
+                  id="expected_return_date"
+                  value={leaveFormData.expected_return_date}
+                  onChange={(e) =>
+                    setLeaveFormData((prev) => ({
+                      ...prev,
+                      expected_return_date: e.target.value,
+                    }))
+                  }
+                />
+                <p className="text-xs text-neutral-500">
+                  휴직 기간에 따라 자동 계산됩니다. 직접 수정도 가능합니다.
+                </p>
+              </div>
+            </div>
+
+            {/* 에러 메시지 */}
+            {updateMutation.error && (
+              <p className="text-sm text-red-600 mt-4">
+                {updateMutation.error.message}
+              </p>
+            )}
+
+            {/* 액션 버튼 */}
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={handleCancelLeave}
+                className="flex-1 px-4 py-2 text-sm font-medium text-neutral-700 bg-neutral-100 rounded-md hover:bg-neutral-200 transition-colors"
+                disabled={updatingStatusId === leaveModalMemberId}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleLeaveSubmit}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-[var(--color-warning-600)] rounded-md hover:bg-[var(--color-warning-700)] disabled:opacity-50 transition-colors"
+                disabled={updatingStatusId === leaveModalMemberId}
+              >
+                {updatingStatusId === leaveModalMemberId ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    처리 중...
+                  </span>
+                ) : (
+                  '휴직 처리'
+                )}
               </button>
             </div>
           </div>

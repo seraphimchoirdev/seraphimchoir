@@ -121,6 +121,11 @@ export function calculateSeatsByRow(
 ): RowSeatPositions[] {
   const rowsData: RowSeatPositions[] = [];
 
+  // gridLayout 또는 rowCapacities가 없으면 빈 배열 반환
+  if (!gridLayout?.rowCapacities) {
+    return rowsData;
+  }
+
   gridLayout.rowCapacities.forEach((capacity, rowIndex) => {
     const offset = getZigzagOffset(rowIndex, gridLayout.zigzagPattern, capacity);
     const seats: SeatPosition[] = [];
