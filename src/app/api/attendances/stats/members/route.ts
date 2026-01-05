@@ -69,32 +69,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 1. 해당 기간의 모든 예배 날짜 조회 (실제 출석 기록 기준)
-    // Supabase 기본 1000행 제한 해제를 위해 range 사용
-    const { data: allAttendanceDates, error: datesError } = await supabase
-      .from('attendances')
-      .select('date')
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .range(0, 9999);
-
-    if (datesError) {
-      console.error('Service dates query error:', datesError);
-      return NextResponse.json(
-        { error: '예배 날짜 조회에 실패했습니다' },
-        { status: 500 }
-      );
-    }
-
-    // 중복 제거하여 예배 날짜 목록 생성
-    const serviceDatesSet = new Set<string>();
-    for (const row of allAttendanceDates || []) {
-      serviceDatesSet.add(row.date);
-    }
-    const serviceDates = Array.from(serviceDatesSet).sort();
-    const totalServiceDates = serviceDates.length;
-
-    // 2. 모든 정대원 목록 조회
+    // 1. 모든 정대원 목록 조회
     let membersQuery = supabase
       .from('members')
       .select('id, name, part')
@@ -114,21 +89,49 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 3. 해당 기간의 출석 데이터 조회 (Supabase 기본 1000행 제한 해제)
-    const { data: attendances, error: attendancesError } = await supabase
-      .from('attendances')
-      .select('member_id, date, is_service_available')
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .range(0, 9999);
+    // 2. 해당 기간의 출석 데이터 조회 (페이지네이션으로 모든 데이터 가져오기)
+    const allAttendances: { member_id: string; date: string; is_service_available: boolean }[] = [];
+    const pageSize = 1000;
+    let page = 0;
+    let hasMore = true;
 
-    if (attendancesError) {
-      console.error('Attendances query error:', attendancesError);
-      return NextResponse.json(
-        { error: '출석 데이터를 불러오는데 실패했습니다' },
-        { status: 500 }
-      );
+    while (hasMore) {
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+
+      const { data: pageData, error: pageError } = await supabase
+        .from('attendances')
+        .select('member_id, date, is_service_available')
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .range(from, to);
+
+      if (pageError) {
+        console.error('Attendances query error:', pageError);
+        return NextResponse.json(
+          { error: '출석 데이터를 불러오는데 실패했습니다' },
+          { status: 500 }
+        );
+      }
+
+      if (pageData && pageData.length > 0) {
+        allAttendances.push(...pageData);
+        hasMore = pageData.length === pageSize;
+        page++;
+      } else {
+        hasMore = false;
+      }
     }
+
+    const attendances = allAttendances;
+
+    // 3. 출석 데이터에서 고유한 예배 날짜 추출
+    const serviceDatesSet = new Set<string>();
+    for (const attendance of attendances) {
+      serviceDatesSet.add(attendance.date);
+    }
+    const serviceDates = Array.from(serviceDatesSet).sort();
+    const totalServiceDates = serviceDates.length;
 
     // 4. 대원별 출석 데이터 맵 생성
     const attendanceMap = new Map<string, Map<string, boolean>>();
