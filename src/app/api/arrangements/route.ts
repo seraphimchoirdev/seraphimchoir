@@ -85,13 +85,40 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. 모든 관련 seats 조회 (파트별 인원 계산용)
+    // Supabase 서버의 max_rows=1000 제한을 우회하기 위해 페이지네이션 사용
     const arrangementIds = (arrangements || []).map(a => a.id);
-    const { data: allSeats } = arrangementIds.length > 0
-        ? await supabase
-            .from('seats')
-            .select('arrangement_id, part')
-            .in('arrangement_id', arrangementIds)
-        : { data: [] };
+    let allSeats: { arrangement_id: string; part: string }[] = [];
+
+    if (arrangementIds.length > 0) {
+        const PAGE_SIZE = 1000;
+        let page = 0;
+        let hasMore = true;
+
+        while (hasMore) {
+            const from = page * PAGE_SIZE;
+            const to = from + PAGE_SIZE - 1;
+
+            const { data: pageSeats, error: seatsError } = await supabase
+                .from('seats')
+                .select('arrangement_id, part')
+                .in('arrangement_id', arrangementIds)
+                .range(from, to);
+
+            if (seatsError) {
+                console.error('Seats query error:', seatsError.message);
+                break;
+            }
+
+            if (pageSeats && pageSeats.length > 0) {
+                allSeats = allSeats.concat(pageSeats);
+                hasMore = pageSeats.length === PAGE_SIZE;
+                page++;
+            } else {
+                hasMore = false;
+            }
+        }
+
+    }
 
     // 4. arrangement별 파트 구성 계산
     const seatCompositionMap = new Map<string, PartComposition>();
