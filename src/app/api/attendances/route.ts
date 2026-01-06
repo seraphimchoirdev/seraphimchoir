@@ -45,58 +45,88 @@ export async function GET(request: NextRequest) {
     const isServiceAvailable = searchParams.get('is_service_available') || isAvailable;
     const isPracticeAttended = searchParams.get('is_practice_attended');
 
-    let query = supabase
-      .from('attendances')
-      .select(`
-        *,
-        members!member_id(
-          id,
-          name,
-          part
-        )
-      `)
-      .order('date', { ascending: false });
-
-    // 필터 적용
-    if (memberId) {
-      query = query.eq('member_id', memberId);
+    // 필터가 하나도 없으면 빈 배열 반환 (의도치 않은 전체 조회 방지)
+    const hasAnyFilter = memberId || date || startDate || endDate || isServiceAvailable || isPracticeAttended;
+    if (!hasAnyFilter) {
+      console.log('Attendances: No filters provided, returning empty array');
+      return NextResponse.json([]);
     }
 
-    if (date) {
-      query = query.eq('date', date);
+    // Supabase max_rows=1000 제한 우회를 위한 페이지네이션
+    const PAGE_SIZE = 1000;
+    let allData: Array<{
+      id: string;
+      member_id: string;
+      date: string;
+      is_service_available: boolean;
+      is_practice_attended: boolean;
+      notes: string | null;
+      created_at: string;
+      updated_at: string;
+      members: { id: string; name: string; part: string };
+    }> = [];
+    let page = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      let query = supabase
+        .from('attendances')
+        .select(`
+          *,
+          members!member_id(
+            id,
+            name,
+            part
+          )
+        `)
+        .order('date', { ascending: false })
+        .range(from, to);
+
+      // 필터 적용
+      if (memberId) {
+        query = query.eq('member_id', memberId);
+      }
+
+      if (date) {
+        query = query.eq('date', date);
+      }
+
+      if (startDate && endDate) {
+        query = query.gte('date', startDate).lte('date', endDate);
+      } else if (startDate) {
+        query = query.gte('date', startDate);
+      } else if (endDate) {
+        query = query.lte('date', endDate);
+      }
+
+      if (isServiceAvailable !== null) {
+        query = query.eq('is_service_available', isServiceAvailable === 'true');
+      }
+
+      if (isPracticeAttended !== null) {
+        query = query.eq('is_practice_attended', isPracticeAttended === 'true');
+      }
+
+      const { data: pageData, error: pageError } = await query;
+
+      if (pageError) {
+        console.error('Supabase error:', pageError);
+        return NextResponse.json({ error: pageError.message }, { status: 500 });
+      }
+
+      if (pageData && pageData.length > 0) {
+        allData = allData.concat(pageData);
+        hasMore = pageData.length === PAGE_SIZE;
+        page++;
+      } else {
+        hasMore = false;
+      }
     }
 
-    if (startDate && endDate) {
-      query = query.gte('date', startDate).lte('date', endDate);
-    } else if (startDate) {
-      query = query.gte('date', startDate);
-    } else if (endDate) {
-      query = query.lte('date', endDate);
-    }
-
-    if (isServiceAvailable !== null) {
-      query = query.eq('is_service_available', isServiceAvailable === 'true');
-    }
-
-    if (isPracticeAttended !== null) {
-      query = query.eq('is_practice_attended', isPracticeAttended === 'true');
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    // 디버깅: 조회된 데이터 확인
-    console.log('Attendances fetched:', {
-      total: data?.length || 0,
-      filters: { date, memberId, isServiceAvailable },
-      sampleData: data?.[0] // 첫 번째 데이터 샘플
-    });
-
-    return NextResponse.json(data);
+    return NextResponse.json(allData);
   } catch (error) {
     console.error('Attendances GET error:', error);
     return NextResponse.json(
