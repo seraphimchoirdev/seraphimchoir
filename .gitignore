@@ -44,3 +44,6 @@ next-env.d.ts
 
 /src/generated/prisma
 
+
+# Large PDF files
+training_data/other_data/1-3월찬양곡.pdf
