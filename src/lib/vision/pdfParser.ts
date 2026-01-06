@@ -55,7 +55,7 @@ function normalizeEmptyValue(value: string | undefined): string | null {
  * 절기/행사 텍스트에서 예배 유형 추론
  */
 function inferServiceType(notesText: string | null): string {
-  if (!notesText) return '주일2부예배';
+  if (!notesText) return '주일 2부 예배';
 
   for (const [keyword, serviceType] of Object.entries(SERVICE_TYPE_KEYWORDS)) {
     if (notesText.includes(keyword)) {
@@ -63,7 +63,7 @@ function inferServiceType(notesText: string | null): string {
     }
   }
 
-  return '주일2부예배';
+  return '주일 2부 예배';
 }
 
 /**
@@ -163,7 +163,7 @@ export function parseScheduleFromPdfText(
     const notesText = normalizeEmptyValue(notesCol);
     let serviceType = inferServiceType(notesText);
 
-    if (isWeekdayService && serviceType === '주일2부예배') {
+    if (isWeekdayService && serviceType === '주일 2부 예배') {
       serviceType = '기도회';
     }
 

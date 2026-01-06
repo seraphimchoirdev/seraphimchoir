@@ -17,7 +17,7 @@ interface CalendarDayCellProps {
   onClick: (date: Date) => void;
   /** 해당 날짜에 예배 일정이 있는지 여부 */
   hasServiceSchedule?: boolean;
-  /** 예배 유형 (예: "주일2부예배", "주일오후찬양예배") */
+  /** 예배 유형 (예: "주일 2부 예배", "오후찬양예배") */
   serviceType?: string;
 }
 

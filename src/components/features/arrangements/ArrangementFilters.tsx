@@ -22,10 +22,9 @@ import {
 // 예배 유형 옵션 (ServiceScheduleForm과 동일)
 const SERVICE_TYPE_OPTIONS = [
     { value: 'all', label: '전체' },
-    { value: '주일2부예배', label: '주일 2부 예배' },
-    { value: '주일오후찬양예배', label: '주일 오후 찬양예배' },
+    { value: '주일 2부 예배', label: '주일 2부 예배' },
+    { value: '오후찬양예배', label: '오후 찬양예배' },
     { value: '절기찬양예배', label: '절기 찬양예배' },
-    { value: '2부예배', label: '2부 예배' },
     { value: '온세대예배', label: '온세대 예배' },
 ];
 

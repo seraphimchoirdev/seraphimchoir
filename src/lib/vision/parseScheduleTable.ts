@@ -151,13 +151,13 @@ function normalizeEmptyValue(value: string | undefined): string | null {
  * 분류 우선순위:
  * 1. 찬양대 절기찬양예배 (6가지 특별예배)
  * 2. 기도회 (새벽기도회, 부흥사경회 등)
- * 3. 주일2부예배 (기본값)
+ * 3. 주일 2부 예배 (기본값)
  *
  * @param notesText 비고/절기 텍스트
  * @param isSunday 주일 여부
  */
 function inferServiceType(notesText: string | null, isSunday: boolean = true): string {
-  if (!notesText) return isSunday ? '주일2부예배' : '기도회';
+  if (!notesText) return isSunday ? '주일 2부 예배' : '기도회';
 
   // 1. 찬양대 담당 절기찬양예배 체크
   for (const keyword of CHOIR_SPECIAL_SERVICES) {
@@ -173,8 +173,8 @@ function inferServiceType(notesText: string | null, isSunday: boolean = true): s
     }
   }
 
-  // 3. 기본값: 주일이면 주일2부예배, 평일이면 기도회
-  return isSunday ? '주일2부예배' : '기도회';
+  // 3. 기본값: 주일이면 주일 2부 예배, 평일이면 기도회
+  return isSunday ? '주일 2부 예배' : '기도회';
 }
 
 /**
@@ -225,7 +225,7 @@ function isDataRowWithDate(columns: string[]): boolean {
 
 /**
  * 셀 병합된 행인지 확인 (날짜 없이 찬양곡 정보만 있는 행)
- * 예: 2/8 주일2부예배 + 오후찬양예배 중 두 번째 행
+ * 예: 2/8 주일 2부 예배 + 오후찬양예배 중 두 번째 행
  */
 function isMergedCellRow(columns: string[], offset: number): boolean {
   if (columns.length < 3) return false;
@@ -335,7 +335,7 @@ export function detectColumnBoundaries(
  * 선곡표 이미지에서 추출된 단어들을 파싱하여 예배 일정 데이터로 변환
  *
  * 셀 병합 처리:
- * - 같은 날짜에 여러 예배(주일2부예배 + 오후찬양예배)가 있는 경우
+ * - 같은 날짜에 여러 예배(주일 2부 예배 + 오후찬양예배)가 있는 경우
  * - 날짜와 후드 색상이 셀 병합되어 첫 번째 행에만 있음
  * - 두 번째 행은 날짜 없이 찬양곡 정보만 있음
  * - 이전 행의 날짜/후드를 상속하여 별도 레코드로 저장
@@ -491,7 +491,7 @@ export function parseScheduleFromWords(
  * ParsedSchedule을 ServiceScheduleInsert 형식으로 변환
  *
  * 예배 유형별 연습 설정:
- * - 주일2부예배: 예배 전 연습 + 예배 후 연습
+ * - 주일 2부 예배: 예배 전 연습 + 예배 후 연습
  * - 오후찬양예배: 예배 전 연습만 (예배 후 연습 없음)
  * - 기도회: 예배 전 연습만
  * - 절기찬양예배: 예배 전 연습 + 예배 후 연습
@@ -501,7 +501,7 @@ export function toServiceScheduleInsert(
   parsed: ParsedSchedule
 ): ServiceScheduleInsert {
   // 예배 후 연습이 있는 예배 유형
-  const hasPostPracticeTypes = ['주일2부예배', '절기찬양예배'];
+  const hasPostPracticeTypes = ['주일 2부 예배', '절기찬양예배'];
   const hasPostPractice = hasPostPracticeTypes.includes(parsed.service_type);
 
   return {

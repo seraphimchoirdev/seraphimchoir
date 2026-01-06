@@ -18,8 +18,8 @@ import type { Database } from '@/types/database.types';
 
 // 예배 유형 옵션
 const SERVICE_TYPE_OPTIONS = [
-  { value: '주일2부예배', label: '주일 2부 예배' },
-  { value: '주일오후찬양예배', label: '주일 오후 찬양예배' },
+  { value: '주일 2부 예배', label: '주일 2부 예배' },
+  { value: '오후찬양예배', label: '오후 찬양예배' },
   { value: '절기찬양예배', label: '절기 찬양예배' },
   { value: '기도회', label: '기도회' },
   { value: '기타', label: '기타' },
@@ -35,9 +35,9 @@ const HOOD_COLOR_OPTIONS = [
   { value: '검정', label: '검정색' },
 ] as const;
 
-// 특별예배 여부 확인 (주일2부예배가 아닌 경우)
+// 특별예배 여부 확인 (주일 2부 예배가 아닌 경우)
 function isSpecialService(serviceType: string | null | undefined): boolean {
-  return !!serviceType && serviceType !== '주일2부예배';
+  return !!serviceType && serviceType !== '주일 2부 예배';
 }
 
 type ServiceSchedule = Database['public']['Tables']['service_schedules']['Row'];
@@ -65,7 +65,7 @@ export default function ServiceScheduleForm({
   isLoading = false,
 }: ServiceScheduleFormProps) {
   // 기존 데이터가 프리셋에 없는 경우 "기타" 모드로 시작
-  const initialServiceType = initialData?.service_type || '주일2부예배';
+  const initialServiceType = initialData?.service_type || '주일 2부 예배';
   const initialIsCustom = initialServiceType && !isPresetServiceType(initialServiceType);
 
   const [formData, setFormData] = useState<ServiceScheduleInsert>(() => {
@@ -130,7 +130,7 @@ export default function ServiceScheduleForm({
         <div>
           <Label htmlFor="service_type">예배 유형</Label>
           <Select
-            value={isCustomMode ? '기타' : (formData.service_type || '주일2부예배')}
+            value={isCustomMode ? '기타' : (formData.service_type || '주일 2부 예배')}
             onValueChange={(value) => {
               if (value === '기타') {
                 setIsCustomMode(true);
@@ -140,7 +140,7 @@ export default function ServiceScheduleForm({
               } else {
                 setIsCustomMode(false);
                 setCustomServiceType('');
-                // 주일2부예배가 아니면 특별예배 → 예배 후 연습 기본 false
+                // 주일 2부 예배가 아니면 특별예배 → 예배 후 연습 기본 false
                 const isSpecial = isSpecialService(value);
                 setFormData({ ...formData, service_type: value, has_post_practice: !isSpecial });
               }

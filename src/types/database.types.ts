@@ -315,9 +315,14 @@ export type Database = {
           created_at: string
           email: string | null
           encrypted_conductor_notes: string | null
+          expected_return_date: string | null
+          height: number | null
           id: string
           is_leader: boolean
           joined_date: string
+          leave_duration_months: number | null
+          leave_reason: string | null
+          leave_start_date: string | null
           member_status: Database["public"]["Enums"]["member_status"]
           name: string
           notes: string | null
@@ -331,9 +336,14 @@ export type Database = {
           created_at?: string
           email?: string | null
           encrypted_conductor_notes?: string | null
+          expected_return_date?: string | null
+          height?: number | null
           id?: string
           is_leader?: boolean
           joined_date: string
+          leave_duration_months?: number | null
+          leave_reason?: string | null
+          leave_start_date?: string | null
           member_status?: Database["public"]["Enums"]["member_status"]
           name: string
           notes?: string | null
@@ -347,9 +357,14 @@ export type Database = {
           created_at?: string
           email?: string | null
           encrypted_conductor_notes?: string | null
+          expected_return_date?: string | null
+          height?: number | null
           id?: string
           is_leader?: boolean
           joined_date?: string
+          leave_duration_months?: number | null
+          leave_reason?: string | null
+          leave_start_date?: string | null
           member_status?: Database["public"]["Enums"]["member_status"]
           name?: string
           notes?: string | null

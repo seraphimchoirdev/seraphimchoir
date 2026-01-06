@@ -394,13 +394,34 @@ export default function QuarterlyCalendar({
   );
 
   // 날짜별 스케줄 맵 (같은 날짜에 여러 예배 유형 지원)
+  // 주일 2부 예배(오전 9시)가 오후찬양예배(오후 5시)보다 먼저 표시되도록 정렬
   const scheduleMap = useMemo(() => {
     const map = new Map<string, ServiceSchedule[]>();
+
+    // 예배 유형별 정렬 우선순위 (낮을수록 먼저)
+    const SERVICE_TYPE_ORDER: Record<string, number> = {
+      '주일 2부 예배': 1,    // 오전 9시
+      '오후찬양예배': 2,      // 오후 5시
+      '온세대예배': 3,
+      '절기찬양예배': 4,
+    };
+
     schedules.forEach((s) => {
       const existing = map.get(s.date) || [];
       existing.push(s);
       map.set(s.date, existing);
     });
+
+    // 각 날짜의 스케줄을 예배 유형 순서대로 정렬
+    map.forEach((dateSchedules, date) => {
+      dateSchedules.sort((a, b) => {
+        const orderA = SERVICE_TYPE_ORDER[a.service_type || ''] ?? 99;
+        const orderB = SERVICE_TYPE_ORDER[b.service_type || ''] ?? 99;
+        return orderA - orderB;
+      });
+      map.set(date, dateSchedules);
+    });
+
     return map;
   }, [schedules]);
 

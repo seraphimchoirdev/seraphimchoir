@@ -136,7 +136,7 @@ function parseAndValidateData(rawData: Record<string, string>[]): ValidationResu
     const date = normalizeDate(dateRaw.trim());
 
     // 예배 유형
-    const serviceType = (row['service_type'] || row['예배유형'] || row['Service Type'] || '주일2부예배').trim();
+    const serviceType = (row['service_type'] || row['예배유형'] || row['Service Type'] || '주일 2부 예배').trim();
 
     // 찬양곡명
     const hymnName = (row['hymn_name'] || row['찬양곡명'] || row['Hymn Name'] || '').trim();
@@ -183,8 +183,8 @@ function parseAndValidateData(rawData: Record<string, string>[]): ValidationResu
 function generateTemplate(): string {
   const headers = ['날짜', '예배유형', '찬양곡명', '봉헌송연주자', '비고'];
   const exampleRows = [
-    ['2025-01-05', '주일2부예배', '나 같은 죄인 살리신', '홍길동 (피아노)', '새해 첫 예배'],
-    ['2025-01-12', '주일2부예배', '주 하나님 지으신 모든 세계', '', ''],
+    ['2025-01-05', '주일 2부 예배', '나 같은 죄인 살리신', '홍길동 (피아노)', '새해 첫 예배'],
+    ['2025-01-12', '주일 2부 예배', '주 하나님 지으신 모든 세계', '', ''],
     ['2025-01-15', '새벽기도회', '새벽기도회 찬양', '', '특별새벽기도회'],
   ];
 
@@ -324,7 +324,7 @@ export default function ServiceScheduleImporter({
     // Vision API 결과를 ParsedSchedule 형식으로 변환
     return (result.data || []).map((schedule: Record<string, unknown>) => ({
       date: schedule.date as string || '',
-      service_type: schedule.service_type as string || '주일2부예배',
+      service_type: schedule.service_type as string || '주일 2부 예배',
       hymn_name: schedule.hymn_name as string || '',
       offertory_performer: schedule.offertory_performer as string || '',
       notes: schedule.notes as string || '',
