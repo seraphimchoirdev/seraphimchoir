@@ -53,8 +53,9 @@ export async function GET(request: NextRequest) {
 
     const { data: schedules } = await schedulesQuery;
 
+    // 날짜 + 예배유형을 키로 사용하여 정확한 매칭
     const scheduleMap = new Map(
-        (schedules || []).map(s => [s.date, s])
+        (schedules || []).map(s => [`${s.date}_${s.service_type}`, s])
     );
 
     // 2. arrangements 조회 (날짜 필터 적용, 페이지네이션 없이 전체 조회)
@@ -112,7 +113,8 @@ export async function GET(request: NextRequest) {
 
     // 5. 데이터 병합
     let enrichedArrangements = (arrangements || []).map(a => {
-        const schedule = scheduleMap.get(a.date);
+        // arrangements.service_info와 service_schedules.service_type을 매칭
+        const schedule = scheduleMap.get(`${a.date}_${a.service_info}`);
         const composition = seatCompositionMap.get(a.id) || {
             SOPRANO: 0,
             ALTO: 0,
@@ -124,7 +126,8 @@ export async function GET(request: NextRequest) {
 
         return {
             ...a,
-            service_type: schedule?.service_type || null,
+            // service_schedules에서 매칭되지 않으면 arrangements.service_info를 fallback으로 사용
+            service_type: schedule?.service_type || a.service_info || null,
             hymn_name: schedule?.hymn_name || null,
             offertory_performer: schedule?.offertory_performer || null,
             seat_count: composition.total,
