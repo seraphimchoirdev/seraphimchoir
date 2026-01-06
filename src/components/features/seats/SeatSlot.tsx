@@ -82,11 +82,11 @@ const SeatSlot = memo(function SeatSlot({ row, col }: SeatSlotProps) {
                 isOccupied && !hasSelection && 'bg-[var(--color-background-primary)] border-solid border-[var(--color-border-default)]',
             )}
             role="button"
-            aria-label={`좌석 ${row + 1}행 ${col + 1}열${assignment ? ` - ${assignment.memberName} 배치됨` : ''}`}
+            aria-label={`좌석 ${row}행 ${col}열${assignment ? ` - ${assignment.memberName} 배치됨` : ''}`}
             aria-pressed={isSelectedSeat}
         >
             <span className="absolute top-0.5 left-0.5 sm:top-1 sm:left-1 text-[9px] sm:text-[10px] text-[var(--color-text-tertiary)] pointer-events-none">
-                {row + 1}-{col + 1}
+                {row}-{col}
             </span>
 
             {assignment ? (
@@ -153,7 +153,7 @@ const GridClickableMember = memo(function GridClickableMember({
             )}
             title={isRowLeader ? "줄반장 (클릭하여 해제)" : (rowLeaderMode ? "클릭하여 줄반장 지정" : "더블 클릭하여 제거")}
             role="presentation"
-            aria-label={`${name} - ${part} 파트, ${row + 1}행 ${col + 1}열 배치됨${isRowLeader ? ' (줄반장)' : ''}`}
+            aria-label={`${name} - ${part} 파트, ${row}행 ${col}열 배치됨${isRowLeader ? ' (줄반장)' : ''}`}
         >
             <span className="font-bold text-xs sm:text-sm lg:text-base text-center leading-tight px-0.5 truncate max-w-full drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
                 {name}
