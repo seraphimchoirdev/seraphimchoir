@@ -2,6 +2,12 @@
 import { create } from 'zustand';
 import type { Database } from '@/types/database.types';
 import type { GridLayout } from '@/types/grid';
+import {
+    minimalReassignment,
+    type MinimalReassignmentResult,
+    type MemberSeatPreference,
+} from '@/lib/minimal-reassignment';
+import { type PartZone, DEFAULT_PART_ZONES } from '@/lib/part-zone-analyzer';
 
 type Part = Database['public']['Enums']['part'];
 
@@ -55,6 +61,7 @@ interface ArrangementState {
     // Actions
     setAssignments: (assignments: SeatAssignment[]) => void;
     setGridLayout: (layout: GridLayout | null) => void;
+    setGridLayoutAndCompact: (layout: GridLayout) => void;
     placeMember: (member: Omit<SeatAssignment, 'row' | 'col'>, row: number, col: number) => void;
     removeMember: (row: number, col: number) => void;
     moveMember: (fromRow: number, fromCol: number, toRow: number, toCol: number) => void;
@@ -76,6 +83,14 @@ interface ArrangementState {
     canUndo: () => boolean;
     canRedo: () => boolean;
     clearHistory: () => void;
+
+    // Minimal reassignment action
+    applyMinimalReassignment: (
+        removedPosition: { row: number; col: number },
+        newLayout: GridLayout,
+        partZones?: Map<Part, PartZone>,
+        preferences?: Map<string, MemberSeatPreference>
+    ) => MinimalReassignmentResult;
 }
 
 export const useArrangementStore = create<ArrangementState>((set, get) => ({
@@ -101,6 +116,38 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
     },
 
     setGridLayout: (layout) => set({ gridLayout: layout }),
+
+    /**
+     * 그리드 레이아웃 변경 (자동 재배치 없음)
+     * - 새 그리드 경계 내에 있는 대원만 유지
+     * - 경계 밖 대원은 미배치 상태가 됨 (MemberSidebar에 표시)
+     * - 사용자가 수동으로 재배치
+     */
+    setGridLayoutAndCompact: (layout) =>
+        set((state) => {
+            const { rowCapacities } = layout;
+            const currentAssignments = { ...state.assignments };
+            const newAssignments: Record<string, SeatAssignment> = {};
+
+            // 현재 배치를 순회하며 경계 내에 있는 것만 유지
+            Object.values(currentAssignments).forEach((assignment) => {
+                const { row, col } = assignment;
+                const rowIndex = row - 1; // 0-based index
+                const maxColInRow = rowCapacities[rowIndex] || 0;
+
+                if (rowIndex >= 0 && rowIndex < rowCapacities.length && col <= maxColInRow) {
+                    // 경계 내 - 유지
+                    newAssignments[`${row}-${col}`] = assignment;
+                }
+                // 경계 외 - 자동으로 미배치가 됨 (assignments에서 제외)
+            });
+
+            return {
+                _history: saveToHistory(state),
+                gridLayout: layout,
+                assignments: newAssignments,
+            };
+        }),
 
     placeMember: (member, row, col) =>
         set((state) => {
@@ -379,4 +426,40 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
     // Clear history (used when loading new arrangement)
     clearHistory: () =>
         set({ _history: { past: [], future: [] } }),
+
+    // Minimal reassignment: 긴급 등단 불가 시 최소 변동 재배치
+    applyMinimalReassignment: (removedPosition, newLayout, partZones, preferences) => {
+        const state = get();
+
+        // 파트 영역이 제공되지 않으면 기본값 사용
+        const zones = partZones || new Map(
+            (['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'] as Part[]).map(
+                (part) => [part, DEFAULT_PART_ZONES[part]]
+            )
+        );
+
+        // 재배치 알고리즘 실행
+        const result = minimalReassignment(
+            state.assignments,
+            removedPosition,
+            newLayout,
+            zones,
+            preferences
+        );
+
+        // 상태 업데이트
+        set({
+            _history: saveToHistory(state),
+            gridLayout: newLayout,
+            assignments: result.newAssignments,
+            // 선택 상태 초기화
+            selectedMemberId: null,
+            selectedMemberName: null,
+            selectedMemberPart: null,
+            selectedSource: null,
+            selectedPosition: null,
+        });
+
+        return result;
+    },
 }));

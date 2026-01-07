@@ -6,7 +6,7 @@ import { useState, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns/format';
 import { ko } from 'date-fns/locale/ko';
-import { Calendar, User, Music, Edit, Trash2, Eye, Lock } from 'lucide-react';
+import { Calendar, User, Music, Edit, Trash2, Eye, Lock, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,29 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useDeleteArrangement, ArrangementWithSchedule } from '@/hooks/useArrangements';
+import type { ArrangementStatus } from '@/types/database.types';
+
+// 상태별 배지 설정 헬퍼
+const getStatusBadgeConfig = (status: ArrangementStatus | string | null) => {
+    switch (status) {
+        case 'SHARED':
+            return {
+                label: '공유됨',
+                className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+            };
+        case 'CONFIRMED':
+            return {
+                label: '확정됨',
+                className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+            };
+        case 'DRAFT':
+        default:
+            return {
+                label: '작성중',
+                className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+            };
+    }
+};
 
 interface ArrangementListProps {
     arrangements: ArrangementWithSchedule[];
@@ -36,6 +59,11 @@ const ArrangementCard = memo(function ArrangementCard({
     onEdit,
     onDeleteClick,
 }: ArrangementCardProps) {
+    const currentStatus = (arrangement as ArrangementWithSchedule & { status?: string }).status || 'DRAFT';
+    const statusBadge = getStatusBadgeConfig(currentStatus);
+    const isConfirmed = currentStatus === 'CONFIRMED';
+    const isShared = currentStatus === 'SHARED';
+
     return (
         <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-[var(--color-primary-400)] group">
             <CardHeader className="pb-3">
@@ -43,9 +71,16 @@ const ArrangementCard = memo(function ArrangementCard({
                     <CardTitle className="text-lg font-bold text-[var(--color-text-primary)] line-clamp-1">
                         {format(new Date(arrangement.date), 'yyyy년 M월 d일', { locale: ko })} {arrangement.service_type || '예배'}
                     </CardTitle>
-                    <Badge variant={arrangement.is_published ? 'default' : 'secondary'}>
-                        {arrangement.is_published ? '발행됨' : '작성중'}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                        <Badge className={`text-xs ${statusBadge.className}`}>
+                            {statusBadge.label}
+                        </Badge>
+                        {isShared && (
+                            <span title="긴급 수정 가능">
+                                <AlertTriangle className="h-3.5 w-3.5 text-blue-600" />
+                            </span>
+                        )}
+                    </div>
                 </div>
                 <div className="flex items-center text-sm text-[var(--color-text-secondary)] mt-1">
                     <Calendar className="w-4 h-4 mr-1.5" />
@@ -79,10 +114,15 @@ const ArrangementCard = memo(function ArrangementCard({
                         className="flex-1 gap-1.5"
                         onClick={() => onEdit(arrangement.id)}
                     >
-                        {arrangement.is_published ? (
+                        {isConfirmed ? (
                             <>
                                 <Eye className="h-3.5 w-3.5" />
                                 보기
+                            </>
+                        ) : isShared ? (
+                            <>
+                                <AlertTriangle className="h-3.5 w-3.5 text-blue-600" />
+                                긴급수정
                             </>
                         ) : (
                             <>
@@ -91,13 +131,13 @@ const ArrangementCard = memo(function ArrangementCard({
                             </>
                         )}
                     </Button>
-                    {arrangement.is_published ? (
+                    {isConfirmed ? (
                         <Button
                             variant="outline"
                             size="sm"
                             className="gap-1.5 text-[var(--color-text-tertiary)] cursor-not-allowed"
                             disabled
-                            title="발행된 배치표는 삭제할 수 없습니다"
+                            title="확정된 배치표는 삭제할 수 없습니다"
                         >
                             <Lock className="h-3.5 w-3.5" />
                             잠금

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, RefObject } from 'react';
-import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2, BarChart3, Lock } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2, BarChart3, Lock, Send, Share2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,7 @@ import PastArrangementButton from './PastArrangementButton';
 import PerformanceReportModal from './PerformanceReportModal';
 import { ServiceScheduleBadge } from '@/components/features/service-schedules';
 import { useArrangementAnalysis } from '@/hooks/useArrangementAnalysis';
-import type { Database, Json } from '@/types/database.types';
+import type { Database, Json, ArrangementStatus } from '@/types/database.types';
 import type { RecommendationResponse } from '@/hooks/useRecommendSeats';
 import type { ApplyPastResponse } from '@/hooks/usePastArrangement';
 import type { ArrangementAnalysisResponse } from '@/types/analysis';
@@ -53,8 +53,43 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         canRedo,
     } = useArrangementStore();
 
-    // 발행된 배치표는 읽기 전용
-    const isReadOnly = arrangement.is_published;
+    // 상태 관련 로직
+    const currentStatus = (arrangement.status as ArrangementStatus) || 'DRAFT';
+
+    // CONFIRMED 상태만 읽기 전용 (SHARED는 긴급 수정 가능)
+    const isReadOnly = currentStatus === 'CONFIRMED';
+
+    // 상태별 배지 설정
+    const getStatusBadge = () => {
+        switch (currentStatus) {
+            case 'DRAFT':
+                return {
+                    variant: 'secondary' as const,
+                    label: '작성중',
+                    className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                };
+            case 'SHARED':
+                return {
+                    variant: 'default' as const,
+                    label: '공유됨',
+                    className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+                };
+            case 'CONFIRMED':
+                return {
+                    variant: 'default' as const,
+                    label: '확정됨',
+                    className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                };
+            default:
+                return {
+                    variant: 'secondary' as const,
+                    label: '작성중',
+                    className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                };
+        }
+    };
+
+    const statusBadge = getStatusBadge();
 
     // 현재 활성화된 캡처 ref 선택 (뷰포트 기반)
     const getActiveCaptureRef = () => {
@@ -153,6 +188,117 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         }
     };
 
+    // 공유하기 (DRAFT → SHARED)
+    const handleShare = async () => {
+        if (!confirm('배치표를 공유하시겠습니까?\n공유 후에도 긴급 수정은 가능합니다.')) {
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            // 먼저 현재 변경사항 저장
+            await updateArrangement.mutateAsync({
+                id: arrangement.id,
+                data: {
+                    title,
+                    conductor: conductor || null,
+                    grid_layout: gridLayout as Json,
+                    grid_rows: gridLayout?.rows || 6,
+                    status: 'SHARED',
+                },
+            });
+
+            const seatsData = Object.values(assignments).map((a) => ({
+                memberId: a.memberId,
+                row: a.row,
+                column: a.col,
+                part: a.part,
+                isRowLeader: a.isRowLeader || false,
+            }));
+
+            await updateSeats.mutateAsync({
+                arrangementId: arrangement.id,
+                seats: seatsData,
+            });
+
+            alert('자리배치표가 공유되었습니다.\n긴급 수정이 필요하면 언제든 수정할 수 있습니다.');
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+            alert('공유에 실패했습니다.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // 확정하기 (SHARED → CONFIRMED)
+    const handleConfirm = async () => {
+        if (!confirm('배치표를 확정하시겠습니까?\n확정 후에는 더 이상 수정할 수 없습니다.')) {
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            await updateArrangement.mutateAsync({
+                id: arrangement.id,
+                data: {
+                    title,
+                    conductor: conductor || null,
+                    grid_layout: gridLayout as Json,
+                    grid_rows: gridLayout?.rows || 6,
+                    status: 'CONFIRMED',
+                    is_published: true, // 레거시 호환성
+                },
+            });
+
+            const seatsData = Object.values(assignments).map((a) => ({
+                memberId: a.memberId,
+                row: a.row,
+                column: a.col,
+                part: a.part,
+                isRowLeader: a.isRowLeader || false,
+            }));
+
+            await updateSeats.mutateAsync({
+                arrangementId: arrangement.id,
+                seats: seatsData,
+            });
+
+            alert('자리배치표가 확정되었습니다.');
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+            alert('확정에 실패했습니다.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // 롤백 (SHARED → DRAFT)
+    const handleRevertToDraft = async () => {
+        if (!confirm('배치표를 작성중 상태로 되돌리시겠습니까?')) {
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            await updateArrangement.mutateAsync({
+                id: arrangement.id,
+                data: {
+                    status: 'DRAFT',
+                },
+            });
+
+            alert('작성중 상태로 되돌렸습니다.');
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+            alert('상태 변경에 실패했습니다.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const handleApplyRecommendation = (recommendation: RecommendationResponse) => {
         // AI 추천 결과를 store에 적용
         const formattedSeats = recommendation.seats.map(seat => ({
@@ -219,9 +365,15 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                             readOnly={isReadOnly}
                             className={`h-9 sm:h-8 font-bold text-base sm:text-lg border-transparent px-2 -ml-2 w-full sm:w-64 ${isReadOnly ? 'cursor-default' : 'hover:border-[var(--color-border-default)] focus:border-[var(--color-primary-400)]'}`}
                         />
-                        <Badge variant={arrangement.is_published ? 'default' : 'secondary'} className="flex-shrink-0 text-xs">
-                            {arrangement.is_published ? '발행됨' : '작성중'}
+                        <Badge variant={statusBadge.variant} className={`flex-shrink-0 text-xs ${statusBadge.className}`}>
+                            {statusBadge.label}
                         </Badge>
+                        {currentStatus === 'SHARED' && (
+                            <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                긴급 수정 가능
+                            </span>
+                        )}
                     </div>
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-secondary)]">
@@ -348,20 +500,67 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-{isReadOnly ? (
+{/* 상태별 버튼 렌더링 */}
+                {currentStatus === 'CONFIRMED' ? (
                     <Button disabled className="gap-2 h-11 sm:h-10 text-sm bg-[var(--color-text-tertiary)]">
                         <Lock className="h-4 w-4" />
-                        읽기 전용
+                        확정됨
                     </Button>
+                ) : currentStatus === 'SHARED' ? (
+                    <>
+                        <Button onClick={handleSave} disabled={isSaving} className="gap-2 h-11 sm:h-10 text-sm">
+                            {isSaving ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Save className="h-4 w-4" />
+                            )}
+                            저장
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={handleRevertToDraft}
+                            disabled={isSaving}
+                            className="gap-2 h-11 sm:h-10 text-sm"
+                        >
+                            <Undo2 className="h-4 w-4" />
+                            <span className="hidden sm:inline">작성중으로</span>
+                        </Button>
+                        <Button
+                            onClick={handleConfirm}
+                            disabled={isSaving || Object.keys(assignments).length === 0}
+                            className="gap-2 h-11 sm:h-10 text-sm bg-green-600 hover:bg-green-700"
+                        >
+                            {isSaving ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <CheckCircle2 className="h-4 w-4" />
+                            )}
+                            확정
+                        </Button>
+                    </>
                 ) : (
-                    <Button onClick={handleSave} disabled={isSaving} className="gap-2 h-11 sm:h-10 text-sm">
-                        {isSaving ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                            <Save className="h-4 w-4" />
-                        )}
-                        저장
-                    </Button>
+                    <>
+                        <Button onClick={handleSave} disabled={isSaving} className="gap-2 h-11 sm:h-10 text-sm">
+                            {isSaving ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Save className="h-4 w-4" />
+                            )}
+                            저장
+                        </Button>
+                        <Button
+                            onClick={handleShare}
+                            disabled={isSaving || Object.keys(assignments).length === 0}
+                            className="gap-2 h-11 sm:h-10 text-sm bg-blue-600 hover:bg-blue-700"
+                        >
+                            {isSaving ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Share2 className="h-4 w-4" />
+                            )}
+                            공유
+                        </Button>
+                    </>
                 )}
             </div>
 

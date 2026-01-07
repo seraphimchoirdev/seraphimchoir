@@ -19,11 +19,28 @@ export interface RowDistributionRecommendation {
   rows: number;
   rowCapacities: number[];
   confidence: 'high' | 'medium' | 'low';
-  source: 'learned' | 'interpolated' | 'calculated' | 'cached';
+  source: 'learned' | 'interpolated' | 'calculated' | 'cached' | 'adjusted';
   similarPattern?: {
     totalMembers: number;
     observations: number;
   };
+  /** ALTO 제약으로 인한 조정 정보 */
+  adjustments?: {
+    reason: 'alto_constraint';
+    altoDeficit: number;
+    addedToFrontRows: number;
+  };
+}
+
+/**
+ * 파트별 인원 수 (ALTO 좌석 보장 계산용)
+ */
+export interface PartCounts {
+  SOPRANO?: number;
+  ALTO?: number;
+  TENOR?: number;
+  BASS?: number;
+  SPECIAL?: number;
 }
 
 /**
@@ -81,19 +98,34 @@ const rowPatternCache = new RowPatternCache();
 /**
  * 총 인원에 대한 최적의 행별 인원 분배 추천
  * @param totalMembers 총 인원 수
+ * @param partCounts 파트별 인원 (선택) - ALTO 제약 반영을 위해 전달
  * @returns 추천된 행 구성
  *
  * 최적화: LRU 캐시 적용
  * - 캐시 히트 시 O(1) 조회
  * - 캐시 미스 시 기존 로직 + 캐시 저장
+ *
+ * ALTO 미배치 방지:
+ * - partCounts.ALTO가 전달되면 1-4행에 충분한 좌석 보장
+ * - 부족 시 5-6행에서 1-4행으로 좌석 재분배
  */
 export function recommendRowDistribution(
-  totalMembers: number
+  totalMembers: number,
+  partCounts?: PartCounts
 ): RowDistributionRecommendation {
   // 0. 캐시 확인 (최적화)
+  // partCounts가 있으면 캐시된 결과에도 ALTO 조정 필요
   const cached = rowPatternCache.get(totalMembers);
   if (cached) {
-    return { ...cached, source: 'cached' };
+    const cachedResult = { ...cached, source: 'cached' as const };
+
+    // ALTO 조정 필요한 경우
+    if (partCounts?.ALTO) {
+      const adjusted = adjustRecommendationForPartConstraints(cachedResult, partCounts);
+      if (adjusted) return adjusted;
+    }
+
+    return cachedResult;
   }
 
   // 1. 정확히 일치하는 학습 패턴이 있는 경우
@@ -110,6 +142,13 @@ export function recommendRowDistribution(
       },
     };
     rowPatternCache.set(totalMembers, result);
+
+    // ALTO 조정 필요한 경우
+    if (partCounts?.ALTO) {
+      const adjusted = adjustRecommendationForPartConstraints(result, partCounts);
+      if (adjusted) return adjusted;
+    }
+
     return result;
   }
 
@@ -160,6 +199,13 @@ export function recommendRowDistribution(
       },
     };
     rowPatternCache.set(totalMembers, interpolatedResult);
+
+    // ALTO 조정 필요한 경우
+    if (partCounts?.ALTO) {
+      const adjusted = adjustRecommendationForPartConstraints(interpolatedResult, partCounts);
+      if (adjusted) return adjusted;
+    }
+
     return interpolatedResult;
   }
 
@@ -177,6 +223,13 @@ export function recommendRowDistribution(
 
   // 계산 결과도 캐시에 저장
   rowPatternCache.set(totalMembers, calculatedResult);
+
+  // ALTO 조정 필요한 경우
+  if (partCounts?.ALTO) {
+    const adjusted = adjustRecommendationForPartConstraints(calculatedResult, partCounts);
+    if (adjusted) return adjusted;
+  }
+
   return calculatedResult;
 }
 
@@ -316,4 +369,147 @@ export function getLearnedPatternsInRange(
   return getAllLearnedPatterns().filter(
     (p) => p.totalMembers >= minMembers && p.totalMembers <= maxMembers
   );
+}
+
+// ============================================================
+// ALTO 미배치 방지: 1-4행 좌석 보장 로직
+// ============================================================
+
+/** 행당 최대 좌석 수 */
+const MAX_CAPACITY_PER_ROW = 16;
+
+/**
+ * 1-4행 오른쪽(ALTO 영역)의 좌석 수 계산
+ * ALTO는 1-4행(인덱스 0-3) 오른쪽 절반에만 배치 가능
+ */
+function calculateAltoCapacity(rowCapacities: number[]): number {
+  let capacity = 0;
+  for (let row = 0; row < Math.min(4, rowCapacities.length); row++) {
+    // 오른쪽 절반 = ALTO 영역
+    capacity += Math.floor(rowCapacities[row] / 2);
+  }
+  return capacity;
+}
+
+/**
+ * ALTO 부족분 계산
+ * @returns 양수면 부족, 0이면 충분
+ */
+function calculateAltoDeficit(
+  rowCapacities: number[],
+  altoCount: number
+): number {
+  const current = calculateAltoCapacity(rowCapacities);
+  return Math.max(0, altoCount - current);
+}
+
+/**
+ * ALTO 제약을 반영하여 1-4행 좌석 추가
+ * 부족분만큼 1-4행에 좌석을 균등하게 추가
+ */
+function adjustForAltoConstraint(
+  baseCapacities: number[],
+  altoCount: number
+): { adjusted: number[]; deficit: number; added: number } {
+  const adjusted = [...baseCapacities];
+  let deficit = calculateAltoDeficit(adjusted, altoCount);
+  const originalDeficit = deficit;
+
+  if (deficit <= 0) {
+    return { adjusted, deficit: 0, added: 0 };
+  }
+
+  // 1-4행에 좌석 추가 (균등 분배)
+  const frontRows = [0, 1, 2, 3].filter((r) => r < adjusted.length);
+
+  while (deficit > 0) {
+    // 가장 적은 행부터 추가
+    frontRows.sort((a, b) => adjusted[a] - adjusted[b]);
+
+    let addedThisRound = false;
+    for (const rowIdx of frontRows) {
+      if (deficit <= 0) break;
+      if (adjusted[rowIdx] < MAX_CAPACITY_PER_ROW) {
+        adjusted[rowIdx]++;
+        deficit--;
+        addedThisRound = true;
+      }
+    }
+
+    // 무한 루프 방지: 더 이상 추가할 수 없으면 중단
+    if (!addedThisRound) break;
+  }
+
+  return {
+    adjusted,
+    deficit: originalDeficit,
+    added: originalDeficit - deficit,
+  };
+}
+
+/**
+ * 5-6행에서 좌석 감소 (총 좌석 수 균형)
+ * 1-4행에 좌석을 추가한 만큼 5-6행에서 감소
+ */
+function rebalanceBackRows(
+  capacities: number[],
+  originalTotal: number
+): number[] {
+  const adjusted = [...capacities];
+  let excess = adjusted.reduce((a, b) => a + b, 0) - originalTotal;
+
+  if (excess <= 0) return adjusted;
+
+  // 5-6행(인덱스 4, 5)에서 감소 - 뒤에서부터
+  const backRows = [5, 4].filter((r) => r < adjusted.length);
+
+  for (const rowIdx of backRows) {
+    while (excess > 0 && adjusted[rowIdx] > 1) {
+      adjusted[rowIdx]--;
+      excess--;
+    }
+  }
+
+  return adjusted;
+}
+
+/**
+ * 파트별 제약을 반영한 그리드 조정
+ * @param base 기본 추천 결과
+ * @param partCounts 파트별 인원
+ * @returns 조정된 추천 결과 (또는 조정 불필요 시 null)
+ */
+export function adjustRecommendationForPartConstraints(
+  base: RowDistributionRecommendation,
+  partCounts: PartCounts
+): RowDistributionRecommendation | null {
+  const altoCount = partCounts.ALTO || 0;
+
+  if (altoCount === 0) return null;
+
+  // ALTO 부족분 확인
+  const deficit = calculateAltoDeficit(base.rowCapacities, altoCount);
+  if (deficit <= 0) return null;
+
+  const totalMembers = base.rowCapacities.reduce((a, b) => a + b, 0);
+
+  // 1-4행 좌석 추가
+  const { adjusted, added } = adjustForAltoConstraint(
+    base.rowCapacities,
+    altoCount
+  );
+
+  // 5-6행 좌석 감소 (균형)
+  const rebalanced = rebalanceBackRows(adjusted, totalMembers);
+
+  return {
+    ...base,
+    rowCapacities: rebalanced,
+    source: 'adjusted',
+    adjustments: {
+      reason: 'alto_constraint',
+      altoDeficit: deficit,
+      addedToFrontRows: added,
+    },
+  };
 }

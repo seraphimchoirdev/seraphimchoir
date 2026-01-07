@@ -133,10 +133,10 @@ export async function POST(
     console.log('Querying members and attendances for date:', arrangement.date);
 
     const [membersResult, attendancesResult, profilesResult] = await Promise.all([
-      // 모든 정대원 조회
+      // 모든 정대원 조회 (experience 컬럼은 스키마에 없으므로 제외)
       supabase
         .from('members')
-        .select('id, name, part, height, experience, member_status')
+        .select('id, name, part, height, member_status')
         .eq('member_status', 'REGULAR'),
 
       // 해당 날짜의 모든 출석 데이터 조회 (필터 없이)
@@ -251,7 +251,7 @@ export async function POST(
             name: member.name,
             part: member.part as MLMemberInput['part'],
             height: details?.height ?? null,
-            experience: details?.experience ?? null,
+            experience: null, // experience 컬럼은 DB 스키마에 없음
             is_leader: partLeaderIds.has(member.id),
           };
         });

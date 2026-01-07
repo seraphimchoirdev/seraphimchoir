@@ -15,14 +15,23 @@ interface ArrangementInfo {
     conductor?: string;
 }
 
+interface EmergencyUnavailableParams {
+    memberId: string;
+    memberName: string;
+    row: number;
+    col: number;
+}
+
 interface SeatsGridProps {
     gridLayout?: GridLayout | null;
     arrangementInfo?: ArrangementInfo;
     showCaptureInfo?: boolean;
+    onEmergencyUnavailable?: (params: EmergencyUnavailableParams) => void;
+    isReadOnly?: boolean;
 }
 
 const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
-    { gridLayout, arrangementInfo, showCaptureInfo = false },
+    { gridLayout, arrangementInfo, showCaptureInfo = false, onEmergencyUnavailable, isReadOnly = false },
     ref
 ) {
     // Fallback to default if no gridLayout provided
@@ -75,6 +84,8 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                                             key={`${seat.row}-${seat.col}`}
                                             row={seat.row}
                                             col={seat.col}
+                                            onEmergencyUnavailable={onEmergencyUnavailable}
+                                            isReadOnly={isReadOnly}
                                         />
                                     ))}
                                 </div>

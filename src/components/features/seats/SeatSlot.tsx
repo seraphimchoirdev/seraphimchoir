@@ -8,16 +8,29 @@ import { useArrangementStore } from '@/store/arrangement-store';
 import type { Database } from '@/types/database.types';
 import { cn } from '@/lib/utils';
 import { useShallow } from 'zustand/react/shallow';
+import SeatContextMenu from './SeatContextMenu';
 
 type Part = Database['public']['Enums']['part'];
 
 interface SeatSlotProps {
     row: number;
     col: number;
+    onEmergencyUnavailable?: (params: {
+        memberId: string;
+        memberName: string;
+        row: number;
+        col: number;
+    }) => void;
+    isReadOnly?: boolean;
 }
 
 // 메모이제이션된 SeatSlot 컴포넌트
-const SeatSlot = memo(function SeatSlot({ row, col }: SeatSlotProps) {
+const SeatSlot = memo(function SeatSlot({
+    row,
+    col,
+    onEmergencyUnavailable,
+    isReadOnly = false,
+}: SeatSlotProps) {
     const seatKey = `${row}-${col}`;
 
     // 선택적 상태 구독 - 이 좌석과 관련된 상태만 구독
@@ -61,8 +74,35 @@ const SeatSlot = memo(function SeatSlot({ row, col }: SeatSlotProps) {
         }
     }, [rowLeaderMode, assignment, toggleRowLeaderAction, handleSeatClickAction, row, col]);
 
+    // 컨텍스트 메뉴: 좌석에서 제거
+    const handleRemoveFromSeat = useCallback(() => {
+        if (assignment) {
+            removeMemberAction(row, col);
+        }
+    }, [assignment, removeMemberAction, row, col]);
+
+    // 컨텍스트 메뉴: 긴급 등단 불가 처리
+    const handleEmergencyUnavailable = useCallback(() => {
+        if (assignment && onEmergencyUnavailable) {
+            onEmergencyUnavailable({
+                memberId: assignment.memberId,
+                memberName: assignment.memberName,
+                row,
+                col,
+            });
+        }
+    }, [assignment, onEmergencyUnavailable, row, col]);
+
     return (
-        <button
+        <SeatContextMenu
+            isOccupied={isOccupied}
+            memberName={assignment?.memberName}
+            memberId={assignment?.memberId}
+            onRemoveFromSeat={handleRemoveFromSeat}
+            onEmergencyUnavailable={onEmergencyUnavailable ? handleEmergencyUnavailable : undefined}
+            disabled={isReadOnly}
+        >
+            <button
             type="button"
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
@@ -101,7 +141,8 @@ const SeatSlot = memo(function SeatSlot({ row, col }: SeatSlotProps) {
             ) : (
                 <div className="text-[10px] sm:text-xs text-[var(--color-text-disabled)] pointer-events-none">빈 좌석</div>
             )}
-        </button>
+            </button>
+        </SeatContextMenu>
     );
 });
 

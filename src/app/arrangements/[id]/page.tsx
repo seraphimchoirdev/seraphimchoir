@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, use, useState, useMemo, useRef } from 'react';
+import { useEffect, use, useState, useMemo, useRef, useCallback } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Settings, ChevronUp, ChevronDown } from 'lucide-react';
@@ -13,7 +13,9 @@ import { useArrangementStore } from '@/store/arrangement-store';
 import { useUndoRedoShortcuts } from '@/hooks/useUndoRedoShortcuts';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
+import { useEmergencyUnavailable } from '@/hooks/useEmergencyUnavailable';
 import { DEFAULT_GRID_LAYOUT, GridLayout } from '@/types/grid';
+import { recommendRowDistribution } from '@/lib/row-distribution-recommender';
 
 import MemberSidebar from '@/components/features/seats/MemberSidebar';
 import SeatsGrid from '@/components/features/seats/SeatsGrid';
@@ -22,7 +24,7 @@ import Navigation from '@/components/layout/Navigation';
 export default function ArrangementEditorPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const { data: arrangement, isLoading, error } = useArrangement(id);
-    const { setAssignments, setGridLayout, gridLayout, clearHistory } = useArrangementStore();
+    const { setAssignments, setGridLayout, setGridLayoutAndCompact, gridLayout, clearHistory } = useArrangementStore();
 
     // 키보드 단축키 훅 초기화 (Ctrl+Z/Y for Undo/Redo)
     useUndoRedoShortcuts();
@@ -65,6 +67,34 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             return attendance.is_service_available === true;
         }).length;
     }, [membersData, attendanceMap]);
+
+    // 배치표 상태에 따른 읽기 전용 모드 (CONFIRMED 상태면 읽기 전용)
+    const isReadOnly = arrangement?.status === 'CONFIRMED';
+
+    // 그리드 재설정 콜백 (AI 추천 자동 적용, 기존 zigzagPattern 유지, 자동 재배치)
+    const handleGridRecalculate = useCallback(
+        (recommendation: ReturnType<typeof recommendRowDistribution>) => {
+            // setGridLayoutAndCompact: 그리드 변경 + 경계 밖 대원 자동 재배치
+            setGridLayoutAndCompact({
+                rows: recommendation.rows,
+                rowCapacities: recommendation.rowCapacities,
+                zigzagPattern: gridLayout?.zigzagPattern || 'even',
+            });
+        },
+        [setGridLayoutAndCompact, gridLayout?.zigzagPattern]
+    );
+
+    // 현재 등단 가능 멤버 수 조회 콜백 (stale closure 방지)
+    const getCurrentMemberCount = useCallback(() => totalMembers, [totalMembers]);
+
+    // 긴급 등단 불가 처리 훅
+    const { handleEmergencyUnavailable } = useEmergencyUnavailable({
+        date: arrangement?.date || '',
+        onGridRecalculate: handleGridRecalculate,
+        getCurrentMemberCount,
+        onSuccess: (message) => alert(message),
+        onError: (message) => alert(`오류: ${message}`),
+    });
 
     // Initialize store with fetched seats and grid layout
     useEffect(() => {
@@ -177,6 +207,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                         conductor: arrangement.conductor || undefined,
                     }}
                     showCaptureInfo={true}
+                    onEmergencyUnavailable={handleEmergencyUnavailable}
+                    isReadOnly={isReadOnly}
                 />
             </div>
 
@@ -193,6 +225,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                             conductor: arrangement.conductor || undefined,
                         }}
                         showCaptureInfo={true}
+                        onEmergencyUnavailable={handleEmergencyUnavailable}
+                        isReadOnly={isReadOnly}
                     />
 
                     {/* 그리드 설정 버튼 (Floating) */}
