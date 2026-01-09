@@ -127,7 +127,12 @@ const SeatSlot = memo(function SeatSlot({
             aria-label={`좌석 ${row}행 ${col}열${assignment ? ` - ${assignment.memberName} 배치됨` : ''}`}
             aria-pressed={isSelectedSeat}
         >
-            <span className="absolute top-0.5 left-0.5 sm:top-1 sm:left-1 text-[9px] sm:text-[10px] text-[var(--color-text-tertiary)] pointer-events-none">
+            <span className={cn(
+                "absolute top-0.5 left-0.5 sm:top-1 sm:left-1 text-[9px] sm:text-[10px] pointer-events-none",
+                isOccupied
+                    ? "text-white/60 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]"
+                    : "text-[var(--color-text-secondary)]"
+            )}>
                 {row}-{col}
             </span>
 
