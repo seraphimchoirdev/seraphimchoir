@@ -15,7 +15,6 @@ import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
 import { useEmergencyUnavailable } from '@/hooks/useEmergencyUnavailable';
 import { DEFAULT_GRID_LAYOUT, GridLayout } from '@/types/grid';
-import { recommendRowDistribution } from '@/lib/row-distribution-recommender';
 
 import MemberSidebar from '@/components/features/seats/MemberSidebar';
 import SeatsGrid from '@/components/features/seats/SeatsGrid';
@@ -24,7 +23,7 @@ import Navigation from '@/components/layout/Navigation';
 export default function ArrangementEditorPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const { data: arrangement, isLoading, error } = useArrangement(id);
-    const { setAssignments, setGridLayout, setGridLayoutAndCompact, gridLayout, clearHistory } = useArrangementStore();
+    const { setAssignments, setGridLayout, gridLayout, clearHistory, compactAllRows } = useArrangementStore();
 
     // 키보드 단축키 훅 초기화 (Ctrl+Z/Y for Undo/Redo)
     useUndoRedoShortcuts();
@@ -35,6 +34,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     // 이미지 캡처를 위한 ref (데스크톱/모바일 각각)
     const desktopCaptureRef = useRef<HTMLDivElement>(null);
     const mobileCaptureRef = useRef<HTMLDivElement>(null);
+
+    // 초기 로드 완료 추적 (compactAllRows 중복 실행 방지)
+    const initialLoadDoneRef = useRef(false);
 
     // 모든 정대원 조회 (AI 추천 분배 인원수 계산용)
     const { data: membersData } = useMembers({
@@ -56,6 +58,15 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         return map;
     }, [attendances]);
 
+    // 멤버가 등단 가능한지 확인하는 헬퍼 함수
+    const isServiceAvailable = useCallback((memberId: string) => {
+        const attendance = attendanceMap.get(memberId);
+        // 출석 레코드가 없으면 기본값 true (등단 가능)
+        if (!attendance) return true;
+        // 출석 레코드가 있으면 is_service_available 값 사용
+        return attendance.is_service_available === true;
+    }, [attendanceMap]);
+
     // 등단 가능한 멤버 수 계산 (출석 레코드가 없거나 is_service_available이 true인 경우)
     const totalMembers = useMemo(() => {
         const members = membersData?.data || [];
@@ -71,59 +82,68 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     // 배치표 상태에 따른 읽기 전용 모드 (CONFIRMED 상태면 읽기 전용)
     const isReadOnly = arrangement?.status === 'CONFIRMED';
 
-    // 그리드 재설정 콜백 (AI 추천 자동 적용, 기존 zigzagPattern 유지, 자동 재배치)
-    const handleGridRecalculate = useCallback(
-        (recommendation: ReturnType<typeof recommendRowDistribution>) => {
-            // setGridLayoutAndCompact: 그리드 변경 + 경계 밖 대원 자동 재배치
-            setGridLayoutAndCompact({
-                rows: recommendation.rows,
-                rowCapacities: recommendation.rowCapacities,
-                zigzagPattern: gridLayout?.zigzagPattern || 'even',
-            });
-        },
-        [setGridLayoutAndCompact, gridLayout?.zigzagPattern]
-    );
-
-    // 현재 등단 가능 멤버 수 조회 콜백 (stale closure 방지)
-    const getCurrentMemberCount = useCallback(() => totalMembers, [totalMembers]);
-
-    // 긴급 등단 불가 처리 훅
+    // 긴급 등단 불가 처리 훅 (단순화된 버전)
+    // - 파트 영역 고려: 같은 파트만 당기기
+    // - 크로스-행 이동: 행 간 불균형 시 뒷줄에서 앞줄로 이동
+    // - ⭐ 자동 저장: gridLayout과 seats를 DB에 즉시 저장
     const { handleEmergencyUnavailable } = useEmergencyUnavailable({
+        arrangementId: id,
         date: arrangement?.date || '',
-        onGridRecalculate: handleGridRecalculate,
-        getCurrentMemberCount,
         onSuccess: (message) => alert(message),
         onError: (message) => alert(`오류: ${message}`),
+        enableCrossRowMove: true,
+        crossRowThreshold: 2,
     });
 
     // Initialize store with fetched seats and grid layout
+    // attendances가 로드된 후에만 좌석을 설정하여 등단 불가능 멤버 필터링
+    // ⭐ 초기 로드 시에만 실행 (긴급 등단 불가 처리 후 재실행 방지)
     useEffect(() => {
-        if (arrangement) {
+        if (arrangement && attendances !== undefined && !initialLoadDoneRef.current) {
+            // 초기 로드 완료 마킹
+            initialLoadDoneRef.current = true;
+
             // 새 배치표 로드 시 히스토리 초기화
             clearHistory();
 
-            // Load seats
+            // Load seats (등단 불가능한 멤버 필터링)
             if (arrangement.seats && arrangement.seats.length > 0) {
-                const formattedSeats = arrangement.seats.map((seat) => ({
-                    memberId: seat.member_id,
-                    memberName: seat.member?.name || 'Unknown',
-                    part: seat.part,
-                    row: seat.seat_row,
-                    col: seat.seat_column,
-                    isRowLeader: seat.is_row_leader || false,
-                }));
+                const formattedSeats = arrangement.seats
+                    .filter((seat) => isServiceAvailable(seat.member_id)) // 등단 가능 멤버만
+                    .map((seat) => ({
+                        memberId: seat.member_id,
+                        memberName: seat.member?.name || 'Unknown',
+                        part: seat.part,
+                        row: seat.seat_row,
+                        col: seat.seat_column,
+                        isRowLeader: seat.is_row_leader || false,
+                    }));
+
+                // 필터링된 좌석 수가 원본과 다르면 콘솔에 알림
+                const filteredCount = arrangement.seats.length - formattedSeats.length;
+                if (filteredCount > 0) {
+                    console.log(`[ArrangementEditor] 등단 불가능 멤버 ${filteredCount}명이 좌석에서 제외됨`);
+                }
+
                 setAssignments(formattedSeats);
             }
 
             // Load grid layout with fallback to default
-            const layout = (arrangement.grid_layout as GridLayout | null) || DEFAULT_GRID_LAYOUT;
-            setGridLayout(layout);
+            // gridLayout이 없을 때만 (최초 로드 시) DB 값 설정
+            // 긴급 등단 불가 처리로 최적화된 레이아웃은 유지됨
+            if (!gridLayout) {
+                const layout = (arrangement.grid_layout as GridLayout | null) || DEFAULT_GRID_LAYOUT;
+                setGridLayout(layout);
+            }
 
-            // setAssignments가 히스토리를 저장하므로 로드 직후 다시 클리어
-            // (초기 로드 상태는 히스토리에 포함되지 않도록)
-            clearHistory();
+            // 로드 후 빈 좌석 자동 컴팩션 (등단 불가 멤버 필터링으로 생긴 빈 자리 정리)
+            // 약간의 지연 후 실행하여 gridLayout 설정이 반영되도록 함
+            setTimeout(() => {
+                compactAllRows();
+                clearHistory(); // 컴팩션 후 히스토리 클리어
+            }, 0);
         }
-    }, [arrangement, setAssignments, setGridLayout, clearHistory]);
+    }, [arrangement, attendances, isServiceAvailable, setAssignments, setGridLayout, clearHistory, compactAllRows, gridLayout]);
 
     if (isLoading) {
         return (

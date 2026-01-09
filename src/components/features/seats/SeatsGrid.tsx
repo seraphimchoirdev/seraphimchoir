@@ -4,6 +4,9 @@
 import { useMemo, forwardRef } from 'react';
 import SeatSlot from './SeatSlot';
 import { GridLayout, DEFAULT_GRID_LAYOUT } from '@/types/grid';
+import type { Database } from '@/types/database.types';
+
+type Part = Database['public']['Enums']['part'];
 import { calculateSeatsByRow } from '@/lib/utils/seatPositionCalculator';
 import { useArrangementStore } from '@/store/arrangement-store';
 import CaptureHeader from './CaptureHeader';
@@ -18,6 +21,7 @@ interface ArrangementInfo {
 interface EmergencyUnavailableParams {
     memberId: string;
     memberName: string;
+    part: Part;  // 파트 정보 (파트 영역 고려를 위해 필수)
     row: number;
     col: number;
 }

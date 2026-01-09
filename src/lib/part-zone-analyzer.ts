@@ -310,3 +310,104 @@ export function findNearestEmptySeatInZone(
 
     return nearest;
 }
+
+/**
+ * 확장된 파트 영역 내에서 빈 좌석을 찾습니다.
+ *
+ * 탐색 순서:
+ * 1. 기본 파트 영역 내
+ * 2. 파트 영역 경계 ±1행 확장 (측면 제약 유지)
+ * 3. 전체 그리드에서 가장 가까운 좌석 (fallback)
+ *
+ * @param targetPos - 대상 위치
+ * @param emptySeats - 빈 좌석 목록
+ * @param part - 파트
+ * @param zone - 파트 영역 정의
+ * @param rowCapacities - 행별 용량
+ * @param enableFallback - 전체 그리드 탐색 허용 여부 (기본: false)
+ * @returns 가장 가까운 빈 좌석 또는 null
+ */
+export function findNearestEmptySeatInExpandedZone(
+    targetPos: { row: number; col: number },
+    emptySeats: Array<{ row: number; col: number }>,
+    part: Part,
+    zone: PartZone,
+    rowCapacities: number[],
+    enableFallback: boolean = false
+): { row: number; col: number; searchLevel: 'primary' | 'expanded' | 'fallback' } | null {
+    // 1차: 기본 파트 영역 탐색
+    const primaryResult = findNearestEmptySeatInZone(
+        targetPos,
+        emptySeats,
+        part,
+        zone,
+        rowCapacities
+    );
+
+    if (primaryResult) {
+        return { ...primaryResult, searchLevel: 'primary' };
+    }
+
+    // 2차: 확장 영역 탐색 (±1행, 측면 제약 유지)
+    const expandedZone: PartZone = {
+        ...zone,
+        allowedRows: [
+            Math.max(1, zone.allowedRows[0] - 1),
+            Math.min(rowCapacities.length, zone.allowedRows[1] + 1),
+        ],
+        // ALTO 금지 행은 여전히 유지 (5, 6행)
+        forbiddenRows: zone.forbiddenRows,
+    };
+
+    const expandedResult = findNearestEmptySeatInZone(
+        targetPos,
+        emptySeats,
+        part,
+        expandedZone,
+        rowCapacities
+    );
+
+    if (expandedResult) {
+        return { ...expandedResult, searchLevel: 'expanded' };
+    }
+
+    // 3차: 전체 그리드 탐색 (fallback, 선택적)
+    if (enableFallback && emptySeats.length > 0) {
+        // 측면 제약만 유지하고 행 제한 제거
+        const fallbackZone: PartZone = {
+            ...zone,
+            allowedRows: [1, rowCapacities.length],
+            forbiddenRows: [], // 금지 행도 제거
+        };
+
+        const fallbackResult = findNearestEmptySeatInZone(
+            targetPos,
+            emptySeats,
+            part,
+            fallbackZone,
+            rowCapacities
+        );
+
+        if (fallbackResult) {
+            return { ...fallbackResult, searchLevel: 'fallback' };
+        }
+
+        // 최후의 수단: 아무 빈 좌석이라도
+        let nearest: { row: number; col: number } | null = null;
+        let minDistance = Infinity;
+
+        for (const seat of emptySeats) {
+            const distance = manhattanDistance(targetPos, seat);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearest = seat;
+            }
+        }
+
+        if (nearest) {
+            return { ...nearest, searchLevel: 'fallback' };
+        }
+    }
+
+    return null;
+}

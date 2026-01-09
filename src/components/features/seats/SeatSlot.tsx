@@ -18,6 +18,7 @@ interface SeatSlotProps {
     onEmergencyUnavailable?: (params: {
         memberId: string;
         memberName: string;
+        part: Part;  // 파트 정보 (파트 영역 고려를 위해 필수)
         row: number;
         col: number;
     }) => void;
@@ -87,6 +88,7 @@ const SeatSlot = memo(function SeatSlot({
             onEmergencyUnavailable({
                 memberId: assignment.memberId,
                 memberName: assignment.memberName,
+                part: assignment.part,  // 파트 정보 전달 (파트 영역 고려를 위해 필수)
                 row,
                 col,
             });
