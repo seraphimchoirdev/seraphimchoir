@@ -52,12 +52,12 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
 
     return (
         <div className="flex-1 bg-[var(--color-background-secondary)] overflow-auto">
-            <div className="min-w-full min-h-full flex flex-col items-center p-4 sm:p-6 lg:p-8 bg-white">
+            <div className="min-w-fit min-h-full flex flex-col p-2 sm:p-6 lg:p-8 bg-white">
                 {/* 이미지 캡처 대상 영역 */}
                 <div
                     ref={ref}
                     data-capture-target
-                    className="inline-flex flex-col items-center bg-white pb-4 px-8"
+                    className="inline-flex flex-col items-center bg-white pb-4 px-4 sm:px-8"
                 >
                     {/* 캡처용 헤더: 예배 정보 (캡처 모드에서만 표시) */}
                     {showCaptureInfo && arrangementInfo && (
