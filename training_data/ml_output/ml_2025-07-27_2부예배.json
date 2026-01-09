@@ -15,14 +15,7 @@
   },
   "grid_layout": {
     "rows": 6,
-    "row_capacities": [
-      15,
-      14,
-      15,
-      14,
-      14,
-      13
-    ],
+    "row_capacities": [15, 14, 15, 14, 14, 13],
     "zigzag_pattern": "even"
   },
   "seats": [
@@ -221,7 +214,6 @@
       "member_name": "변성식",
       "part": "TENOR",
       "height": null,
-      "experience_years": 0,
       "is_part_leader": false,
       "row": 5,
       "col": 7
