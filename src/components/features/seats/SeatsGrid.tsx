@@ -64,7 +64,6 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                         <CaptureHeader
                             date={arrangementInfo.date}
                             title={arrangementInfo.title}
-                            conductor={arrangementInfo.conductor}
                         />
                     )}
 

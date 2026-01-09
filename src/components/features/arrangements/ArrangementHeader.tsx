@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, RefObject } from 'react';
-import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2, BarChart3, Lock, Send, Share2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2, BarChart3, Lock, Send, Share2, CheckCircle2, AlertTriangle, Sparkles, Trash2, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useUpdateArrangement } from '@/hooks/useArrangements';
 import { useUpdateSeats } from '@/hooks/useSeats';
@@ -47,6 +48,8 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         setAssignments,
         rowLeaderMode,
         toggleRowLeaderMode,
+        autoAssignRowLeaders,
+        clearAllRowLeaders,
         undo,
         redo,
         canUndo,
@@ -378,14 +381,6 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-secondary)]">
                             <span className="flex-shrink-0">{arrangement.date}</span>
-                            <span>•</span>
-                            <Input
-                                value={conductor}
-                                onChange={(e) => setConductor(e.target.value)}
-                                placeholder="지휘자 입력"
-                                readOnly={isReadOnly}
-                                className={`h-7 sm:h-6 text-xs sm:text-sm border-transparent px-2 -ml-2 w-28 sm:w-32 ${isReadOnly ? 'cursor-default' : 'hover:border-[var(--color-border-default)] focus:border-[var(--color-primary-400)]'}`}
-                            />
                         </div>
                         <ServiceScheduleBadge date={arrangement.date} compact />
                     </div>
@@ -410,15 +405,54 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                     />
                 )}
 {!isReadOnly && (
-                    <Button
-                        variant={rowLeaderMode ? "default" : "outline"}
-                        onClick={toggleRowLeaderMode}
-                        disabled={isSaving}
-                        className={`gap-2 h-11 sm:h-10 text-sm ${rowLeaderMode ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
-                    >
-                        <Crown className="h-4 w-4" />
-                        <span className="hidden sm:inline">{rowLeaderMode ? '줄반장 지정 중' : '줄반장 지정'}</span>
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant={rowLeaderMode ? "default" : "outline"}
+                                disabled={isSaving || Object.keys(assignments).length === 0}
+                                className={`gap-2 h-11 sm:h-10 text-sm ${rowLeaderMode ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                            >
+                                <Crown className="h-4 w-4" />
+                                <span className="hidden sm:inline">{rowLeaderMode ? '줄반장 지정 중' : '줄반장'}</span>
+                                <ChevronDown className="h-3 w-3 hidden sm:inline" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                                onClick={toggleRowLeaderMode}
+                                className="cursor-pointer"
+                            >
+                                <Crown className={`mr-2 h-4 w-4 ${rowLeaderMode ? 'text-orange-500' : ''}`} />
+                                {rowLeaderMode ? '수동 지정 모드 끄기' : '수동 지정 모드'}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    const candidates = autoAssignRowLeaders();
+                                    if (candidates.length > 0) {
+                                        alert(`줄반장 ${candidates.length}명이 자동 지정되었습니다.`);
+                                    } else {
+                                        alert('자동 지정할 수 있는 줄반장이 없습니다.');
+                                    }
+                                }}
+                                className="cursor-pointer"
+                            >
+                                <Sparkles className="mr-2 h-4 w-4 text-yellow-500" />
+                                자동 지정
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    if (confirm('모든 줄반장 지정을 해제하시겠습니까?')) {
+                                        clearAllRowLeaders();
+                                    }
+                                }}
+                                className="cursor-pointer text-red-600"
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                전체 해제
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 )}
                 {!isReadOnly && (
                     <div className="flex items-center gap-1">

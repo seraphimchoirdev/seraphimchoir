@@ -189,8 +189,8 @@ const GridClickableMember = memo(function GridClickableMember({
                 'pointer-events-none', // Parent button handles all clicks
                 'touch-manipulation transition-all duration-200',
                 getPartColor(part),
-                // 줄반장 표시: 오렌지 테두리 강조
-                isRowLeader && 'ring-2 ring-[var(--color-part-soprano-500)] ring-offset-1',
+                // 줄반장 표시: 보라 글로우 + 흰색 링 (모든 파트와 대비)
+                isRowLeader && 'ring-[3px] ring-white ring-offset-2 ring-offset-violet-500 shadow-[0_0_10px_3px_rgba(139,92,246,0.5)]',
                 // 줄반장 지정 모드일 때 호버 효과
                 rowLeaderMode && 'cursor-pointer',
             )}
@@ -201,9 +201,11 @@ const GridClickableMember = memo(function GridClickableMember({
             <span className="font-bold text-xs sm:text-sm lg:text-base text-center leading-tight px-0.5 truncate max-w-full drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
                 {name}
             </span>
-            {/* 줄반장 아이콘 표시 */}
+            {/* 줄반장 아이콘 표시: 흰색 원형 배경 + 보라 크라운 */}
             {isRowLeader && (
-                <Crown className="absolute -top-1 -right-1 w-4 h-4 text-[var(--color-part-soprano-500)]" />
+                <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-violet-400">
+                    <Crown className="w-3.5 h-3.5 text-violet-600 fill-violet-300" />
+                </div>
             )}
         </div>
     );

@@ -6,14 +6,13 @@ import { useServiceScheduleByDate } from '@/hooks/useServiceSchedules';
 interface CaptureHeaderProps {
     date: string;
     title?: string;
-    conductor?: string;
 }
 
 /**
  * 이미지 캡처용 헤더 컴포넌트
- * 날짜, 예배명, 찬양곡명, 봉헌송 연주자, 지휘자 정보를 표시
+ * 날짜, 예배명, 찬양곡명, 봉헌송 연주자 정보를 표시
  */
-export default function CaptureHeader({ date, title, conductor }: CaptureHeaderProps) {
+export default function CaptureHeader({ date, title }: CaptureHeaderProps) {
     const { data: schedule } = useServiceScheduleByDate(date);
 
     return (
@@ -47,19 +46,12 @@ export default function CaptureHeader({ date, title, conductor }: CaptureHeaderP
                 </div>
             )}
 
-            {/* 3행: 봉헌 + 지휘 (명시적 줄 간격) */}
-            <div className="mt-3 space-y-2">
-                {schedule?.offertory_performer && (
-                    <div className="text-lg text-[var(--color-text-secondary)] leading-relaxed">
-                        봉헌: {schedule.offertory_performer}
-                    </div>
-                )}
-                {conductor && (
-                    <div className="text-lg text-[var(--color-text-secondary)] leading-relaxed">
-                        지휘: {conductor}
-                    </div>
-                )}
-            </div>
+            {/* 3행: 봉헌송 */}
+            {schedule?.offertory_performer && (
+                <div className="mt-3 text-lg text-[var(--color-text-secondary)] leading-relaxed">
+                    봉헌송: {schedule.offertory_performer}
+                </div>
+            )}
         </div>
     );
 }

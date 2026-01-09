@@ -12,6 +12,7 @@ import {
     DEFAULT_PART_ZONES,
     findNearestEmptySeatInExpandedZone,
 } from '@/lib/part-zone-analyzer';
+import { selectRowLeaders, type RowLeaderCandidate } from '@/lib/row-leader-utils';
 
 type Part = Database['public']['Enums']['part'];
 
@@ -121,6 +122,10 @@ interface ArrangementState {
     // Row leader actions
     toggleRowLeaderMode: () => void;
     toggleRowLeader: (row: number, col: number) => void;
+
+    // 줄반장 자동 지정/해제 액션
+    autoAssignRowLeaders: () => RowLeaderCandidate[];
+    clearAllRowLeaders: () => void;
 
     // History actions for undo/redo
     undo: () => void;
@@ -472,6 +477,76 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
                         isRowLeader: !assignment.isRowLeader,
                     },
                 },
+            };
+        }),
+
+    /**
+     * 줄반장 자동 지정
+     *
+     * 패턴:
+     * - 왼쪽 영역 (소프라노/테너) 3명: 1행, 3행 경계 소프라노 + 5행 경계 테너
+     * - 오른쪽 영역 (알토/베이스) 5명: 1행 경계 알토 + 중간 알토 + 4,5,6행 경계 베이스
+     *
+     * @returns 지정된 줄반장 후보 배열
+     */
+    autoAssignRowLeaders: () => {
+        const state = get();
+        const { gridLayout, assignments } = state;
+
+        if (!gridLayout) {
+            console.warn('[RowLeader] gridLayout이 없어 자동 지정 불가');
+            return [];
+        }
+
+        // 1. 먼저 기존 줄반장 전체 해제
+        const newAssignments = { ...assignments };
+        Object.keys(newAssignments).forEach((key) => {
+            if (newAssignments[key].isRowLeader) {
+                newAssignments[key] = { ...newAssignments[key], isRowLeader: false };
+            }
+        });
+
+        // 2. 알고리즘으로 줄반장 후보 선정
+        const candidates = selectRowLeaders(newAssignments, gridLayout);
+
+        // 3. 선정된 후보에 줄반장 표시
+        candidates.forEach(({ row, col }) => {
+            const key = `${row}-${col}`;
+            if (newAssignments[key]) {
+                newAssignments[key] = { ...newAssignments[key], isRowLeader: true };
+            }
+        });
+
+        // 4. 상태 업데이트
+        set({
+            _history: saveToHistory(state),
+            assignments: newAssignments,
+        });
+
+        console.log(`[RowLeader] 자동 지정 완료: ${candidates.length}명`);
+        return candidates;
+    },
+
+    /**
+     * 모든 줄반장 해제
+     */
+    clearAllRowLeaders: () =>
+        set((state) => {
+            const newAssignments = { ...state.assignments };
+            let clearedCount = 0;
+
+            Object.keys(newAssignments).forEach((key) => {
+                if (newAssignments[key].isRowLeader) {
+                    newAssignments[key] = { ...newAssignments[key], isRowLeader: false };
+                    clearedCount++;
+                }
+            });
+
+            console.log(`[RowLeader] 전체 해제: ${clearedCount}명`);
+
+            return {
+                _history: saveToHistory(state),
+                assignments: newAssignments,
             };
         }),
 
