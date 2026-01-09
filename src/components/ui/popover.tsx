@@ -11,10 +11,23 @@ const PopoverContext = React.createContext<PopoverContextValue | undefined>(unde
 
 export interface PopoverProps {
     children: React.ReactNode;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
-export function Popover({ children }: PopoverProps) {
-    const [open, setOpen] = React.useState(false);
+export function Popover({ children, open: controlledOpen, onOpenChange }: PopoverProps) {
+    const [internalOpen, setInternalOpen] = React.useState(false);
+
+    // Controlled mode: use props, Uncontrolled mode: use internal state
+    const isControlled = controlledOpen !== undefined;
+    const open = isControlled ? controlledOpen : internalOpen;
+    const setOpen = React.useCallback((newOpen: boolean) => {
+        if (isControlled) {
+            onOpenChange?.(newOpen);
+        } else {
+            setInternalOpen(newOpen);
+        }
+    }, [isControlled, onOpenChange]);
 
     return (
         <PopoverContext.Provider value={{ open, setOpen }}>

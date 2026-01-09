@@ -1,10 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger, PopoverProps } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-const DropdownMenu = Popover;
+const DropdownMenu = (props: PopoverProps) => <Popover {...props} />;
 
 const DropdownMenuTrigger = PopoverTrigger;
 
