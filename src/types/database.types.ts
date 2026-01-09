@@ -25,6 +25,7 @@ export type Database = {
           image_url: string | null
           is_published: boolean
           service_info: string | null
+          status: string | null
           title: string
           updated_at: string
         }
@@ -38,6 +39,7 @@ export type Database = {
           image_url?: string | null
           is_published?: boolean
           service_info?: string | null
+          status?: string | null
           title: string
           updated_at?: string
         }
@@ -51,6 +53,7 @@ export type Database = {
           image_url?: string | null
           is_published?: boolean
           service_info?: string | null
+          status?: string | null
           title?: string
           updated_at?: string
         }
@@ -522,6 +525,7 @@ export type Database = {
           pre_practice_location: string | null
           pre_practice_minutes_before: number | null
           pre_practice_start_time: string | null
+          service_start_time: string | null
           service_type: string | null
           updated_at: string | null
         }
@@ -543,6 +547,7 @@ export type Database = {
           pre_practice_location?: string | null
           pre_practice_minutes_before?: number | null
           pre_practice_start_time?: string | null
+          service_start_time?: string | null
           service_type?: string | null
           updated_at?: string | null
         }
@@ -564,6 +569,7 @@ export type Database = {
           pre_practice_location?: string | null
           pre_practice_minutes_before?: number | null
           pre_practice_start_time?: string | null
+          service_start_time?: string | null
           service_type?: string | null
           updated_at?: string | null
         }
@@ -874,3 +880,6 @@ export const Constants = {
     },
   },
 } as const
+
+// 배치표 상태 타입 정의
+export type ArrangementStatus = 'DRAFT' | 'SHARED' | 'CONFIRMED'
