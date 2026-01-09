@@ -47,3 +47,4 @@ next-env.d.ts
 
 # Large PDF files
 training_data/other_data/1-3월찬양곡.pdf
+.playwright-mcp/
