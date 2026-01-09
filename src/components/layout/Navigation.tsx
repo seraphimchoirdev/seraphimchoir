@@ -91,8 +91,8 @@ export default function Navigation() {
               >
                 찬양대 자리배치 시스템
               </Link>
-              {/* 데스크톱 네비게이션 */}
-              <div className="hidden md:flex gap-4">
+              {/* 데스크톱 네비게이션 - lg(1024px) 이상에서 표시 */}
+              <div className="hidden lg:flex gap-4">
                 {navLinks.map((link) => {
                   const isActive = pathname.startsWith(link.href);
                   return (
@@ -111,8 +111,8 @@ export default function Navigation() {
               </div>
             </div>
 
-            {/* 데스크톱 사용자 정보 및 로그아웃 */}
-            <div className="hidden md:flex items-center gap-4">
+            {/* 데스크톱 사용자 정보 및 로그아웃 - lg(1024px) 이상에서 표시 */}
+            <div className="hidden lg:flex items-center gap-4">
               {mounted && user ? (
                 <>
                   <div className="text-right">
@@ -147,8 +147,8 @@ export default function Navigation() {
               )}
             </div>
 
-            {/* 모바일 메뉴 버튼 */}
-            <div className="flex md:hidden items-center">
+            {/* 모바일/태블릿 메뉴 버튼 - lg(1024px) 미만에서 표시 */}
+            <div className="flex lg:hidden items-center">
               <Button
                 variant="ghost"
                 size="icon"
@@ -160,9 +160,9 @@ export default function Navigation() {
             </div>
           </div>
 
-          {/* 모바일 메뉴 */}
+          {/* 모바일/태블릿 메뉴 - lg(1024px) 미만에서 표시 */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-[var(--color-border-subtle)] animate-in slide-in-from-top-2">
+            <div className="lg:hidden py-4 border-t border-[var(--color-border-subtle)] animate-in slide-in-from-top-2">
               <div className="space-y-3">
                 {navLinks.map((link) => {
                   const isActive = pathname.startsWith(link.href);
