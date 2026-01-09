@@ -299,20 +299,20 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                                 animation: 'fadeIn 0.3s ease-out',
                             }}
                         />
-                        {/* Bottom Sheet */}
+                        {/* Bottom Sheet - max-h-full로 컨테이너 내에서만 표시 */}
                         <div
-                            className="absolute left-0 right-0 bottom-0 z-40 flex flex-col bg-[var(--color-background-primary)] rounded-t-2xl shadow-2xl"
+                            className="absolute left-0 right-0 bottom-0 z-40 flex flex-col bg-[var(--color-background-primary)] rounded-t-2xl shadow-2xl max-h-full"
                             style={{
-                                height: '70vh',
+                                height: '90%',
                                 animation: 'slideUp 0.3s ease-out',
                             }}
                         >
                             {/* 드래그 핸들 */}
-                            <div className="flex justify-center pt-2 pb-1">
+                            <div className="flex-shrink-0 flex justify-center pt-2 pb-1">
                                 <div className="w-10 h-1 rounded-full bg-[var(--color-text-tertiary)] opacity-30" />
                             </div>
-                            {/* 헤더 */}
-                            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border-default)] bg-[var(--color-surface)]">
+                            {/* 헤더 - flex-shrink-0로 항상 표시 보장 */}
+                            <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-[var(--color-border-default)] bg-[var(--color-surface)]">
                                 <h2 className="text-lg font-bold text-[var(--color-text-primary)]">그리드 설정</h2>
                                 <Button
                                     onClick={() => setShowSettingsSheet(false)}
@@ -324,8 +324,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                                     닫기
                                 </Button>
                             </div>
-                            {/* 설정 패널 */}
-                            <div className="flex-1 overflow-auto p-4">
+                            {/* 설정 패널 - min-h-0으로 flex overflow 동작 보장 */}
+                            <div className="flex-1 min-h-0 overflow-auto p-4">
                                 <GridSettingsPanel
                                     gridLayout={gridLayout}
                                     onChange={setGridLayout}
