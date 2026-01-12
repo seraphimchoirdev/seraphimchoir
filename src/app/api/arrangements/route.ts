@@ -140,8 +140,20 @@ export async function GET(request: NextRequest) {
 
     // 5. 데이터 병합
     let enrichedArrangements = (arrangements || []).map(a => {
-        // arrangements.service_info와 service_schedules.service_type을 매칭
-        const schedule = scheduleMap.get(`${a.date}_${a.service_info}`);
+        // arrangements.service_info와 service_schedules.service_type을 매칭 시도
+        // 1. 정확한 매칭 (기존 로직)
+        let schedule = scheduleMap.get(`${a.date}_${a.service_info}`);
+
+        // 2. 매칭 실패 시, 해당 날짜의 스케줄이 하나만 있다면 그것을 사용 (2026년 데이터 호환성)
+        if (!schedule) {
+            const schedulesOnDate = (schedules || []).filter(s => s.date === a.date);
+            if (schedulesOnDate.length === 1) {
+                schedule = schedulesOnDate[0];
+            } else if (schedulesOnDate.length > 1) {
+                // 여러 개일 경우, service_info에 service_type이 포함되어 있는지 확인
+                schedule = schedulesOnDate.find(s => a.service_info?.includes(s.service_type || ''));
+            }
+        }
         const composition = seatCompositionMap.get(a.id) || {
             SOPRANO: 0,
             ALTO: 0,

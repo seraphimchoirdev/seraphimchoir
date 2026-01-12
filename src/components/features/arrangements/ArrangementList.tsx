@@ -64,14 +64,19 @@ const ArrangementCard = memo(function ArrangementCard({
     const isConfirmed = currentStatus === 'CONFIRMED';
     const isShared = currentStatus === 'SHARED';
 
+    // 2026년 데이터 호환성: service_type에 '찬양곡' 등이 포함된 경우 '주일 2부 예배'로 표시
+    const displayServiceType = arrangement.service_type?.includes('찬양곡')
+        ? '주일 2부 예배'
+        : (arrangement.service_type || '예배');
+
     return (
-        <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-[var(--color-primary-400)] group">
+        <Card className="h-full flex flex-col transition-all duration-200 hover:shadow-md hover:border-[var(--color-primary-400)] group">
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-start gap-2">
-                    <CardTitle className="text-lg font-bold text-[var(--color-text-primary)] line-clamp-1">
-                        {format(new Date(arrangement.date), 'yyyy년 M월 d일', { locale: ko })} {arrangement.service_type || '예배'}
+                    <CardTitle className="text-lg font-bold text-[var(--color-text-primary)] line-clamp-1" title={`${format(new Date(arrangement.date), 'yyyy년 M월 d일', { locale: ko })} ${displayServiceType}`}>
+                        {format(new Date(arrangement.date), 'yyyy년 M월 d일', { locale: ko })} {displayServiceType}
                     </CardTitle>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                         <Badge className={`text-xs ${statusBadge.className}`}>
                             {statusBadge.label}
                         </Badge>
@@ -87,21 +92,55 @@ const ArrangementCard = memo(function ArrangementCard({
                     {format(new Date(arrangement.date), 'yyyy년 M월 d일 (EEE)', { locale: ko })}
                 </div>
             </CardHeader>
-            <CardContent className="pb-3 space-y-2">
+            <CardContent className="pb-3 space-y-2 flex-1">
+                {/* 1. 찬양곡명 표시 (DB 필드 우선) */}
                 {arrangement.hymn_name && (
                     <div className="flex items-start text-sm text-[var(--color-text-secondary)]">
-                        <Music className="w-4 h-4 mr-2 mt-0.5 text-[var(--color-text-tertiary)]" />
+                        <Music className="w-4 h-4 mr-2 mt-0.5 text-[var(--color-text-tertiary)] shrink-0" />
                         <span className="line-clamp-2">{arrangement.hymn_name}</span>
                     </div>
                 )}
+
+                {/* 2. service_info 파싱하여 부족한 정보 보충 표시 */}
+                {arrangement.service_info && (
+                    <>
+                        {arrangement.service_info.split('\n').map((line, index) => {
+                            const isOffertoryLine = line.includes('봉헌송:');
+
+                            // 이미 DB 필드로 표시된 정보는 중복 표시 방지
+                            if (isOffertoryLine && arrangement.offertory_performer) return null;
+                            if (!isOffertoryLine && arrangement.hymn_name) return null;
+
+                            if (!line.trim()) return null;
+
+                            if (isOffertoryLine) {
+                                return (
+                                    <div key={`info-${index}`} className="flex items-center text-sm text-[var(--color-text-secondary)]">
+                                        <User className="w-4 h-4 mr-2 text-[var(--color-text-tertiary)] shrink-0" />
+                                        <span className="line-clamp-1">{line.replace('봉헌송:', '').trim() || line}</span>
+                                    </div>
+                                );
+                            } else {
+                                return (
+                                    <div key={`info-${index}`} className="flex items-start text-sm text-[var(--color-text-secondary)]">
+                                        <Music className="w-4 h-4 mr-2 mt-0.5 text-[var(--color-text-tertiary)] shrink-0" />
+                                        <span className="line-clamp-2">{line.replace('찬양곡:', '').trim() || line}</span>
+                                    </div>
+                                );
+                            }
+                        })}
+                    </>
+                )}
+
+                {/* 3. 봉헌송 연주자 표시 (DB 필드 우선) */}
                 {arrangement.offertory_performer && (
                     <div className="flex items-center text-sm text-[var(--color-text-secondary)]">
-                        <User className="w-4 h-4 mr-2 text-[var(--color-text-tertiary)]" />
+                        <User className="w-4 h-4 mr-2 text-[var(--color-text-tertiary)] shrink-0" />
                         <span>봉헌송: {arrangement.offertory_performer}</span>
                     </div>
                 )}
             </CardContent>
-            <CardFooter className="pt-3 border-t border-[var(--color-border-default)] flex-col gap-3">
+            <CardFooter className="pt-3 border-t border-[var(--color-border-default)] flex-col gap-3 mt-auto">
                 <div className="w-full flex justify-between items-center text-xs text-[var(--color-text-tertiary)]">
                     <span>
                         수정: {format(new Date(arrangement.updated_at), 'yyyy.MM.dd')}
