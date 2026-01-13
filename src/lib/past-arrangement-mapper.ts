@@ -4,19 +4,24 @@
  * 과거 배치를 현재 그리드에 적용할 때 파트별 영역(zone)을 유지합니다.
  * - 각 파트가 과거에 차지한 영역을 분석
  * - 현재 그리드에 비례적으로 매핑
- * - PART_PLACEMENT_RULES 기반으로 타겟 영역 계산
+ * - 학습된 규칙 또는 기본 규칙 기반으로 타겟 영역 계산
  */
+
+import type { PartPlacementRule } from './part-placement-rules-loader';
 
 type Part = 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS' | 'SPECIAL';
 
-/** 파트별 배치 규칙 (ai-seat-algorithm.ts에서 가져온 규칙) - 1-based row index */
-const PART_PLACEMENT_RULES = {
-    SOPRANO: { side: 'left' as const, preferredRows: [1, 2, 3], overflowRows: [4, 5, 6] },
-    ALTO: { side: 'right' as const, preferredRows: [1, 2, 3], overflowRows: [4] }, // 5, 6행 (1-based) 금지!
-    TENOR: { side: 'left' as const, preferredRows: [4, 5, 6], overflowRows: [] },
-    BASS: { side: 'right' as const, preferredRows: [4, 5, 6], overflowRows: [] },
-    SPECIAL: { side: 'left' as const, preferredRows: [1, 2, 3, 4, 5, 6], overflowRows: [] },
-} as const;
+/** 파트별 배치 규칙 타입 */
+export type PartPlacementRules = Record<Part, PartPlacementRule>;
+
+/** 기본 파트별 배치 규칙 (학습 데이터 없을 때 사용) - 1-based row index */
+const DEFAULT_PART_PLACEMENT_RULES: PartPlacementRules = {
+    SOPRANO: { side: 'left', preferredRows: [1, 2, 3], overflowRows: [4, 5, 6] },
+    ALTO: { side: 'right', preferredRows: [1, 2, 3], overflowRows: [4], forbiddenRows: [5, 6] },
+    TENOR: { side: 'left', preferredRows: [4, 5, 6], overflowRows: [] },
+    BASS: { side: 'right', preferredRows: [4, 5, 6], overflowRows: [] },
+    SPECIAL: { side: 'left', preferredRows: [1, 2, 3, 4, 5, 6], overflowRows: [] },
+};
 
 /** 그리드 레이아웃 */
 export interface GridLayout {
@@ -79,10 +84,19 @@ interface PartZoneTarget {
 
 /**
  * 현재 그리드에서 각 파트의 타겟 영역 계산
+ *
+ * @param gridLayout - 현재 그리드 레이아웃
+ * @param learnedRules - 학습된 규칙 (선택적, 없으면 기본값 사용)
  */
-function calculatePartZones(gridLayout: GridLayout): Map<Part, PartZoneTarget> {
+function calculatePartZones(
+    gridLayout: GridLayout,
+    learnedRules?: PartPlacementRules
+): Map<Part, PartZoneTarget> {
     const zones = new Map<Part, PartZoneTarget>();
     const { rows, rowCapacities } = gridLayout;
+
+    // 사용할 규칙 결정 (학습 규칙 우선)
+    const rules = learnedRules || DEFAULT_PART_PLACEMENT_RULES;
 
     // 행별 최대 열 계산
     const maxCols = Math.max(...rowCapacities);
@@ -91,29 +105,35 @@ function calculatePartZones(gridLayout: GridLayout): Map<Part, PartZoneTarget> {
     const midCol = Math.floor(maxCols / 2) + 1;
 
     // 각 파트별 영역 계산
-    for (const [partName, rules] of Object.entries(PART_PLACEMENT_RULES)) {
+    for (const [partName, partRules] of Object.entries(rules)) {
         const part = partName as Part;
 
         // 열 범위 (1-based): 좌측 파트는 1 ~ midCol, 우측 파트는 midCol ~ maxCols
-        const colStart = rules.side === 'left' ? 1 : midCol;
-        const colEnd = rules.side === 'left' ? midCol : maxCols + 1;
+        // 'both' 측면인 경우 전체 열 사용
+        const colStart = partRules.side === 'left' ? 1 : (partRules.side === 'right' ? midCol : 1);
+        const colEnd = partRules.side === 'left' ? midCol : maxCols + 1;
 
         // 선호 행 (그리드 범위 내, 1-based이므로 rows 이하인지 확인)
-        const preferredRows = rules.preferredRows.filter(r => r <= rows);
+        const preferredRows = partRules.preferredRows.filter(r => r <= rows);
 
         // 오버플로우 행 (그리드 범위 내)
-        const overflowRows = rules.overflowRows.filter(r => r <= rows);
+        const overflowRows = partRules.overflowRows.filter(r => r <= rows);
 
-        // 사용 가능한 모든 행
-        const allRows = [...new Set([...preferredRows, ...overflowRows])].sort((a, b) => a - b);
+        // 금지 행 제외 (학습된 규칙에서 가져옴)
+        const forbiddenRows = partRules.forbiddenRows || [];
+
+        // 사용 가능한 모든 행 (금지 행 제외)
+        const allRows = [...new Set([...preferredRows, ...overflowRows])]
+            .filter(r => !forbiddenRows.includes(r))
+            .sort((a, b) => a - b);
 
         zones.set(part, {
             part,
             rows: allRows,
             colStart,
             colEnd,
-            preferredRows,
-            overflowRows,
+            preferredRows: preferredRows.filter(r => !forbiddenRows.includes(r)),
+            overflowRows: overflowRows.filter(r => !forbiddenRows.includes(r)),
         });
     }
 
@@ -271,6 +291,8 @@ function findBestSeat(
 /**
  * 과거 배치를 현재 그리드에 파트별 영역 유지하며 매핑
  * ML 선호 좌석 데이터를 활용하여 멤버별 익숙한 위치에 배치
+ *
+ * @param params.learnedRules - 학습된 파트 배치 규칙 (선택적, 없으면 기본값 사용)
  */
 export function applyPastArrangementWithZoneMapping(params: {
     pastSeats: PastSeat[];
@@ -278,11 +300,12 @@ export function applyPastArrangementWithZoneMapping(params: {
     currentGridLayout: GridLayout;
     availableMembers: AvailableMember[];
     memberPreferences?: Map<string, MemberSeatPreference>;  // ML 선호 좌석 데이터
+    learnedRules?: PartPlacementRules;  // 학습된 파트 배치 규칙
 }): {
     seats: SeatRecommendation[];
     unassignedMembers: UnassignedMember[];
 } {
-    const { pastSeats, pastGridLayout, currentGridLayout, availableMembers, memberPreferences } = params;
+    const { pastSeats, pastGridLayout, currentGridLayout, availableMembers, memberPreferences, learnedRules } = params;
 
     const seats: SeatRecommendation[] = [];
     const unassignedMembers: UnassignedMember[] = [];
@@ -293,8 +316,8 @@ export function applyPastArrangementWithZoneMapping(params: {
     const availableMemberIds = new Set(availableMembers.map(m => m.id));
     const availableMemberMap = new Map(availableMembers.map(m => [m.id, m]));
 
-    // 현재 그리드의 파트별 타겟 영역 계산
-    const partZones = calculatePartZones(currentGridLayout);
+    // 현재 그리드의 파트별 타겟 영역 계산 (학습된 규칙 적용)
+    const partZones = calculatePartZones(currentGridLayout, learnedRules);
 
     // 파트별로 과거 좌석 그룹화 (출석 가능한 멤버만)
     const pastSeatsByPart = new Map<Part, PastSeat[]>();

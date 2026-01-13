@@ -380,7 +380,12 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                     </div>
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-secondary)]">
-                            <span className="flex-shrink-0">{arrangement.date}</span>
+                            <span className="flex-shrink-0">
+                                {(() => {
+                                    const [year, month, day] = arrangement.date.split('-');
+                                    return `${year}년 ${month}월 ${day}일`;
+                                })()}
+                            </span>
                         </div>
                         <ServiceScheduleBadge date={arrangement.date} compact />
                     </div>

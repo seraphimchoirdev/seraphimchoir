@@ -4,7 +4,7 @@
  *
  * 과거 배치표의 좌석 정보를 현재 출석 가능 인원에게 파트별 영역 유지하며 매핑
  * - 각 파트가 과거에 차지한 영역을 현재 그리드에 비례적으로 매핑
- * - PART_PLACEMENT_RULES 기반 타겟 영역 계산
+ * - 학습된 파트 배치 규칙 또는 기본 규칙 기반 타겟 영역 계산
  */
 
 import { createClient } from '@/lib/supabase/server';
@@ -17,6 +17,7 @@ import {
     type GridLayout,
     type MemberSeatPreference,
 } from '@/lib/past-arrangement-mapper';
+import { loadPartPlacementRules } from '@/lib/part-placement-rules-loader';
 
 const applyPastSchema = z.object({
     sourceArrangementId: z.string().uuid('유효한 배치표 ID가 아닙니다'),
@@ -26,6 +27,51 @@ const applyPastSchema = z.object({
         zigzagPattern: z.enum(['none', 'even', 'odd']),
     }).optional(),
 });
+
+/**
+ * 배치표 제목에서 예배 유형 추출
+ * 예: "2025-01-05 주일 2부 예배" → "주일 2부 예배"
+ *
+ * UI에서 사용하는 표준 예배 유형:
+ * - '주일 2부 예배'
+ * - '오후찬양예배'
+ * - '절기찬양예배'
+ * - '온세대예배'
+ * - '기도회'
+ * - '기타'
+ */
+function extractServiceType(title: string): string {
+    // 표준 예배 유형 (ServiceScheduleForm, ArrangementFilters 기준)
+    const serviceTypes = [
+        '주일 2부 예배',
+        '오후찬양예배',
+        '절기찬양예배',
+        '온세대예배',
+        '기도회',
+    ];
+    for (const type of serviceTypes) {
+        if (title.includes(type)) {
+            return type;
+        }
+    }
+
+    // 레거시 데이터 호환 (공백 없는 형식)
+    if (title.includes('2부예배') || title.includes('2부 예배')) {
+        return '주일 2부 예배';
+    }
+    if (title.includes('온세대')) {
+        return '온세대예배';
+    }
+    if (title.includes('오후찬양') || title.includes('오후 찬양')) {
+        return '오후찬양예배';
+    }
+    if (title.includes('절기') || title.includes('특별')) {
+        return '절기찬양예배';
+    }
+
+    // 기본값: 주일 2부 예배 (가장 흔한 유형)
+    return '주일 2부 예배';
+}
 
 interface SeatRecommendation {
     memberId: string;
@@ -53,10 +99,10 @@ export async function POST(
         const json = await request.json();
         const { sourceArrangementId, gridLayout: clientGridLayout } = applyPastSchema.parse(json);
 
-        // 1. 현재 배치표 정보 조회 (날짜, 그리드 레이아웃)
+        // 1. 현재 배치표 정보 조회 (날짜, 그리드 레이아웃, 제목)
         const { data: currentArrangement, error: currentError } = await supabase
             .from('arrangements')
-            .select('date, grid_layout, grid_rows')
+            .select('date, grid_layout, grid_rows, title')
             .eq('id', currentArrangementId)
             .single();
 
@@ -207,13 +253,26 @@ export async function POST(
             part: m.part as Part,
         }));
 
-        // 6. 파트별 영역 유지 매핑 알고리즘 적용 (ML 선호 좌석 포함)
+        // 5-1. 학습된 파트 배치 규칙 로드
+        // 예배 유형 및 인원수 구간 기반으로 최적화된 규칙 사용
+        const serviceType = extractServiceType(currentArrangement.title);
+        const totalMembers = availableMemberList.length;
+
+        const { rules: learnedRules, source: rulesSource } = await loadPartPlacementRules(
+            supabase,
+            { serviceType, totalMembers }
+        );
+
+        console.log(`[apply-past] 파트 배치 규칙 로드: ${rulesSource} (${serviceType}, ${totalMembers}명)`);
+
+        // 6. 파트별 영역 유지 매핑 알고리즘 적용 (ML 선호 좌석 + 학습 규칙 포함)
         const result = applyPastArrangementWithZoneMapping({
             pastSeats,
             pastGridLayout,
             currentGridLayout,
             availableMembers: availableMemberList,
             memberPreferences,  // ML 선호 좌석 데이터 전달
+            learnedRules,       // 학습된 파트 배치 규칙 전달
         });
 
         // 7. 응답
@@ -223,6 +282,11 @@ export async function POST(
             totalAvailable: availableMemberIds.size,
             unassignedMembers: result.unassignedMembers,
             gridLayout: currentGridLayout,
+            rulesInfo: {
+                source: rulesSource,
+                serviceType,
+                memberCountRange: `${Math.floor(totalMembers / 10) * 10}-${Math.floor(totalMembers / 10) * 10 + 9}`,
+            },
         });
 
     } catch (error: unknown) {
