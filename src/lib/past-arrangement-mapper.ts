@@ -326,10 +326,16 @@ function findClosestSeat(
 /**
  * ML 선호 좌석을 고려한 최적 좌석 탐색
  *
- * 우선순위:
- * 1. 선호 좌석이 비어있으면 즉시 반환
- * 2. 선호 좌석과 동일 행 내 빈 좌석 탐색 (열 거리 가까운 순)
- * 3. 기존 상대적 위치 기반 거리 계산 (fallback)
+ * 우선순위 (버그 수정: 선호행 범위 내에서만 ML 선호 검색):
+ * 1. ML 선호행이 파트의 선호행(preferredRows) 범위 내인 경우에만:
+ *    - 선호 좌석이 비어있으면 즉시 반환
+ *    - 선호 좌석과 동일 행 내 빈 좌석 탐색 (열 거리 가까운 순)
+ * 2. 우선순위 순서대로 첫 번째 좌석 반환 (availableSeats는 이미 정렬됨)
+ *
+ * 수정 이유:
+ * - 이전에는 ML 선호행이 오버플로우 행이어도 해당 행을 검색
+ * - 이로 인해 선호행(1-3행)에 빈좌석이 있어도 오버플로우 행(4-6행)에 배치됨
+ * - 수정 후: ML 선호 검색은 선호행 범위 내에서만 동작
  */
 function findBestSeat(
     availableSeats: { row: number; col: number }[],
@@ -342,30 +348,39 @@ function findBestSeat(
 
     // ML 선호 좌석이 있는 경우
     if (memberPreference) {
-        // 1단계: 선호 좌석이 사용 가능한가?
-        const preferredSeat = availableSeats.find(
-            s => s.row === memberPreference.preferred_row &&
-                 s.col === memberPreference.preferred_col
-        );
-        if (preferredSeat) {
-            return preferredSeat;
-        }
+        // 수정: 선호행 범위 내에서만 ML 선호 검색 수행
+        const preferredRowSet = new Set(zone.preferredRows);
 
-        // 2단계: 선호 좌석과 동일 행 내 검색 (열 거리 가까운 순)
-        const sameRowSeats = availableSeats
-            .filter(s => s.row === memberPreference.preferred_row)
-            .sort((a, b) =>
-                Math.abs(a.col - memberPreference.preferred_col) -
-                Math.abs(b.col - memberPreference.preferred_col)
+        // ML 선호행이 파트의 선호행 범위 내인 경우에만 검색
+        if (preferredRowSet.has(memberPreference.preferred_row)) {
+            // 1단계: 선호 좌석이 사용 가능한가?
+            const preferredSeat = availableSeats.find(
+                s => s.row === memberPreference.preferred_row &&
+                     s.col === memberPreference.preferred_col
             );
+            if (preferredSeat) {
+                return preferredSeat;
+            }
 
-        if (sameRowSeats.length > 0) {
-            return sameRowSeats[0]; // 열 거리가 가장 가까운 좌석
+            // 2단계: 선호 좌석과 동일 행 내 검색 (열 거리 가까운 순)
+            const sameRowSeats = availableSeats
+                .filter(s => s.row === memberPreference.preferred_row)
+                .sort((a, b) =>
+                    Math.abs(a.col - memberPreference.preferred_col) -
+                    Math.abs(b.col - memberPreference.preferred_col)
+                );
+
+            if (sameRowSeats.length > 0) {
+                return sameRowSeats[0]; // 열 거리가 가장 가까운 좌석
+            }
         }
+        // ML 선호행이 오버플로우 행이면 → 무시하고 우선순위 순서대로 배치
     }
 
-    // 3단계: 기존 로직 (상대적 위치 기반 거리 계산)
-    return findClosestSeat(relativePos, availableSeats, zone, gridLayout);
+    // 3단계: 우선순위 순서대로 첫 번째 좌석 반환
+    // availableSeats는 getAvailableSeatsInZone()에서 이미 정렬됨:
+    // 선호행+열범위내(0) < 선호행+열범위외(1) < 오버플로우+열범위내(2) < 오버플로우+열범위외(3)
+    return availableSeats[0];
 }
 
 /**

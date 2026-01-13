@@ -308,6 +308,10 @@ export async function loadPartPlacementRules(
 
 /**
  * DB Row 배열을 Record<Part, PartPlacementRule>로 변환
+ *
+ * 버그 수정: 기본 forbiddenRows(하드 제약)를 반드시 적용
+ * - 학습된 규칙이 과거 데이터에서 금지행에 배치된 경우를 포함할 수 있음
+ * - DEFAULT_PART_ZONES의 forbiddenRows는 항상 강제로 적용해야 함
  */
 function convertDbRowsToRules(
     rows: LearnedPartPlacementRuleRow[]
@@ -335,11 +339,27 @@ function convertDbRowsToRules(
             }
         }
 
+        // 버그 수정: 기본 forbiddenRows와 학습된 forbiddenRows 병합
+        // DEFAULT_PART_ZONES의 forbiddenRows는 하드 제약으로 항상 적용
+        const defaultZone = DEFAULT_PART_ZONES[row.part];
+        const mergedForbiddenRows = [
+            ...new Set([
+                ...(row.forbidden_rows || []),
+                ...(defaultZone?.forbiddenRows || [])  // 하드 제약 강제 포함
+            ])
+        ].sort((a, b) => a - b);
+
+        // preferredRows와 overflowRows에서 forbiddenRows 제거
+        const cleanPreferredRows = (row.preferred_rows || [])
+            .filter(r => !mergedForbiddenRows.includes(r));
+        const cleanOverflowRows = (row.overflow_rows || [])
+            .filter(r => !mergedForbiddenRows.includes(r));
+
         rules[row.part] = {
             side: row.side,
-            preferredRows: row.preferred_rows || [],
-            overflowRows: row.overflow_rows || [],
-            forbiddenRows: row.forbidden_rows || [],
+            preferredRows: cleanPreferredRows,
+            overflowRows: cleanOverflowRows,
+            forbiddenRows: mergedForbiddenRows,
             // 열 패턴 데이터 (학습된 값 우선, 없으면 기본값 유지)
             colRangeByRow: colRangeByRow || defaultRules[row.part]?.colRangeByRow,
             avgCol: row.avg_col ?? defaultRules[row.part]?.avgCol,
