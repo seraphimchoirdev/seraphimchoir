@@ -104,6 +104,10 @@ interface LearnedPartPlacementRuleRow {
     confidence_score: number | null;
     last_learned_at: string;
     created_at: string;
+    // 열 패턴 관련 필드
+    col_range_by_row?: Record<string, { min: number; max: number; avg: number; count: number }>;
+    avg_col?: number | null;
+    col_consistency?: number | null;
 }
 
 /** ML 출력 파일 구조 */
@@ -324,6 +328,10 @@ export async function POST(request: NextRequest) {
                             sample_count: rule.sample_count,
                             total_seats_analyzed: rule.total_seats_analyzed,
                             confidence_score: rule.confidence_score,
+                            // 열 패턴 데이터 (Phase 2 추가)
+                            col_range_by_row: rule.col_range_by_row,
+                            avg_col: rule.avg_col,
+                            col_consistency: rule.col_consistency,
                             last_learned_at: new Date().toISOString(),
                         },
                         {
@@ -351,6 +359,10 @@ export async function POST(request: NextRequest) {
                 preferredRows: r.preferred_rows,
                 forbiddenRows: r.forbidden_rows,
                 confidence: r.confidence_score,
+                // 열 패턴 데이터 미리보기
+                avgCol: r.avg_col,
+                colConsistency: r.col_consistency,
+                colRangeByRow: r.col_range_by_row,
             })),
         });
 
@@ -419,6 +431,10 @@ export async function GET(request: NextRequest) {
                 frontRowPercentage: rule.front_row_percentage,
                 sampleCount: rule.sample_count,
                 confidence: rule.confidence_score,
+                // 열 패턴 데이터
+                avgCol: rule.avg_col,
+                colConsistency: rule.col_consistency,
+                colRangeByRow: rule.col_range_by_row,
             };
         }
 

@@ -7,9 +7,64 @@
  * - 학습된 규칙 또는 기본 규칙 기반으로 타겟 영역 계산
  */
 
-import type { PartPlacementRule } from './part-placement-rules-loader';
+import type { PartPlacementRule, ColRange } from './part-placement-rules-loader';
 
 type Part = 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS' | 'SPECIAL';
+
+// ============================================================================
+// 열 범위 검증 함수 (Phase 4)
+// ============================================================================
+
+/**
+ * 그리드 크기에 맞춰 열 범위를 비율적으로 조정
+ *
+ * 기본 열 범위는 15열 기준이므로, 다른 그리드 크기에 맞춰 비율 조정
+ *
+ * @param colRange - 기본 열 범위 (15열 기준)
+ * @param maxColInRow - 해당 행의 실제 열 수
+ * @param baseMaxCol - 기준 열 수 (기본: 15)
+ */
+function adjustColRangeForGrid(
+    colRange: ColRange,
+    maxColInRow: number,
+    baseMaxCol: number = 15
+): { min: number; max: number } {
+    const ratio = maxColInRow / baseMaxCol;
+    return {
+        min: Math.max(1, Math.round(colRange.min * ratio)),
+        max: Math.min(maxColInRow, Math.round(colRange.max * ratio)),
+    };
+}
+
+/**
+ * 좌석이 파트의 허용 열 범위 내에 있는지 확인
+ *
+ * @param row - 행 번호 (1-based)
+ * @param col - 열 번호 (1-based)
+ * @param colRangeByRow - 파트의 행별 열 범위
+ * @param maxColInRow - 해당 행의 최대 열 수
+ */
+function isInAllowedColRange(
+    row: number,
+    col: number,
+    colRangeByRow?: Record<number, ColRange>,
+    maxColInRow?: number
+): boolean {
+    // 열 범위 정보가 없으면 항상 허용
+    if (!colRangeByRow || !colRangeByRow[row]) {
+        return true;
+    }
+
+    const baseRange = colRangeByRow[row];
+
+    // 그리드 크기에 따른 비율 조정
+    if (maxColInRow && maxColInRow !== 15) {
+        const adjustedRange = adjustColRangeForGrid(baseRange, maxColInRow);
+        return col >= adjustedRange.min && col <= adjustedRange.max;
+    }
+
+    return col >= baseRange.min && col <= baseRange.max;
+}
 
 /** 파트별 배치 규칙 타입 */
 export type PartPlacementRules = Record<Part, PartPlacementRule>;
@@ -80,6 +135,8 @@ interface PartZoneTarget {
     colEnd: number;           // 열 끝 (1-based, exclusive)
     preferredRows: number[];  // 선호 행 (1-based)
     overflowRows: number[];   // 오버플로우 행 (1-based)
+    // 열 범위 관련 필드 (Phase 4 추가)
+    colRangeByRow?: Record<number, ColRange>;  // 행별 열 범위
 }
 
 /**
@@ -134,6 +191,8 @@ function calculatePartZones(
             colEnd,
             preferredRows: preferredRows.filter(r => !forbiddenRows.includes(r)),
             overflowRows: overflowRows.filter(r => !forbiddenRows.includes(r)),
+            // 열 범위 정보 포함 (Phase 4)
+            colRangeByRow: partRules.colRangeByRow,
         });
     }
 
@@ -142,6 +201,12 @@ function calculatePartZones(
 
 /**
  * 영역 내 사용 가능한 좌석 목록 생성
+ *
+ * 우선순위 (Phase 4 열 범위 적용):
+ * 1. 선호 행 + 열 범위 내 (priority: 0)
+ * 2. 선호 행 + 열 범위 외 (priority: 1)
+ * 3. 오버플로우 행 + 열 범위 내 (priority: 2)
+ * 4. 오버플로우 행 + 열 범위 외 (priority: 3)
  */
 function getAvailableSeatsInZone(
     zone: PartZoneTarget,
@@ -151,12 +216,13 @@ function getAvailableSeatsInZone(
     const seats: { row: number; col: number; priority: number }[] = [];
 
     // 선호 행 먼저, 그 다음 오버플로우 행 (모두 1-based)
+    // 기본 행 우선순위: 선호=0, 오버플로우=2
     const orderedRows = [
-        ...zone.preferredRows.map(r => ({ row: r, priority: 0 })),
-        ...zone.overflowRows.map(r => ({ row: r, priority: 1 })),
+        ...zone.preferredRows.map(r => ({ row: r, basePriority: 0 })),
+        ...zone.overflowRows.map(r => ({ row: r, basePriority: 2 })),
     ];
 
-    for (const { row, priority } of orderedRows) {
+    for (const { row, basePriority } of orderedRows) {
         // 1-based row를 0-based index로 변환하여 배열 접근
         const rowCapacity = gridLayout.rowCapacities[row - 1] || 0;
 
@@ -167,12 +233,26 @@ function getAvailableSeatsInZone(
         for (let col = colStart; col < colEnd; col++) {
             const seatKey = `${row}-${col}`;
             if (!occupiedSeats.has(seatKey)) {
-                seats.push({ row, col, priority });
+                // 열 범위 검증으로 추가 우선순위 결정
+                // 열 범위 내: +0, 열 범위 외: +1
+                const inColRange = isInAllowedColRange(
+                    row,
+                    col,
+                    zone.colRangeByRow,
+                    rowCapacity
+                );
+                const colPriorityBonus = inColRange ? 0 : 1;
+
+                seats.push({
+                    row,
+                    col,
+                    priority: basePriority + colPriorityBonus,
+                });
             }
         }
     }
 
-    // 우선순위별 정렬 (선호 행 먼저)
+    // 우선순위별 정렬 (열 범위 내 선호 행 먼저)
     seats.sort((a, b) => a.priority - b.priority);
 
     return seats.map(s => ({ row: s.row, col: s.col }));

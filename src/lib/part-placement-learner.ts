@@ -15,6 +15,33 @@ import type { GridLayout } from '@/types/grid';
 
 type Part = Database['public']['Enums']['part'];
 
+/** 행별 열 통계 */
+export interface ColumnStats {
+    min: number;
+    max: number;
+    avg: number;
+    count: number;
+}
+
+/** 파트별 열 패턴 */
+export interface PartColumnPattern {
+    /** 행별 열 범위 통계 */
+    colRangeByRow: Record<number, ColumnStats>;
+    /** 전체 평균 열 위치 */
+    avgCol: number;
+    /** 열 배치 일관성 점수 (0-1, 높을수록 일관됨) */
+    colConsistency: number;
+}
+
+/** 파트 경계선 정보 */
+export interface BoundaryInfo {
+    row: number;
+    leftPart: Part;
+    rightPart: Part;
+    boundaryCol: number;
+    overlapWidth: number;
+}
+
 /** 학습된 파트 배치 규칙 */
 export interface LearnedPartRule {
     part: Part;
@@ -38,6 +65,13 @@ export interface LearnedPartRule {
     totalSeatsAnalyzed: number;
     /** 신뢰도 점수 (0-1) */
     confidenceScore: number;
+    // 열 패턴 관련 필드 (Phase 2 추가)
+    /** 행별 열 범위 통계 */
+    colRangeByRow?: Record<number, ColumnStats>;
+    /** 전체 평균 열 위치 */
+    avgCol?: number;
+    /** 열 배치 일관성 점수 */
+    colConsistency?: number;
 }
 
 /** 학습 결과 (DB 저장용) */
@@ -55,6 +89,11 @@ export interface LearnedRuleRecord {
     sample_count: number;
     total_seats_analyzed: number;
     confidence_score: number;
+    // 열 패턴 관련 필드 (Phase 2 추가)
+    col_range_by_row?: Record<string, ColumnStats>;
+    boundary_info?: Record<string, BoundaryInfo>;
+    avg_col?: number;
+    col_consistency?: number;
 }
 
 /** 좌석 데이터 입력 타입 */
@@ -186,6 +225,207 @@ function calculateFrontRowPercentage(rowDistribution: Record<number, number>): n
 }
 
 // ============================================================================
+// 열(Column) 패턴 분석 함수
+// ============================================================================
+
+/**
+ * 파트별 열 패턴 분석
+ *
+ * 각 파트에 대해 행별 열 분포를 분석하여 좌우 배치 경계를 학습합니다.
+ *
+ * @param seats - 파트의 좌석 데이터 배열
+ * @param maxRows - 분석할 최대 행 수
+ * @returns 파트의 열 패턴
+ */
+function analyzeColumnPatternForPart(
+    seats: SeatDataForLearning[],
+    maxRows: number = 6
+): PartColumnPattern {
+    // 행별 열 통계를 위한 임시 저장소
+    const rowColData: Record<number, number[]> = {};
+
+    // 전체 열 위치 합계 (평균 계산용)
+    let totalColSum = 0;
+
+    for (const seat of seats) {
+        if (seat.seat_row > maxRows) continue;
+
+        if (!rowColData[seat.seat_row]) {
+            rowColData[seat.seat_row] = [];
+        }
+        rowColData[seat.seat_row].push(seat.seat_column);
+        totalColSum += seat.seat_column;
+    }
+
+    // 행별 열 통계 계산
+    const colRangeByRow: Record<number, ColumnStats> = {};
+
+    for (const [row, cols] of Object.entries(rowColData)) {
+        const rowNum = Number(row);
+        if (cols.length === 0) continue;
+
+        const min = Math.min(...cols);
+        const max = Math.max(...cols);
+        const avg = cols.reduce((a, b) => a + b, 0) / cols.length;
+
+        colRangeByRow[rowNum] = {
+            min,
+            max,
+            avg: Math.round(avg * 100) / 100,
+            count: cols.length,
+        };
+    }
+
+    // 전체 평균 열 위치
+    const avgCol = seats.length > 0
+        ? Math.round((totalColSum / seats.length) * 100) / 100
+        : 0;
+
+    // 열 배치 일관성 점수 계산
+    const colConsistency = calculateColConsistency(colRangeByRow);
+
+    return {
+        colRangeByRow,
+        avgCol,
+        colConsistency,
+    };
+}
+
+/**
+ * 열 배치 일관성 점수 계산
+ *
+ * 행별 평균 열 위치의 표준편차를 기반으로 일관성 점수 계산
+ * - 표준편차가 작을수록 높은 점수 (0-1)
+ *
+ * @param colRangeByRow - 행별 열 통계
+ * @returns 일관성 점수 (0-1)
+ */
+function calculateColConsistency(
+    colRangeByRow: Record<number, ColumnStats>
+): number {
+    const avgCols = Object.values(colRangeByRow)
+        .filter(stats => stats.count > 0)
+        .map(stats => stats.avg);
+
+    if (avgCols.length < 2) {
+        return 1; // 데이터 부족 시 완전 일관성으로 가정
+    }
+
+    // 평균 계산
+    const mean = avgCols.reduce((a, b) => a + b, 0) / avgCols.length;
+
+    // 표준편차 계산
+    const variance = avgCols.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / avgCols.length;
+    const stdDev = Math.sqrt(variance);
+
+    // 표준편차를 0-1 점수로 변환
+    // 표준편차 0 → 점수 1, 표준편차 5 이상 → 점수 0에 가까움
+    const consistency = Math.max(0, 1 - (stdDev / 5));
+
+    return Math.round(consistency * 1000) / 1000;
+}
+
+/**
+ * 특정 행의 파트 경계선 계산
+ *
+ * 좌측 파트와 우측 파트의 열 범위가 겹치는 지점을 경계선으로 계산
+ *
+ * @param leftPartSeats - 좌측 파트 좌석들
+ * @param rightPartSeats - 우측 파트 좌석들
+ * @param row - 분석할 행 번호
+ * @param leftPart - 좌측 파트 이름
+ * @param rightPart - 우측 파트 이름
+ * @returns 경계선 정보 또는 null
+ */
+function calculateBoundaryForRow(
+    leftPartSeats: SeatDataForLearning[],
+    rightPartSeats: SeatDataForLearning[],
+    row: number,
+    leftPart: Part,
+    rightPart: Part
+): BoundaryInfo | null {
+    // 해당 행의 좌석만 필터링
+    const leftSeatsInRow = leftPartSeats.filter(s => s.seat_row === row);
+    const rightSeatsInRow = rightPartSeats.filter(s => s.seat_row === row);
+
+    if (leftSeatsInRow.length === 0 || rightSeatsInRow.length === 0) {
+        return null;
+    }
+
+    // 좌측 파트의 최대 열
+    const leftMaxCol = Math.max(...leftSeatsInRow.map(s => s.seat_column));
+    // 우측 파트의 최소 열
+    const rightMinCol = Math.min(...rightSeatsInRow.map(s => s.seat_column));
+
+    // 경계선 = (좌측 최대 + 우측 최소) / 2
+    const boundaryCol = Math.round((leftMaxCol + rightMinCol) / 2 * 10) / 10;
+
+    // 오버랩 = 좌측 최대 - 우측 최소 + 1 (음수면 간격 있음)
+    const overlapWidth = leftMaxCol - rightMinCol + 1;
+
+    return {
+        row,
+        leftPart,
+        rightPart,
+        boundaryCol,
+        overlapWidth: Math.max(0, overlapWidth),
+    };
+}
+
+/**
+ * 모든 행의 파트 경계선 계산
+ *
+ * @param seatsByPart - 파트별 좌석 데이터
+ * @param maxRows - 분석할 최대 행 수
+ * @returns 행별 경계선 정보 Map
+ */
+function calculateAllBoundaries(
+    seatsByPart: Map<Part, SeatDataForLearning[]>,
+    maxRows: number = 6
+): Record<number, BoundaryInfo> {
+    const boundaries: Record<number, BoundaryInfo> = {};
+
+    // 1-3행: SOPRANO(좌) - ALTO(우)
+    const sopranoSeats = seatsByPart.get('SOPRANO') || [];
+    const altoSeats = seatsByPart.get('ALTO') || [];
+
+    for (let row = 1; row <= 3; row++) {
+        const boundary = calculateBoundaryForRow(
+            sopranoSeats,
+            altoSeats,
+            row,
+            'SOPRANO',
+            'ALTO'
+        );
+        if (boundary) {
+            boundaries[row] = boundary;
+        }
+    }
+
+    // 4행: 혼합 구간 (오버플로우)
+    // 여러 파트가 섞일 수 있어 별도 처리 가능
+
+    // 5-6행: TENOR(좌) - BASS(우)
+    const tenorSeats = seatsByPart.get('TENOR') || [];
+    const bassSeats = seatsByPart.get('BASS') || [];
+
+    for (let row = 5; row <= Math.min(6, maxRows); row++) {
+        const boundary = calculateBoundaryForRow(
+            tenorSeats,
+            bassSeats,
+            row,
+            'TENOR',
+            'BASS'
+        );
+        if (boundary) {
+            boundaries[row] = boundary;
+        }
+    }
+
+    return boundaries;
+}
+
+// ============================================================================
 // 핵심 학습 함수
 // ============================================================================
 
@@ -281,6 +521,9 @@ export function learnPartPlacementRulesFromGroup(
         // 신뢰도 점수
         const confidenceScore = calculateConfidenceScore(sampleCount, totalSeats);
 
+        // 열 패턴 분석 (Phase 2 추가)
+        const columnPattern = analyzeColumnPatternForPart(partSeats, maxRows);
+
         rules.set(part, {
             part,
             side,
@@ -293,6 +536,10 @@ export function learnPartPlacementRulesFromGroup(
             sampleCount,
             totalSeatsAnalyzed: totalSeats,
             confidenceScore,
+            // 열 패턴 데이터
+            colRangeByRow: columnPattern.colRangeByRow,
+            avgCol: columnPattern.avgCol,
+            colConsistency: columnPattern.colConsistency,
         });
     }
 
@@ -418,6 +665,14 @@ export function learnAllPartPlacementRules(input: LearningInput): LearningOutput
                 sample_count: rule.sampleCount,
                 total_seats_analyzed: rule.totalSeatsAnalyzed,
                 confidence_score: rule.confidenceScore,
+                // 열 패턴 데이터 (Phase 2 추가)
+                col_range_by_row: rule.colRangeByRow
+                    ? Object.fromEntries(
+                          Object.entries(rule.colRangeByRow).map(([k, v]) => [k, v])
+                      )
+                    : undefined,
+                avg_col: rule.avgCol,
+                col_consistency: rule.colConsistency,
             });
             partRulesGenerated++;
         }

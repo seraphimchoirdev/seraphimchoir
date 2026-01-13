@@ -30,6 +30,11 @@ interface LearnedPartPlacementRuleRow {
     confidence_score: number | null;
     last_learned_at: string;
     created_at: string;
+    // 열 패턴 관련 필드 (Phase 3)
+    col_range_by_row?: Record<string, { min: number; max: number; avg: number; count: number }>;
+    boundary_info?: Record<string, unknown>;
+    avg_col?: number;
+    col_consistency?: number;
 }
 
 /** 규칙 로드 파라미터 */
@@ -55,6 +60,13 @@ export interface LoadedRulesResult {
     };
 }
 
+/** 행별 열 범위 */
+export interface ColRange {
+    min: number;
+    max: number;
+    avg?: number;
+}
+
 /** 파트 배치 규칙 (알고리즘에서 사용하는 형태) */
 export interface PartPlacementRule {
     /** 선호 측면 */
@@ -65,11 +77,68 @@ export interface PartPlacementRule {
     overflowRows: number[];
     /** 금지 행 (0% 배치) - 학습된 값 */
     forbiddenRows?: number[];
+    // 열 패턴 관련 필드 (Phase 3 추가)
+    /** 행별 열 범위 */
+    colRangeByRow?: Record<number, ColRange>;
+    /** 전체 평균 열 위치 */
+    avgCol?: number;
 }
 
 // ============================================================================
 // 기본 규칙 (학습 데이터 없을 때 사용)
 // ============================================================================
+
+/**
+ * 기본 열 범위 (학습 데이터 분석 결과 기반)
+ *
+ * 40+ 예배 데이터 분석 결과:
+ * - 1-3행: SOPRANO(col 1-9) / ALTO(col 8-16)
+ * - 5-6행: TENOR(col 1-7) / BASS(col 5-13)
+ *
+ * 참고: 15열 기준으로 정의됨. 다른 그리드 크기에서는 비율 조정 필요
+ */
+const DEFAULT_COL_RANGES: Record<Part, { colRangeByRow: Record<number, ColRange>; avgCol: number }> = {
+    SOPRANO: {
+        colRangeByRow: {
+            1: { min: 1, max: 9, avg: 4.5 },
+            2: { min: 1, max: 10, avg: 4.8 },
+            3: { min: 1, max: 10, avg: 5.0 },
+            4: { min: 1, max: 8, avg: 4.0 }, // 오버플로우
+            5: { min: 1, max: 6, avg: 3.5 }, // 오버플로우
+            6: { min: 1, max: 5, avg: 3.0 }, // 오버플로우
+        },
+        avgCol: 4.6,
+    },
+    ALTO: {
+        colRangeByRow: {
+            1: { min: 6, max: 16, avg: 11.5 },
+            2: { min: 6, max: 18, avg: 12.0 },
+            3: { min: 8, max: 21, avg: 12.5 },
+            4: { min: 8, max: 21, avg: 12.0 }, // 오버플로우
+        },
+        avgCol: 12.1,
+    },
+    TENOR: {
+        colRangeByRow: {
+            4: { min: 1, max: 10, avg: 4.0 },
+            5: { min: 1, max: 10, avg: 4.2 },
+            6: { min: 1, max: 7, avg: 3.8 },
+        },
+        avgCol: 4.4,
+    },
+    BASS: {
+        colRangeByRow: {
+            4: { min: 6, max: 20, avg: 10.5 },
+            5: { min: 5, max: 17, avg: 10.0 },
+            6: { min: 5, max: 15, avg: 9.5 },
+        },
+        avgCol: 10.0,
+    },
+    SPECIAL: {
+        colRangeByRow: {}, // 제한 없음
+        avgCol: 8, // 중앙
+    },
+};
 
 /**
  * DEFAULT_PART_ZONES를 PartPlacementRule 형태로 변환
@@ -106,11 +175,17 @@ function getDefaultRules(): Record<Part, PartPlacementRule> {
             overflowRows = [];
         }
 
+        // 기본 열 범위 가져오기
+        const colDefaults = DEFAULT_COL_RANGES[part];
+
         defaultRules[part] = {
             side: zone.side,
             preferredRows,
             overflowRows,
             forbiddenRows: zone.forbiddenRows,
+            // 열 패턴 데이터
+            colRangeByRow: colDefaults?.colRangeByRow,
+            avgCol: colDefaults?.avgCol,
         };
     }
 
@@ -247,11 +322,27 @@ function convertDbRowsToRules(
 
     // 학습된 규칙으로 덮어쓰기
     for (const row of rows) {
+        // DB의 col_range_by_row를 ColRange 형태로 변환
+        let colRangeByRow: Record<number, ColRange> | undefined;
+        if (row.col_range_by_row) {
+            colRangeByRow = {};
+            for (const [rowStr, stats] of Object.entries(row.col_range_by_row)) {
+                colRangeByRow[Number(rowStr)] = {
+                    min: stats.min,
+                    max: stats.max,
+                    avg: stats.avg,
+                };
+            }
+        }
+
         rules[row.part] = {
             side: row.side,
             preferredRows: row.preferred_rows || [],
             overflowRows: row.overflow_rows || [],
             forbiddenRows: row.forbidden_rows || [],
+            // 열 패턴 데이터 (학습된 값 우선, 없으면 기본값 유지)
+            colRangeByRow: colRangeByRow || defaultRules[row.part]?.colRangeByRow,
+            avgCol: row.avg_col ?? defaultRules[row.part]?.avgCol,
         };
     }
 
