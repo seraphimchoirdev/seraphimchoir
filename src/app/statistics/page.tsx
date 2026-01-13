@@ -4,8 +4,9 @@ import { useState } from 'react';
 import Navigation from '@/components/layout/Navigation';
 import AttendanceStatistics from '@/components/features/attendances/AttendanceStatistics';
 import MemberAttendanceStats from '@/components/features/attendances/MemberAttendanceStats';
+import StageStatistics from '@/components/features/arrangements/StageStatistics';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Users } from 'lucide-react';
+import { BarChart3, Users, Calendar } from 'lucide-react';
 
 export default function StatisticsPage() {
   const [activeTab, setActiveTab] = useState<string>('part-stats');
@@ -37,6 +38,10 @@ export default function StatisticsPage() {
                     <Users className="h-4 w-4 mr-2" />
                     대원별 통계
                   </TabsTrigger>
+                  <TabsTrigger value="stage-stats">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    등단 통계
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -45,6 +50,7 @@ export default function StatisticsPage() {
           {/* 탭 컨텐츠 */}
           {activeTab === 'part-stats' && <AttendanceStatistics />}
           {activeTab === 'member-stats' && <MemberAttendanceStats />}
+          {activeTab === 'stage-stats' && <StageStatistics />}
         </div>
       </div>
     </div>
