@@ -32,10 +32,12 @@ interface SeatsGridProps {
     showCaptureInfo?: boolean;
     onEmergencyUnavailable?: (params: EmergencyUnavailableParams) => void;
     isReadOnly?: boolean;
+    /** 긴급 수정 모드 (SHARED 상태에서만 true) - 컨텍스트 메뉴 표시 조건 */
+    isEmergencyMode?: boolean;
 }
 
 const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
-    { gridLayout, arrangementInfo, showCaptureInfo = false, onEmergencyUnavailable, isReadOnly = false },
+    { gridLayout, arrangementInfo, showCaptureInfo = false, onEmergencyUnavailable, isReadOnly = false, isEmergencyMode = false },
     ref
 ) {
     // Fallback to default if no gridLayout provided
@@ -89,6 +91,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                                             col={seat.col}
                                             onEmergencyUnavailable={onEmergencyUnavailable}
                                             isReadOnly={isReadOnly}
+                                            isEmergencyMode={isEmergencyMode}
                                         />
                                     ))}
                                 </div>

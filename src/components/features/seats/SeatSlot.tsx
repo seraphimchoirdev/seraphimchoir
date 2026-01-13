@@ -23,6 +23,8 @@ interface SeatSlotProps {
         col: number;
     }) => void;
     isReadOnly?: boolean;
+    /** 긴급 수정 모드 (SHARED 상태에서만 true) - 컨텍스트 메뉴 표시 조건 */
+    isEmergencyMode?: boolean;
 }
 
 // 메모이제이션된 SeatSlot 컴포넌트
@@ -31,6 +33,7 @@ const SeatSlot = memo(function SeatSlot({
     col,
     onEmergencyUnavailable,
     isReadOnly = false,
+    isEmergencyMode = false,
 }: SeatSlotProps) {
     const seatKey = `${row}-${col}`;
 
@@ -103,6 +106,7 @@ const SeatSlot = memo(function SeatSlot({
             onRemoveFromSeat={handleRemoveFromSeat}
             onEmergencyUnavailable={onEmergencyUnavailable ? handleEmergencyUnavailable : undefined}
             disabled={isReadOnly}
+            isEmergencyMode={isEmergencyMode}
         >
             <button
             type="button"

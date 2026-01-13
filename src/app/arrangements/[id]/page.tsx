@@ -82,6 +82,12 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     // 배치표 상태에 따른 읽기 전용 모드 (CONFIRMED 상태면 읽기 전용)
     const isReadOnly = arrangement?.status === 'CONFIRMED';
 
+    // 긴급 수정 모드 (SHARED 상태에서만 컨텍스트 메뉴 표시)
+    // DRAFT: 일반 편집 모드 (더블클릭으로 제거)
+    // SHARED: 긴급 수정 모드 (컨텍스트 메뉴 표시)
+    // CONFIRMED: 읽기 전용 모드 (수정 불가)
+    const isEmergencyMode = arrangement?.status === 'SHARED';
+
     // 긴급 등단 불가 처리 훅 (단순화된 버전)
     // - 파트 영역 고려: 같은 파트만 당기기
     // - 크로스-행 이동: 행 간 불균형 시 뒷줄에서 앞줄로 이동
@@ -229,6 +235,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                     showCaptureInfo={true}
                     onEmergencyUnavailable={handleEmergencyUnavailable}
                     isReadOnly={isReadOnly}
+                    isEmergencyMode={isEmergencyMode}
                 />
             </div>
 
@@ -247,6 +254,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                         showCaptureInfo={true}
                         onEmergencyUnavailable={handleEmergencyUnavailable}
                         isReadOnly={isReadOnly}
+                        isEmergencyMode={isEmergencyMode}
                     />
 
                     {/* 그리드 설정 버튼 (Floating) */}
