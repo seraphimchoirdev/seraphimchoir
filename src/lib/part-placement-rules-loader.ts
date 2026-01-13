@@ -92,10 +92,18 @@ function getDefaultRules(): Record<Part, PartPlacementRule> {
             (r) => !preferredRows.includes(r) && !zone.forbiddenRows.includes(r)
         );
 
-        // BASS 특별 처리: 4-6행 선호, 3-1행은 오버플로우로 추가
-        // (인원이 많아 4-6행이 부족할 때만 3행 이하 사용)
-        if (part === 'BASS') {
-            overflowRows = [3, 2, 1];
+        // 파트별 오버플로우 규칙 (사용자 지정)
+        // SOPRANO: 1-3행 선호, 4-6행 오버플로우
+        if (part === 'SOPRANO') {
+            overflowRows = [4, 5, 6];
+        }
+        // ALTO: 1-3행 선호, 4행만 오버플로우 (5-6행 금지)
+        else if (part === 'ALTO') {
+            overflowRows = [4];
+        }
+        // TENOR, BASS: 4-6행만 사용, 1-3행 금지 (오버플로우 없음)
+        else if (part === 'TENOR' || part === 'BASS') {
+            overflowRows = [];
         }
 
         defaultRules[part] = {
@@ -151,8 +159,40 @@ export async function loadPartPlacementRules(
             };
         }
 
-        // 데이터가 없으면 기본값 사용
+        // 데이터가 없으면 fallback 또는 기본값 사용
         if (!data || data.length === 0) {
+            // 60-69명 구간: 70-79명 규칙으로 fallback
+            if (memberCountRange === '60-69') {
+                console.log(
+                    `[loadPartPlacementRules] 60-69명 샘플 부족, 70-79명 규칙으로 fallback 시도`
+                );
+                const { data: fallbackData, error: fallbackError } = await supabase
+                    .from('learned_part_placement_rules' as 'arrangements')
+                    .select('*')
+                    .eq('service_type' as 'id', serviceType)
+                    .eq('member_count_range' as 'id', '70-79') as unknown as {
+                        data: LearnedPartPlacementRuleRow[] | null;
+                        error: { message: string } | null;
+                    };
+
+                if (!fallbackError && fallbackData && fallbackData.length > 0) {
+                    const rules = convertDbRowsToRules(fallbackData as LearnedPartPlacementRuleRow[]);
+                    const avgConfidence = calculateAverageConfidence(fallbackData as LearnedPartPlacementRuleRow[]);
+                    console.log(
+                        `[loadPartPlacementRules] 70-79명 규칙으로 fallback 성공, 신뢰도: ${(avgConfidence * 100).toFixed(1)}%`
+                    );
+                    return {
+                        rules,
+                        source: 'learned',
+                        confidenceScore: avgConfidence,
+                        loadedGroup: {
+                            serviceType,
+                            memberCountRange: '70-79 (fallback from 60-69)',
+                        },
+                    };
+                }
+            }
+
             console.log(
                 `[loadPartPlacementRules] 학습 데이터 없음 (${serviceType}, ${memberCountRange}), 기본값 사용`
             );

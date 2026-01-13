@@ -55,31 +55,31 @@ export interface PartZone {
 export const DEFAULT_PART_ZONES: Record<Part, PartZone> = {
     SOPRANO: {
         part: 'SOPRANO',
-        allowedRows: [1, 6],
+        allowedRows: [1, 3], // 1-3행 선호 (4-6행 오버플로우)
         side: 'left',
         forbiddenRows: [],
-        preferredRows: [1, 2, 3, 4, 5, 6],
+        preferredRows: [1, 2, 3],
     },
     ALTO: {
         part: 'ALTO',
-        allowedRows: [1, 4], // 5-6행 금지!
+        allowedRows: [1, 4], // 1-3행 선호, 4행 오버플로우
         side: 'right',
-        forbiddenRows: [5, 6],
-        preferredRows: [1, 2, 3, 4],
+        forbiddenRows: [5, 6], // 5-6행 금지 유지
+        preferredRows: [1, 2, 3],
     },
     TENOR: {
         part: 'TENOR',
-        allowedRows: [1, 6],
+        allowedRows: [4, 6], // 4-6행만 사용
         side: 'left',
-        forbiddenRows: [],
-        preferredRows: [4, 5, 6, 3, 2, 1],
+        forbiddenRows: [1, 2, 3], // 1-3행 금지
+        preferredRows: [4, 5, 6],
     },
     BASS: {
         part: 'BASS',
-        allowedRows: [4, 6], // 4-6행 우선 (3행 이하는 오버플로우)
+        allowedRows: [4, 6], // 4-6행만 사용
         side: 'right',
-        forbiddenRows: [],
-        preferredRows: [4, 5, 6], // 4-6행만 선호
+        forbiddenRows: [1, 2, 3], // 1-3행 금지
+        preferredRows: [4, 5, 6],
     },
     SPECIAL: {
         part: 'SPECIAL',
