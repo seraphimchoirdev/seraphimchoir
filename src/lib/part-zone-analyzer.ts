@@ -76,10 +76,10 @@ export const DEFAULT_PART_ZONES: Record<Part, PartZone> = {
     },
     BASS: {
         part: 'BASS',
-        allowedRows: [1, 6],
+        allowedRows: [4, 6], // 4-6행 우선 (3행 이하는 오버플로우)
         side: 'right',
         forbiddenRows: [],
-        preferredRows: [4, 5, 6, 3, 2, 1],
+        preferredRows: [4, 5, 6], // 4-6행만 선호
     },
     SPECIAL: {
         part: 'SPECIAL',

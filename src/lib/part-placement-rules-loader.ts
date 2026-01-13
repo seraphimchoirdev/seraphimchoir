@@ -88,9 +88,15 @@ function getDefaultRules(): Record<Part, PartPlacementRule> {
             { length: zone.allowedRows[1] - zone.allowedRows[0] + 1 },
             (_, i) => zone.allowedRows[0] + i
         );
-        const overflowRows = allRows.filter(
+        let overflowRows = allRows.filter(
             (r) => !preferredRows.includes(r) && !zone.forbiddenRows.includes(r)
         );
+
+        // BASS 특별 처리: 4-6행 선호, 3-1행은 오버플로우로 추가
+        // (인원이 많아 4-6행이 부족할 때만 3행 이하 사용)
+        if (part === 'BASS') {
+            overflowRows = [3, 2, 1];
+        }
 
         defaultRules[part] = {
             side: zone.side,
