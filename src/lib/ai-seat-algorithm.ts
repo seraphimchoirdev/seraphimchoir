@@ -104,6 +104,211 @@ const FIXED_SEAT_CONFIG = {
 } as const;
 
 /**
+ * 파트별 열 범위 제약 (과거배치 로직에서 가져옴)
+ * - 각 행에서 파트가 배치될 수 있는 열 범위 정의
+ * - 기본 16열 기준, 그리드 크기에 따라 비례 조정
+ */
+const BASE_GRID_COLS = 15;
+
+/**
+ * 학습된 열 범위 상수 (DEFAULT_COL_RANGES와 동기화)
+ *
+ * 변경 이력:
+ * - 2026-01-14(v5): avg 값 추가하여 중앙 우선 배치 지원
+ * - 2026-01-14(v4): 전체 OCR 오류 수정 후 최종 재학습 데이터 반영
+ */
+const PART_COL_CONSTRAINTS: Record<string, Record<number, { min: number; max: number; avg: number }>> = {
+  SOPRANO: {
+    1: { min: 1, max: 9, avg: 4.51 },
+    2: { min: 1, max: 9, avg: 4.74 },
+    3: { min: 1, max: 10, avg: 5.08 },
+    4: { min: 1, max: 5, avg: 2.38 },   // 오버플로우, 좌측 집중
+    5: { min: 1, max: 4, avg: 1.88 },   // 오버플로우, 좌측 집중
+    6: { min: 1, max: 2, avg: 1.5 },    // 오버플로우, 극좌측만
+  },
+  ALTO: {
+    1: { min: 7, max: 16, avg: 11.8 },
+    2: { min: 8, max: 16, avg: 12.21 },
+    3: { min: 8, max: 17, avg: 12.67 },
+    4: { min: 11, max: 16, avg: 13.7 }, // 오버플로우
+    // 5, 6행은 ALTO 금지
+  },
+  TENOR: {
+    // 1-3행은 TENOR 금지
+    4: { min: 3, max: 8, avg: 5.96 },
+    5: { min: 1, max: 7, avg: 5.04 },
+    6: { min: 1, max: 7, avg: 3.59 },
+  },
+  BASS: {
+    // 1-3행은 BASS 금지
+    4: { min: 6, max: 14, avg: 10.19 },
+    5: { min: 6, max: 14, avg: 10.07 },
+    6: { min: 6, max: 12, avg: 8.91 },
+  },
+};
+
+/**
+ * 그리드 크기에 따라 열 범위 조정 (avg 포함)
+ */
+function getAdjustedColConstraints(
+  part: string,
+  row: number,
+  rowCapacity: number
+): { min: number; max: number; avg: number } | null {
+  const constraint = PART_COL_CONSTRAINTS[part]?.[row];
+  if (!constraint) return null;
+
+  // 기본 15열 기준 비율로 조정
+  const ratio = rowCapacity / BASE_GRID_COLS;
+  return {
+    min: Math.max(1, Math.round(constraint.min * ratio)),
+    max: Math.min(rowCapacity, Math.round(constraint.max * ratio)),
+    avg: Math.round(constraint.avg * ratio * 100) / 100,  // 소수점 2자리
+  };
+}
+
+/**
+ * Row 4-6에서 다른 파트의 "전용 영역"에 해당하는지 확인
+ *
+ * 4-6행 영역 구분:
+ * - SOPRANO overflow: 왼쪽 끝 (col <= SOPRANO.max, 보통 col 1~5)
+ * - TENOR: 중앙-왼쪽 (SOPRANO.max 초과 ~ BASS.min 미만)
+ * - BASS: 오른쪽 (col >= BASS.min, 보통 col 6+)
+ * - ALTO overflow: 4행만 허용, 오른쪽 끝 (col >= ALTO.min)
+ *
+ * @returns true면 다른 파트 영역 침범 (배치 금지)
+ */
+function isInOtherPartTerritory(
+  row: number,
+  col: number,
+  currentPart: string,
+  rowCapacity: number
+): boolean {
+  // Row 1-3에서 SOPRANO/ALTO 간 영역 체크 (TENOR/BASS는 row 1-3 자체가 금지)
+  if (row < 4) {
+    if (currentPart === 'SOPRANO') {
+      // SOPRANO가 ALTO 영역(오른쪽)에 들어가면 안 됨
+      const altoCol = getAdjustedColConstraints('ALTO', row, rowCapacity);
+      if (altoCol && col >= altoCol.min) {
+        return true; // ALTO 영역 침범
+      }
+    } else if (currentPart === 'ALTO') {
+      // ALTO가 SOPRANO 영역(왼쪽)에 들어가면 안 됨
+      const sopranoCol = getAdjustedColConstraints('SOPRANO', row, rowCapacity);
+      if (sopranoCol && col <= sopranoCol.max) {
+        return true; // SOPRANO 영역 침범
+      }
+    }
+    // TENOR/BASS는 row 1-3 자체가 금지이므로 여기서 체크 안 함
+    return false;
+  }
+
+  // 각 파트의 열 범위 가져오기
+  const sopranoCol = getAdjustedColConstraints('SOPRANO', row, rowCapacity);
+  const bassCol = getAdjustedColConstraints('BASS', row, rowCapacity);
+
+  // SOPRANO overflow 전용 영역: col 1 ~ SOPRANO.max
+  const sopranoMaxCol = sopranoCol?.max ?? 0;
+  // BASS 전용 영역 시작: BASS.min ~
+  const bassMinCol = bassCol?.min ?? rowCapacity + 1;
+
+  switch (currentPart) {
+    case 'BASS':
+      // BASS는 SOPRANO overflow 영역(왼쪽 끝)에 들어가면 안 됨
+      if (sopranoMaxCol > 0 && col <= sopranoMaxCol) {
+        return true; // SOPRANO overflow 영역 침범
+      }
+      break;
+
+    case 'TENOR':
+      // SOPRANO overflow 영역 침범 금지 (col 1-5)
+      if (sopranoMaxCol > 0 && col <= sopranoMaxCol) {
+        return true; // SOPRANO overflow 영역 침범
+      }
+      // BASS 전용 영역(오른쪽) 침범 금지
+      if (col >= bassMinCol) {
+        return true; // BASS 영역 침범
+      }
+      break;
+
+    case 'SOPRANO':
+      // SOPRANO overflow는 왼쪽 가장자리에만 배치 (중앙 침범 금지)
+      // 학습 범위: row 4 col 1-5, row 5 col 1-4, row 6 col 1-2
+      // 중앙 기준: midCol 이상은 TENOR/BASS 영역
+      const midColForSoprano = Math.ceil(rowCapacity / 2);
+      // 학습 범위와 중앙 기준 중 더 작은 값 사용
+      const sopranoOverflowMax = Math.min(sopranoMaxCol || 5, midColForSoprano - 1);
+
+      if (col > sopranoOverflowMax) {
+        return true; // TENOR/BASS 영역 침범
+      }
+      break;
+
+    case 'ALTO':
+      // ALTO는 Row 5-6 자체가 금지 (overflowRows에 없음)
+      // Row 4에서는 ALTO 열 범위(col 11-16) 미만이면 모두 금지
+      if (row === 4) {
+        // ALTO 열 범위 미만이면 모두 금지 (다른 파트 영역)
+        // ALTO 4행 min=11이므로 col 1-10은 모두 금지
+        const altoCol = getAdjustedColConstraints('ALTO', row, rowCapacity);
+        if (altoCol && col < altoCol.min) {
+          return true; // ALTO 열 범위 미만 = SOPRANO/TENOR/BASS 영역
+        }
+      }
+      break;
+  }
+
+  return false;
+}
+
+/**
+ * 좌석 우선순위 계산 (과거배치 로직에서 가져옴)
+ *
+ * 열 범위 제약을 엄격하게 적용:
+ * - Priority 0: 선호행 + 열 범위 내 (가장 선호)
+ * - Priority 1: 오버플로우행 + 열 범위 내
+ * - Priority 2: 선호행 + 열 범위 외 (fallback, 다른 파트 영역 아닐 때만)
+ * - Priority 3: 오버플로우행 + 열 범위 외 (최후 수단, 다른 파트 영역 아닐 때만)
+ * - Priority 5: 금지 영역 (다른 파트 영역 포함)
+ */
+function getSeatPriority(
+  row: number,
+  col: number,
+  part: string,
+  rowCapacity: number
+): number {
+  const rules = PART_PLACEMENT_RULES[part as keyof typeof PART_PLACEMENT_RULES];
+  if (!rules) return 5;
+
+  // readonly 배열이므로 타입 캐스팅
+  const preferredRows = rules.preferredRows as readonly number[];
+  const overflowRows = rules.overflowRows as readonly number[];
+
+  const inPreferredRow = preferredRows.includes(row);
+  const inOverflowRow = overflowRows.includes(row);
+  const colConstraint = getAdjustedColConstraints(part, row, rowCapacity);
+  const inColRange = colConstraint
+    ? col >= colConstraint.min && col <= colConstraint.max
+    : true;
+
+  // === 수정: Row 4-6에서 열 범위 상관없이 다른 파트 영역 침범 확인 ===
+  // 열 범위 체크보다 먼저 수행하여 다른 파트 영역 침범 방지
+  if (row >= 4 && isInOtherPartTerritory(row, col, part, rowCapacity)) {
+    return 5; // 다른 파트 영역 침범 - 무조건 금지
+  }
+
+  // 열 범위 내 좌석 우선 (위 체크 통과 후)
+  if (inPreferredRow && inColRange) return 0;   // 최고: 선호행 + 열범위 내
+  if (inOverflowRow && inColRange) return 1;    // 오버플로우 + 열범위 내
+
+  // 열 범위 밖 fallback (다른 파트 영역이 아닌 경우에만)
+  if (inPreferredRow) return 2;                 // 선호행 + 열범위 밖
+  if (inOverflowRow) return 3;                  // 오버플로우 + 열범위 밖
+
+  return 5;  // 금지 영역
+}
+
+/**
  * 대원별 이전 배치 이력에서 선호 좌석 계산
  *
  * ML 데이터 분석 결과 (2부예배 43회, 103명 대원):
@@ -288,39 +493,147 @@ function distributePartsToRows(
   let tenorRemaining = partCounts.TENOR || 0;
   let bassRemaining = partCounts.BASS || 0;
 
-  // 총 인원으로 좌우 비율 계산
-  const leftTotal = sopranoRemaining + tenorRemaining;
-  const rightTotal = altoRemaining + bassRemaining;
-  const totalMembers = leftTotal + rightTotal;
-
+  const totalMembers = sopranoRemaining + altoRemaining + tenorRemaining + bassRemaining;
   if (totalMembers === 0) return distribution;
 
-  // === STEP 1: 4-6행에 TENOR/BASS 우선 배치 (개선됨) ===
-  // 핵심 변경: overflow 공간 예약 없이 TENOR/BASS를 먼저 충분히 배치
-  // 남는 공간에 나중에 overflow 배치
-  const backRowCount = Math.max(1, numRows - 3); // 4-6행 개수
+  // === 인원 비율 기반 중앙점 계산 ===
+  // SOPRANO/ALTO 비율로 1-3행 좌우 분할 (overlap 영역 동적 분배)
+  const sopranoAltoTotal = sopranoRemaining + altoRemaining;
+  const sopranoRatio = sopranoAltoTotal > 0 ? sopranoRemaining / sopranoAltoTotal : 0.5;
 
-  // 4-6행 총 용량 계산 (MAX_ROW_CAPACITY 기준)
-  let backRowTotalCapacity = 0;
-  for (let row = 4; row <= numRows; row++) {
-    backRowTotalCapacity += Math.min(MAX_ROW_CAPACITY, rowCapacities[row - 1] + 4); // 여유 공간 포함
+  // TENOR/BASS 비율로 4-6행 좌우 분할
+  const tenorBassTotal = tenorRemaining + bassRemaining;
+  const tenorRatio = tenorBassTotal > 0 ? tenorRemaining / tenorBassTotal : 0.5;
+
+  // === STEP 1: 1-3행에 SOPRANO/ALTO 먼저 배치 (인원 비율 기반) ===
+  // SOPRANO/ALTO를 먼저 배치하여 overflow 영역 확보
+  for (let row = 1; row <= Math.min(3, numRows); row++) {
+    const rowCapacity = rowCapacities[row - 1];
+    // 인원 비율로 좌우 분할 (overlap 영역 동적 분배)
+    const sopranoCapacity = Math.round(rowCapacity * sopranoRatio);
+    const altoCapacity = rowCapacity - sopranoCapacity;
+
+    // SOPRANO 배치 (왼쪽)
+    const sopranoToPlace = Math.min(sopranoRemaining, sopranoCapacity);
+    distribution[row].SOPRANO = sopranoToPlace;
+    sopranoRemaining -= sopranoToPlace;
+    rowTotals[row - 1] += sopranoToPlace;
+
+    // ALTO 배치 (오른쪽)
+    const altoToPlace = Math.min(altoRemaining, altoCapacity);
+    distribution[row].ALTO = altoToPlace;
+    altoRemaining -= altoToPlace;
+    rowTotals[row - 1] += altoToPlace;
   }
 
-  // TENOR/BASS 총 인원
-  const tenorBassTotal = tenorRemaining + bassRemaining;
+  // === STEP 2: SOPRANO overflow → 4-6행 왼쪽 가장자리 (용량 비율 분배) ===
+  // 하이브리드 분배: 행 용량(5:4:2) 비율로 각 행에 균등 분산
+  // 학습 범위 내 열만 사용 (SOPRANO 4행: 1-5, 5행: 1-4, 6행: 1-2)
+  if (sopranoRemaining > 0) {
+    // 학습된 SOPRANO overflow 용량 (각 행별 max열 기준)
+    const sopranoOverflowCaps: Record<number, number> = { 4: 5, 5: 4, 6: 2 };
+    const totalCapacity = 5 + 4 + 2; // 11
 
-  // 각 행에 TENOR/BASS를 균등하게 분배
-  const tenorBassPerRow = Math.ceil(tenorBassTotal / backRowCount);
+    // 각 행의 가용 공간 확인
+    const availableRows: number[] = [];
+    for (const row of [4, 5, 6]) {
+      if (row <= numRows) {
+        const available = Math.min(
+          sopranoOverflowCaps[row] || 0,
+          rowCapacities[row - 1] - rowTotals[row - 1]
+        );
+        if (available > 0) availableRows.push(row);
+      }
+    }
 
+    // 용량 비율로 각 행 할당량 계산 (5:4:2 = 45%:36%:18%)
+    const initialAlloc: Record<number, number> = { 4: 0, 5: 0, 6: 0 };
+
+    for (const row of availableRows) {
+      // 행 용량을 기준으로 비율 계산
+      const capacityRatio = sopranoOverflowCaps[row] / totalCapacity;
+      const maxCap = Math.min(
+        sopranoOverflowCaps[row] || 0,
+        rowCapacities[row - 1] - rowTotals[row - 1]
+      );
+      // 비율에 따라 할당 (반올림), 최대 용량 제한
+      initialAlloc[row] = Math.min(Math.round(sopranoRemaining * capacityRatio), maxCap);
+    }
+
+    // 할당량 합계 조정 (반올림 오차 보정)
+    let totalAlloc = initialAlloc[4] + initialAlloc[5] + initialAlloc[6];
+
+    // 부족하면 가용 공간이 있는 행에 추가
+    while (totalAlloc < sopranoRemaining) {
+      for (const row of [4, 5, 6]) {
+        if (totalAlloc >= sopranoRemaining) break;
+        const maxCap = Math.min(
+          sopranoOverflowCaps[row] || 0,
+          rowCapacities[row - 1] - rowTotals[row - 1]
+        );
+        if (initialAlloc[row] < maxCap) {
+          initialAlloc[row]++;
+          totalAlloc++;
+        }
+      }
+      // 무한 루프 방지
+      if (totalAlloc === initialAlloc[4] + initialAlloc[5] + initialAlloc[6]) break;
+      totalAlloc = initialAlloc[4] + initialAlloc[5] + initialAlloc[6];
+    }
+
+    // 초과하면 가장 많은 행에서 감소
+    while (totalAlloc > sopranoRemaining) {
+      for (const row of [6, 5, 4]) { // 뒤에서부터 감소
+        if (totalAlloc <= sopranoRemaining) break;
+        if (initialAlloc[row] > 0) {
+          initialAlloc[row]--;
+          totalAlloc--;
+        }
+      }
+    }
+
+    // 분배 적용
+    for (const row of [4, 5, 6]) {
+      if (initialAlloc[row] > 0) {
+        distribution[row].SOPRANO = initialAlloc[row];
+        sopranoRemaining -= initialAlloc[row];
+        rowTotals[row - 1] += initialAlloc[row];
+      }
+    }
+  }
+
+  // === STEP 3: ALTO overflow → 4행에만 배치 (5-6행 금지) ===
+  // 학습 범위: 4행 col 11-16 (약 6석)
+  if (altoRemaining > 0 && numRows >= 4) {
+    const row = 4;
+    const rowCapacity = rowCapacities[row - 1];
+    // ALTO 4행 overflow: 오른쪽 끝 약 6석 (학습 범위 기준)
+    const altoOverflowCap = Math.min(6, rowCapacity - rowTotals[row - 1]);
+
+    if (altoOverflowCap > 0) {
+      const toPlace = Math.min(altoRemaining, altoOverflowCap);
+      distribution[row].ALTO += toPlace;
+      altoRemaining -= toPlace;
+      rowTotals[row - 1] += toPlace;
+    }
+  }
+
+  // === STEP 4: 4-6행에 TENOR/BASS 배치 (남은 공간) ===
+  // SOPRANO/ALTO overflow 이후 남은 공간에 배치
   for (let row = 4; row <= numRows; row++) {
-    // 각 행에 배치할 TENOR/BASS 수 계산
-    const rowCapacity = Math.min(MAX_ROW_CAPACITY, rowCapacities[row - 1] + 4);
-    const tenorBassForThisRow = Math.min(tenorBassPerRow, tenorRemaining + bassRemaining, rowCapacity);
+    const rowCapacity = rowCapacities[row - 1];
+    const usedSpace = rowTotals[row - 1];
+    const availableSpace = rowCapacity - usedSpace;
 
-    // 좌우 비율로 TENOR/BASS 분배
-    const tenorRatio = tenorRemaining / (tenorRemaining + bassRemaining || 1);
-    const tenorForThisRow = Math.round(tenorBassForThisRow * tenorRatio);
-    const bassForThisRow = tenorBassForThisRow - tenorForThisRow;
+    if (availableSpace <= 0) continue;
+
+    // TENOR/BASS 인원 비율로 분배
+    const currentTenorRatio = (tenorRemaining + bassRemaining > 0)
+      ? tenorRemaining / (tenorRemaining + bassRemaining)
+      : tenorRatio;
+
+    const tenorForThisRow = Math.round(availableSpace * currentTenorRatio);
+    const bassForThisRow = availableSpace - tenorForThisRow;
 
     // TENOR 배치
     const tenorToPlace = Math.min(tenorRemaining, tenorForThisRow);
@@ -335,65 +648,10 @@ function distributePartsToRows(
     rowTotals[row - 1] += bassToPlace;
   }
 
-  // === STEP 2: 1-3행에 SOPRANO/ALTO 배치 ===
-  for (let row = 1; row <= 3; row++) {
-    const rowCapacity = rowCapacities[row - 1];
-    const leftCapacity = Math.round(rowCapacity * leftTotal / totalMembers);
-    const rightCapacity = rowCapacity - leftCapacity;
-
-    // SOPRANO 배치 (왼쪽)
-    const sopranoToPlace = Math.min(sopranoRemaining, leftCapacity);
-    distribution[row].SOPRANO = sopranoToPlace;
-    sopranoRemaining -= sopranoToPlace;
-    rowTotals[row - 1] += sopranoToPlace;
-
-    // ALTO 배치 (오른쪽)
-    const altoToPlace = Math.min(altoRemaining, rightCapacity);
-    distribution[row].ALTO = altoToPlace;
-    altoRemaining -= altoToPlace;
-    rowTotals[row - 1] += altoToPlace;
-  }
-
-  // === STEP 3: SOPRANO overflow → 4-6행 왼쪽 가장자리 ===
-  // 역순 배치 (6→5→4): 5-6행은 ALTO가 금지되므로 SOPRANO로 먼저 채움
-  // 이렇게 하면 row 6의 빈좌석이 SOPRANO overflow로 채워짐
-  if (sopranoRemaining > 0) {
-    for (let row = numRows; row >= 4; row--) {
-      if (sopranoRemaining === 0) break;
-
-      const rowCapacity = rowCapacities[row - 1];
-      const availableSpace = rowCapacity - rowTotals[row - 1];
-
-      if (availableSpace > 0) {
-        // 왼쪽 가장자리에 추가 (TENOR 앞에)
-        const toPlace = Math.min(sopranoRemaining, availableSpace);
-        distribution[row].SOPRANO = toPlace;
-        sopranoRemaining -= toPlace;
-        rowTotals[row - 1] += toPlace;
-      }
-    }
-  }
-
-  // === STEP 4: ALTO overflow → 4행에만 배치 (5-6행 금지) ===
-  // MAX_ROW_CAPACITY 기준으로 빈공간 계산
-  if (altoRemaining > 0 && numRows >= 4) {
-    const row = 4;
-    const availableSpace = MAX_ROW_CAPACITY - rowTotals[row - 1];
-
-    if (availableSpace > 0) {
-      const toPlace = Math.min(altoRemaining, availableSpace);
-      distribution[row].ALTO += toPlace;
-      altoRemaining -= toPlace;
-      rowTotals[row - 1] += toPlace;
-    }
-  }
-
-  // === STEP 5: 남은 TENOR/BASS가 있으면 4-6행에 추가 배치 ===
-  // TENOR/BASS는 4-6행에만 배치 (1-3행 금지 유지)
+  // === STEP 5: 남은 TENOR/BASS 추가 배치 ===
   // MAX_ROW_CAPACITY까지 확장하여 미배치 방지
   if (tenorRemaining > 0 || bassRemaining > 0) {
     for (let row = 4; row <= numRows; row++) {
-      // MAX_ROW_CAPACITY 기준으로 빈공간 계산 (미배치 방지)
       let availableSpace = MAX_ROW_CAPACITY - rowTotals[row - 1];
 
       if (tenorRemaining > 0 && availableSpace > 0) {
@@ -414,13 +672,12 @@ function distributePartsToRows(
   }
 
   // === STEP 6: 최후의 수단 - 남은 인원이 있으면 아무 빈공간에 ===
-  // SOPRANO: 모든 행 가능, TENOR/BASS: 4-6행에만, ALTO: 4행 overflow만
-  // MAX_ROW_CAPACITY 기준으로 빈공간 계산
+  // SOPRANO overflow 추가
   if (sopranoRemaining > 0) {
-    for (let row = 1; row <= numRows; row++) {
-      let availableSpace = MAX_ROW_CAPACITY - rowTotals[row - 1];
-
-      if (sopranoRemaining > 0 && availableSpace > 0) {
+    for (let row = 4; row <= numRows; row++) {
+      if (sopranoRemaining === 0) break;
+      const availableSpace = MAX_ROW_CAPACITY - rowTotals[row - 1];
+      if (availableSpace > 0) {
         const toPlace = Math.min(sopranoRemaining, availableSpace);
         distribution[row].SOPRANO += toPlace;
         sopranoRemaining -= toPlace;
@@ -429,35 +686,11 @@ function distributePartsToRows(
     }
   }
 
-  // TENOR/BASS는 4-6행에만 배치 (MAX_ROW_CAPACITY 기준)
-  if (tenorRemaining > 0 || bassRemaining > 0) {
-    for (let row = 4; row <= numRows; row++) {
-      let availableSpace = MAX_ROW_CAPACITY - rowTotals[row - 1];
-
-      if (tenorRemaining > 0 && availableSpace > 0) {
-        const toPlace = Math.min(tenorRemaining, availableSpace);
-        distribution[row].TENOR += toPlace;
-        tenorRemaining -= toPlace;
-        availableSpace -= toPlace;
-        rowTotals[row - 1] += toPlace;
-      }
-      if (bassRemaining > 0 && availableSpace > 0) {
-        const toPlace = Math.min(bassRemaining, availableSpace);
-        distribution[row].BASS += toPlace;
-        bassRemaining -= toPlace;
-        rowTotals[row - 1] += toPlace;
-      }
-    }
-  }
-
-  // 알토 남은 인원 - 4행까지만 재시도 (1-3행 우선, 그다음 4행)
-  // MAX_ROW_CAPACITY 기준으로 빈공간 계산
+  // ALTO 남은 인원 - 4행까지만 재시도 (5-6행 금지 유지)
   if (altoRemaining > 0) {
     for (let row = 1; row <= Math.min(4, numRows); row++) {
       if (altoRemaining === 0) break;
-
       const availableSpace = MAX_ROW_CAPACITY - rowTotals[row - 1];
-
       if (availableSpace > 0) {
         const toPlace = Math.min(altoRemaining, availableSpace);
         distribution[row].ALTO += toPlace;
@@ -471,28 +704,18 @@ function distributePartsToRows(
 }
 
 /**
- * 행별로 좌석 배치
+ * 행별로 좌석 배치 (ML 선호좌석 우선 배치 v2)
  *
- * 지휘자 중심 좌우 분할 배치:
- * - 왼쪽: SOPRANO, TENOR (왼쪽 파트끼리 모여 배치)
- * - 오른쪽: ALTO, BASS (오른쪽 파트끼리 모여 배치)
+ * 배치 전략 (과거배치 로직에서 가져온 개선사항):
+ * 1. 고정석 대원: 선호 좌석 직접 배치 시도
+ * 2. 실패 시: 같은 행 내 가장 가까운 빈 열
+ * 3. 그래도 실패 시: 우선순위 기반 순차 배치
  *
- * 파트별 배치 방식:
- * - 1-3행 (SOPRANO/ALTO 주력):
- *   SOPRANO는 왼쪽 가장자리부터, ALTO는 오른쪽 가장자리부터
- *   TENOR/BASS overflow 시 중앙에 배치
- *
- * - 4-6행 (TENOR/BASS 주력):
- *   TENOR/BASS는 중앙부터 채움 (중앙에서 양쪽으로 확장)
- *   SOPRANO/ALTO overflow 시 가장자리에 배치
- *
- * 고정석 우선 배치:
- * - 고정석 성향이 강한 대원은 선호 행에 우선 배치
- * - 같은 행 내에서 선호 열 위치에 가깝게 배치
- *
- * 행별 배치 구조:
- * - 1-3행: [SOPRANO...가장자리→][←TENOR][ALTO→][←BASS...가장자리]
- * - 4-6행: [SOPRANO(가장자리)][TENOR←중앙→BASS][ALTO(가장자리)]
+ * 좌석 우선순위 시스템 (4단계):
+ * - Priority 0: 선호행 + 열 범위 내 (가장 선호)
+ * - Priority 1: 선호행 + 열 범위 외
+ * - Priority 2: 오버플로우행 + 열 범위 내
+ * - Priority 3: 오버플로우행 + 열 범위 외
  */
 function assignSeatsToRows(
   membersByPart: Record<string, Member[]>,
@@ -503,185 +726,536 @@ function assignSeatsToRows(
   const seats: Seat[] = [];
   const numRows = rowCapacities.length;
 
-  // 고정석 대원을 선호 행에 우선 배치하기 위해 재정렬
-  // 최적화: 사전 인덱싱으로 Map 조회 횟수 감소
-  if (preferredSeats) {
-    for (const part of ['SOPRANO', 'ALTO', 'TENOR', 'BASS'] as const) {
-      const members = membersByPart[part];
+  // 점유된 좌석 추적 (row:col 형식)
+  const occupiedSeats = new Set<string>();
+  const seatKey = (row: number, col: number) => `${row}:${col}`;
 
-      // 최적화: 대원별 선호 정보 사전 조회 (O(M) 조회 → 이후 O(1) 접근)
-      const memberPrefs = new Map<string, PreferredSeat | undefined>();
-      for (const member of members) {
-        memberPrefs.set(member.id, preferredSeats.get(member.id));
-      }
+  // === 행별 배치 할당량 추적 (distribution 기반) ===
+  // overflow 행에서 각 파트가 배치할 수 있는 남은 좌석 수
+  const remainingAllocation: Record<string, Record<number, number>> = {
+    SOPRANO: { 4: distribution[4]?.SOPRANO || 0, 5: distribution[5]?.SOPRANO || 0, 6: distribution[6]?.SOPRANO || 0 },
+    ALTO: { 4: distribution[4]?.ALTO || 0 },
+  };
 
-      // 선호 행별로 그룹화
-      const byPreferredRow = new Map<number, Member[]>();
-      const noPreference: Member[] = [];
+  // === 인원 비율 기반 중앙점 계산 ===
+  const sopranoCount = membersByPart.SOPRANO?.length || 0;
+  const altoCount = membersByPart.ALTO?.length || 0;
+  const tenorCount = membersByPart.TENOR?.length || 0;
+  const bassCount = membersByPart.BASS?.length || 0;
 
-      for (const member of members) {
-        const pref = memberPrefs.get(member.id);
-        if (pref && hasStrongFixedSeatPreference(pref)) {
-          const rowMembers = byPreferredRow.get(pref.preferred_row) || [];
-          rowMembers.push(member);
-          byPreferredRow.set(pref.preferred_row, rowMembers);
+  // SOPRANO/ALTO 비율로 1-3행 중앙점 계산
+  const sopranoAltoTotal = sopranoCount + altoCount;
+  const sopranoRatio = sopranoAltoTotal > 0 ? sopranoCount / sopranoAltoTotal : 0.5;
+
+  // TENOR/BASS 비율로 4-6행 중앙점 계산
+  const tenorBassTotal = tenorCount + bassCount;
+  const tenorRatio = tenorBassTotal > 0 ? tenorCount / tenorBassTotal : 0.5;
+
+  // 행별로 배치 가능한 좌석 생성
+  interface AvailableSeat {
+    row: number;
+    col: number;
+    priority: number;
+  }
+
+  // 파트별로 배치 가능한 좌석 목록 생성 (우선순위 정렬)
+  function getAvailableSeatsForPart(part: string): AvailableSeat[] {
+    const availableSeats: AvailableSeat[] = [];
+
+    // === TENOR/BASS: 중앙 기준 좌우 분할 배치 (6행 → 5행 → 4행) ===
+    if (part === 'TENOR' || part === 'BASS') {
+      // 6행 → 5행 → 4행 순서로 (뒤에서부터 채움)
+      for (const row of [6, 5, 4]) {
+        if (row > numRows) continue;
+
+        const rowCap = rowCapacities[row - 1];
+        // 인원 비율 기반 중앙점 (TENOR/BASS 비율)
+        const midCol = Math.round(rowCap * tenorRatio);
+
+        if (part === 'TENOR') {
+          // TENOR: 중앙에서 왼쪽으로 확장 (midCol → SOPRANO overflow max + 1)
+          // SOPRANO overflow 영역은 예약하여 침범 방지
+          const sopranoOverflowCol = getAdjustedColConstraints('SOPRANO', row, rowCap);
+          const tenorMinCol = (sopranoOverflowCol?.max ?? 5) + 1;
+
+          for (let col = midCol; col >= tenorMinCol; col--) {
+            if (!occupiedSeats.has(seatKey(row, col))) {
+              availableSeats.push({ row, col, priority: 0 });
+            }
+          }
         } else {
-          noPreference.push(member);
+          // BASS: 중앙에서 오른쪽으로 확장 (midCol+1 → bassMaxCol)
+          // Row 4에서는 ALTO overflow 영역 예약 (침범 방지)
+          let bassMaxCol = rowCap;
+          if (row === 4) {
+            const altoOverflowCol = getAdjustedColConstraints('ALTO', row, rowCap);
+            if (altoOverflowCol) {
+              bassMaxCol = altoOverflowCol.min - 1; // ALTO min 직전까지만
+            }
+          }
+
+          for (let col = midCol + 1; col <= bassMaxCol; col++) {
+            if (!occupiedSeats.has(seatKey(row, col))) {
+              availableSeats.push({ row, col, priority: 0 });
+            }
+          }
+        }
+      }
+      return availableSeats; // 이미 원하는 순서로 정렬됨
+    }
+
+    // === SOPRANO/ALTO: 중앙 기준 좌우 분할 배치 (1-3행) ===
+    if (part === 'SOPRANO' || part === 'ALTO') {
+      // 1행 → 2행 → 3행 순서 (앞에서부터 채움)
+      for (const row of [1, 2, 3]) {
+        if (row > numRows) continue;
+
+        const rowCap = rowCapacities[row - 1];
+        // 인원 비율 기반 중앙점 (SOPRANO/ALTO 비율)
+        const midCol = Math.round(rowCap * sopranoRatio);
+
+        if (part === 'SOPRANO') {
+          // SOPRANO: 중앙에서 왼쪽으로 확장 (midCol → 1)
+          for (let col = midCol; col >= 1; col--) {
+            if (!occupiedSeats.has(seatKey(row, col))) {
+              availableSeats.push({ row, col, priority: 0 });
+            }
+          }
+        } else {
+          // ALTO: 중앙에서 오른쪽으로 확장 (midCol+1 → rowCap)
+          for (let col = midCol + 1; col <= rowCap; col++) {
+            if (!occupiedSeats.has(seatKey(row, col))) {
+              availableSeats.push({ row, col, priority: 0 });
+            }
+          }
         }
       }
 
-      // 선호 행 순서대로 정렬 후 선호 없는 대원 추가
-      const sortedMembers: Member[] = [];
-      for (let row = 1; row <= numRows; row++) {
-        const rowMembers = byPreferredRow.get(row) || [];
-        // 같은 행 내에서 선호 열 순으로 정렬 (인덱싱된 Map 사용)
-        rowMembers.sort((a, b) => {
-          const prefA = memberPrefs.get(a.id);
-          const prefB = memberPrefs.get(b.id);
-          return (prefA?.preferred_col || 0) - (prefB?.preferred_col || 0);
+      // Overflow 행 추가 (파트 영역 규칙 내, priority 1)
+      if (part === 'SOPRANO') {
+        // SOPRANO overflow: 행별 할당량(remainingAllocation)에 맞게 좌석 배분
+        // findBestSeat가 행 기준 정렬하므로, 할당량만큼만 좌석 반환하여 균등 분배
+
+        // 각 행의 남은 할당량 확인
+        const sopranoAlloc: Record<number, number> = {
+          4: remainingAllocation.SOPRANO[4] || 0,
+          5: remainingAllocation.SOPRANO[5] || 0,
+          6: remainingAllocation.SOPRANO[6] || 0
+        };
+
+        // 각 행의 가용 좌석 수집 (col 1부터 순서대로)
+        const rowSeats: Record<number, Array<{ row: number; col: number }>> = { 4: [], 5: [], 6: [] };
+        for (const row of [4, 5, 6]) {
+          if (row > numRows || sopranoAlloc[row] <= 0) continue;
+          const rowCap = rowCapacities[row - 1];
+          const sopranoCol = getAdjustedColConstraints('SOPRANO', row, rowCap);
+          const maxCol = sopranoCol?.max ?? 0;
+          for (let col = 1; col <= maxCol; col++) {
+            if (!occupiedSeats.has(seatKey(row, col))) {
+              rowSeats[row].push({ row, col });
+            }
+          }
+        }
+
+        // 각 행에서 할당량만큼만 좌석 추가
+        // findBestSeat가 행 기준 정렬하므로, 할당량 초과 좌석은 제외
+        for (const row of [4, 5, 6]) {
+          const allocLimit = sopranoAlloc[row];
+          const seats = rowSeats[row].slice(0, allocLimit); // 할당량만큼만
+          for (const seat of seats) {
+            availableSeats.push({ ...seat, priority: 1 });
+          }
+        }
+      } else {
+        // ALTO overflow: 4행만 (5-6행 금지, 학습 데이터상 4행만 존재)
+        // 오른쪽 끝(col 14)부터 안쪽으로 채움
+        const row = 4;
+        if (row <= numRows) {
+          const rowCap = rowCapacities[row - 1];
+          const altoCol = getAdjustedColConstraints('ALTO', row, rowCap);
+          if (altoCol) {
+            // 오른쪽 끝부터 안쪽으로: col 14 → 13 → 12 → 11
+            const maxCol = Math.min(altoCol.max, rowCap);
+            for (let col = maxCol; col >= altoCol.min; col--) {
+              if (!occupiedSeats.has(seatKey(row, col))) {
+                availableSeats.push({ row, col, priority: 1 });
+              }
+            }
+          }
+        }
+      }
+
+      return availableSeats; // 이미 원하는 순서로 정렬됨
+    }
+
+    // === Fallback: 기존 학습 범위 기반 배치 (SPECIAL 등) ===
+    for (let row = 1; row <= numRows; row++) {
+      const rowCapacity = rowCapacities[row - 1];
+      for (let col = 1; col <= rowCapacity; col++) {
+        if (occupiedSeats.has(seatKey(row, col))) continue;
+
+        const priority = getSeatPriority(row, col, part, rowCapacity);
+        if (priority <= 3) {  // 금지 영역(4) 제외
+          availableSeats.push({ row, col, priority });
+        }
+      }
+    }
+
+    // 우선순위 → 행 → avg 거리 순으로 정렬
+    availableSeats.sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      if (a.row !== b.row) return a.row - b.row;
+
+      const constraintA = getAdjustedColConstraints(part, a.row, rowCapacities[a.row - 1]);
+      const constraintB = getAdjustedColConstraints(part, b.row, rowCapacities[b.row - 1]);
+      const avgA = constraintA?.avg ?? a.col;
+      const avgB = constraintB?.avg ?? b.col;
+
+      return Math.abs(a.col - avgA) - Math.abs(b.col - avgB);
+    });
+
+    return availableSeats;
+  }
+
+  // 선호 좌석 또는 가장 가까운 빈 좌석 찾기
+  function findBestSeat(
+    member: Member,
+    preference: PreferredSeat | undefined,
+    availableSeats: AvailableSeat[]
+  ): AvailableSeat | null {
+    if (!preference || !hasStrongFixedSeatPreference(preference)) {
+      // 비고정석 대원: 파트 avg 열 기반 배치 (휴직 복귀 등 기록 없는 대원 포함)
+      const rules = PART_PLACEMENT_RULES[member.part as keyof typeof PART_PLACEMENT_RULES];
+      if (rules) {
+        const partPreferredRows = rules.preferredRows as readonly number[];
+        const targetRow = partPreferredRows[0] || 4;
+        const targetRowCapacity = rowCapacities[targetRow - 1] || 15;
+        const constraint = getAdjustedColConstraints(member.part, targetRow, targetRowCapacity);
+
+        if (constraint) {
+          const targetCol = Math.round(constraint.avg);
+
+          // 열 범위 내 좌석만 필터 (priority 0-1)
+          const inRangeSeats = availableSeats.filter(s => s.priority <= 1);
+          if (inRangeSeats.length > 0) {
+            // 행 우선, 그 다음 avg 거리 순 정렬
+            inRangeSeats.sort((a, b) => {
+              if (a.row !== b.row) return a.row - b.row;
+              return Math.abs(a.col - targetCol) - Math.abs(b.col - targetCol);
+            });
+            return inRangeSeats[0];
+          }
+        }
+      }
+
+      // fallback: 우선순위 최상위 좌석 (열 범위 밖 포함)
+      return availableSeats.length > 0 ? availableSeats[0] : null;
+    }
+
+    const prefRow = preference.preferred_row;
+    const prefCol = preference.preferred_col;
+    const rowCapacity = rowCapacities[prefRow - 1] || 15;
+
+    // 1순위: 정확히 선호 좌석 (열 범위 내일 때만)
+    if (!occupiedSeats.has(seatKey(prefRow, prefCol))) {
+      const priority = getSeatPriority(prefRow, prefCol, member.part, rowCapacity);
+      // priority 0-1만 허용 (열 범위 내 좌석)
+      if (priority <= 1) {
+        return { row: prefRow, col: prefCol, priority };
+      }
+    }
+
+    // 2순위: 같은 행 내 열 범위 내 가장 가까운 열
+    const sameRowInRangeSeats = availableSeats.filter(s =>
+      s.row === prefRow && s.priority <= 1
+    );
+    if (sameRowInRangeSeats.length > 0) {
+      sameRowInRangeSeats.sort((a, b) =>
+        Math.abs(a.col - prefCol) - Math.abs(b.col - prefCol)
+      );
+      return sameRowInRangeSeats[0];
+    }
+    // fallback: 열 범위 밖도 허용 (좌석 부족 시)
+    const sameRowSeats = availableSeats.filter(s => s.row === prefRow);
+    if (sameRowSeats.length > 0) {
+      sameRowSeats.sort((a, b) =>
+        Math.abs(a.col - prefCol) - Math.abs(b.col - prefCol)
+      );
+      return sameRowSeats[0];
+    }
+
+    // 3순위: 선호행 범위 내 열 범위 우선 좌석
+    const rules = PART_PLACEMENT_RULES[member.part as keyof typeof PART_PLACEMENT_RULES];
+    if (rules) {
+      const partPreferredRows = rules.preferredRows as readonly number[];
+      const preferredRowSeats = availableSeats.filter(s =>
+        partPreferredRows.includes(s.row)
+      );
+      if (preferredRowSeats.length > 0) {
+        // priority(열 범위) 우선, 그 다음 거리
+        preferredRowSeats.sort((a, b) => {
+          // 열 범위 내 좌석 우선 (priority 0-1)
+          if (a.priority <= 1 && b.priority > 1) return -1;
+          if (a.priority > 1 && b.priority <= 1) return 1;
+          // 같은 priority 그룹 내에서 거리 정렬
+          const distA = Math.abs(a.row - prefRow) + Math.abs(a.col - prefCol) * 0.5;
+          const distB = Math.abs(b.row - prefRow) + Math.abs(b.col - prefCol) * 0.5;
+          return distA - distB;
         });
-        sortedMembers.push(...rowMembers);
+        return preferredRowSeats[0];
       }
-      sortedMembers.push(...noPreference);
+    }
 
-      membersByPart[part] = sortedMembers;
+    // 4순위: 우선순위 최상위 좌석
+    return availableSeats.length > 0 ? availableSeats[0] : null;
+  }
+
+  // 미배치 대원 추적
+  const unplacedMembers: Member[] = [];
+
+  // 파트별로 대원 배치
+  // SOPRANO/ALTO를 먼저 처리하여 overflow 영역(5-6행 col 1-3) 확보
+  // (TENOR/BASS가 먼저 처리되면 5-6행 col 1-3을 점유하여 SOPRANO overflow 자리 부족)
+  for (const part of ['SOPRANO', 'ALTO', 'TENOR', 'BASS'] as const) {
+    const members = [...membersByPart[part]];  // 복사본 사용
+
+    // 고정석 대원 우선 정렬 (출석 횟수 높은 순)
+    if (preferredSeats) {
+      members.sort((a, b) => {
+        const prefA = preferredSeats.get(a.id);
+        const prefB = preferredSeats.get(b.id);
+        const isFixedA = hasStrongFixedSeatPreference(prefA);
+        const isFixedB = hasStrongFixedSeatPreference(prefB);
+
+        // 고정석 우선
+        if (isFixedA !== isFixedB) return isFixedA ? -1 : 1;
+        // 같은 그룹 내에서 출석 횟수 순
+        return (prefB?.total_appearances || 0) - (prefA?.total_appearances || 0);
+      });
+    }
+
+    // 각 대원 배치
+    for (const member of members) {
+      const preference = preferredSeats?.get(member.id);
+      const availableSeats = getAvailableSeatsForPart(part);
+
+      const bestSeat = findBestSeat(member, preference, availableSeats);
+
+      if (bestSeat) {
+        seats.push({
+          member_id: member.id,
+          member_name: member.name,
+          part: member.part,
+          row: bestSeat.row,
+          col: bestSeat.col,
+        });
+        occupiedSeats.add(seatKey(bestSeat.row, bestSeat.col));
+
+        // === overflow 행 배치 시 할당량 차감 ===
+        // SOPRANO: 4-6행 overflow에 배치되면 해당 행 할당량 감소
+        if (part === 'SOPRANO' && bestSeat.row >= 4 && bestSeat.row <= 6) {
+          if (remainingAllocation.SOPRANO[bestSeat.row] > 0) {
+            remainingAllocation.SOPRANO[bestSeat.row]--;
+          }
+        }
+        // ALTO: 4행 overflow에 배치되면 할당량 감소
+        if (part === 'ALTO' && bestSeat.row === 4) {
+          if (remainingAllocation.ALTO[4] > 0) {
+            remainingAllocation.ALTO[4]--;
+          }
+        }
+      } else {
+        // 파트 제약 내 좌석이 없으면 미배치 목록에 추가
+        unplacedMembers.push(member);
+      }
+    }
+
+    // 원본 배열 비우기 (다른 로직과의 호환성)
+    membersByPart[part] = [];
+  }
+
+  // === SMART FALLBACK: 학습된 열 범위(PART_COL_CONSTRAINTS) 기반 미배치 대원 배치 ===
+  // 4단계 우선순위: (1) overflow행+학습열범위 → (2) preferred행+학습열범위 → (3) 열범위확장(±2) → (4) 아무빈좌석
+  if (unplacedMembers.length > 0) {
+    console.log(`[AI] ${unplacedMembers.length}명 미배치 → smart fallback 시도 (학습 데이터 기반)`);
+
+    /**
+     * 파트별 fallback 좌석 찾기 (getAdjustedColConstraints 활용)
+     */
+    const findFallbackSeat = (
+      member: Member
+    ): { row: number; col: number } | null => {
+      const part = member.part;
+      const rules = PART_PLACEMENT_RULES[part as keyof typeof PART_PLACEMENT_RULES];
+      const preferredRows = rules.preferredRows as readonly number[];
+      const overflowRows = rules.overflowRows as readonly number[];
+
+      // 1순위: overflow 행 + 학습된 열 범위
+      for (const row of overflowRows) {
+        if (row > numRows) continue;
+        const rowCap = rowCapacities[row - 1];
+        const constraint = getAdjustedColConstraints(part, row, rowCap);
+        if (!constraint) continue;
+
+        for (let col = constraint.min; col <= constraint.max; col++) {
+          if (!occupiedSeats.has(seatKey(row, col))) {
+            return { row, col };
+          }
+        }
+      }
+
+      // 2순위: preferred 행 + 학습된 열 범위
+      for (const row of preferredRows) {
+        if (row > numRows) continue;
+        const rowCap = rowCapacities[row - 1];
+        const constraint = getAdjustedColConstraints(part, row, rowCap);
+        if (!constraint) continue;
+
+        for (let col = constraint.min; col <= constraint.max; col++) {
+          if (!occupiedSeats.has(seatKey(row, col))) {
+            return { row, col };
+          }
+        }
+      }
+
+      // 3순위: 모든 허용 행 + 열 범위 확장 (±2열)
+      // 다른 파트 영역 침범 방지 체크 포함
+      const allAllowedRows = part === 'ALTO'
+        ? [1, 2, 3, 4]  // ALTO는 5-6행 금지
+        : [...preferredRows, ...overflowRows];
+
+      for (const row of allAllowedRows) {
+        if (row > numRows) continue;
+        const rowCap = rowCapacities[row - 1];
+        const constraint = getAdjustedColConstraints(part, row, rowCap);
+        if (!constraint) continue;
+
+        // 열 범위 확장 (±2열)
+        const extendedMin = Math.max(1, constraint.min - 2);
+        const extendedMax = Math.min(rowCap, constraint.max + 2);
+
+        for (let col = extendedMin; col <= extendedMax; col++) {
+          if (occupiedSeats.has(seatKey(row, col))) continue;
+          // 다른 파트 영역 침범 체크 (SOPRANO overflow, ALTO overflow 등)
+          if (isInOtherPartTerritory(row, col, part, rowCap)) continue;
+          return { row, col };
+        }
+      }
+
+      // 4순위: 아무 빈좌석 (파트 영역 체크 포함, ALTO는 5-6행 회피)
+      // 4-1: 다른 파트 영역 침범 안 하는 빈좌석 우선
+      const lastResortRows = part === 'ALTO'
+        ? [1, 2, 3, 4]
+        : Array.from({ length: numRows }, (_, i) => i + 1);
+
+      for (const row of lastResortRows) {
+        const rowCap = rowCapacities[row - 1];
+        for (let col = 1; col <= rowCap; col++) {
+          if (occupiedSeats.has(seatKey(row, col))) continue;
+          // 다른 파트 영역 침범 체크
+          if (isInOtherPartTerritory(row, col, part, rowCap)) continue;
+          return { row, col };
+        }
+      }
+
+      // 4-2: ALTO는 row 5-6 오른쪽 끝 허용 (row 4 col 1-3 SOPRANO영역보다 나음)
+      // Row 5-6의 오른쪽 끝 열은 다른 파트의 학습 범위 밖이므로 neutral zone
+      if (part === 'ALTO') {
+        for (const row of [5, 6]) {
+          if (row > numRows) continue;
+          const rowCap = rowCapacities[row - 1];
+          // row 5-6 오른쪽 끝에서 빈자리 찾기 (rowCap부터 역순)
+          // BASS max를 초과하는 영역은 neutral zone
+          const bassCol = getAdjustedColConstraints('BASS', row, rowCap);
+          const startCol = bassCol ? bassCol.max + 1 : rowCap - 2;
+          for (let col = rowCap; col >= Math.max(startCol, rowCap - 3); col--) {
+            if (!occupiedSeats.has(seatKey(row, col))) {
+              console.log(`[AI] ${member.name}(${part}) row ${row} 오른쪽 배치: ${row}행 ${col}열`);
+              return { row, col };
+            }
+          }
+        }
+      } else if (part === 'TENOR') {
+        // TENOR: 학습 범위 직후 ~ BASS 평균값 사이 (overflow 영역)
+        for (const row of [4, 5, 6]) {
+          if (row > numRows) continue;
+          const rowCap = rowCapacities[row - 1];
+          const tenorCol = getAdjustedColConstraints('TENOR', row, rowCap);
+          const bassCol = getAdjustedColConstraints('BASS', row, rowCap);
+          if (!tenorCol || !bassCol) continue;
+          // TENOR overflow: tenorCol.max+1 ~ BASS 평균값 (bassCol.avg)
+          // BASS min과 TENOR max가 오버랩되는 경우에도 유효한 범위 생성
+          const overflowMin = tenorCol.max + 1;
+          const overflowMax = Math.min(
+            Math.floor(bassCol.avg),  // BASS 평균값까지만
+            rowCap - 2                // 안전 마진
+          );
+          for (let col = overflowMin; col <= overflowMax; col++) {
+            if (!occupiedSeats.has(seatKey(row, col))) {
+              console.log(`[AI] ${member.name}(${part}) overflow 영역 배치: ${row}행 ${col}열`);
+              return { row, col };
+            }
+          }
+        }
+      }
+
+      // 4-3: 정말 좌석이 없으면 아무 빈좌석 (최후의 수단, 단 TENOR는 BASS 영역 피함)
+      for (const row of lastResortRows) {
+        const rowCap = rowCapacities[row - 1];
+        for (let col = 1; col <= rowCap; col++) {
+          if (occupiedSeats.has(seatKey(row, col))) continue;
+          // TENOR는 BASS 전용 영역(col >= BASS.min) 피함
+          if (part === 'TENOR' && row >= 4) {
+            const bassCol = getAdjustedColConstraints('BASS', row, rowCap);
+            if (bassCol && col >= bassCol.min) continue;
+          }
+          console.warn(`[AI] ${member.name}(${part}) 최후 배치: ${row}행 ${col}열 (영역 침범 불가피)`);
+          return { row, col };
+        }
+      }
+
+      // 4-4: TENOR 전용 - BASS 영역 진입하되, BASS avg 이하로 제한 (경계 근처에 배치)
+      if (part === 'TENOR') {
+        for (const row of lastResortRows) {
+          const rowCap = rowCapacities[row - 1];
+          const bassCol = getAdjustedColConstraints('BASS', row, rowCap);
+          // BASS avg까지만 허용 (col 14 같은 극단적 위치 방지)
+          const maxAllowedCol = bassCol ? Math.floor(bassCol.avg) : rowCap;
+          for (let col = 1; col <= maxAllowedCol; col++) {
+            if (!occupiedSeats.has(seatKey(row, col))) {
+              console.warn(`[AI] ${member.name}(${part}) BASS 경계 배치: ${row}행 ${col}열 (수작업 최소화)`);
+              return { row, col };
+            }
+          }
+        }
+      }
+
+      return null;
+    };
+
+    for (const member of unplacedMembers) {
+      const fallbackSeat = findFallbackSeat(member);
+
+      if (fallbackSeat) {
+        seats.push({
+          member_id: member.id,
+          member_name: member.name,
+          part: member.part,
+          row: fallbackSeat.row,
+          col: fallbackSeat.col,
+        });
+        occupiedSeats.add(seatKey(fallbackSeat.row, fallbackSeat.col));
+      } else {
+        console.warn(`[AI] ${member.name}(${member.part}) 배치 실패: 좌석 부족`);
+      }
     }
   }
 
-  for (let row = 1; row <= numRows; row++) {
-    const rowCapacity = rowCapacities[row - 1];
-    const sopranoCount = distribution[row].SOPRANO;
-    const tenorCount = distribution[row].TENOR;
-    const altoCount = distribution[row].ALTO;
-    const bassCount = distribution[row].BASS;
-
-    const isFrontRow = row <= 3;
-    const totalInRow = sopranoCount + tenorCount + altoCount + bassCount;
-
-    if (isFrontRow) {
-      // === 1-3행: SOPRANO/ALTO가 주력, 가장자리부터 ===
-      // 배치 순서: [SOPRANO(왼쪽)][TENOR][ALTO][BASS(오른쪽)]
-      let col = 1;
-
-      // SOPRANO 배치 (왼쪽 가장자리부터)
-      for (let i = 0; i < sopranoCount; i++) {
-        const member = membersByPart.SOPRANO.shift();
-        if (member) {
-          seats.push({
-            member_id: member.id,
-            member_name: member.name,
-            part: member.part,
-            row,
-            col: col++,
-          });
-        }
-      }
-
-      // TENOR 배치 (SOPRANO 옆, 중앙 방향)
-      for (let i = 0; i < tenorCount; i++) {
-        const member = membersByPart.TENOR.shift();
-        if (member) {
-          seats.push({
-            member_id: member.id,
-            member_name: member.name,
-            part: member.part,
-            row,
-            col: col++,
-          });
-        }
-      }
-
-      // ALTO 배치 (중앙에서 오른쪽으로)
-      for (let i = 0; i < altoCount; i++) {
-        const member = membersByPart.ALTO.shift();
-        if (member) {
-          seats.push({
-            member_id: member.id,
-            member_name: member.name,
-            part: member.part,
-            row,
-            col: col++,
-          });
-        }
-      }
-
-      // BASS 배치 (오른쪽 끝)
-      for (let i = 0; i < bassCount; i++) {
-        const member = membersByPart.BASS.shift();
-        if (member) {
-          seats.push({
-            member_id: member.id,
-            member_name: member.name,
-            part: member.part,
-            row,
-            col: col++,
-          });
-        }
-      }
-    } else {
-      // === 4-6행: TENOR/BASS가 주력 ===
-      // 배치 순서: [SOPRANO(왼쪽)][TENOR][BASS][ALTO(오른쪽)]
-      // 1-3행과 동일하게 순차 배치 방식 사용 (col++ 사용)
-      // 이렇게 하면 rowCapacity 초과 문제가 발생하지 않음
-      let col = 1;
-
-      // SOPRANO overflow 배치 (왼쪽 가장자리)
-      for (let i = 0; i < sopranoCount; i++) {
-        const member = membersByPart.SOPRANO.shift();
-        if (member) {
-          seats.push({
-            member_id: member.id,
-            member_name: member.name,
-            part: member.part,
-            row,
-            col: col++,
-          });
-        }
-      }
-
-      // TENOR 배치 (SOPRANO 옆)
-      for (let i = 0; i < tenorCount; i++) {
-        const member = membersByPart.TENOR.shift();
-        if (member) {
-          seats.push({
-            member_id: member.id,
-            member_name: member.name,
-            part: member.part,
-            row,
-            col: col++,
-          });
-        }
-      }
-
-      // BASS 배치 (TENOR 옆)
-      for (let i = 0; i < bassCount; i++) {
-        const member = membersByPart.BASS.shift();
-        if (member) {
-          seats.push({
-            member_id: member.id,
-            member_name: member.name,
-            part: member.part,
-            row,
-            col: col++,
-          });
-        }
-      }
-
-      // ALTO overflow 배치 (오른쪽 가장자리)
-      for (let i = 0; i < altoCount; i++) {
-        const member = membersByPart.ALTO.shift();
-        if (member) {
-          seats.push({
-            member_id: member.id,
-            member_name: member.name,
-            part: member.part,
-            row,
-            col: col++,
-          });
-        }
-      }
-    }
-  }
+  // 좌석 정렬 (행 → 열 순)
+  seats.sort((a, b) => {
+    if (a.row !== b.row) return a.row - b.row;
+    return a.col - b.col;
+  });
 
   return seats;
 }
@@ -748,6 +1322,43 @@ export function generateAISeatingArrangement(
 
   // 6. 행별로 좌석 배치 (고정석 우선, TENOR/BASS는 중앙부터)
   const seats = assignSeatsToRows(membersByPart, distribution, rowCapacities, preferredSeats);
+
+  // === DEBUG: 파트별 배치 현황 로깅 ===
+  const partSeats: Record<string, { row: number; col: number; name: string }[]> = {};
+  for (const seat of seats) {
+    const part = seat.part;
+    if (!partSeats[part]) partSeats[part] = [];
+    partSeats[part].push({ row: seat.row, col: seat.col, name: seat.member_name });
+  }
+
+  console.log('\n[DEBUG] === 파트별 배치 현황 ===');
+  for (const part of ['SOPRANO', 'ALTO', 'TENOR', 'BASS']) {
+    const ps = partSeats[part] || [];
+    if (ps.length === 0) continue;
+
+    const rowGroups: Record<number, number[]> = {};
+    for (const s of ps) {
+      if (!rowGroups[s.row]) rowGroups[s.row] = [];
+      rowGroups[s.row].push(s.col);
+    }
+
+    console.log(`[${part}] 총 ${ps.length}명:`);
+    for (const row of Object.keys(rowGroups).map(Number).sort((a, b) => a - b)) {
+      const cols = rowGroups[row].sort((a, b) => a - b);
+      const constraint = getAdjustedColConstraints(part, row, rowCapacities[row - 1]);
+      const constraintStr = constraint ? `학습범위: ${constraint.min}-${constraint.max}` : '(학습데이터 없음)';
+      console.log(`  ${row}행: col ${cols.join(', ')} [${constraintStr}]`);
+
+      // 범위 이탈 체크
+      if (constraint) {
+        const outOfRange = cols.filter(c => c < constraint.min || c > constraint.max);
+        if (outOfRange.length > 0) {
+          console.log(`    ⚠️ 범위 이탈: col ${outOfRange.join(', ')}`);
+        }
+      }
+    }
+  }
+  console.log('[DEBUG] === 배치 현황 끝 ===\n');
 
   // 7. 결과 반환
   return {

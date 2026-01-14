@@ -46,6 +46,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         gridLayout,
         clearArrangement,
         setAssignments,
+        setGridLayout,
         rowLeaderMode,
         toggleRowLeaderMode,
         autoAssignRowLeaders,
@@ -303,6 +304,16 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
     };
 
     const handleApplyRecommendation = (recommendation: RecommendationResponse) => {
+        // 디버깅: API 응답 확인
+        console.log('=== AI 추천 결과 디버깅 ===');
+        console.log('seats.length:', recommendation.seats.length);
+        console.log('gridLayout:', recommendation.gridLayout);
+        if (recommendation.gridLayout) {
+            const totalCapacity = recommendation.gridLayout.rowCapacities.reduce((a: number, b: number) => a + b, 0);
+            console.log('rowCapacities 합계:', totalCapacity);
+            console.log('빈좌석 예상:', totalCapacity - recommendation.seats.length);
+        }
+
         // AI 추천 결과를 store에 적용
         const formattedSeats = recommendation.seats.map(seat => ({
             memberId: seat.memberId,
@@ -311,6 +322,15 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
             row: seat.row,
             col: seat.col,
         }));
+
+        // AI 추천 gridLayout 적용 (빈좌석 방지)
+        if (recommendation.gridLayout) {
+            setGridLayout({
+                rows: recommendation.gridLayout.rows,
+                rowCapacities: recommendation.gridLayout.rowCapacities,
+                zigzagPattern: recommendation.gridLayout.zigzagPattern,
+            });
+        }
 
         setAssignments(formattedSeats);
         const qualityScore = recommendation.qualityScore ?? 0;

@@ -32,7 +32,6 @@ import {
 } from '@/lib/ml-service-client';
 import {
   calculateHeightOrder,
-  calculateLeaderPosition,
   type SeatWithMember,
 } from '@/lib/quality-metrics';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -346,15 +345,12 @@ export async function POST(
     // 키 순서 정렬도 계산 (실제 계산)
     const heightOrder = calculateHeightOrder(seatsForMetrics);
 
-    // 파트장 위치 적절성 계산 (실제 계산)
-    const leaderPosition = calculateLeaderPosition(seatsForMetrics);
-
     // 전체 품질 점수 (가중 평균)
+    // 참고: leaderPosition은 더 이상 사용되지 않음 (파트장 위치 규칙 없음)
     const qualityScore = (
-      placementRate * 0.4 +        // 배치율 40%
-      partBalance * 0.25 +         // 파트 균형 25%
-      heightOrder * 0.2 +          // 키 순서 20%
-      leaderPosition * 0.15        // 파트장 위치 15%
+      placementRate * 0.5 +        // 배치율 50%
+      partBalance * 0.3 +          // 파트 균형 30%
+      heightOrder * 0.2            // 키 순서 20%
     );
 
     // 8. 응답 포맷팅 (camelCase로 변환)
@@ -384,7 +380,6 @@ export async function POST(
         placementRate,
         partBalance,
         heightOrder,       // 실제 계산된 값
-        leaderPosition     // 실제 계산된 값
       },
       unassignedMembers: [],  // AI 알고리즘은 모든 멤버를 배치하므로 빈 배열
       source: 'typescript-rule-based' as const,

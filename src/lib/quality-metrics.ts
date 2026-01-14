@@ -26,11 +26,13 @@ export interface QualityMetrics {
   placementRate: number;    // 배치율 (0-1)
   partBalance: number;      // 파트 균형도 (0-1)
   heightOrder: number;      // 키 순서 정렬도 (0-1)
-  leaderPosition: number;   // 파트장 위치 적절성 (0-1)
+  // 참고: leaderPosition은 더 이상 사용되지 않음 (파트장 위치 규칙 없음)
 }
 
 /**
  * 전체 품질 메트릭 계산
+ *
+ * 참고: leaderPosition은 v2에서 제외됨 (파트장 위치 규칙 없음)
  */
 export function calculateQualityMetrics(
   seats: SeatWithMember[],
@@ -39,13 +41,11 @@ export function calculateQualityMetrics(
   const placementRate = calculatePlacementRate(seats, totalMembers);
   const partBalance = calculatePartBalance(seats);
   const heightOrder = calculateHeightOrder(seats);
-  const leaderPosition = calculateLeaderPosition(seats);
 
   return {
     placementRate,
     partBalance,
     heightOrder,
-    leaderPosition,
   };
 }
 
@@ -234,13 +234,19 @@ export function calculateLeaderPosition(seats: SeatWithMember[]): number {
 
 /**
  * 전체 품질 점수 계산 (가중 평균)
+ *
+ * 가중치 배분 (v2):
+ * - 배치율: 50% (모든 대원 배치가 가장 중요)
+ * - 파트 균형: 30% (파트별 인원 균형)
+ * - 키 순서: 20% (행 내 키 정렬)
+ *
+ * 참고: leaderPosition은 제외됨 (파트장 위치 규칙 없음)
  */
 export function calculateOverallQualityScore(metrics: QualityMetrics): number {
   return (
-    metrics.placementRate * 0.4 +
-    metrics.partBalance * 0.25 +
-    metrics.heightOrder * 0.2 +
-    metrics.leaderPosition * 0.15
+    metrics.placementRate * 0.5 +
+    metrics.partBalance * 0.3 +
+    metrics.heightOrder * 0.2
   );
 }
 
