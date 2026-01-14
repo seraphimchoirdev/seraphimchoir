@@ -27,6 +27,7 @@ const createMemberSchema = z.object({
   part: PartEnum,
   is_leader: z.boolean().default(false),
   member_status: MemberStatusEnum.default('NEW'),
+  joined_date: z.string().optional(), // YYYY-MM-DD 형식, 미입력 시 오늘 날짜
   phone_number: z.string().nullable().optional(),
   email: z.string().email('올바른 이메일 형식이 아닙니다').nullable().optional(),
   notes: z.string().nullable().optional(),
@@ -213,10 +214,17 @@ export async function POST(request: NextRequest) {
 
     const memberData = validation.data;
 
+    // joined_date 기본값 설정 (오늘 날짜)
+    const today = new Date().toISOString().split('T')[0];
+    const dataToInsert = {
+      ...memberData,
+      joined_date: memberData.joined_date || today,
+    };
+
     // Supabase insert
     const { data: newMember, error } = await supabase
       .from('members')
-      .insert([memberData])
+      .insert([dataToInsert])
       .select()
       .single();
 
