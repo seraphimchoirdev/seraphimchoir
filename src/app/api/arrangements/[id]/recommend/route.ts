@@ -275,7 +275,8 @@ export async function POST(
         });
 
         // ML 서비스 응답을 API 응답 형식으로 변환
-        // Python ML은 이미 0-based row/col을 반환
+        // Python ML은 1-based row/col을 반환 (ml_output JSON과 동일)
+        // 프론트엔드(SeatSlot, Grid Calculator)도 1-based를 사용하므로 변환 불필요
         const formattedMLResponse = {
           seats: mlResponse.seats.map(seat => ({
             memberId: seat.member_id,
@@ -357,14 +358,14 @@ export async function POST(
     );
 
     // 8. 응답 포맷팅 (camelCase로 변환)
-    // IMPORTANT: AI 알고리즘은 1-based row/col을 반환하지만,
-    // UI는 0-based를 기대하므로 -1 변환 필요
+    // AI 알고리즘은 1-based row/col을 반환
+    // 프론트엔드(SeatSlot, Grid Calculator)도 1-based를 사용하므로 변환 불필요
     const formattedResponse = {
       seats: recommendation.seats.map(seat => ({
         memberId: seat.member_id,
         memberName: seat.member_name,
-        row: seat.row - 1,  // 1-based → 0-based
-        col: seat.col - 1,  // 1-based → 0-based
+        row: seat.row,
+        col: seat.col,
         part: seat.part
       })),
       gridLayout: {

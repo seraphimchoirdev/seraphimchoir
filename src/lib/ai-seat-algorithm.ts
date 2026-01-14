@@ -264,6 +264,12 @@ interface RowDistribution {
 /**
  * 최적화: 행별 누적 합계 유지로 O(R × 4) → O(R) 감소
  */
+/**
+ * 물리적 최대 행 용량 (UI 그리드 기준)
+ * 미배치 방지를 위해 rowCapacities보다 큰 경우에도 배치 허용
+ */
+const MAX_ROW_CAPACITY = 16;
+
 function distributePartsToRows(
   partCounts: Record<string, number>,
   rowCapacities: number[]
@@ -289,59 +295,41 @@ function distributePartsToRows(
 
   if (totalMembers === 0) return distribution;
 
-  // === STEP 1: 4-6행에 TENOR/BASS 중앙 우선 배치 ===
-  // 중요: overflow 공간을 남기기 위해 양쪽 가장자리에 여유 공간 확보
-  const sopranoTotal = partCounts.SOPRANO || 0;
-  const altoTotal = partCounts.ALTO || 0;
+  // === STEP 1: 4-6행에 TENOR/BASS 우선 배치 (개선됨) ===
+  // 핵심 변경: overflow 공간 예약 없이 TENOR/BASS를 먼저 충분히 배치
+  // 남는 공간에 나중에 overflow 배치
+  const backRowCount = Math.max(1, numRows - 3); // 4-6행 개수
 
-  // 1-3행에 배치 가능한 소프라노/알토 수 계산
-  const frontRowCapacity = rowCapacities.slice(0, 3).reduce((sum, cap) => {
-    const leftCap = Math.round(cap * leftTotal / totalMembers);
-    const rightCap = cap - leftCap;
-    return sum + leftCap + rightCap;
-  }, 0);
+  // 4-6행 총 용량 계산 (MAX_ROW_CAPACITY 기준)
+  let backRowTotalCapacity = 0;
+  for (let row = 4; row <= numRows; row++) {
+    backRowTotalCapacity += Math.min(MAX_ROW_CAPACITY, rowCapacities[row - 1] + 4); // 여유 공간 포함
+  }
 
-  // 예상 overflow 계산
-  const frontLeftCapacity = rowCapacities.slice(0, 3).reduce((sum, cap) =>
-    sum + Math.round(cap * leftTotal / totalMembers), 0);
-  const frontRightCapacity = rowCapacities.slice(0, 3).reduce((sum, cap) =>
-    sum + (cap - Math.round(cap * leftTotal / totalMembers)), 0);
+  // TENOR/BASS 총 인원
+  const tenorBassTotal = tenorRemaining + bassRemaining;
 
-  const sopranoOverflow = Math.max(0, sopranoTotal - frontLeftCapacity);
-  const altoOverflow = Math.max(0, altoTotal - frontRightCapacity);
+  // 각 행에 TENOR/BASS를 균등하게 분배
+  const tenorBassPerRow = Math.ceil(tenorBassTotal / backRowCount);
 
   for (let row = 4; row <= numRows; row++) {
-    const rowCapacity = rowCapacities[row - 1];
+    // 각 행에 배치할 TENOR/BASS 수 계산
+    const rowCapacity = Math.min(MAX_ROW_CAPACITY, rowCapacities[row - 1] + 4);
+    const tenorBassForThisRow = Math.min(tenorBassPerRow, tenorRemaining + bassRemaining, rowCapacity);
 
-    // 이 행에 필요한 overflow 공간 계산
-    // 4행부터 순차적으로 overflow 공간 할당
-    const rowIndex = row - 4; // 0, 1, 2
-    const backRowCount = numRows - 3; // 4-6행 = 3개 행
+    // 좌우 비율로 TENOR/BASS 분배
+    const tenorRatio = tenorRemaining / (tenorRemaining + bassRemaining || 1);
+    const tenorForThisRow = Math.round(tenorBassForThisRow * tenorRatio);
+    const bassForThisRow = tenorBassForThisRow - tenorForThisRow;
 
-    // 각 뒷행에 균등하게 overflow 분배
-    const sopranoOverflowPerRow = Math.ceil(sopranoOverflow / backRowCount);
-    const altoOverflowPerRow = row === 4 ? altoOverflow : 0; // 알토는 4행까지만
-
-    // overflow를 위한 공간 확보
-    const sopranoSpaceNeeded = Math.min(sopranoOverflowPerRow, sopranoOverflow - (rowIndex * sopranoOverflowPerRow));
-    const altoSpaceNeeded = row === 4 ? altoOverflow : 0; // 알토는 4행에만 overflow
-
-    const overflowSpace = Math.max(0, sopranoSpaceNeeded) + Math.max(0, altoSpaceNeeded);
-    const availableForTenorBass = rowCapacity - overflowSpace;
-
-    // 좌우 비율로 TENOR/BASS 공간 분배
-    const tenorBassLeftRatio = tenorRemaining / (tenorRemaining + bassRemaining || 1);
-    const leftCapacity = Math.round(availableForTenorBass * tenorBassLeftRatio);
-    const rightCapacity = availableForTenorBass - leftCapacity;
-
-    // TENOR 배치 (왼쪽 영역)
-    const tenorToPlace = Math.min(tenorRemaining, Math.max(0, leftCapacity));
+    // TENOR 배치
+    const tenorToPlace = Math.min(tenorRemaining, tenorForThisRow);
     distribution[row].TENOR = tenorToPlace;
     tenorRemaining -= tenorToPlace;
     rowTotals[row - 1] += tenorToPlace;
 
-    // BASS 배치 (오른쪽 영역)
-    const bassToPlace = Math.min(bassRemaining, Math.max(0, rightCapacity));
+    // BASS 배치
+    const bassToPlace = Math.min(bassRemaining, bassForThisRow);
     distribution[row].BASS = bassToPlace;
     bassRemaining -= bassToPlace;
     rowTotals[row - 1] += bassToPlace;
@@ -367,9 +355,10 @@ function distributePartsToRows(
   }
 
   // === STEP 3: SOPRANO overflow → 4-6행 왼쪽 가장자리 ===
-  // 최적화: rowTotals 배열로 O(1) 접근
+  // 역순 배치 (6→5→4): 5-6행은 ALTO가 금지되므로 SOPRANO로 먼저 채움
+  // 이렇게 하면 row 6의 빈좌석이 SOPRANO overflow로 채워짐
   if (sopranoRemaining > 0) {
-    for (let row = 4; row <= numRows; row++) {
+    for (let row = numRows; row >= 4; row--) {
       if (sopranoRemaining === 0) break;
 
       const rowCapacity = rowCapacities[row - 1];
@@ -385,33 +374,31 @@ function distributePartsToRows(
     }
   }
 
-  // === STEP 4: ALTO overflow → 4행 오른쪽 가장자리만 (5~6행 제외!) ===
-  if (altoRemaining > 0) {
-    // 알토 overflow는 4행까지만 (5~6행 금지!)
-    if (numRows >= 4) {
-      const row = 4;
-      const rowCapacity = rowCapacities[row - 1];
-      const availableSpace = rowCapacity - rowTotals[row - 1];
+  // === STEP 4: ALTO overflow → 4행에만 배치 (5-6행 금지) ===
+  // MAX_ROW_CAPACITY 기준으로 빈공간 계산
+  if (altoRemaining > 0 && numRows >= 4) {
+    const row = 4;
+    const availableSpace = MAX_ROW_CAPACITY - rowTotals[row - 1];
 
-      if (availableSpace > 0) {
-        // 오른쪽 가장자리에 추가 (BASS 뒤에)
-        const toPlace = Math.min(altoRemaining, availableSpace);
-        distribution[row].ALTO = toPlace;
-        altoRemaining -= toPlace;
-        rowTotals[row - 1] += toPlace;
-      }
+    if (availableSpace > 0) {
+      const toPlace = Math.min(altoRemaining, availableSpace);
+      distribution[row].ALTO += toPlace;
+      altoRemaining -= toPlace;
+      rowTotals[row - 1] += toPlace;
     }
   }
 
-  // === STEP 5: 남은 TENOR/BASS가 있으면 1-3행 빈공간에 ===
+  // === STEP 5: 남은 TENOR/BASS가 있으면 4-6행에 추가 배치 ===
+  // TENOR/BASS는 4-6행에만 배치 (1-3행 금지 유지)
+  // MAX_ROW_CAPACITY까지 확장하여 미배치 방지
   if (tenorRemaining > 0 || bassRemaining > 0) {
-    for (let row = 1; row <= 3; row++) {
-      const rowCapacity = rowCapacities[row - 1];
-      let availableSpace = rowCapacity - rowTotals[row - 1];
+    for (let row = 4; row <= numRows; row++) {
+      // MAX_ROW_CAPACITY 기준으로 빈공간 계산 (미배치 방지)
+      let availableSpace = MAX_ROW_CAPACITY - rowTotals[row - 1];
 
       if (tenorRemaining > 0 && availableSpace > 0) {
         const toPlace = Math.min(tenorRemaining, availableSpace);
-        distribution[row].TENOR = toPlace;
+        distribution[row].TENOR += toPlace;
         tenorRemaining -= toPlace;
         availableSpace -= toPlace;
         rowTotals[row - 1] += toPlace;
@@ -419,7 +406,7 @@ function distributePartsToRows(
 
       if (bassRemaining > 0 && availableSpace > 0) {
         const toPlace = Math.min(bassRemaining, availableSpace);
-        distribution[row].BASS = toPlace;
+        distribution[row].BASS += toPlace;
         bassRemaining -= toPlace;
         rowTotals[row - 1] += toPlace;
       }
@@ -427,19 +414,26 @@ function distributePartsToRows(
   }
 
   // === STEP 6: 최후의 수단 - 남은 인원이 있으면 아무 빈공간에 ===
-  // (알토는 여전히 6행 금지)
-  if (sopranoRemaining > 0 || tenorRemaining > 0 || bassRemaining > 0) {
+  // SOPRANO: 모든 행 가능, TENOR/BASS: 4-6행에만, ALTO: 4행 overflow만
+  // MAX_ROW_CAPACITY 기준으로 빈공간 계산
+  if (sopranoRemaining > 0) {
     for (let row = 1; row <= numRows; row++) {
-      const rowCapacity = rowCapacities[row - 1];
-      let availableSpace = rowCapacity - rowTotals[row - 1];
+      let availableSpace = MAX_ROW_CAPACITY - rowTotals[row - 1];
 
       if (sopranoRemaining > 0 && availableSpace > 0) {
         const toPlace = Math.min(sopranoRemaining, availableSpace);
         distribution[row].SOPRANO += toPlace;
         sopranoRemaining -= toPlace;
-        availableSpace -= toPlace;
         rowTotals[row - 1] += toPlace;
       }
+    }
+  }
+
+  // TENOR/BASS는 4-6행에만 배치 (MAX_ROW_CAPACITY 기준)
+  if (tenorRemaining > 0 || bassRemaining > 0) {
+    for (let row = 4; row <= numRows; row++) {
+      let availableSpace = MAX_ROW_CAPACITY - rowTotals[row - 1];
+
       if (tenorRemaining > 0 && availableSpace > 0) {
         const toPlace = Math.min(tenorRemaining, availableSpace);
         distribution[row].TENOR += toPlace;
@@ -451,19 +445,18 @@ function distributePartsToRows(
         const toPlace = Math.min(bassRemaining, availableSpace);
         distribution[row].BASS += toPlace;
         bassRemaining -= toPlace;
-        availableSpace -= toPlace;
         rowTotals[row - 1] += toPlace;
       }
     }
   }
 
   // 알토 남은 인원 - 4행까지만 재시도 (1-3행 우선, 그다음 4행)
+  // MAX_ROW_CAPACITY 기준으로 빈공간 계산
   if (altoRemaining > 0) {
     for (let row = 1; row <= Math.min(4, numRows); row++) {
       if (altoRemaining === 0) break;
 
-      const rowCapacity = rowCapacities[row - 1];
-      const availableSpace = rowCapacity - rowTotals[row - 1];
+      const availableSpace = MAX_ROW_CAPACITY - rowTotals[row - 1];
 
       if (availableSpace > 0) {
         const toPlace = Math.min(altoRemaining, availableSpace);
@@ -626,20 +619,11 @@ function assignSeatsToRows(
         }
       }
     } else {
-      // === 4-6행: TENOR/BASS가 주력, 중앙부터 ===
-      // TENOR/BASS는 중앙에, SOPRANO/ALTO overflow는 가장자리에
-
-      // 중앙 계산: 행의 중간 지점
-      const centerCol = Math.ceil(totalInRow / 2);
-
-      // TENOR/BASS 총 인원 (중앙에 배치)
-      const centerTotal = tenorCount + bassCount;
-      // SOPRANO/ALTO overflow 인원 (가장자리에 배치)
-      const edgeTotal = sopranoCount + altoCount;
-
-      // 중앙 블록 시작 위치 계산
-      // 가장자리에 SOPRANO가 있으면 그 다음부터, 없으면 1부터
-      const centerStartCol = sopranoCount + 1;
+      // === 4-6행: TENOR/BASS가 주력 ===
+      // 배치 순서: [SOPRANO(왼쪽)][TENOR][BASS][ALTO(오른쪽)]
+      // 1-3행과 동일하게 순차 배치 방식 사용 (col++ 사용)
+      // 이렇게 하면 rowCapacity 초과 문제가 발생하지 않음
+      let col = 1;
 
       // SOPRANO overflow 배치 (왼쪽 가장자리)
       for (let i = 0; i < sopranoCount; i++) {
@@ -650,12 +634,12 @@ function assignSeatsToRows(
             member_name: member.name,
             part: member.part,
             row,
-            col: 1 + i,
+            col: col++,
           });
         }
       }
 
-      // TENOR 배치 (중앙 왼쪽)
+      // TENOR 배치 (SOPRANO 옆)
       for (let i = 0; i < tenorCount; i++) {
         const member = membersByPart.TENOR.shift();
         if (member) {
@@ -664,12 +648,12 @@ function assignSeatsToRows(
             member_name: member.name,
             part: member.part,
             row,
-            col: centerStartCol + i,
+            col: col++,
           });
         }
       }
 
-      // BASS 배치 (중앙 오른쪽, TENOR 바로 옆)
+      // BASS 배치 (TENOR 옆)
       for (let i = 0; i < bassCount; i++) {
         const member = membersByPart.BASS.shift();
         if (member) {
@@ -678,7 +662,7 @@ function assignSeatsToRows(
             member_name: member.name,
             part: member.part,
             row,
-            col: centerStartCol + tenorCount + i,
+            col: col++,
           });
         }
       }
@@ -692,7 +676,7 @@ function assignSeatsToRows(
             member_name: member.name,
             part: member.part,
             row,
-            col: centerStartCol + tenorCount + bassCount + i,
+            col: col++,
           });
         }
       }
