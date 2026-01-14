@@ -5,19 +5,19 @@
     "service": "2부예배",
     "anthem": "선한 목자 되신 우리 주",
     "offering_hymn_leader": "새영연부",
-    "total_members": 86,
+    "total_members": 85,
     "breakdown": {
-      "소프라노": 35,
-      "알토": 24,
+      "소프라노": 34,
+      "알토": 23,
       "테너": 13,
-      "베이스": 14
+      "베이스": 15
     }
   },
   "grid_layout": {
     "rows": 6,
     "row_capacities": [
       15,
-      16,
+      15,
       16,
       15,
       13,
@@ -377,9 +377,9 @@
       "col": 11
     },
     {
-      "member_id": "bcbd596d-78d7-40e0-9522-cc65f2eaea1b",
-      "member_name": "김진희",
-      "part": "SOPRANO",
+      "member_id": "1eab806e-64f7-4edd-8fc6-67b0048b8c39",
+      "member_name": "김성휘",
+      "part": "BASS",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
@@ -687,16 +687,6 @@
       "col": 11
     },
     {
-      "member_id": "d4d66444-4e84-4a8a-a51b-2dc7c361a964",
-      "member_name": "변소정",
-      "part": "ALTO",
-      "height": null,
-      "experience_years": 0,
-      "is_part_leader": false,
-      "row": 2,
-      "col": 12
-    },
-    {
       "member_id": "355ab732-17c8-42ea-9d96-9ae4cbbace16",
       "member_name": "안은희",
       "part": "ALTO",
@@ -704,7 +694,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 13
+      "col": 12
     },
     {
       "member_id": "c1195bdc-122f-42b9-8b79-15bdffe2c95b",
@@ -714,7 +704,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 14
+      "col": 13
     },
     {
       "member_id": "05a953d7-52dc-4838-9e55-f1e6360751d1",
@@ -724,7 +714,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 15
+      "col": 14
     },
     {
       "member_id": "f2295256-ece2-44e0-8101-f73d48e7f850",
@@ -734,7 +724,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 16
+      "col": 15
     },
     {
       "member_id": "0682bd16-ab1a-4fec-983a-ded1c3365365",

@@ -5,10 +5,10 @@
     "service": "2부예배",
     "anthem": "주 예수 이름 높이어",
     "offering_hymn_leader": "홍영은",
-    "total_members": 76,
+    "total_members": 75,
     "breakdown": {
       "소프라노": 29,
-      "알토": 22,
+      "알토": 21,
       "테너": 10,
       "베이스": 15
     }
@@ -16,7 +16,7 @@
   "grid_layout": {
     "rows": 6,
     "row_capacities": [
-      14,
+      13,
       13,
       14,
       13,
@@ -757,16 +757,6 @@
       "col": 11
     },
     {
-      "member_id": "355ab732-17c8-42ea-9d96-9ae4cbbace16",
-      "member_name": "안은희",
-      "part": "ALTO",
-      "height": null,
-      "experience_years": 0,
-      "is_part_leader": false,
-      "row": 1,
-      "col": 12
-    },
-    {
       "member_id": "6ba6680a-fe5d-4e24-a7f0-a918c5fdca96",
       "member_name": "최명희",
       "part": "ALTO",
@@ -774,7 +764,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 1,
-      "col": 13
+      "col": 12
     },
     {
       "member_id": "373deb7c-fb31-4475-a230-d2bb913aa8b2",
@@ -784,7 +774,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 1,
-      "col": 14
+      "col": 13
     }
   ]
 }

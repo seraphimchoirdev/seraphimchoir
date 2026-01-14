@@ -7,10 +7,10 @@
     "offering_hymn_leader": "박재은",
     "total_members": 84,
     "breakdown": {
-      "소프라노": 35,
+      "소프라노": 34,
       "알토": 23,
       "테너": 13,
-      "베이스": 13
+      "베이스": 14
     }
   },
   "grid_layout": {
@@ -217,9 +217,9 @@
       "col": 8
     },
     {
-      "member_id": "bcbd596d-78d7-40e0-9522-cc65f2eaea1b",
-      "member_name": "김진희",
-      "part": "SOPRANO",
+      "member_id": "1eab806e-64f7-4edd-8fc6-67b0048b8c39",
+      "member_name": "김성휘",
+      "part": "BASS",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,

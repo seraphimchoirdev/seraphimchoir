@@ -5,9 +5,9 @@
     "service": "2부예배",
     "anthem": "할렐루야",
     "offering_hymn_leader": "김해선",
-    "total_members": 83,
+    "total_members": 82,
     "breakdown": {
-      "소프라노": 31,
+      "소프라노": 30,
       "알토": 22,
       "테너": 14,
       "베이스": 16
@@ -17,7 +17,7 @@
     "rows": 6,
     "row_capacities": [
       14,
-      15,
+      14,
       15,
       15,
       13,
@@ -617,16 +617,6 @@
       "col": 5
     },
     {
-      "member_id": "4976844a-319c-45f2-8701-d007b45ab337",
-      "member_name": "이선아",
-      "part": "SOPRANO",
-      "height": null,
-      "experience_years": 0,
-      "is_part_leader": false,
-      "row": 2,
-      "col": 6
-    },
-    {
       "member_id": "c9a92c9f-4df2-416e-821b-ae9eaac301dd",
       "member_name": "신수정",
       "part": "SOPRANO",
@@ -634,7 +624,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 7
+      "col": 6
     },
     {
       "member_id": "9352769c-1efa-42f7-9ad7-fcf7e3acb645",
@@ -644,7 +634,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 8
+      "col": 7
     },
     {
       "member_id": "ecd238b8-79dd-49a0-a8a0-e45a233c6c10",
@@ -654,7 +644,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 9
+      "col": 8
     },
     {
       "member_id": "ca4eef10-84dd-474f-b846-82a37c3eac51",
@@ -664,7 +654,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 10
+      "col": 9
     },
     {
       "member_id": "355ab732-17c8-42ea-9d96-9ae4cbbace16",
@@ -674,7 +664,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 11
+      "col": 10
     },
     {
       "member_id": "c1195bdc-122f-42b9-8b79-15bdffe2c95b",
@@ -684,7 +674,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 12
+      "col": 11
     },
     {
       "member_id": "43d60188-705f-4b38-b00b-40b3a0ac65e4",
@@ -694,7 +684,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 13
+      "col": 12
     },
     {
       "member_id": "338af00b-a855-4ab6-8eeb-bfd18a4e9363",
@@ -704,7 +694,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 14
+      "col": 13
     },
     {
       "member_id": "f2295256-ece2-44e0-8101-f73d48e7f850",
@@ -714,7 +704,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 2,
-      "col": 15
+      "col": 14
     },
     {
       "member_id": "23d9b1ea-729f-4890-b6a9-cb282ec12b67",

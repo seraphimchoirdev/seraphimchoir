@@ -5,10 +5,10 @@
     "service": "2부예배",
     "anthem": "01:21 그의 나라에",
     "offering_hymn_leader": "소재현",
-    "total_members": 80,
+    "total_members": 79,
     "breakdown": {
       "소프라노": 30,
-      "알토": 23,
+      "알토": 22,
       "테너": 12,
       "베이스": 15
     }
@@ -20,7 +20,7 @@
       14,
       15,
       14,
-      11,
+      12,
       10
     ],
     "zigzag_pattern": "even"
@@ -297,9 +297,9 @@
       "col": 5
     },
     {
-      "member_id": "1eab806e-64f7-4edd-8fc6-67b0048b8c39",
-      "member_name": "김성휘",
-      "part": "BASS",
+      "member_id": "27ddae26-185e-4e45-9a76-5896926a5d67",
+      "member_name": "김상목",
+      "part": "TENOR",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,

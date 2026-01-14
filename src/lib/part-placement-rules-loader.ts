@@ -91,48 +91,56 @@ export interface PartPlacementRule {
 /**
  * 기본 열 범위 (학습 데이터 분석 결과 기반)
  *
- * 40+ 예배 데이터 분석 결과:
- * - 1-3행: SOPRANO(col 1-9) / ALTO(col 8-16)
- * - 5-6행: TENOR(col 1-7) / BASS(col 5-13)
+ * 48개 예배 데이터 분석 (2025-02-10 ~ 2026-01-14, 3958개 좌석)
+ * - 1-3행: SOPRANO(col 1-10) / ALTO(col 7-17)
+ * - 4-6행: TENOR(col 1-7) / BASS(col 6-14)
  *
- * 참고: 15열 기준으로 정의됨. 다른 그리드 크기에서는 비율 조정 필요
+ * 참고: 16열 기준으로 정의됨. 다른 그리드 크기에서는 비율 조정 필요
+ *
+ * 변경 이력:
+ * - 2026-01-14(v4): 전체 OCR 오류 수정 후 최종 재학습
+ *   - 중복 멤버 8건 수정 (삭제/이름 수정)
+ *   - 2025-07-27 OCR 재생성
+ *   - SOPRANO Row 4 max 축소 (9→5)
+ *   - TENOR Row 5-6 max 축소 (8→7)
+ *   - BASS Row 6 max 축소 (13→12)
  */
 const DEFAULT_COL_RANGES: Record<Part, { colRangeByRow: Record<number, ColRange>; avgCol: number }> = {
     SOPRANO: {
         colRangeByRow: {
-            1: { min: 1, max: 9, avg: 4.5 },
-            2: { min: 1, max: 10, avg: 4.8 },
-            3: { min: 1, max: 10, avg: 5.0 },
-            4: { min: 1, max: 8, avg: 4.0 }, // 오버플로우
-            5: { min: 1, max: 6, avg: 3.5 }, // 오버플로우
-            6: { min: 1, max: 5, avg: 3.0 }, // 오버플로우
+            1: { min: 1, max: 9, avg: 4.51 },
+            2: { min: 1, max: 9, avg: 4.74 },
+            3: { min: 1, max: 10, avg: 5.08 },
+            4: { min: 1, max: 5, avg: 2.38 },  // 오버플로우 (좌측 집중)
+            5: { min: 1, max: 4, avg: 1.88 },  // 오버플로우 (좌측 집중)
+            6: { min: 1, max: 2, avg: 1.5 },   // 오버플로우 (극좌측만)
         },
-        avgCol: 4.6,
+        avgCol: 4.25,
     },
     ALTO: {
         colRangeByRow: {
-            1: { min: 6, max: 16, avg: 11.5 },
-            2: { min: 6, max: 18, avg: 12.0 },
-            3: { min: 8, max: 21, avg: 12.5 },
-            4: { min: 8, max: 21, avg: 12.0 }, // 오버플로우
+            1: { min: 7, max: 16, avg: 11.8 },
+            2: { min: 8, max: 16, avg: 12.21 },
+            3: { min: 8, max: 17, avg: 12.67 },
+            4: { min: 11, max: 16, avg: 13.7 }, // 오버플로우
         },
-        avgCol: 12.1,
+        avgCol: 12.39,
     },
     TENOR: {
         colRangeByRow: {
-            4: { min: 1, max: 10, avg: 4.0 },
-            5: { min: 1, max: 10, avg: 4.2 },
-            6: { min: 1, max: 7, avg: 3.8 },
+            4: { min: 3, max: 8, avg: 5.96 },
+            5: { min: 1, max: 7, avg: 5.04 },
+            6: { min: 1, max: 7, avg: 3.59 },
         },
-        avgCol: 4.4,
+        avgCol: 4.7,
     },
     BASS: {
         colRangeByRow: {
-            4: { min: 6, max: 20, avg: 10.5 },
-            5: { min: 5, max: 17, avg: 10.0 },
-            6: { min: 5, max: 15, avg: 9.5 },
+            4: { min: 6, max: 14, avg: 10.19 },
+            5: { min: 6, max: 14, avg: 10.07 },
+            6: { min: 6, max: 12, avg: 8.91 },
         },
-        avgCol: 10.0,
+        avgCol: 9.72,
     },
     SPECIAL: {
         colRangeByRow: {}, // 제한 없음

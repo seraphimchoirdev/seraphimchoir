@@ -5,12 +5,12 @@
     "service": "2부예배",
     "anthem": "나의 갈 길 다가도록",
     "offering_hymn_leader": "이원섭",
-    "total_members": 79,
+    "total_members": 78,
     "breakdown": {
       "소프라노": 30,
       "알토": 20,
       "테너": 13,
-      "베이스": 16
+      "베이스": 15
     }
   },
   "grid_layout": {
@@ -20,7 +20,7 @@
       15,
       13,
       14,
-      13,
+      12,
       10
     ],
     "zigzag_pattern": "even"
@@ -217,16 +217,6 @@
       "col": 9
     },
     {
-      "member_id": "c95491d5-d146-4d3f-926d-a188949f560e",
-      "member_name": "박재용",
-      "part": "BASS",
-      "height": null,
-      "experience_years": 0,
-      "is_part_leader": false,
-      "row": 5,
-      "col": 10
-    },
-    {
       "member_id": "3b9a3c3c-9653-4374-a400-626187d06b05",
       "member_name": "문승현",
       "part": "BASS",
@@ -234,7 +224,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 5,
-      "col": 11
+      "col": 10
     },
     {
       "member_id": "57a7a1d4-15be-442f-9e43-94cf3f4cf499",
@@ -244,7 +234,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 5,
-      "col": 12
+      "col": 11
     },
     {
       "member_id": "d616cd1e-5361-43cd-8ed3-eb84624ace63",
@@ -254,7 +244,7 @@
       "experience_years": 0,
       "is_part_leader": false,
       "row": 5,
-      "col": 13
+      "col": 12
     },
     {
       "member_id": "23c3fc63-610a-427c-9add-6ed06b443bd2",
