@@ -7,9 +7,9 @@
     "offering_hymn_leader": "두나미스",
     "total_members": 82,
     "breakdown": {
-      "소프라노": 33,
+      "소프라노": 32,
       "알토": 23,
-      "테너": 12,
+      "테너": 13,
       "베이스": 14
     }
   },
@@ -139,7 +139,7 @@
     {
       "member_id": "11ea7452-c905-4aed-be61-827adca539c2",
       "member_name": "김재원",
-      "part": "SOPRANO",
+      "part": "TENOR",
       "height": null,
       "experience_years": 0,
       "is_part_leader": false,
