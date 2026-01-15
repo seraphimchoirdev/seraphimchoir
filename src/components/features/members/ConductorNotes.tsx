@@ -28,12 +28,17 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // 오직 CONDUCTOR만 접근 가능
-  // userRole이 제공되지 않으면 API에서 권한 확인 (403 응답)
-  const shouldRender = !userRole || userRole === 'CONDUCTOR';
+  // 오직 CONDUCTOR만 접근 가능 (userRole이 없으면 렌더링하지 않음)
+  const shouldRender = userRole === 'CONDUCTOR';
 
-  // 메모 로드
+  // 메모 로드 (CONDUCTOR만 실행)
   useEffect(() => {
+    // CONDUCTOR가 아니면 API 호출하지 않음
+    if (userRole !== 'CONDUCTOR') {
+      setIsLoading(false);
+      return;
+    }
+
     async function loadNotes() {
       try {
         setIsLoading(true);
@@ -61,7 +66,7 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
     }
 
     loadNotes();
-  }, [memberId]);
+  }, [memberId, userRole]);
 
   // 메모 저장
   const handleSave = async () => {
