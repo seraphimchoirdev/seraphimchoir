@@ -4,7 +4,7 @@ import { encryptConductorNotes, decryptConductorNotes } from '@/lib/crypto';
 
 /**
  * 지휘자 메모 조회 API
- * CONDUCTOR 권한만 접근 가능
+ * 오직 CONDUCTOR만 접근 가능 (ADMIN 포함 다른 역할 접근 불가)
  */
 export async function GET(
   request: NextRequest,
@@ -27,7 +27,7 @@ export async function GET(
       );
     }
 
-    // 사용자 권한 확인 (CONDUCTOR 또는 ADMIN만 가능)
+    // 사용자 권한 확인 (오직 CONDUCTOR만 가능)
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('role')
@@ -41,9 +41,9 @@ export async function GET(
       );
     }
 
-    if (profile.role !== 'CONDUCTOR' && profile.role !== 'ADMIN') {
+    if (profile.role !== 'CONDUCTOR') {
       return NextResponse.json(
-        { error: '지휘자 권한이 필요합니다.' },
+        { error: '지휘자만 접근할 수 있습니다.' },
         { status: 403 }
       );
     }
@@ -106,7 +106,7 @@ export async function GET(
 
 /**
  * 지휘자 메모 업데이트 API
- * CONDUCTOR 권한만 접근 가능
+ * 오직 CONDUCTOR만 접근 가능 (ADMIN 포함 다른 역할 접근 불가)
  */
 export async function PUT(
   request: NextRequest,
@@ -129,7 +129,7 @@ export async function PUT(
       );
     }
 
-    // 사용자 권한 확인 (CONDUCTOR 또는 ADMIN만 가능)
+    // 사용자 권한 확인 (오직 CONDUCTOR만 가능)
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('role')
@@ -143,9 +143,9 @@ export async function PUT(
       );
     }
 
-    if (profile.role !== 'CONDUCTOR' && profile.role !== 'ADMIN') {
+    if (profile.role !== 'CONDUCTOR') {
       return NextResponse.json(
-        { error: '지휘자 권한이 필요합니다.' },
+        { error: '지휘자만 접근할 수 있습니다.' },
         { status: 403 }
       );
     }
@@ -248,7 +248,7 @@ export async function PUT(
 
 /**
  * 지휘자 메모 삭제 API
- * CONDUCTOR 권한만 접근 가능
+ * 오직 CONDUCTOR만 접근 가능 (ADMIN 포함 다른 역할 접근 불가)
  */
 export async function DELETE(
   request: NextRequest,
@@ -271,7 +271,7 @@ export async function DELETE(
       );
     }
 
-    // 사용자 권한 확인 (CONDUCTOR 또는 ADMIN만 가능)
+    // 사용자 권한 확인 (오직 CONDUCTOR만 가능)
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('role')
@@ -285,9 +285,9 @@ export async function DELETE(
       );
     }
 
-    if (profile.role !== 'CONDUCTOR' && profile.role !== 'ADMIN') {
+    if (profile.role !== 'CONDUCTOR') {
       return NextResponse.json(
-        { error: '지휘자 권한이 필요합니다.' },
+        { error: '지휘자만 접근할 수 있습니다.' },
         { status: 403 }
       );
     }

@@ -54,8 +54,11 @@
 
 | 권한 | ADMIN | CONDUCTOR | MANAGER | STAFF | PART_LEADER | MEMBER |
 |------|:-----:|:---------:|:-------:|:-----:|:-----------:|:------:|
-| 대원 추가/수정/삭제 (`canManageMembers`) | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| 대원 추가/수정 (`canManageMembers`) | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| 대원 삭제 | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | 대원 목록 조회 (`canViewMembers`) | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+
+> PART_LEADER는 대원을 **등록** 및 **수정**할 수 있지만, **삭제**는 MANAGER 이상만 가능합니다.
 
 ### 출석 관리
 
@@ -90,7 +93,9 @@
 
 | 권한 | ADMIN | CONDUCTOR | MANAGER | STAFF | PART_LEADER | MEMBER |
 |------|:-----:|:---------:|:-------:|:-----:|:-----------:|:------:|
-| 지휘자 메모 열람 (`canViewConductorNotes`) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| 지휘자 메모 열람 (`canViewConductorNotes`) | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+
+> **지휘자 메모 보안**: 지휘자 메모는 AES-256-GCM으로 암호화되어 저장되며, **오직 CONDUCTOR만** API 접근이 가능합니다. ADMIN을 포함한 다른 역할은 DB에서 직접 확인하거나 복호화할 수 없습니다.
 
 ---
 
@@ -102,13 +107,14 @@
 |------|-----|---------------|
 | 대시보드 | `/dashboard` | 모든 인증 사용자 |
 | 관리자 | `/admin` | ADMIN |
-| 찬양대원 관리 | `/members` | ADMIN, CONDUCTOR, MANAGER |
+| 찬양대원 관리 | `/members` | ADMIN, CONDUCTOR, MANAGER, PART_LEADER |
 | 출석 관리 | `/attendances` | ADMIN, CONDUCTOR, MANAGER, PART_LEADER |
 | 자리배치 | `/arrangements` | 모든 역할 |
 | 문서 아카이브 | `/documents` | ADMIN, CONDUCTOR, MANAGER, STAFF |
 | 내 출석 | `/my-attendance` | 대원 연결된 사용자 |
 | 통계 | `/statistics` | ADMIN, CONDUCTOR, MANAGER |
 | 예배/행사 관리 | `/service-schedules` | ADMIN, CONDUCTOR, MANAGER |
+| 지휘자 메모 | `/members/${memberId}/conductor-notes` | CONDUCTOR |
 
 ### 관리자 페이지 (`/admin/*`)
 
@@ -140,7 +146,7 @@ Supabase Row Level Security(RLS) 정책입니다. (`supabase/migrations/20260115
 
 | 테이블 | SELECT | INSERT | UPDATE | DELETE |
 |--------|--------|--------|--------|--------|
-| `members` | 모든 인증 사용자 | ADMIN, CONDUCTOR, MANAGER | ADMIN, CONDUCTOR, MANAGER | ADMIN, CONDUCTOR, MANAGER |
+| `members` | 모든 인증 사용자 | ADMIN~PART_LEADER | ADMIN~PART_LEADER | ADMIN, CONDUCTOR, MANAGER |
 | `attendances` | 모든 인증 사용자 | MANAGER+ / PART_LEADER(파트) / MEMBER(본인) | ← | ← |
 | `arrangements` | 모든 인증 사용자 | ADMIN, CONDUCTOR | ADMIN, CONDUCTOR / MANAGER(SHARED만) | ADMIN, CONDUCTOR |
 | `seats` | 모든 인증 사용자 | ADMIN, CONDUCTOR / MANAGER(SHARED만) | ← | ← |
@@ -329,6 +335,7 @@ function MemberActions({ memberId }: { memberId: string }) {
 | `src/app/admin/layout.tsx` | 관리자 페이지 레이아웃 (ADMIN 전용) |
 | `supabase/migrations/20260115000000_update_roles_and_titles.sql` | 역할/직책 스키마 |
 | `supabase/migrations/20260115100000_update_rls_policies_for_new_roles.sql` | RLS 정책 |
+| `supabase/migrations/20260115050616_add_part_leader_to_members_policy.sql` | PART_LEADER 대원 관리 권한 |
 
 ---
 
@@ -340,3 +347,5 @@ function MemberActions({ memberId }: { memberId: string }) {
 | 2026-01-15 | 직책(title) 필드 추가 |
 | 2026-01-15 | RLS 정책 전면 업데이트 |
 | 2026-01-15 | usePermission 훅 추가 |
+| 2026-01-15 | 지휘자 메모 - CONDUCTOR 전용으로 변경 (ADMIN 접근 제거) |
+| 2026-01-15 | 찬양대원 관리 - PART_LEADER 등록/수정 권한 추가 (삭제는 불가) |

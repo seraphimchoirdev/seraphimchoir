@@ -64,8 +64,8 @@ export default function Navigation() {
     // 관리자 페이지 (ADMIN만)
     { href: '/admin', label: '관리자', show: hasRole(['ADMIN']) },
 
-    // 찬양대원 관리 (ADMIN, CONDUCTOR, MANAGER만)
-    { href: '/members', label: '찬양대원 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']) },
+    // 찬양대원 관리 (ADMIN, CONDUCTOR, MANAGER, PART_LEADER)
+    { href: '/members', label: '찬양대원 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
 
     // 출석 관리 (ADMIN, CONDUCTOR, MANAGER, PART_LEADER)
     { href: '/attendances', label: '출석 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },

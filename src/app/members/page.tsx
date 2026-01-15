@@ -10,8 +10,8 @@ import { Spinner } from '@/components/ui/spinner';
 export default function MembersPage() {
   const { hasRole, isLoading: authLoading } = useAuth();
 
-  // 대원 관리 권한: ADMIN, CONDUCTOR, MANAGER만
-  const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
+  // 대원 관리 권한: ADMIN, CONDUCTOR, MANAGER, PART_LEADER
+  const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']);
 
   if (authLoading) {
     return (

@@ -154,7 +154,7 @@ export const RolePermissions: Record<UserRole, RolePermissionSet> = {
     canViewArrangements: true,
     canManageDocuments: true,
     canViewDocuments: true,
-    canViewConductorNotes: true,
+    canViewConductorNotes: false,  // 지휘자 메모는 CONDUCTOR만 접근 가능
   },
   CONDUCTOR: {
     canManageUsers: false,
@@ -218,7 +218,7 @@ export const RolePermissions: Record<UserRole, RolePermissionSet> = {
     canManageRoles: false,
     canApproveLinks: false,
     canAccessAdmin: false,
-    canManageMembers: false,
+    canManageMembers: true,  // 대원 등록/수정 가능 (삭제는 별도 권한 필요)
     canViewMembers: true,
     canManageAttendance: true,
     canManageOwnAttendance: true,

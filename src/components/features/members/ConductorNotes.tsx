@@ -11,12 +11,12 @@ interface ConductorNotesProps {
 
 /**
  * 지휘자 전용 메모 컴포넌트
- * CONDUCTOR 권한을 가진 사용자만 볼 수 있는 암호화된 메모 입력/편집 폼
+ * 오직 CONDUCTOR만 볼 수 있는 암호화된 메모 입력/편집 폼
  *
  * 특징:
- * - CONDUCTOR 또는 ADMIN만 접근 가능
+ * - 오직 CONDUCTOR만 접근 가능 (ADMIN 포함 다른 역할 접근 불가)
  * - 메모는 서버에서 AES-256-GCM 암호화되어 저장됨
- * - ADMIN도 DB에서 직접 확인 불가능
+ * - ADMIN도 API 및 DB에서 직접 확인 불가능
  */
 export function ConductorNotes({ memberId, memberName, userRole }: ConductorNotesProps) {
   const router = useRouter();
@@ -28,9 +28,9 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // CONDUCTOR 또는 ADMIN 권한 확인
+  // 오직 CONDUCTOR만 접근 가능
   // userRole이 제공되지 않으면 API에서 권한 확인 (403 응답)
-  const shouldRender = !userRole || userRole === 'CONDUCTOR' || userRole === 'ADMIN';
+  const shouldRender = !userRole || userRole === 'CONDUCTOR';
 
   // 메모 로드
   useEffect(() => {
