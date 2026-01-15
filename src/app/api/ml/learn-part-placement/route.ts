@@ -368,8 +368,9 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error('[learn-part-placement] 예외 발생:', error);
+        const isDev = process.env.NODE_ENV === 'development';
         return NextResponse.json(
-            { error: '학습 중 오류 발생', details: String(error) },
+            { error: '학습 중 오류 발생', ...(isDev && { details: String(error) }) },
             { status: 500 }
         );
     }
@@ -386,27 +387,29 @@ export async function GET(request: NextRequest) {
         const serviceType = searchParams.get('serviceType');
         const memberCountRange = searchParams.get('memberCountRange');
 
-        // Note: 마이그레이션 적용 후 타입 재생성 필요 (npx supabase gen types typescript)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let query = (supabase as any)
-            .from('learned_part_placement_rules')
+        // Note: learned_part_placement_rules 테이블 타입이 database.types.ts에 없으므로
+        // 타입 안전성을 위해 결과에만 타입을 적용
+        type QueryResult = { data: LearnedPartPlacementRuleRow[] | null; error: { message: string } | null };
+
+        // 쿼리 실행 (타입 미정의 테이블이므로 any 사용 후 결과에 타입 적용)
+        const result = await supabase
+            .from('learned_part_placement_rules' as unknown as 'members')
             .select('*')
             .order('service_type')
             .order('member_count_range')
-            .order('part');
+            .order('part')
+            .match({
+                ...(serviceType && { service_type: serviceType }),
+                ...(memberCountRange && { member_count_range: memberCountRange }),
+            });
 
-        if (serviceType) {
-            query = query.eq('service_type', serviceType);
-        }
-        if (memberCountRange) {
-            query = query.eq('member_count_range', memberCountRange);
-        }
-
-        const { data, error } = await query as { data: LearnedPartPlacementRuleRow[] | null; error: { message: string } | null };
+        const { data, error } = result as unknown as QueryResult;
 
         if (error) {
+            console.error('Learn part placement query error:', error);
+            const isDev = process.env.NODE_ENV === 'development';
             return NextResponse.json(
-                { error: '규칙 조회 실패', details: error.message },
+                { error: '규칙 조회 실패', ...(isDev && { details: error.message }) },
                 { status: 500 }
             );
         }
@@ -446,8 +449,9 @@ export async function GET(request: NextRequest) {
 
     } catch (error) {
         console.error('[learn-part-placement] GET 오류:', error);
+        const isDev = process.env.NODE_ENV === 'development';
         return NextResponse.json(
-            { error: '조회 중 오류 발생', details: String(error) },
+            { error: '조회 중 오류 발생', ...(isDev && { details: String(error) }) },
             { status: 500 }
         );
     }

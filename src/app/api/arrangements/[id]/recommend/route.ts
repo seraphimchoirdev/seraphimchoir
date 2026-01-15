@@ -13,6 +13,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { z } from 'zod';
 import {
   generateAISeatingArrangement,
   loadLearnedPreferences,
@@ -22,6 +23,25 @@ import {
   type DBMemberSeatStatistics,
   type PreferredSeat,
 } from '@/lib/ai-seat-algorithm';
+
+// ============================================================================
+// Input Validation Schemas (Zod)
+// ============================================================================
+
+/** UUID 형식 검증 */
+const uuidSchema = z.string().uuid('Invalid arrangement ID format');
+
+/** 그리드 레이아웃 요청 스키마 */
+const gridLayoutSchema = z.object({
+  rows: z.number().int().min(1, '최소 1행 이상').max(10, '최대 10행 이하'),
+  rowCapacities: z.array(z.number().int().min(1).max(20)).min(1).max(10),
+  zigzagPattern: z.enum(['none', 'even', 'odd']),
+}).optional();
+
+/** 추천 요청 본문 스키마 */
+const recommendRequestSchema = z.object({
+  gridLayout: gridLayoutSchema,
+});
 import {
   isMLServiceEnabled,
   isMLServiceReady,
@@ -83,13 +103,8 @@ async function getPreferencesFromDB(
   }
 }
 
-interface RecommendRequestBody {
-  gridLayout?: {
-    rows: number;
-    rowCapacities: number[];
-    zigzagPattern: 'none' | 'even' | 'odd';
-  };
-}
+/** Zod 스키마에서 추론된 타입 */
+type RecommendRequestBody = z.infer<typeof recommendRequestSchema>;
 
 export async function POST(
   request: NextRequest,
@@ -98,12 +113,37 @@ export async function POST(
   try {
     const resolvedParams = await params;
     const arrangementId = resolvedParams.id;
-    const body: RecommendRequestBody = await request.json();
+
+    // 1. 입력값 검증 (arrangement ID)
+    const idValidation = uuidSchema.safeParse(arrangementId);
+    if (!idValidation.success) {
+      return NextResponse.json(
+        { error: 'Invalid request', details: idValidation.error.issues[0]?.message || 'Invalid ID' },
+        { status: 400 }
+      );
+    }
+
+    // 2. 요청 본문 검증
+    let body: RecommendRequestBody;
+    try {
+      const rawBody = await request.json();
+      const bodyValidation = recommendRequestSchema.safeParse(rawBody);
+      if (!bodyValidation.success) {
+        return NextResponse.json(
+          { error: 'Invalid request body', details: bodyValidation.error.issues.map(e => e.message).join(', ') },
+          { status: 400 }
+        );
+      }
+      body = bodyValidation.data;
+    } catch {
+      // JSON 파싱 실패 시 빈 객체로 처리 (gridLayout은 optional)
+      body = {};
+    }
 
     // Supabase 클라이언트 생성
     const supabase = await createClient();
 
-    // 1. 현재 사용자 확인
+    // 3. 현재 사용자 확인
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
@@ -112,7 +152,7 @@ export async function POST(
       );
     }
 
-    // 2. 배치표 정보 조회 (날짜 정보 필요)
+    // 4. 배치표 정보 조회 (날짜 정보 필요)
     const { data: arrangement, error: arrError } = await supabase
       .from('arrangements')
       .select('*')
@@ -122,12 +162,12 @@ export async function POST(
     if (arrError || !arrangement) {
       console.error('Arrangement query error:', arrError);
       return NextResponse.json(
-        { error: 'Arrangement not found', detail: arrError?.message },
+        { error: 'Arrangement not found' },
         { status: 404 }
       );
     }
 
-    // 3. 정대원 + 출석 데이터 + 파트장 정보 병렬 조회
+    // 5. 정대원 + 출석 데이터 + 파트장 정보 병렬 조회
     // 출석 레코드가 없는 대원도 기본값 true(등단 가능)로 처리해야 함
     console.log('Querying members and attendances for date:', arrangement.date);
 
@@ -389,9 +429,13 @@ export async function POST(
 
   } catch (error) {
     console.error('Recommendation API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+
+    // 프로덕션 환경에서는 내부 에러 메시지를 노출하지 않음
+    const isDev = process.env.NODE_ENV === 'development';
+    const errorResponse = isDev && error instanceof Error
+      ? { error: 'Internal server error', message: error.message }
+      : { error: 'Internal server error' };
+
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }
