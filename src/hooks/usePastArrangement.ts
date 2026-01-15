@@ -2,6 +2,7 @@
  * 과거 자리배치 불러오기 관련 훅
  */
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { STALE_TIME } from '@/lib/constants';
 import type { Database } from '@/types/database.types';
 
 type Part = Database['public']['Enums']['part'];
@@ -204,7 +205,7 @@ export function usePastArrangements(params: PastArrangementsParams = {}) {
 
             return result;
         },
-        staleTime: 1000 * 60 * 5 // 5분
+        staleTime: STALE_TIME.LONG, // 5분
     });
 }
 

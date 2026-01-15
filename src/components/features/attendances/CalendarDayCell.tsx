@@ -1,9 +1,9 @@
 'use client';
 
+import { memo, useState } from 'react';
 import { format } from 'date-fns/format';
 import { isToday as isTodayFn } from 'date-fns/isToday';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
 import { Music } from 'lucide-react';
 
 interface CalendarDayCellProps {
@@ -21,7 +21,7 @@ interface CalendarDayCellProps {
   serviceType?: string;
 }
 
-export default function CalendarDayCell({
+function CalendarDayCell({
   date,
   attendanceStats,
   isCurrentMonth,
@@ -203,3 +203,5 @@ export default function CalendarDayCell({
     </div>
   );
 }
+
+export default memo(CalendarDayCell);

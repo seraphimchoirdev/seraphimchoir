@@ -1,6 +1,7 @@
 
 'use client';
 
+import { memo } from 'react';
 import { CheckCircle2, GripVertical } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useArrangementStore } from '@/store/arrangement-store';
@@ -16,7 +17,7 @@ interface ClickableMemberProps {
     isPlaced?: boolean;
 }
 
-export default function ClickableMember({ memberId, name, part, isPlaced }: ClickableMemberProps) {
+function ClickableMember({ memberId, name, part, isPlaced }: ClickableMemberProps) {
     const { selectedMemberId, selectedSource, selectMemberFromSidebar } = useArrangementStore();
 
     // Check if this member is currently selected
@@ -72,3 +73,5 @@ export default function ClickableMember({ memberId, name, part, isPlaced }: Clic
         </button>
     );
 }
+
+export default memo(ClickableMember);

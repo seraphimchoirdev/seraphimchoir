@@ -1,5 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE_TIME } from '@/lib/constants';
 import type { Database } from '@/types/database.types';
 import type { PaginatedResponse } from '@/types/api';
 
@@ -68,7 +69,7 @@ export function useArrangements(filters?: ArrangementFilters) {
 
             return response.json() as Promise<ArrangementsResponse>;
         },
-        staleTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: STALE_TIME.LONG, // 5분 // 5 minutes
     });
 }
 
@@ -91,7 +92,7 @@ export function useArrangement(id: string | undefined) {
             return response.json() as Promise<ArrangementWithSeats>;
         },
         enabled: !!id,
-        staleTime: 1000 * 60 * 5,
+        staleTime: STALE_TIME.LONG, // 5분
     });
 }
 

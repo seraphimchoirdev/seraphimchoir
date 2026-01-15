@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { cn, getPartAbbreviation, getPartColor } from '@/lib/utils';
 import { CheckCircle, XCircle, Star } from 'lucide-react';
 import { Part } from '@/types';
@@ -16,7 +17,7 @@ interface MemberRowProps {
   onToggle: () => void;
 }
 
-export default function MemberRow({ member, isAttending, isChanged, onToggle }: MemberRowProps) {
+function MemberRow({ member, isAttending, isChanged, onToggle }: MemberRowProps) {
   return (
     <button
       type="button"
@@ -64,3 +65,5 @@ export default function MemberRow({ member, isAttending, isChanged, onToggle }: 
     </button>
   );
 }
+
+export default memo(MemberRow);

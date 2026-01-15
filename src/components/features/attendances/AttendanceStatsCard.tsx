@@ -5,6 +5,7 @@
 
 'use client';
 
+import { memo } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
 interface AttendanceStatsCardProps {
@@ -49,7 +50,7 @@ interface AttendanceStatsCardProps {
  * />
  * ```
  */
-export default function AttendanceStatsCard({
+function AttendanceStatsCard({
   title,
   value,
   unit = '',
@@ -142,3 +143,5 @@ export default function AttendanceStatsCard({
     </div>
   );
 }
+
+export default memo(AttendanceStatsCard);

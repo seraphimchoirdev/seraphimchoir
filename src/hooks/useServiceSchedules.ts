@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE_TIME } from '@/lib/constants';
 import type { Database } from '@/types/database.types';
 
 type ServiceSchedule = Database['public']['Tables']['service_schedules']['Row'];
@@ -41,7 +42,7 @@ export function useServiceSchedules(filters?: ServiceScheduleFilters) {
 
       return response.json() as Promise<ServiceSchedulesResponse>;
     },
-    staleTime: 1000 * 60 * 10, // 10분 (예배 일정은 자주 변경되지 않음)
+    staleTime: STALE_TIME.EXTRA_LONG, // 10분 // 10분 (예배 일정은 자주 변경되지 않음)
   });
 }
 
@@ -65,7 +66,7 @@ export function useServiceScheduleByDate(date: string | undefined) {
       return result.data[0] || null; // 단일 날짜이므로 첫 번째 결과
     },
     enabled: !!date,
-    staleTime: 1000 * 60 * 10,
+    staleTime: STALE_TIME.EXTRA_LONG, // 10분
   });
 }
 
@@ -88,7 +89,7 @@ export function useServiceSchedule(id: string | undefined) {
       return response.json() as Promise<ServiceSchedule>;
     },
     enabled: !!id,
-    staleTime: 1000 * 60 * 10,
+    staleTime: STALE_TIME.EXTRA_LONG, // 10분
   });
 }
 

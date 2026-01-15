@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { Check, X, Star } from 'lucide-react';
 import { Part } from '@/types';
@@ -22,7 +23,7 @@ interface MemberChipProps {
  * - 한 줄에 여러 명을 배치할 수 있는 작은 크기
  * - 터치/클릭으로 출석 상태 토글
  */
-export default function MemberChip({
+function MemberChip({
   member,
   isAttending,
   isChanged,
@@ -97,3 +98,5 @@ export default function MemberChip({
     </button>
   );
 }
+
+export default memo(MemberChip);

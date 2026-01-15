@@ -4,6 +4,7 @@
 'use client';
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { STALE_TIME } from '@/lib/constants';
 import type {
   MemberAttendanceStats,
   MemberAttendanceStatsResponse,
@@ -74,6 +75,6 @@ export function useMemberAttendanceStats(
       return response.json();
     },
     enabled: !!startDate && !!endDate,
-    staleTime: 1000 * 60 * 5, // 5분 동안 캐시 유지
+    staleTime: STALE_TIME.LONG, // 5분
   });
 }

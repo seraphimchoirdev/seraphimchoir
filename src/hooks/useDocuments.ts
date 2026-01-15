@@ -11,6 +11,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { createLogger } from '@/lib/logger';
+import { STALE_TIME } from '@/lib/constants';
 
 const logger = createLogger({ prefix: 'useDocuments' });
 
@@ -269,7 +270,7 @@ export function useDocumentDownloadUrl(filePath: string) {
       return data.signedUrl;
     },
     enabled: !!filePath,
-    staleTime: 30 * 60 * 1000, // 30분
+    staleTime: STALE_TIME.DOCUMENTS, // 30분
   });
 }
 

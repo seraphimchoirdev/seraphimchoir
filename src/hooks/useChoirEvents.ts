@@ -9,6 +9,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
+import { STALE_TIME } from '@/lib/constants';
 import type { Database } from '@/types/database.types';
 
 type ChoirEvent = Database['public']['Tables']['choir_events']['Row'];
@@ -99,7 +100,7 @@ export function useChoirEvents(filters?: ChoirEventFilters) {
         meta: { total: count },
       };
     },
-    staleTime: 1000 * 60 * 10, // 10분
+    staleTime: STALE_TIME.EXTRA_LONG, // 10분
   });
 }
 
@@ -123,7 +124,7 @@ export function useChoirEvent(id: string | undefined) {
       return data;
     },
     enabled: !!id,
-    staleTime: 1000 * 60 * 10,
+    staleTime: STALE_TIME.EXTRA_LONG, // 10분
   });
 }
 

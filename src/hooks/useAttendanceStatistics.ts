@@ -4,6 +4,7 @@
  */
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { STALE_TIME } from '@/lib/constants';
 import type {
   AttendanceStatistics,
   PartAttendanceStatistics,
@@ -52,7 +53,7 @@ export function useAttendanceStatistics(
       return response.json() as Promise<AttendanceStatistics>;
     },
     enabled: !!startDate && !!endDate,
-    staleTime: 1000 * 60 * 5, // 5분 동안 캐시 유지
+    staleTime: STALE_TIME.LONG, // 5분
   });
 }
 
@@ -100,7 +101,7 @@ export function usePartAttendanceStatistics(
       return response.json() as Promise<PartAttendanceStatistics[]>;
     },
     enabled: !!startDate && !!endDate,
-    staleTime: 1000 * 60 * 5, // 5분 동안 캐시 유지
+    staleTime: STALE_TIME.LONG, // 5분
   });
 }
 
@@ -154,7 +155,7 @@ export function useMemberAttendanceHistory(
       return response.json() as Promise<MemberAttendanceHistory[]>;
     },
     enabled: !!memberId,
-    staleTime: 1000 * 60 * 5, // 5분 동안 캐시 유지
+    staleTime: STALE_TIME.LONG, // 5분
   });
 }
 
@@ -203,6 +204,6 @@ export function useAttendanceSummaryByDate(
       return response.json() as Promise<AttendanceSummaryByDate[]>;
     },
     enabled: !!startDate && !!endDate,
-    staleTime: 1000 * 60 * 5, // 5분 동안 캐시 유지
+    staleTime: STALE_TIME.LONG, // 5분
   });
 }

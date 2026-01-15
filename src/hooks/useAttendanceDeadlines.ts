@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE_TIME } from '@/lib/constants';
 import type { Tables } from '@/types/database.types';
 
 type Part = 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS' | 'SPECIAL';
@@ -38,7 +39,7 @@ export function useAttendanceDeadlines(date: string | undefined) {
       return response.json();
     },
     enabled: !!date,
-    staleTime: 1000 * 30, // 30초
+    staleTime: STALE_TIME.SHORT, // 30초
   });
 }
 
