@@ -10,6 +10,9 @@
 
 import { createAdminClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'LearnPartPlacement' });
 import {
     learnAllPartPlacementRules,
     type SeatDataForLearning,
@@ -145,7 +148,7 @@ function loadDataFromMLOutputFiles(): {
     }
 
     const files = fs.readdirSync(mlOutputDir).filter(f => f.endsWith('.json'));
-    console.log(`[learn-part-placement] ml_output에서 ${files.length}개 파일 발견`);
+    logger.debug(`[learn-part-placement] ml_output에서 ${files.length}개 파일 발견`);
 
     const allSeats: SeatDataForLearning[] = [];
     const allArrangements: ArrangementMetadata[] = [];
@@ -195,7 +198,7 @@ export async function POST(request: NextRequest) {
     const source = searchParams.get('source') || 'db';
 
     try {
-        console.log(`[learn-part-placement] 파트 배치 규칙 학습 시작... (source: ${source})`);
+        logger.debug(`[learn-part-placement] 파트 배치 규칙 학습 시작... (source: ${source})`);
 
         let seats: SeatDataForLearning[];
         let arrangements: ArrangementMetadata[];
@@ -206,7 +209,7 @@ export async function POST(request: NextRequest) {
             seats = fileData.seats;
             arrangements = fileData.arrangements;
 
-            console.log(`[learn-part-placement] ${arrangements.length}개 배치, ${seats.length}개 좌석 데이터 (파일)`);
+            logger.debug(`[learn-part-placement] ${arrangements.length}개 배치, ${seats.length}개 좌석 데이터 (파일)`);
         } else {
             // ===== DB에서 로드 (기존 방식) =====
             // 1. 모든 배치 메타데이터 조회 (ml_arrangement_history)
@@ -215,7 +218,7 @@ export async function POST(request: NextRequest) {
                 .select('arrangement_id, service_type, total_members, grid_layout');
 
             if (historyError) {
-                console.error('[learn-part-placement] ML 히스토리 조회 오류:', historyError);
+                logger.error('[learn-part-placement] ML 히스토리 조회 오류:', historyError);
                 return NextResponse.json(
                     { error: 'ML 히스토리 조회 실패', details: historyError.message },
                     { status: 500 }
@@ -229,7 +232,7 @@ export async function POST(request: NextRequest) {
                 );
             }
 
-            console.log(`[learn-part-placement] ${arrangementHistories.length}개 배치 메타데이터 로드 완료`);
+            logger.debug(`[learn-part-placement] ${arrangementHistories.length}개 배치 메타데이터 로드 완료`);
 
             // 2. 배치 ID 목록 추출
             const arrangementIds = arrangementHistories.map(h => h.arrangement_id);
@@ -241,7 +244,7 @@ export async function POST(request: NextRequest) {
                 .in('arrangement_id', arrangementIds);
 
             if (seatsError) {
-                console.error('[learn-part-placement] 좌석 데이터 조회 오류:', seatsError);
+                logger.error('[learn-part-placement] 좌석 데이터 조회 오류:', seatsError);
                 return NextResponse.json(
                     { error: '좌석 데이터 조회 실패', details: seatsError.message },
                     { status: 500 }
@@ -255,7 +258,7 @@ export async function POST(request: NextRequest) {
                 );
             }
 
-            console.log(`[learn-part-placement] ${allSeats.length}개 좌석 데이터 로드 완료`);
+            logger.debug(`[learn-part-placement] ${allSeats.length}개 좌석 데이터 로드 완료`);
 
             // 4. 데이터 변환
             seats = allSeats.map(seat => ({
@@ -299,14 +302,14 @@ export async function POST(request: NextRequest) {
         }
 
         // 5. 학습 알고리즘 실행
-        console.log('[learn-part-placement] 학습 알고리즘 실행 중...');
+        logger.debug('[learn-part-placement] 학습 알고리즘 실행 중...');
         const learningResult = learnAllPartPlacementRules({ seats, arrangements });
 
-        console.log(`[learn-part-placement] 학습 완료:`, learningResult.stats);
+        logger.debug(`[learn-part-placement] 학습 완료:`, learningResult.stats);
 
         // 6. 학습된 규칙 DB에 UPSERT
         if (learningResult.rules.length > 0) {
-            console.log(`[learn-part-placement] ${learningResult.rules.length}개 규칙 DB 저장 중...`);
+            logger.debug(`[learn-part-placement] ${learningResult.rules.length}개 규칙 DB 저장 중...`);
 
             // UPSERT: service_type + member_count_range + part 조합이 unique
             // Note: 마이그레이션 적용 후 타입 재생성 필요 (npx supabase gen types typescript)
@@ -340,11 +343,11 @@ export async function POST(request: NextRequest) {
                     );
 
                 if (upsertError) {
-                    console.error('[learn-part-placement] 규칙 저장 오류:', upsertError, rule);
+                    logger.error('[learn-part-placement] 규칙 저장 오류:', upsertError, rule);
                 }
             }
 
-            console.log('[learn-part-placement] DB 저장 완료');
+            logger.debug('[learn-part-placement] DB 저장 완료');
         }
 
         // 7. 학습 결과 반환
@@ -367,7 +370,7 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error) {
-        console.error('[learn-part-placement] 예외 발생:', error);
+        logger.error('[learn-part-placement] 예외 발생:', error);
         const isDev = process.env.NODE_ENV === 'development';
         return NextResponse.json(
             { error: '학습 중 오류 발생', ...(isDev && { details: String(error) }) },
@@ -406,7 +409,7 @@ export async function GET(request: NextRequest) {
         const { data, error } = result as unknown as QueryResult;
 
         if (error) {
-            console.error('Learn part placement query error:', error);
+            logger.error('Learn part placement query error:', error);
             const isDev = process.env.NODE_ENV === 'development';
             return NextResponse.json(
                 { error: '규칙 조회 실패', ...(isDev && { details: error.message }) },
@@ -448,7 +451,7 @@ export async function GET(request: NextRequest) {
         });
 
     } catch (error) {
-        console.error('[learn-part-placement] GET 오류:', error);
+        logger.error('[learn-part-placement] GET 오류:', error);
         const isDev = process.env.NODE_ENV === 'development';
         return NextResponse.json(
             { error: '조회 중 오류 발생', ...(isDev && { details: String(error) }) },

@@ -12,6 +12,9 @@ import { persist, devtools } from 'zustand/middleware';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import { AUTH_CONFIG } from '@/lib/constants';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AuthStore' });
 
 // UserProfile 타입 정의 (대원 연결 정보 포함)
 export interface UserProfile {
@@ -192,7 +195,7 @@ export const useAuthStore = create<AuthStore>()(
 
               await Promise.race([signOutPromise, timeoutPromise]);
             } catch (e) {
-              console.warn('Supabase signOut ignored error:', e);
+              logger.warn('Supabase signOut ignored error:', e);
             }
 
             // 성공/실패/타임아웃 여부와 관계없이 로컬 상태 초기화
@@ -207,7 +210,7 @@ export const useAuthStore = create<AuthStore>()(
             return { error: null };
           } catch (error) {
             const err = error as Error;
-            console.error('SignOut catch error:', error);
+            logger.error('SignOut catch error:', error);
 
             // 예외 발생 시에도 상태 초기화
             set({
@@ -225,21 +228,21 @@ export const useAuthStore = create<AuthStore>()(
         // 현재 사용자 정보 가져오기
         fetchUser: async () => {
           const supabase = createClient();
-          console.log('[fetchUser] 시작');
+          logger.debug('[fetchUser] 시작');
 
           try {
             set({ isLoading: true, error: null }, false, 'auth/fetchUser/start');
 
-            console.log('[fetchUser] getSession 호출');
+            logger.debug('[fetchUser] getSession 호출');
             const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-            console.log('[fetchUser] getSession 완료:', { hasSession: !!session, sessionError });
+            logger.debug('[fetchUser] getSession 완료:', { hasSession: !!session, sessionError });
 
             if (sessionError) {
               throw sessionError;
             }
 
             if (!session?.user) {
-              console.log('[fetchUser] 세션 없음');
+              logger.debug('[fetchUser] 세션 없음');
               set({
                 user: null,
                 profile: null,
@@ -250,16 +253,16 @@ export const useAuthStore = create<AuthStore>()(
             }
 
             // 프로필 정보 가져오기 (대원 연결 정보 포함)
-            console.log('[fetchUser] 프로필 조회 시작:', session.user.id);
+            logger.debug('[fetchUser] 프로필 조회 시작:', session.user.id);
             const { data: profile, error: profileError } = await supabase
               .from('user_profiles')
               .select('id, email, name, role, linked_member_id, link_status')
               .eq('id', session.user.id)
               .single();
-            console.log('[fetchUser] 프로필 조회 완료:', { profile, profileError });
+            logger.debug('[fetchUser] 프로필 조회 완료:', { profile, profileError });
 
             if (profileError) {
-              console.error('[fetchUser] 프로필 로드 에러:', profileError);
+              logger.error('[fetchUser] 프로필 로드 에러:', profileError);
             }
 
             set({
@@ -268,9 +271,9 @@ export const useAuthStore = create<AuthStore>()(
               isAuthenticated: true,
               isLoading: false
             }, false, 'auth/fetchUser/success');
-            console.log('[fetchUser] 완료');
+            logger.debug('[fetchUser] 완료');
           } catch (error) {
-            console.error('[fetchUser] 예외:', error);
+            logger.error('[fetchUser] 예외:', error);
             set({
               user: null,
               profile: null,

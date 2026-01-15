@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'EventDialog' });
 import {
   Dialog,
   DialogContent,
@@ -309,7 +312,7 @@ export default function EventDialog({
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error(error);
+      logger.error('Event mutation error:', error);
     }
   };
 
@@ -321,7 +324,7 @@ export default function EventDialog({
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error(error);
+      logger.error('Event mutation error:', error);
     }
   };
 

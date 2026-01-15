@@ -15,6 +15,9 @@ import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
 import { useEmergencyUnavailable } from '@/hooks/useEmergencyUnavailable';
 import { DEFAULT_GRID_LAYOUT, GridLayout } from '@/types/grid';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'ArrangementEditorPage' });
 
 import MemberSidebar from '@/components/features/seats/MemberSidebar';
 import SeatsGrid from '@/components/features/seats/SeatsGrid';
@@ -137,10 +140,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                         isRowLeader: seat.is_row_leader || false,
                     }));
 
-                // 필터링된 좌석 수가 원본과 다르면 콘솔에 알림
+                // 필터링된 좌석 수가 원본과 다르면 로그에 알림
                 const filteredCount = arrangement.seats.length - formattedSeats.length;
                 if (filteredCount > 0) {
-                    console.log(`[ArrangementEditor] 등단 불가능 멤버 ${filteredCount}명이 좌석에서 제외됨`);
+                    logger.info(`등단 불가능 멤버 ${filteredCount}명이 좌석에서 제외됨`);
                 }
 
                 setAssignments(formattedSeats);

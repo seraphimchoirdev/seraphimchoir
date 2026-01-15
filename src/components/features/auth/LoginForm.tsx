@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'LoginForm' });
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -43,7 +46,7 @@ export default function LoginForm() {
             }
         } catch (err) {
             setError('로그인 중 오류가 발생했습니다.');
-            console.error(err);
+            logger.error('Login error:', err);
         } finally {
             setIsLoading(false);
         }
@@ -63,7 +66,7 @@ export default function LoginForm() {
             // 성공 시 리다이렉트되므로 로딩 상태 유지
         } catch (err) {
             setError('카카오 로그인 중 오류가 발생했습니다.');
-            console.error(err);
+            logger.error('Login error:', err);
             setIsKakaoLoading(false);
         }
     };

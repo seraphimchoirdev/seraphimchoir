@@ -4,6 +4,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
 import type {
   StageStatisticsResponse,
   StageStatsSummary,
@@ -12,6 +13,8 @@ import type {
   DailyStageStats,
   Part,
 } from '@/types/stage-stats.types';
+
+const logger = createLogger({ prefix: 'ArrangementsStats' });
 
 /** DB에서 반환되는 ml_arrangement_history 레코드 타입 */
 interface MLHistoryRecord {
@@ -79,7 +82,7 @@ export async function GET(request: NextRequest) {
     const { data: records, error } = await query;
 
     if (error) {
-      console.error('ML history query error:', error);
+      logger.error('ML history query error:', error);
       return NextResponse.json(
         { error: `등단 이력 조회 실패: ${error.message}` },
         { status: 500 }
@@ -136,7 +139,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Stage stats error:', error);
+    logger.error('Stage stats error:', error);
     return NextResponse.json({ error: '등단 통계 조회에 실패했습니다' }, { status: 500 });
   }
 }

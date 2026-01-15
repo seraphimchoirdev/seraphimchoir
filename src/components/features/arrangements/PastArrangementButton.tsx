@@ -12,6 +12,9 @@ import { useArrangementStore } from '@/store/arrangement-store';
 import { useMembers } from '@/hooks/useMembers';
 import { useAttendances } from '@/hooks/useAttendances';
 import PastArrangementModal from './PastArrangementModal';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'PastArrangementButton' });
 
 interface PastArrangementButtonProps {
     arrangementId: string;
@@ -88,7 +91,7 @@ export default function PastArrangementButton({
             onApply(result);
             setShowModal(false);
         } catch (error) {
-            console.error('과거 배치 적용 실패:', error);
+            logger.error('과거 배치 적용 실패:', error);
             // 에러는 모달 내에서 처리
         }
     };

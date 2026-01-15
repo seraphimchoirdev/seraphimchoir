@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'ConductorNotes' });
 
 interface ConductorNotesProps {
   memberId: string;
@@ -58,7 +61,7 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
         setNotes(data.notes || '');
         setOriginalNotes(data.notes || '');
       } catch (err) {
-        console.error('메모 로드 오류:', err);
+        logger.error('메모 로드 오류:', err);
         setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
       } finally {
         setIsLoading(false);
@@ -99,7 +102,7 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
       // 페이지 새로고침 (필요시)
       router.refresh();
     } catch (err) {
-      console.error('메모 저장 오류:', err);
+      logger.error('메모 저장 오류:', err);
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
     } finally {
       setIsSaving(false);
@@ -137,7 +140,7 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
 
       router.refresh();
     } catch (err) {
-      console.error('메모 삭제 오류:', err);
+      logger.error('메모 삭제 오류:', err);
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
     } finally {
       setIsSaving(false);

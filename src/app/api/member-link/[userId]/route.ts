@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'MemberLinkAction' });
 
 /**
  * PATCH /api/member-link/[userId]
@@ -123,7 +126,7 @@ export async function PATCH(
         .eq('id', userId);
 
       if (updateError) {
-        console.error('승인 처리 실패:', updateError);
+        logger.error('승인 처리 실패:', updateError);
         return NextResponse.json(
           { error: '승인 처리에 실패했습니다.' },
           { status: 500 }
@@ -147,7 +150,7 @@ export async function PATCH(
         .eq('id', userId);
 
       if (updateError) {
-        console.error('거부 처리 실패:', updateError);
+        logger.error('거부 처리 실패:', updateError);
         return NextResponse.json(
           { error: '거부 처리에 실패했습니다.' },
           { status: 500 }
@@ -160,7 +163,7 @@ export async function PATCH(
       });
     }
   } catch (error) {
-    console.error('Member link action error:', error);
+    logger.error('Member link action error:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'RolesAPI' });
 
 /**
  * PATCH /api/auth/roles
@@ -53,7 +56,7 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (currentProfileError || !currentUserProfile) {
-      console.error('Current user profile fetch error:', currentProfileError);
+      logger.error('Current user profile fetch error:', currentProfileError);
       return NextResponse.json(
         { error: '사용자 프로필을 찾을 수 없습니다.' },
         { status: 404 }
@@ -87,7 +90,7 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (targetUserError || !targetUser) {
-      console.error('Target user fetch error:', targetUserError);
+      logger.error('Target user fetch error:', targetUserError);
       return NextResponse.json(
         { error: '대상 사용자를 찾을 수 없습니다.' },
         { status: 404 }
@@ -118,7 +121,7 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (updateError) {
-      console.error('Role update error:', updateError);
+      logger.error('Role update error:', updateError);
       return NextResponse.json(
         { error: '역할 업데이트 중 오류가 발생했습니다.' },
         { status: 500 }
@@ -137,7 +140,7 @@ export async function PATCH(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Update role exception:', error);
+    logger.error('Update role exception:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

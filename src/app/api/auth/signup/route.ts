@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AuthSignup' });
 
 /**
  * POST /api/auth/signup
@@ -57,7 +60,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      console.error('Signup error:', error);
+      logger.error('Signup error:', error);
 
       // 이미 존재하는 이메일인 경우
       if (error.message.includes('already registered')) {
@@ -84,7 +87,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Signup exception:', error);
+    logger.error('Signup exception:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

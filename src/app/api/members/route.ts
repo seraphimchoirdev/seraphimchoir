@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { PaginatedResponse, PaginationMeta } from '@/types/api';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'MembersAPI' });
 
 // Part enum validation
 const PartEnum = z.enum(['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL']);
@@ -81,7 +84,7 @@ export async function GET(request: NextRequest) {
     const validation = queryParamsSchema.safeParse(rawParams);
 
     if (!validation.success) {
-      console.error('Query validation failed:', {
+      logger.error('Query validation failed:', {
         rawParams,
         errors: validation.error.issues,
       });
@@ -167,7 +170,7 @@ export async function GET(request: NextRequest) {
     const { data: members, error, count } = await query;
 
     if (error) {
-      console.error('Members fetch error:', error);
+      logger.error('Members fetch error:', error);
       return NextResponse.json({ error: '찬양대원 목록을 불러오는데 실패했습니다' }, { status: 500 });
     }
 
@@ -193,7 +196,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
-    console.error('GET /api/members error:', error);
+    logger.error('GET /api/members error:', error);
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
   }
 }
@@ -257,13 +260,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Member creation error:', error);
+      logger.error('Member creation error:', error);
       return NextResponse.json({ error: '찬양대원 등록에 실패했습니다' }, { status: 500 });
     }
 
     return NextResponse.json({ data: newMember, message: '찬양대원이 성공적으로 등록되었습니다' }, { status: 201 });
   } catch (error) {
-    console.error('POST /api/members error:', error);
+    logger.error('POST /api/members error:', error);
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
   }
 }

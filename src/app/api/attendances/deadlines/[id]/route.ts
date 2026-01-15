@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AttendanceDeadlines' });
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -45,13 +48,13 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       .eq('id', id);
 
     if (error) {
-      console.error('Supabase error:', error);
+      logger.error('Supabase error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, message: '마감이 해제되었습니다' });
   } catch (error) {
-    console.error('Deadline DELETE error:', error);
+    logger.error('Deadline DELETE error:', error);
     return NextResponse.json(
       { error: '마감 해제에 실패했습니다' },
       { status: 500 }

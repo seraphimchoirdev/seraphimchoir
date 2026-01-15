@@ -4,6 +4,9 @@
  */
 
 import { ML_SERVICE_CONFIG } from './constants';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'MLServiceClient' });
 
 // 환경 변수
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
@@ -120,7 +123,7 @@ export async function checkMLServiceHealth(): Promise<MLHealthResponse | null> {
 
     return (await response.json()) as MLHealthResponse;
   } catch {
-    console.warn("[ML Client] Health check failed - service may be unavailable");
+    logger.warn("Health check failed - service may be unavailable");
     return null;
   }
 }

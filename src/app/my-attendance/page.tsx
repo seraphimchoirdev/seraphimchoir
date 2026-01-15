@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Calendar, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import Navigation from '@/components/layout/Navigation';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'MyAttendancePage' });
 
 interface ServiceWithAttendance {
   date: string;
@@ -110,7 +113,7 @@ export default function MyAttendancePage() {
         });
       }
     } catch (err) {
-      console.error('출석 업데이트 실패:', err);
+      logger.error('출석 업데이트 실패:', err);
     }
   };
 

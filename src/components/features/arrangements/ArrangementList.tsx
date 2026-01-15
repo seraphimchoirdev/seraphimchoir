@@ -20,6 +20,9 @@ import {
 } from '@/components/ui/dialog';
 import { useDeleteArrangement, ArrangementWithSchedule } from '@/hooks/useArrangements';
 import type { ArrangementStatus } from '@/types/database.types';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'ArrangementList' });
 
 // 상태별 배지 설정 헬퍼
 const getStatusBadgeConfig = (status: ArrangementStatus | string | null) => {
@@ -226,7 +229,7 @@ export default function ArrangementList({ arrangements }: ArrangementListProps) 
             setDeleteDialogOpen(false);
             setSelectedArrangement(null);
         } catch (error) {
-            console.error('삭제 실패:', error);
+            logger.error('삭제 실패:', error);
             alert('배치표 삭제에 실패했습니다.');
         } finally {
             setIsDeleting(false);

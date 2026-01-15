@@ -2,6 +2,9 @@
 
 import { useState, useRef } from 'react';
 import Papa from 'papaparse';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'ScheduleImporter' });
 // xlsx는 동적 임포트로 변경 (312K 번들 분리)
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -285,7 +288,7 @@ export default function ServiceScheduleImporter({
     formData.append('file', file);
     formData.append('year', new Date().getFullYear().toString());
 
-    console.log('Clova OCR로 이미지 파싱 시작...');
+    logger.debug('Clova OCR로 이미지 파싱 시작...');
 
     const response = await fetch('/api/vision/parse-schedule', {
       method: 'POST',
@@ -298,13 +301,13 @@ export default function ServiceScheduleImporter({
     }
 
     const result = await response.json();
-    console.log('Vision API 응답:', result);
-    console.log('추출된 원본 스케줄:', result.rawSchedules);
-    console.log('디버그 정보:', result.debug);
+    logger.debug('Vision API 응답:', result);
+    logger.debug('추출된 원본 스케줄:', result.rawSchedules);
+    logger.debug('디버그 정보:', result.debug);
 
     if (!result.success) {
-      console.error('파싱 실패:', result.errors, result.warnings);
-      console.log('디버그 정보:', result.debug);
+      logger.error('파싱 실패:', result.errors, result.warnings);
+      logger.debug('디버그 정보:', result.debug);
 
       // OCR은 성공했지만 일정 파싱이 안 된 경우
       if (result.debug?.wordCount > 0 && (!result.data || result.data.length === 0)) {
@@ -316,7 +319,7 @@ export default function ServiceScheduleImporter({
 
       // 경고만 있고 에러가 없으면 rawSchedules라도 표시
       if (result.rawSchedules?.length > 0) {
-        console.log('부분 파싱 결과:', result.rawSchedules);
+        logger.debug('부분 파싱 결과:', result.rawSchedules);
       }
       throw new Error(result.error || result.errors?.join(', ') || '파일 파싱 실패');
     }

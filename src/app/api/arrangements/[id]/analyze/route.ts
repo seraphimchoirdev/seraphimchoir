@@ -4,12 +4,15 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
 import {
   analyzeArrangement,
   type SeatWithMember,
 } from '@/lib/quality-metrics';
 import type { GridLayout } from '@/types/grid';
 import type { ArrangementAnalysisResponse } from '@/types/analysis';
+
+const logger = createLogger({ prefix: 'ArrangementsAnalyze' });
 
 export async function POST(
   request: NextRequest,
@@ -63,7 +66,7 @@ export async function POST(
       .eq('arrangement_id', arrangementId);
 
     if (seatsError) {
-      console.error('Seats query error:', seatsError);
+      logger.error('Seats query error:', seatsError);
       return NextResponse.json(
         { error: '좌석 정보를 불러오는데 실패했습니다.' },
         { status: 500 }
@@ -117,7 +120,7 @@ export async function POST(
 
     return NextResponse.json(analysis);
   } catch (error) {
-    console.error('Analysis API error:', error);
+    logger.error('Analysis API error:', error);
     return NextResponse.json(
       { error: '분석 중 오류가 발생했습니다.' },
       { status: 500 }

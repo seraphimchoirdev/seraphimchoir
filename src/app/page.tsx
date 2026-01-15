@@ -7,6 +7,9 @@ import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'HomePage' });
 
 export default function Home() {
   const router = useRouter();
@@ -14,11 +17,11 @@ export default function Home() {
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   useEffect(() => {
-    console.log('HomePage: hasHydrated =', hasHydrated, 'isAuthenticated =', isAuthenticated);
+    logger.debug('hasHydrated =', hasHydrated, 'isAuthenticated =', isAuthenticated);
 
     // Hydration 완료 후 인증된 사용자는 대시보드로 리다이렉트
     if (hasHydrated && isAuthenticated) {
-      console.log('HomePage: 로그인됨, /dashboard로 리다이렉트');
+      logger.debug('로그인됨, /dashboard로 리다이렉트');
       router.push('/dashboard');
     }
   }, [isAuthenticated, hasHydrated, router]);

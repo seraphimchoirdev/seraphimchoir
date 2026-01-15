@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AttendanceDetailAPI' });
 
 /**
  * 전체 마감 여부 확인 헬퍼 함수
@@ -57,7 +60,7 @@ export async function GET(
       .single();
 
     if (error) {
-      console.error('Supabase error:', error);
+      logger.error('Supabase error:', error);
       if (error.code === 'PGRST116') {
         return NextResponse.json({ error: '출석 기록을 찾을 수 없습니다' }, { status: 404 });
       }
@@ -66,7 +69,7 @@ export async function GET(
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Attendance GET error:', error);
+    logger.error('Attendance GET error:', error);
     return NextResponse.json(
       { error: '출석 기록을 불러오는데 실패했습니다' },
       { status: 500 }
@@ -139,7 +142,7 @@ export async function PATCH(
       .single();
 
     if (error) {
-      console.error('Supabase error:', error);
+      logger.error('Supabase error:', error);
       if (error.code === 'PGRST116') {
         return NextResponse.json({ error: '출석 기록을 찾을 수 없습니다' }, { status: 404 });
       }
@@ -152,7 +155,7 @@ export async function PATCH(
       return NextResponse.json({ error: error.issues[0].message }, { status: 400 });
     }
 
-    console.error('Attendance PATCH error:', error);
+    logger.error('Attendance PATCH error:', error);
     return NextResponse.json(
       { error: '출석 기록 수정에 실패했습니다' },
       { status: 500 }
@@ -220,13 +223,13 @@ export async function DELETE(
       .eq('id', id);
 
     if (error) {
-      console.error('Supabase error:', error);
+      logger.error('Supabase error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ message: '출석 기록이 삭제되었습니다' });
   } catch (error) {
-    console.error('Attendance DELETE error:', error);
+    logger.error('Attendance DELETE error:', error);
     return NextResponse.json(
       { error: '출석 기록 삭제에 실패했습니다' },
       { status: 500 }

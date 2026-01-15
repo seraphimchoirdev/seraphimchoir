@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'MemberLink' });
 
 /**
  * POST /api/member-link
@@ -109,7 +112,7 @@ export async function POST(request: Request) {
       .eq('id', user.id);
 
     if (updateError) {
-      console.error('연결 요청 생성 실패:', updateError);
+      logger.error('연결 요청 생성 실패:', updateError);
       return NextResponse.json(
         { error: '연결 요청 생성에 실패했습니다.' },
         { status: 500 }
@@ -126,7 +129,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Member link request error:', error);
+    logger.error('Member link request error:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -177,7 +180,7 @@ export async function GET() {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Get link status error:', error);
+    logger.error('Get link status error:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

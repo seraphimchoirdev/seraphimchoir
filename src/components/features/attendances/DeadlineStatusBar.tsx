@@ -1,6 +1,9 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'DeadlineStatusBar' });
 import { Check, Lock, Unlock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -61,7 +64,7 @@ export default function DeadlineStatusBar({
       await closeMutation.mutateAsync({ date, part });
       onRefetch?.();
     } catch (error) {
-      console.error('Part close error:', error);
+      logger.error('Part close error:', error);
     }
   };
 
@@ -71,7 +74,7 @@ export default function DeadlineStatusBar({
       await closeMutation.mutateAsync({ date, part: null });
       onRefetch?.();
     } catch (error) {
-      console.error('Full close error:', error);
+      logger.error('Full close error:', error);
     }
   };
 
@@ -81,7 +84,7 @@ export default function DeadlineStatusBar({
       await reopenMutation.mutateAsync({ id: deadlineId, date });
       onRefetch?.();
     } catch (error) {
-      console.error('Reopen error:', error);
+      logger.error('Reopen error:', error);
     }
   };
 

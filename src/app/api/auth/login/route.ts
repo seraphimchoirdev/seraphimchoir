@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AuthLogin' });
 
 /**
  * POST /api/auth/login
@@ -27,7 +30,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      console.error('Login error:', error);
+      logger.error('Login error:', error);
 
       // 인증 실패 (이메일 또는 비밀번호 불일치)
       if (error.message.includes('Invalid login credentials')) {
@@ -51,7 +54,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (profileError) {
-      console.error('Profile fetch error:', profileError);
+      logger.error('Profile fetch error:', profileError);
       // 프로필 조회 실패는 로그인 자체를 막지 않음
     }
 
@@ -65,7 +68,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Login exception:', error);
+    logger.error('Login exception:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

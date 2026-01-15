@@ -1,7 +1,9 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'Arrangements' });
 
 const gridLayoutSchema = z.object({
     rows: z.number().int().min(4).max(8),
@@ -105,7 +107,7 @@ export async function GET(request: NextRequest) {
                 .range(from, to);
 
             if (seatsError) {
-                console.error('Seats query error:', seatsError.message);
+                logger.error('Seats query error:', seatsError.message);
                 break;
             }
 

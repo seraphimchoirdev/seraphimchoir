@@ -10,6 +10,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createLogger } from '@/lib/logger';
 import {
     applyPastArrangementWithZoneMapping,
     type PastSeat,
@@ -18,6 +19,8 @@ import {
     type MemberSeatPreference,
 } from '@/lib/past-arrangement-mapper';
 import { loadPartPlacementRules } from '@/lib/part-placement-rules-loader';
+
+const logger = createLogger({ prefix: 'ApplyPastArrangement' });
 
 const applyPastSchema = z.object({
     sourceArrangementId: z.string().uuid('유효한 배치표 ID가 아닙니다'),
@@ -263,7 +266,7 @@ export async function POST(
             { serviceType, totalMembers }
         );
 
-        console.log(`[apply-past] 파트 배치 규칙 로드: ${rulesSource} (${serviceType}, ${totalMembers}명)`);
+        logger.debug(`파트 배치 규칙 로드: ${rulesSource} (${serviceType}, ${totalMembers}명)`);
 
         // 6. 파트별 영역 유지 매핑 알고리즘 적용 (ML 선호 좌석 + 학습 규칙 포함)
         const result = applyPastArrangementWithZoneMapping({
@@ -296,7 +299,7 @@ export async function POST(
                 { status: 400 }
             );
         }
-        console.error('Apply past arrangement error:', error);
+        logger.error('Apply past arrangement error:', error);
         return NextResponse.json(
             { error: '서버 오류가 발생했습니다' },
             { status: 500 }

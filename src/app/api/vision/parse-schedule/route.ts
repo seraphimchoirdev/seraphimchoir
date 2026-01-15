@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'ParseScheduleAPI' });
 import {
   parseScheduleFromWords,
   toServiceScheduleInsert,
@@ -135,16 +138,16 @@ export async function POST(request: NextRequest) {
 
     // PDF 파일 처리
     if (pdfTypes.includes(file.type)) {
-      console.log('=== PDF 파일 처리 ===');
+      logger.debug('=== PDF 파일 처리 ===');
 
       // 텍스트 기반 PDF인지 확인
       const isTextBased = await isPdfTextBased(buffer);
-      console.log('텍스트 기반 PDF:', isTextBased);
+      logger.debug('텍스트 기반 PDF:', isTextBased);
 
       if (isTextBased) {
         // 텍스트 직접 추출 (OCR 불필요, 100% 정확도)
         const pdfText = await extractTextFromPdf(buffer);
-        console.log('추출된 텍스트 (처음 1000자):', pdfText.substring(0, 1000));
+        logger.debug('추출된 텍스트 (처음 1000자):', pdfText.substring(0, 1000));
 
         const parseResult = parseScheduleFromPdfText(pdfText, year);
         const schedules = parseResult.schedules.map(toServiceScheduleInsert);
@@ -164,7 +167,7 @@ export async function POST(request: NextRequest) {
       } else {
         // 스캔된 PDF - 이미지로 변환 필요
         // PDF 이미지 변환 라이브러리가 Next.js 환경과 호환성 문제가 있어 비활성화
-        console.log('스캔된 PDF 감지 - 이미지 변환 안내');
+        logger.debug('스캔된 PDF 감지 - 이미지 변환 안내');
         return NextResponse.json(
           {
             success: false,
@@ -189,11 +192,11 @@ export async function POST(request: NextRequest) {
         ? 'png' // webp는 png로 처리
         : 'jpg';
 
-    console.log('=== Clova OCR 처리 ===');
+    logger.debug('=== Clova OCR 처리 ===');
 
     // Clova OCR로 단어 추출
     // centerX, centerY 포함 - groupWordsIntoRows()에서 사용
-    console.log('Clova OCR API 호출...');
+    logger.debug('Clova OCR API 호출...');
     const clovaWords = await extractWordsWithClovaOcr(base64, imageFormat);
     const words = clovaWords.map((w: ClovaExtractedWord) => ({
       text: w.text,
@@ -204,7 +207,7 @@ export async function POST(request: NextRequest) {
       centerX: w.centerX,
       centerY: w.centerY,
     }));
-    console.log(`Clova OCR 추출 단어 수: ${words.length}`);
+    logger.debug(`Clova OCR 추출 단어 수: ${words.length}`);
 
     if (words.length === 0) {
       return NextResponse.json(
@@ -225,7 +228,7 @@ export async function POST(request: NextRequest) {
 
     // 동적 Y 임계값 계산 (OCR 프로바이더 스케일에 자동 적응)
     const dynamicYThreshold = calculateDynamicYThreshold(words);
-    console.log(`동적 Y 임계값: ${dynamicYThreshold.toFixed(1)}px`);
+    logger.debug(`동적 Y 임계값: ${dynamicYThreshold.toFixed(1)}px`);
 
     // 디버깅: 행과 컬럼 추출 결과 확인
     // 동적 임계값 사용 (yThreshold 파라미터 생략)
@@ -242,10 +245,10 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    console.log('이미지 너비:', imageWidth);
-    console.log('행 수:', rows.length);
-    console.log('컬럼 경계:', columnBoundaries);
-    console.log('샘플 행 데이터:', JSON.stringify(sampleRows, null, 2));
+    logger.debug('이미지 너비:', imageWidth);
+    logger.debug('행 수:', rows.length);
+    logger.debug('컬럼 경계:', columnBoundaries);
+    logger.debug('샘플 행 데이터:', JSON.stringify(sampleRows, null, 2));
 
     // 파싱
     const parseResult = parseScheduleFromWords(words, year, imageWidth);
@@ -272,7 +275,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('파일 처리 오류:', error);
+    logger.error('파일 처리 오류:', error);
 
     const message =
       error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';

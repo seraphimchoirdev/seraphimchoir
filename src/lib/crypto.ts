@@ -1,4 +1,7 @@
 import crypto from 'crypto';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'Crypto' });
 
 /**
  * AES-256-GCM 암호화를 사용한 지휘자 메모 암호화/복호화 유틸리티
@@ -77,7 +80,7 @@ export function encryptConductorNotes(plainText: string): {
       authTag: authTag.toString('hex'),
     };
   } catch (error) {
-    console.error('암호화 중 오류 발생:', error);
+    logger.error('암호화 중 오류 발생:', error);
     throw new Error('지휘자 메모 암호화에 실패했습니다.');
   }
 }
@@ -118,7 +121,7 @@ export function decryptConductorNotes(
 
     return decrypted;
   } catch (error) {
-    console.error('복호화 중 오류 발생:', error);
+    logger.error('복호화 중 오류 발생:', error);
     throw new Error('지휘자 메모 복호화에 실패했습니다. 데이터가 손상되었을 수 있습니다.');
   }
 }

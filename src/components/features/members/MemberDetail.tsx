@@ -7,6 +7,9 @@ import { useMember, useDeleteMember } from '@/hooks/useMembers';
 import type { Database } from '@/types/database.types';
 import { useState } from 'react';
 import ConductorNotes from './ConductorNotes';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'MemberDetail' });
 
 type Part = Database['public']['Enums']['part'];
 type MemberStatus = Database['public']['Enums']['member_status'];
@@ -44,7 +47,7 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
       await deleteMutation.mutateAsync(memberId);
       router.push('/members');
     } catch (error) {
-      console.error('Delete error:', error);
+      logger.error('Delete error:', error);
     }
   };
 

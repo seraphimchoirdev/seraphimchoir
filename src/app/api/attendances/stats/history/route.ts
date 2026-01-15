@@ -4,6 +4,9 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AttendanceStatsHistory' });
 
 export interface MemberAttendanceHistoryResponse {
   date: string;
@@ -52,7 +55,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (error) {
-      console.error('Member attendance history error:', error);
+      logger.error('Member attendance history error:', error);
       return NextResponse.json(
         { error: `회원 출석 이력 조회 실패: ${error.message}` },
         { status: 500 }
@@ -61,7 +64,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data as MemberAttendanceHistoryResponse[]);
   } catch (error) {
-    console.error('Member attendance history error:', error);
+    logger.error('Member attendance history error:', error);
     return NextResponse.json(
       { error: '회원 출석 이력 조회에 실패했습니다' },
       { status: 500 }

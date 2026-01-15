@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AttendanceInputModal' });
 import { format } from 'date-fns/format';
 import { ko } from 'date-fns/locale/ko';
 import { useMembers } from '@/hooks/useMembers';
@@ -174,7 +177,7 @@ export default function AttendanceInputModal({
       onSave?.();
       onClose();
     } catch (error) {
-      console.error('출석 저장 실패:', error);
+      logger.error('출석 저장 실패:', error);
       alert('출석 기록 저장에 실패했습니다.');
     } finally {
       setIsSaving(false);

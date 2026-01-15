@@ -5,6 +5,9 @@ import { usePendingLinkRequests, useApproveMemberLink, useRejectMemberLink } fro
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Check, X, UserCheck, Clock } from 'lucide-react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'MemberLinksAdminPage' });
 
 const PART_LABELS: Record<string, string> = {
   SOPRANO: '소프라노',
@@ -26,7 +29,7 @@ export default function MemberLinksAdminPage() {
     try {
       await approveMutation.mutateAsync(userId);
     } catch (err) {
-      console.error('승인 실패:', err);
+      logger.error('승인 실패:', err);
     }
   };
 
@@ -36,7 +39,7 @@ export default function MemberLinksAdminPage() {
     try {
       await rejectMutation.mutateAsync(userId);
     } catch (err) {
-      console.error('거부 실패:', err);
+      logger.error('거부 실패:', err);
     }
   };
 

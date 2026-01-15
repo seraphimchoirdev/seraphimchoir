@@ -16,6 +16,9 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'MemberForm' });
 
 type Part = Database['public']['Enums']['part'];
 type MemberStatus = Database['public']['Enums']['member_status'];
@@ -148,7 +151,7 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
       setVersionConflict(false); // 성공 시 충돌 상태 초기화
       onSuccess?.();
     } catch (error) {
-      console.error('Form submission error:', error);
+      logger.error('Form submission error:', error);
 
       // 버전 충돌 감지 (409 Conflict)
       const err = error as Error & { code?: string };

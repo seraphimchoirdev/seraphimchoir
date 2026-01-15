@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, RefObject } from 'react';
+import { createLogger } from '@/lib/logger';
 import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2, BarChart3, Lock, Send, Share2, CheckCircle2, AlertTriangle, Sparkles, Trash2, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,8 @@ import type { Database, Json, ArrangementStatus } from '@/types/database.types';
 import type { RecommendationResponse } from '@/hooks/useRecommendSeats';
 import type { ApplyPastResponse } from '@/hooks/usePastArrangement';
 import type { ArrangementAnalysisResponse } from '@/types/analysis';
+
+const logger = createLogger({ prefix: 'ArrangementHeader' });
 
 type Arrangement = Database['public']['Tables']['arrangements']['Row'];
 
@@ -141,7 +144,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 alert('이미지가 다운로드되었습니다.');
             }
         } catch (error) {
-            console.error('이미지 다운로드 실패:', error);
+            logger.error('이미지 다운로드 실패:', error);
             if (isMountedRef.current) {
                 alert('이미지 다운로드에 실패했습니다.');
             }
@@ -160,7 +163,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 alert('이미지가 클립보드에 복사되었습니다.');
             }
         } catch (error) {
-            console.error('클립보드 복사 실패:', error);
+            logger.error('클립보드 복사 실패:', error);
             if (isMountedRef.current) {
                 alert('클립보드 복사에 실패했습니다. 브라우저 설정을 확인해주세요.');
             }
@@ -205,7 +208,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 alert('저장되었습니다.');
             }
         } catch (error) {
-            console.error(error);
+            logger.error('저장 실패:', error);
             if (isMountedRef.current) {
                 alert('저장에 실패했습니다.');
             }
@@ -260,7 +263,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 router.refresh();
             }
         } catch (error) {
-            console.error(error);
+            logger.error('공유 실패:', error);
             if (isMountedRef.current) {
                 alert('공유에 실패했습니다.');
             }
@@ -309,7 +312,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 router.refresh();
             }
         } catch (error) {
-            console.error(error);
+            logger.error('확정 실패:', error);
             if (isMountedRef.current) {
                 alert('확정에 실패했습니다.');
             }
@@ -340,7 +343,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 router.refresh();
             }
         } catch (error) {
-            console.error(error);
+            logger.error('상태 변경 실패:', error);
             if (isMountedRef.current) {
                 alert('상태 변경에 실패했습니다.');
             }
@@ -353,13 +356,13 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
 
     const handleApplyRecommendation = (recommendation: RecommendationResponse) => {
         // 디버깅: API 응답 확인
-        console.log('=== AI 추천 결과 디버깅 ===');
-        console.log('seats.length:', recommendation.seats.length);
-        console.log('gridLayout:', recommendation.gridLayout);
+        logger.debug('=== AI 추천 결과 디버깅 ===');
+        logger.debug('seats.length:', recommendation.seats.length);
+        logger.debug('gridLayout:', recommendation.gridLayout);
         if (recommendation.gridLayout) {
             const totalCapacity = recommendation.gridLayout.rowCapacities.reduce((a: number, b: number) => a + b, 0);
-            console.log('rowCapacities 합계:', totalCapacity);
-            console.log('빈좌석 예상:', totalCapacity - recommendation.seats.length);
+            logger.debug('rowCapacities 합계:', totalCapacity);
+            logger.debug('빈좌석 예상:', totalCapacity - recommendation.seats.length);
         }
 
         // AI 추천 결과를 store에 적용
@@ -419,7 +422,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 setShowAnalysisModal(true);
             }
         } catch (error) {
-            console.error('분석 실패:', error);
+            logger.error('분석 실패:', error);
             if (isMountedRef.current) {
                 alert('배치 분석에 실패했습니다.');
             }

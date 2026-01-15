@@ -13,7 +13,10 @@
  *   3. 4, 5, 6행 각각의 파트 경계 베이스 (3명)
  */
 
+import { createLogger } from '@/lib/logger';
 import type { Database } from '@/types/database.types';
+
+const logger = createLogger({ prefix: 'RowLeaderUtils' });
 import type { GridLayout } from '@/types/grid';
 import { getPartSide, type SeatAssignment } from '@/store/arrangement-store';
 
@@ -278,6 +281,6 @@ export function selectRowLeaders(
         }
     }
 
-    console.log(`[RowLeader] 자동 지정 후보: ${candidates.length}명`, candidates);
+    logger.debug(`자동 지정 후보: ${candidates.length}명`, candidates);
     return candidates;
 }

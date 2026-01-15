@@ -2,6 +2,9 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'ImportMLDataAPI' });
 
 interface MLSeat {
     member_id: string;
@@ -60,7 +63,7 @@ export async function POST(request: NextRequest) {
             }, { onConflict: 'date' });
 
         if (scheduleError) {
-            console.error('Schedule upsert error:', scheduleError);
+            logger.error('Schedule upsert error:', scheduleError);
         }
 
         // 2. 출석 데이터 처리 - 배치된 대원은 등단 가능, 나머지는 등단 불가
@@ -71,7 +74,7 @@ export async function POST(request: NextRequest) {
             .eq('member_status', 'REGULAR');
 
         if (membersError) {
-            console.error('Members fetch error:', membersError);
+            logger.error('Members fetch error:', membersError);
         }
 
         // 2-2. seats에 있는 member_id 추출 (배치된 대원 = 등단 가능)
@@ -100,7 +103,7 @@ export async function POST(request: NextRequest) {
                 });
 
             if (attendanceError) {
-                console.error('Attendance upsert error:', attendanceError);
+                logger.error('Attendance upsert error:', attendanceError);
             } else {
                 attendanceCount = attendancesToInsert.length;
             }
@@ -187,7 +190,7 @@ export async function POST(request: NextRequest) {
             seatsCount: seatsToInsert.length,
         });
     } catch (error) {
-        console.error('Import error:', error);
+        logger.error('Import error:', error);
         return NextResponse.json(
             { error: error instanceof Error ? error.message : 'Internal Server Error' },
             { status: 500 }

@@ -9,6 +9,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import { DEFAULT_PART_ZONES, type PartZone } from './part-zone-analyzer';
 import { getMemberCountRange } from './part-placement-learner';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'PartPlacementRulesLoader' });
 
 type Part = Database['public']['Enums']['part'];
 
@@ -235,7 +238,7 @@ export async function loadPartPlacementRules(
             };
 
         if (error) {
-            console.warn('[loadPartPlacementRules] DB 조회 오류, 기본값 사용:', error.message);
+            logger.warn('[loadPartPlacementRules] DB 조회 오류, 기본값 사용:', error.message);
             return {
                 rules: getDefaultRules(),
                 source: 'default',
@@ -246,7 +249,7 @@ export async function loadPartPlacementRules(
         if (!data || data.length === 0) {
             // 60-69명 구간: 70-79명 규칙으로 fallback
             if (memberCountRange === '60-69') {
-                console.log(
+                logger.debug(
                     `[loadPartPlacementRules] 60-69명 샘플 부족, 70-79명 규칙으로 fallback 시도`
                 );
                 const { data: fallbackData, error: fallbackError } = await supabase
@@ -261,7 +264,7 @@ export async function loadPartPlacementRules(
                 if (!fallbackError && fallbackData && fallbackData.length > 0) {
                     const rules = convertDbRowsToRules(fallbackData as LearnedPartPlacementRuleRow[]);
                     const avgConfidence = calculateAverageConfidence(fallbackData as LearnedPartPlacementRuleRow[]);
-                    console.log(
+                    logger.debug(
                         `[loadPartPlacementRules] 70-79명 규칙으로 fallback 성공, 신뢰도: ${(avgConfidence * 100).toFixed(1)}%`
                     );
                     return {
@@ -276,7 +279,7 @@ export async function loadPartPlacementRules(
                 }
             }
 
-            console.log(
+            logger.debug(
                 `[loadPartPlacementRules] 학습 데이터 없음 (${serviceType}, ${memberCountRange}), 기본값 사용`
             );
             return {
@@ -291,7 +294,7 @@ export async function loadPartPlacementRules(
         // 평균 신뢰도 계산
         const avgConfidence = calculateAverageConfidence(data as LearnedPartPlacementRuleRow[]);
 
-        console.log(
+        logger.debug(
             `[loadPartPlacementRules] 학습 규칙 로드 성공 (${serviceType}, ${memberCountRange}), ` +
             `신뢰도: ${(avgConfidence * 100).toFixed(1)}%`
         );
@@ -306,7 +309,7 @@ export async function loadPartPlacementRules(
             },
         };
     } catch (err) {
-        console.error('[loadPartPlacementRules] 예외 발생, 기본값 사용:', err);
+        logger.error('[loadPartPlacementRules] 예외 발생, 기본값 사용:', err);
         return {
             rules: getDefaultRules(),
             source: 'default',

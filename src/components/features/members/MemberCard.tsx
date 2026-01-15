@@ -7,6 +7,9 @@ import { AlertTriangle } from 'lucide-react';
 import { useDeleteMember } from '@/hooks/useMembers';
 import type { Database } from '@/types/database.types';
 import { useState, memo } from 'react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'MemberCard' });
 
 type Member = Database['public']['Tables']['members']['Row'] & {
   last_service_date?: string | null;
@@ -94,7 +97,7 @@ function MemberCard({ member, onDelete }: MemberCardProps) {
       onDelete?.();
       setShowDeleteConfirm(false);
     } catch (error) {
-      console.error('Delete error:', error);
+      logger.error('Delete error:', error);
     }
   };
 

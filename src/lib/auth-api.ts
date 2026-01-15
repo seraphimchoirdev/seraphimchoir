@@ -5,6 +5,10 @@
  * Next.js API Routes를 통해 Supabase Auth와 통신합니다.
  */
 
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AuthApi' });
+
 import type {
   SignupRequest,
   SignupResponse,
@@ -55,7 +59,7 @@ async function apiRequest<T>(
       error: null,
     };
   } catch (error) {
-    console.error('API request error:', error);
+    logger.error('API request error:', error);
     return {
       data: null,
       error: '네트워크 오류가 발생했습니다.',

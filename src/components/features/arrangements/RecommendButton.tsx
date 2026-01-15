@@ -8,6 +8,9 @@ import { Sparkles, Loader2 } from 'lucide-react';
 import { useRecommendSeats, type RecommendationResponse } from '@/hooks/useRecommendSeats';
 import { GridLayout } from '@/types/grid';
 import RecommendPreviewModal from './RecommendPreviewModal';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'RecommendButton' });
 
 interface RecommendButtonProps {
   arrangementId: string;
@@ -38,7 +41,7 @@ export default function RecommendButton({
       setRecommendation(result);
       setShowPreview(true);
     } catch (error) {
-      console.error('Recommendation failed:', error);
+      logger.error('Recommendation failed:', error);
       alert('AI 추천 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     }
   };

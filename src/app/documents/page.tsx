@@ -26,6 +26,9 @@ import {
   Calendar,
   Plus,
 } from 'lucide-react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'DocumentsPage' });
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 10 }, (_, i) => CURRENT_YEAR - i);
@@ -110,7 +113,7 @@ export default function DocumentsPage() {
       setUploadYear(CURRENT_YEAR);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
-      console.error('업로드 실패:', err);
+      logger.error('업로드 실패:', err);
     }
   };
 
@@ -120,7 +123,7 @@ export default function DocumentsPage() {
     try {
       await deleteMutation.mutateAsync(id);
     } catch (err) {
-      console.error('삭제 실패:', err);
+      logger.error('삭제 실패:', err);
     }
   };
 

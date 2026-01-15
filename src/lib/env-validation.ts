@@ -5,6 +5,10 @@
  * 런타임 오류를 방지하고 명확한 오류 메시지를 제공합니다.
  */
 
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'EnvValidation' });
+
 export interface EnvValidationResult {
   isValid: boolean;
   errors: string[];
@@ -104,7 +108,7 @@ export function assertEnvironmentValid(): void {
   const result = validateEnvironment();
 
   if (result.warnings.length > 0) {
-    console.warn('⚠️ 환경변수 경고:\n' + result.warnings.join('\n\n'));
+    logger.warn('환경변수 경고:\n' + result.warnings.join('\n\n'));
   }
 
   if (!result.isValid) {

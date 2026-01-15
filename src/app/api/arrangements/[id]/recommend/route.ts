@@ -14,6 +14,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'RecommendAPI' });
 import {
   generateAISeatingArrangement,
   loadLearnedPreferences,
@@ -66,7 +69,7 @@ function getJSONFallbackPreferences(): Map<string, PreferredSeat> {
     fallbackPreferences = loadLearnedPreferences(
       memberPreferencesData as LearnedMemberPreference[]
     );
-    console.log('[ML] Loaded JSON fallback preferences:', fallbackPreferences.size, 'members');
+    logger.debug('Loaded JSON fallback preferences:', fallbackPreferences.size, 'members');
   }
   return fallbackPreferences;
 }
@@ -85,20 +88,20 @@ async function getPreferencesFromDB(
       .gt('total_appearances', 0);
 
     if (error) {
-      console.warn('[ML] DB query failed, using JSON fallback:', error.message);
+      logger.warn('DB query failed, using JSON fallback:', error.message);
       return { preferences: getJSONFallbackPreferences(), source: 'json' };
     }
 
     if (!dbStats || dbStats.length === 0) {
-      console.log('[ML] No DB stats found, using JSON fallback');
+      logger.debug('No DB stats found, using JSON fallback');
       return { preferences: getJSONFallbackPreferences(), source: 'json' };
     }
 
     const preferences = loadPreferencesFromDB(dbStats as DBMemberSeatStatistics[]);
-    console.log('[ML] Loaded preferences from DB:', preferences.size, 'members');
+    logger.debug('Loaded preferences from DB:', preferences.size, 'members');
     return { preferences, source: 'db' };
   } catch (err) {
-    console.error('[ML] Error loading from DB:', err);
+    logger.error('Error loading from DB:', err);
     return { preferences: getJSONFallbackPreferences(), source: 'json' };
   }
 }
@@ -160,7 +163,7 @@ export async function POST(
       .single();
 
     if (arrError || !arrangement) {
-      console.error('Arrangement query error:', arrError);
+      logger.error('Arrangement query error:', arrError);
       return NextResponse.json(
         { error: 'Arrangement not found' },
         { status: 404 }
@@ -169,7 +172,7 @@ export async function POST(
 
     // 5. 정대원 + 출석 데이터 + 파트장 정보 병렬 조회
     // 출석 레코드가 없는 대원도 기본값 true(등단 가능)로 처리해야 함
-    console.log('Querying members and attendances for date:', arrangement.date);
+    logger.debug('Querying members and attendances for date:', arrangement.date);
 
     const [membersResult, attendancesResult, profilesResult] = await Promise.all([
       // 모든 정대원 조회 (experience 컬럼은 스키마에 없으므로 제외)
@@ -196,7 +199,7 @@ export async function POST(
     const { data: profiles } = profilesResult;
 
     if (membersError) {
-      console.error('Members query error:', membersError);
+      logger.error('Members query error:', membersError);
       return NextResponse.json(
         { error: 'Failed to fetch members', detail: membersError.message },
         { status: 500 }
@@ -204,15 +207,15 @@ export async function POST(
     }
 
     if (attError) {
-      console.error('Attendance query error:', attError);
+      logger.error('Attendance query error:', attError);
       return NextResponse.json(
         { error: 'Failed to fetch attendances', detail: attError.message },
         { status: 500 }
       );
     }
 
-    console.log('All REGULAR members:', allMembers?.length || 0);
-    console.log('Attendance records for date:', attendances?.length || 0);
+    logger.debug('All REGULAR members:', allMembers?.length || 0);
+    logger.debug('Attendance records for date:', attendances?.length || 0);
 
     // 출석 데이터를 Map으로 변환 (O(1) 조회)
     const attendanceMap = new Map<string, boolean>();
@@ -254,7 +257,7 @@ export async function POST(
         };
       });
 
-    console.log('Available members for AI recommendation:', availableMembers.length);
+    logger.debug('Available members for AI recommendation:', availableMembers.length);
 
     // 최소 인원 확인
     if (availableMembers.length === 0) {
@@ -271,7 +274,7 @@ export async function POST(
 
     if (mlEnabled) {
       mlServiceReady = await isMLServiceReady();
-      console.log('[ML] Service ready:', mlServiceReady);
+      logger.debug('ML Service ready:', mlServiceReady);
     }
 
     // 6-1. Python ML 서비스 호출 시도
@@ -302,13 +305,13 @@ export async function POST(
           zigzagPattern: body.gridLayout.zigzagPattern,
         } : undefined;
 
-        console.log('[ML] Requesting recommendation from Python service...');
+        logger.debug('Requesting recommendation from Python service...');
         const mlResponse: MLRecommendResponse = await requestMLRecommendation({
           members: mlMembers,
           grid_layout: gridLayout,
         });
 
-        console.log('[ML] Python service response:', {
+        logger.debug('Python service response:', {
           seats: mlResponse.seats.length,
           quality: mlResponse.qualityScore,
         });
@@ -343,20 +346,20 @@ export async function POST(
 
         return NextResponse.json(formattedMLResponse);
       } catch (mlError) {
-        console.error('[ML] Python service failed, falling back to TypeScript:', mlError);
+        logger.error('Python service failed, falling back to TypeScript:', mlError);
         // Fallback to TypeScript algorithm below
       }
     }
 
     // 6-2. TypeScript 규칙 기반 알고리즘 (Fallback)
-    console.log('[ML] Using TypeScript rule-based algorithm');
+    logger.debug('Using TypeScript rule-based algorithm');
     const { preferences, source: dataSource } = await getPreferencesFromDB(supabase);
 
     const recommendation = generateAISeatingArrangement(availableMembers, {
       preferredSeats: preferences,
     });
 
-    console.log('AI recommendation generated:', {
+    logger.debug('AI recommendation generated:', {
       totalMembers: recommendation.metadata.total_members,
       rows: recommendation.grid_layout.rows,
       seats: recommendation.seats.length
@@ -428,7 +431,7 @@ export async function POST(
     return NextResponse.json(formattedResponse);
 
   } catch (error) {
-    console.error('Recommendation API error:', error);
+    logger.error('Recommendation API error:', error);
 
     // 프로덕션 환경에서는 내부 에러 메시지를 노출하지 않음
     const isDev = process.env.NODE_ENV === 'development';

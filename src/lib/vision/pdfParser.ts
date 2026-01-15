@@ -8,6 +8,9 @@ import { extractText, getDocumentProxy } from 'unpdf';
 import { pdfToPng } from 'pdf-to-png-converter';
 import type { ParsedSchedule, ParseResult } from './parseScheduleTable';
 import { normalizeDateString, hasWeekdayInfo } from './parseScheduleTable';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'PDFParser' });
 
 // 후드 색상 목록
 const HOOD_COLORS = ['백', '녹', '보라', '적', '검정', '흰', '녹색', '보라색', '흰색', '검정색', '빨강'];
@@ -117,9 +120,9 @@ export function parseScheduleFromPdfText(
 
   const lines = text.split('\n').filter(line => line.trim().length > 0);
 
-  console.log('=== PDF 텍스트 파싱 ===');
-  console.log('총 라인 수:', lines.length);
-  console.log('처음 10개 라인:', lines.slice(0, 10));
+  logger.debug('=== PDF 텍스트 파싱 ===');
+  logger.debug('총 라인 수:', lines.length);
+  logger.debug('처음 10개 라인:', lines.slice(0, 10));
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -181,7 +184,7 @@ export function parseScheduleFromPdfText(
     schedules.push(schedule);
   }
 
-  console.log('파싱된 스케줄 수:', schedules.length);
+  logger.debug('파싱된 스케줄 수:', schedules.length);
 
   return {
     success: schedules.length > 0,

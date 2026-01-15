@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AuthMe' });
 
 /**
  * GET /api/auth/me
@@ -30,7 +33,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (profileError) {
-      console.error('Profile fetch error:', profileError);
+      logger.error('Profile fetch error:', profileError);
 
       // 프로필이 없는 경우
       if (profileError.code === 'PGRST116') {
@@ -54,7 +57,7 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Get current user exception:', error);
+    logger.error('Get current user exception:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

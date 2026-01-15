@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { useDeleteMember, useUpdateMember } from '@/hooks/useMembers';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'MemberListItem' });
 import type { Database } from '@/types/database.types';
 import { useState, useCallback, memo } from 'react';
 import { format } from 'date-fns/format';
@@ -123,7 +126,7 @@ function MemberListItem({ member, onDelete }: MemberListItemProps) {
             onDelete?.();
             setShowDeleteConfirm(false);
         } catch (error) {
-            console.error('Delete error:', error);
+            logger.error('Delete error:', error);
         }
     };
 
@@ -164,7 +167,7 @@ function MemberListItem({ member, onDelete }: MemberListItemProps) {
             });
             onDelete?.(); // refetch
         } catch (error) {
-            console.error('Status update error:', error);
+            logger.error('Status update error:', error);
         } finally {
             setIsUpdatingStatus(false);
         }
@@ -187,7 +190,7 @@ function MemberListItem({ member, onDelete }: MemberListItemProps) {
             onDelete?.(); // refetch
             setShowLeaveModal(false);
         } catch (error) {
-            console.error('Leave status update error:', error);
+            logger.error('Leave status update error:', error);
         } finally {
             setIsUpdatingStatus(false);
         }
@@ -211,7 +214,7 @@ function MemberListItem({ member, onDelete }: MemberListItemProps) {
             onDelete?.(); // refetch
             setShowReturnModal(false);
         } catch (error) {
-            console.error('Return from leave error:', error);
+            logger.error('Return from leave error:', error);
         } finally {
             setIsUpdatingStatus(false);
         }

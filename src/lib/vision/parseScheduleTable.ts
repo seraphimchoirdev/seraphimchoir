@@ -11,7 +11,10 @@
  * 7. 절기/행사 정보
  */
 
+import { createLogger } from '@/lib/logger';
 import type { Database } from '@/types/database.types';
+
+const logger = createLogger({ prefix: 'ParseScheduleTable' });
 import {
   ExtractedWord,
   groupWordsIntoRows,
@@ -475,7 +478,7 @@ export function parseScheduleFromWords(
 
       schedules.push(schedule);
 
-      console.log(`셀 병합 행 감지: ${lastDate} - ${serviceType} - ${schedule.hymn_name}`);
+      logger.debug(`셀 병합 행 감지: ${lastDate} - ${serviceType} - ${schedule.hymn_name}`);
     }
   }
 

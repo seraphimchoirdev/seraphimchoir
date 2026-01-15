@@ -5,6 +5,9 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AttendanceStatsMembers' });
 
 export interface MemberAttendanceStats {
   memberId: string;
@@ -82,7 +85,7 @@ export async function GET(request: NextRequest) {
     const { data: members, error: membersError } = await membersQuery;
 
     if (membersError) {
-      console.error('Members query error:', membersError);
+      logger.error('Members query error:', membersError);
       return NextResponse.json(
         { error: '대원 목록을 불러오는데 실패했습니다' },
         { status: 500 }
@@ -107,7 +110,7 @@ export async function GET(request: NextRequest) {
         .range(from, to);
 
       if (pageError) {
-        console.error('Attendances query error:', pageError);
+        logger.error('Attendances query error:', pageError);
         return NextResponse.json(
           { error: '출석 데이터를 불러오는데 실패했습니다' },
           { status: 500 }
@@ -230,7 +233,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Member attendance stats error:', error);
+    logger.error('Member attendance stats error:', error);
     return NextResponse.json(
       { error: '대원별 출석 통계 조회에 실패했습니다' },
       { status: 500 }

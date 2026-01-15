@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AttendanceList' });
 import { useMembers } from '@/hooks/useMembers';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useAttendanceDeadlines } from '@/hooks/useAttendanceDeadlines';
@@ -276,7 +279,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
             alert('저장되었습니다.');
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
-            console.error('Failed to save attendances:', error);
+            logger.error('Failed to save attendances:', error);
             alert(`저장 실패: ${errorMessage}`);
         } finally {
             setIsSubmitting(false);

@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AuthCallback' });
 
 /**
  * OAuth Callback Route
@@ -21,7 +24,7 @@ export async function GET(request: Request) {
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
     if (exchangeError) {
-      console.error('OAuth 세션 교환 실패:', exchangeError);
+      logger.error('OAuth 세션 교환 실패:', exchangeError);
       return NextResponse.redirect(`${origin}/login?error=oauth_failed`);
     }
 
@@ -29,7 +32,7 @@ export async function GET(request: Request) {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      console.error('사용자 정보 조회 실패:', userError);
+      logger.error('사용자 정보 조회 실패:', userError);
       return NextResponse.redirect(`${origin}/login?error=user_fetch_failed`);
     }
 
@@ -41,7 +44,7 @@ export async function GET(request: Request) {
       .single();
 
     if (profileError) {
-      console.error('프로필 조회 실패:', profileError);
+      logger.error('프로필 조회 실패:', profileError);
       // 프로필이 없으면 대원 연결 페이지로
       return NextResponse.redirect(`${origin}/member-link`);
     }

@@ -4,6 +4,9 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AttendanceStatsAPI' });
 
 export interface AttendanceStatisticsResponse {
   total_records: number;
@@ -70,7 +73,7 @@ export async function GET(request: NextRequest) {
         });
 
         if (error) {
-          console.error('Overall stats error:', error);
+          logger.error('Overall stats error:', error);
           return NextResponse.json(
             { error: `전체 출석 통계 조회 실패: ${error.message}` },
             { status: 500 }
@@ -87,7 +90,7 @@ export async function GET(request: NextRequest) {
         });
 
         if (error) {
-          console.error('Part stats error:', error);
+          logger.error('Part stats error:', error);
           return NextResponse.json(
             { error: `파트별 출석 통계 조회 실패: ${error.message}` },
             { status: 500 }
@@ -104,7 +107,7 @@ export async function GET(request: NextRequest) {
         });
 
         if (error) {
-          console.error('Date summary error:', error);
+          logger.error('Date summary error:', error);
           return NextResponse.json(
             { error: `날짜별 출석 요약 조회 실패: ${error.message}` },
             { status: 500 }
@@ -121,7 +124,7 @@ export async function GET(request: NextRequest) {
         );
     }
   } catch (error) {
-    console.error('Attendance stats error:', error);
+    logger.error('Attendance stats error:', error);
     return NextResponse.json(
       { error: '출석 통계 조회에 실패했습니다' },
       { status: 500 }

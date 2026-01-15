@@ -12,6 +12,9 @@
 import { useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/store/authStore';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AuthProvider' });
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -35,9 +38,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // 초기 세션 체크
     const initAuth = async () => {
-      console.log('[AuthProvider] 세션 체크 시작');
+      logger.debug('세션 체크 시작');
       await fetchUser();
-      console.log('[AuthProvider] 세션 체크 완료');
+      logger.debug('세션 체크 완료');
     };
 
     initAuth();
@@ -46,7 +49,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[AuthProvider] Auth 상태 변경:', event, session ? '세션 있음' : '세션 없음');
+      logger.debug('Auth 상태 변경:', event, session ? '세션 있음' : '세션 없음');
 
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         // 로그인 시 fetchUser를 호출하여 프로필 로드

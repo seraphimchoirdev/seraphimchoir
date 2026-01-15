@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'SignupPage' });
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,10 +28,10 @@ export default function SignupPage() {
 
   // 이미 로그인된 경우 리다이렉트
   useEffect(() => {
-    console.log('SignupPage: authLoading =', authLoading, 'isAuthenticated =', isAuthenticated);
+    logger.debug('SignupPage: authLoading =', authLoading, 'isAuthenticated =', isAuthenticated);
 
     if (!authLoading && isAuthenticated) {
-      console.log('SignupPage: 이미 로그인됨, /members로 리다이렉트');
+      logger.debug('SignupPage: 이미 로그인됨, /members로 리다이렉트');
       router.push('/members');
     }
   }, [isAuthenticated, authLoading, router]);
@@ -53,14 +56,14 @@ export default function SignupPage() {
 
     const { error } = await signUp(email, password, name);
 
-    console.log('회원가입 결과:', { error });
+    logger.debug('회원가입 결과:', { error });
 
     if (error) {
-      console.error('회원가입 에러:', error);
+      logger.error('회원가입 에러:', error);
       setError(error.message || '회원가입에 실패했습니다.');
       setIsLoading(false);
     } else {
-      console.log('회원가입 성공');
+      logger.debug('회원가입 성공');
 
       setSuccess(true);
       setIsLoading(false);

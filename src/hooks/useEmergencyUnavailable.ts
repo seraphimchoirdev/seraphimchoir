@@ -3,7 +3,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useArrangementStore, getPartSide } from '@/store/arrangement-store';
 import { useUpdateArrangement } from '@/hooks/useArrangements';
 import { useUpdateSeats } from '@/hooks/useSeats';
+import { createLogger } from '@/lib/logger';
 import type { Database, Json } from '@/types/database.types';
+
+const logger = createLogger({ prefix: 'EmergencyUnavailable' });
 
 type Part = Database['public']['Enums']['part'];
 
@@ -97,7 +100,7 @@ export function useEmergencyUnavailable({
     const handleEmergencyUnavailable = useCallback(
         async ({ memberId, memberName, part, row, col }: EmergencyUnavailableParams) => {
             try {
-                console.log(`[Emergency] 등단 불가 처리 시작: ${memberName}(${part}) at (${row}, ${col})`);
+                logger.debug(`[Emergency] 등단 불가 처리 시작: ${memberName}(${part}) at (${row}, ${col})`);
 
                 // 1. DB 업데이트
                 await updateAttendanceMutation.mutateAsync({ memberId });
@@ -105,9 +108,9 @@ export function useEmergencyUnavailable({
                 // 1.5. ⭐ 캐시 무효화 + refetch 완료 대기
                 // invalidateQueries에 await를 사용하면 refetch가 완료될 때까지 기다림
                 // → totalMembers와 MemberSidebar가 즉시 업데이트됨
-                console.log(`[Emergency] 출석 캐시 무효화 및 refetch 대기 중...`);
+                logger.debug(`[Emergency] 출석 캐시 무효화 및 refetch 대기 중...`);
                 await queryClient.invalidateQueries({ queryKey: ['attendances'] });
-                console.log(`[Emergency] 출석 캐시 refetch 완료`);
+                logger.debug(`[Emergency] 출석 캐시 refetch 완료`);
 
                 // 2. 좌석에서 제거
                 removeMember(row, col);
@@ -139,7 +142,7 @@ export function useEmergencyUnavailable({
 
                             // 뒷줄 용량 축소
                             shrinkRowFromSide(backRow, side);
-                            console.log(`[Emergency] 크로스-행 이동 완료: ${backRow}행 → ${row}행`);
+                            logger.debug(`[Emergency] 크로스-행 이동 완료: ${backRow}행 → ${row}행`);
                         } else {
                             // 크로스-행 이동 실패 시 현재 행만 축소
                             shrinkRowFromSide(row, side);
@@ -158,7 +161,7 @@ export function useEmergencyUnavailable({
                 const currentState = useArrangementStore.getState();
                 const { gridLayout: updatedGridLayout, assignments: updatedAssignments } = currentState;
 
-                console.log(`[Emergency] gridLayout 및 seats 자동 저장 시작...`);
+                logger.debug(`[Emergency] gridLayout 및 seats 자동 저장 시작...`);
 
                 // gridLayout 저장
                 await updateArrangement.mutateAsync({
@@ -183,18 +186,18 @@ export function useEmergencyUnavailable({
                     seats: seatsData,
                 });
 
-                console.log(`[Emergency] gridLayout 및 seats 저장 완료`);
+                logger.debug(`[Emergency] gridLayout 및 seats 저장 완료`);
 
                 // 7. 성공 메시지
                 const crossRowInfo = crossRowMoved ? ' (뒷줄에서 1명 이동)' : '';
                 const message = `${memberName}님이 등단 불가로 처리되었습니다.${crossRowInfo}`;
 
-                console.log(`[Emergency] 처리 완료: ${message}`);
+                logger.debug(`[Emergency] 처리 완료: ${message}`);
                 onSuccess?.(message);
 
             } catch (error) {
                 const message = error instanceof Error ? error.message : '처리에 실패했습니다';
-                console.error(`[Emergency] 오류:`, error);
+                logger.error(`[Emergency] 오류:`, error);
                 onError?.(message);
                 throw error;
             }

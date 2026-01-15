@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'Navigation' });
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Menu, X } from 'lucide-react';
@@ -33,14 +36,14 @@ export default function Navigation() {
       const { error } = await signOut();
 
       if (error) {
-        console.error('로그아웃 에러:', error);
+        logger.error('로그아웃 에러:', error);
         alert('로그아웃 중 오류가 발생했습니다. 다시 시도해주세요.');
         setIsLoggingOut(false);
         setIsLogoutDialogOpen(false);
       }
       // 성공 시 signOut 함수 내부에서 리다이렉트됨
     } catch (err) {
-      console.error('로그아웃 예외:', err);
+      logger.error('로그아웃 예외:', err);
       alert('로그아웃 중 오류가 발생했습니다.');
       setIsLoggingOut(false);
       setIsLogoutDialogOpen(false);

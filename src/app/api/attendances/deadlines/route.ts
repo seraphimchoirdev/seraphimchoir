@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { Database } from '@/types/database.types';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'DeadlinesAPI' });
 
 type Part = Database['public']['Enums']['part'];
 
@@ -44,7 +47,7 @@ export async function GET(request: NextRequest) {
       .eq('date', date);
 
     if (error) {
-      console.error('Supabase error:', error);
+      logger.error('Supabase error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -94,7 +97,7 @@ export async function GET(request: NextRequest) {
       isFullyClosed: fullDeadline !== null,
     });
   } catch (error) {
-    console.error('Deadlines GET error:', error);
+    logger.error('Deadlines GET error:', error);
     return NextResponse.json(
       { error: '마감 상태를 불러오는데 실패했습니다' },
       { status: 500 }
@@ -188,7 +191,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Supabase error:', error);
+      logger.error('Supabase error:', error);
       // 중복 에러 처리 (UNIQUE constraint)
       if (error.code === '23505') {
         return NextResponse.json(
@@ -205,7 +208,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.issues[0].message }, { status: 400 });
     }
 
-    console.error('Deadlines POST error:', error);
+    logger.error('Deadlines POST error:', error);
     return NextResponse.json(
       { error: '마감 처리에 실패했습니다' },
       { status: 500 }

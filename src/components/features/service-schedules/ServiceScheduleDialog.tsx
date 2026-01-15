@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import ServiceScheduleForm from './ServiceScheduleForm';
+import { createLogger } from '@/lib/logger';
 import {
   useCreateServiceSchedule,
   useUpdateServiceSchedule,
@@ -16,6 +17,8 @@ import type { Database } from '@/types/database.types';
 type ServiceSchedule = Database['public']['Tables']['service_schedules']['Row'];
 type ServiceScheduleInsert =
   Database['public']['Tables']['service_schedules']['Insert'];
+
+const logger = createLogger({ prefix: 'ServiceScheduleDialog' });
 
 interface ServiceScheduleDialogProps {
   open: boolean;
@@ -69,7 +72,7 @@ export default function ServiceScheduleDialog({
       onSuccess?.();
     } catch (error) {
       // 에러는 mutation에서 처리됨
-      console.error(error);
+      logger.error('ServiceSchedule mutation error:', error);
     }
   };
 

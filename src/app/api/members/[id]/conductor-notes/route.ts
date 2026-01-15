@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { encryptConductorNotes, decryptConductorNotes } from '@/lib/crypto';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'ConductorNotesAPI' });
 
 /**
  * 지휘자 메모 조회 API
@@ -89,14 +92,14 @@ export async function GET(
         notes: decryptedNotes,
       });
     } catch (decryptError) {
-      console.error('복호화 오류:', decryptError);
+      logger.error('복호화 오류:', decryptError);
       return NextResponse.json(
         { error: '메모를 복호화할 수 없습니다. 데이터가 손상되었을 수 있습니다.' },
         { status: 500 }
       );
     }
   } catch (error) {
-    console.error('지휘자 메모 조회 오류:', error);
+    logger.error('지휘자 메모 조회 오류:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -187,7 +190,7 @@ export async function PUT(
         .eq('id', id);
 
       if (updateError) {
-        console.error('메모 삭제 오류:', updateError);
+        logger.error('메모 삭제 오류:', updateError);
         return NextResponse.json(
           { error: '메모를 삭제할 수 없습니다.' },
           { status: 500 }
@@ -217,7 +220,7 @@ export async function PUT(
         .eq('id', id);
 
       if (updateError) {
-        console.error('메모 저장 오류:', updateError);
+        logger.error('메모 저장 오류:', updateError);
         return NextResponse.json(
           { error: '메모를 저장할 수 없습니다.' },
           { status: 500 }
@@ -231,14 +234,14 @@ export async function PUT(
         memberName: member.name,
       });
     } catch (encryptError) {
-      console.error('암호화 오류:', encryptError);
+      logger.error('암호화 오류:', encryptError);
       return NextResponse.json(
         { error: '메모를 암호화할 수 없습니다.' },
         { status: 500 }
       );
     }
   } catch (error) {
-    console.error('지휘자 메모 업데이트 오류:', error);
+    logger.error('지휘자 메모 업데이트 오류:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -303,7 +306,7 @@ export async function DELETE(
       .eq('id', id);
 
     if (updateError) {
-      console.error('메모 삭제 오류:', updateError);
+      logger.error('메모 삭제 오류:', updateError);
       return NextResponse.json(
         { error: '메모를 삭제할 수 없습니다.' },
         { status: 500 }
@@ -315,7 +318,7 @@ export async function DELETE(
       message: '메모가 삭제되었습니다.',
     });
   } catch (error) {
-    console.error('지휘자 메모 삭제 오류:', error);
+    logger.error('지휘자 메모 삭제 오류:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

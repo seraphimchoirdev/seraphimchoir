@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AuthLogout' });
 
 /**
  * POST /api/auth/logout
@@ -25,7 +28,7 @@ export async function POST(request: NextRequest) {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-      console.error('Logout error:', error);
+      logger.error('Logout error:', error);
       return NextResponse.json(
         { error: error.message || '로그아웃 중 오류가 발생했습니다.' },
         { status: 400 }
@@ -39,7 +42,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Logout exception:', error);
+    logger.error('Logout exception:', error);
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

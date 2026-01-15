@@ -2,6 +2,9 @@
 'use memo';
 
 import { useState, useCallback, useMemo, memo } from 'react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'MemberTable' });
 import Link from 'next/link';
 import { format } from 'date-fns/format';
 import { addMonths } from 'date-fns/addMonths';
@@ -392,7 +395,7 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
       onRefetch?.();
       setDeleteConfirmId(null);
     } catch (error) {
-      console.error('Delete error:', error);
+      logger.error('Delete error:', error);
     }
   }, [deleteMutation, onRefetch]);
 
@@ -436,7 +439,7 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
       });
       onRefetch?.();
     } catch (error) {
-      console.error('Status update error:', error);
+      logger.error('Status update error:', error);
     } finally {
       setUpdatingStatusId(null);
     }
@@ -461,7 +464,7 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
       onRefetch?.();
       setLeaveModalMemberId(null);
     } catch (error) {
-      console.error('Leave status update error:', error);
+      logger.error('Leave status update error:', error);
     } finally {
       setUpdatingStatusId(null);
     }
@@ -524,7 +527,7 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
       onRefetch?.();
       setReturnModalInfo(null);
     } catch (error) {
-      console.error('Return from leave error:', error);
+      logger.error('Return from leave error:', error);
     } finally {
       setUpdatingStatusId(null);
     }

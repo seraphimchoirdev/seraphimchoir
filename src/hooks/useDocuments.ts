@@ -10,6 +10,9 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'useDocuments' });
 
 export interface Document {
   id: string;
@@ -231,7 +234,7 @@ export function useDeleteDocument() {
         .remove([doc.file_path]);
 
       if (storageError) {
-        console.error('Storage 삭제 실패:', storageError);
+        logger.error('Storage 삭제 실패:', storageError);
         // Storage 삭제 실패해도 DB에서는 삭제 진행
       }
 

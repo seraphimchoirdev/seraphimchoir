@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AttendancesBatch' });
 
 /**
  * 전체 마감 여부 확인 헬퍼 함수
@@ -181,7 +184,7 @@ export async function POST(request: NextRequest) {
       .select();
 
     if (error) {
-      console.error('Supabase batch upsert error:', error);
+      logger.error('Supabase batch upsert error:', error);
       return NextResponse.json(
         {
           error: '출석 기록 저장에 실패했습니다',
@@ -215,7 +218,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Batch attendances POST error:', error);
+    logger.error('Batch attendances POST error:', error);
     return NextResponse.json(
       { error: '출석 기록 일괄 생성에 실패했습니다' },
       { status: 500 }
@@ -363,7 +366,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    console.error('Batch attendances PATCH error:', error);
+    logger.error('Batch attendances PATCH error:', error);
     return NextResponse.json(
       { error: '출석 기록 일괄 수정에 실패했습니다' },
       { status: 500 }

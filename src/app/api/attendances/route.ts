@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AttendancesAPI' });
 
 // Attendance 생성 스키마
 const createAttendanceSchema = z.object({
@@ -48,7 +51,7 @@ export async function GET(request: NextRequest) {
     // 필터가 하나도 없으면 빈 배열 반환 (의도치 않은 전체 조회 방지)
     const hasAnyFilter = memberId || date || startDate || endDate || isServiceAvailable || isPracticeAttended;
     if (!hasAnyFilter) {
-      console.log('Attendances: No filters provided, returning empty array');
+      logger.debug('Attendances: No filters provided, returning empty array');
       return NextResponse.json([]);
     }
 
@@ -113,7 +116,7 @@ export async function GET(request: NextRequest) {
       const { data: pageData, error: pageError } = await query;
 
       if (pageError) {
-        console.error('Supabase error:', pageError);
+        logger.error('Supabase error:', pageError);
         return NextResponse.json({ error: pageError.message }, { status: 500 });
       }
 
@@ -128,7 +131,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(allData);
   } catch (error) {
-    console.error('Attendances GET error:', error);
+    logger.error('Attendances GET error:', error);
     return NextResponse.json(
       { error: '출석 현황을 불러오는데 실패했습니다' },
       { status: 500 }
@@ -179,7 +182,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Supabase error:', error);
+      logger.error('Supabase error:', error);
       // 중복 에러 처리 (UNIQUE constraint)
       if (error.code === '23505') {
         return NextResponse.json(
@@ -196,7 +199,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.issues[0].message }, { status: 400 });
     }
 
-    console.error('Attendances POST error:', error);
+    logger.error('Attendances POST error:', error);
     return NextResponse.json(
       { error: '출석 기록 생성에 실패했습니다' },
       { status: 500 }
