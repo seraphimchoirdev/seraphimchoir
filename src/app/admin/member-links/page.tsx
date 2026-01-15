@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Navigation from '@/components/layout/Navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { usePendingLinkRequests, useApproveMemberLink, useRejectMemberLink } from '@/hooks/useMemberLink';
 import { Button } from '@/components/ui/button';
@@ -68,12 +69,14 @@ export default function MemberLinksAdminPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-          <UserCheck className="h-6 w-6" />
-          대원 연결 승인
-        </h1>
+    <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+      <Navigation />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+            <UserCheck className="h-6 w-6" />
+            대원 연결 승인
+          </h1>
         <p className="mt-2 text-[var(--color-text-secondary)]">
           카카오 로그인 사용자의 대원 연결 요청을 승인하거나 거부합니다.
         </p>
@@ -194,6 +197,7 @@ export default function MemberLinksAdminPage() {
           )}
         </>
       )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Navigation from '@/components/layout/Navigation';
 import { useAuth } from '@/hooks/useAuth';
 import {
   useDocuments,
@@ -128,7 +129,9 @@ export default function DocumentsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+      <Navigation />
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
@@ -340,6 +343,7 @@ export default function DocumentsPage() {
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 }
