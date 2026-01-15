@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, RefObject } from 'react';
+import { useState, useEffect, useRef, useCallback, RefObject } from 'react';
 import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2, BarChart3, Lock, Send, Share2, CheckCircle2, AlertTriangle, Sparkles, Trash2, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -96,13 +96,13 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
     const statusBadge = getStatusBadge();
 
     // 현재 활성화된 캡처 ref 선택 (뷰포트 기반)
-    const getActiveCaptureRef = () => {
+    const getActiveCaptureRef = useCallback(() => {
         // lg breakpoint (1024px) 기준으로 데스크톱/모바일 구분
         if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
             return desktopCaptureRef;
         }
         return mobileCaptureRef;
-    };
+    }, [desktopCaptureRef, mobileCaptureRef]);
 
     const [title, setTitle] = useState(arrangement.title);
     const [conductor, setConductor] = useState(arrangement.conductor || '');
@@ -111,8 +111,24 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
     const [analysisResult, setAnalysisResult] = useState<ArrangementAnalysisResponse | null>(null);
     const arrangementAnalysis = useArrangementAnalysis();
 
-    // 이미지 내보내기 핸들러
-    const handleDownloadImage = async () => {
+    // 컴포넌트 마운트 상태 추적 (메모리 누수 방지)
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+
+    // 안전한 상태 업데이트 헬퍼
+    const safeSetState = useCallback(<T,>(setter: React.Dispatch<React.SetStateAction<T>>, value: T) => {
+        if (isMountedRef.current) {
+            setter(value);
+        }
+    }, []);
+
+    // 이미지 내보내기 핸들러 (메모리 누수 방지 적용)
+    const handleDownloadImage = useCallback(async () => {
         const captureRef = getActiveCaptureRef();
         if (!captureRef?.current) {
             alert('캡처할 영역을 찾을 수 없습니다.');
@@ -121,14 +137,18 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         try {
             const filename = `배치표_${arrangement.date}_${title.replace(/\s+/g, '_')}`;
             await downloadAsImage(captureRef.current, filename);
-            alert('이미지가 다운로드되었습니다.');
+            if (isMountedRef.current) {
+                alert('이미지가 다운로드되었습니다.');
+            }
         } catch (error) {
             console.error('이미지 다운로드 실패:', error);
-            alert('이미지 다운로드에 실패했습니다.');
+            if (isMountedRef.current) {
+                alert('이미지 다운로드에 실패했습니다.');
+            }
         }
-    };
+    }, [arrangement.date, title, downloadAsImage, getActiveCaptureRef]);
 
-    const handleCopyToClipboard = async () => {
+    const handleCopyToClipboard = useCallback(async () => {
         const captureRef = getActiveCaptureRef();
         if (!captureRef?.current) {
             alert('캡처할 영역을 찾을 수 없습니다.');
@@ -136,12 +156,16 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         }
         try {
             await copyToClipboard(captureRef.current);
-            alert('이미지가 클립보드에 복사되었습니다.');
+            if (isMountedRef.current) {
+                alert('이미지가 클립보드에 복사되었습니다.');
+            }
         } catch (error) {
             console.error('클립보드 복사 실패:', error);
-            alert('클립보드 복사에 실패했습니다. 브라우저 설정을 확인해주세요.');
+            if (isMountedRef.current) {
+                alert('클립보드 복사에 실패했습니다. 브라우저 설정을 확인해주세요.');
+            }
         }
-    };
+    }, [copyToClipboard, getActiveCaptureRef]);
 
     // Sync local state if props change (e.g. refetch)
     useEffect(() => {
@@ -149,7 +173,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         setConductor(arrangement.conductor || '');
     }, [arrangement]);
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
         setIsSaving(true);
         try {
             // 1. Update Metadata and Grid Layout
@@ -177,14 +201,20 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 seats: seatsData,
             });
 
-            alert('저장되었습니다.'); // Simple feedback
+            if (isMountedRef.current) {
+                alert('저장되었습니다.');
+            }
         } catch (error) {
             console.error(error);
-            alert('저장에 실패했습니다.');
+            if (isMountedRef.current) {
+                alert('저장에 실패했습니다.');
+            }
         } finally {
-            setIsSaving(false);
+            if (isMountedRef.current) {
+                setIsSaving(false);
+            }
         }
-    };
+    }, [arrangement.id, title, conductor, gridLayout, assignments, updateArrangement, updateSeats]);
 
     const handleReset = () => {
         if (confirm('모든 자리 배치를 초기화하시겠습니까? 저장하지 않은 변경사항은 복구할 수 없습니다.')) {
@@ -193,7 +223,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
     };
 
     // 공유하기 (DRAFT → SHARED)
-    const handleShare = async () => {
+    const handleShare = useCallback(async () => {
         if (!confirm('배치표를 공유하시겠습니까?\n공유 후에도 긴급 수정은 가능합니다.')) {
             return;
         }
@@ -225,18 +255,24 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 seats: seatsData,
             });
 
-            alert('자리배치표가 공유되었습니다.\n긴급 수정이 필요하면 언제든 수정할 수 있습니다.');
-            router.refresh();
+            if (isMountedRef.current) {
+                alert('자리배치표가 공유되었습니다.\n긴급 수정이 필요하면 언제든 수정할 수 있습니다.');
+                router.refresh();
+            }
         } catch (error) {
             console.error(error);
-            alert('공유에 실패했습니다.');
+            if (isMountedRef.current) {
+                alert('공유에 실패했습니다.');
+            }
         } finally {
-            setIsSaving(false);
+            if (isMountedRef.current) {
+                setIsSaving(false);
+            }
         }
-    };
+    }, [arrangement.id, title, conductor, gridLayout, assignments, updateArrangement, updateSeats, router]);
 
     // 확정하기 (SHARED → CONFIRMED)
-    const handleConfirm = async () => {
+    const handleConfirm = useCallback(async () => {
         if (!confirm('배치표를 확정하시겠습니까?\n확정 후에는 더 이상 수정할 수 없습니다.')) {
             return;
         }
@@ -268,18 +304,24 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 seats: seatsData,
             });
 
-            alert('자리배치표가 확정되었습니다.');
-            router.refresh();
+            if (isMountedRef.current) {
+                alert('자리배치표가 확정되었습니다.');
+                router.refresh();
+            }
         } catch (error) {
             console.error(error);
-            alert('확정에 실패했습니다.');
+            if (isMountedRef.current) {
+                alert('확정에 실패했습니다.');
+            }
         } finally {
-            setIsSaving(false);
+            if (isMountedRef.current) {
+                setIsSaving(false);
+            }
         }
-    };
+    }, [arrangement.id, title, conductor, gridLayout, assignments, updateArrangement, updateSeats, router]);
 
     // 롤백 (SHARED → DRAFT)
-    const handleRevertToDraft = async () => {
+    const handleRevertToDraft = useCallback(async () => {
         if (!confirm('배치표를 작성중 상태로 되돌리시겠습니까?')) {
             return;
         }
@@ -293,15 +335,21 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 },
             });
 
-            alert('작성중 상태로 되돌렸습니다.');
-            router.refresh();
+            if (isMountedRef.current) {
+                alert('작성중 상태로 되돌렸습니다.');
+                router.refresh();
+            }
         } catch (error) {
             console.error(error);
-            alert('상태 변경에 실패했습니다.');
+            if (isMountedRef.current) {
+                alert('상태 변경에 실패했습니다.');
+            }
         } finally {
-            setIsSaving(false);
+            if (isMountedRef.current) {
+                setIsSaving(false);
+            }
         }
-    };
+    }, [arrangement.id, updateArrangement, router]);
 
     const handleApplyRecommendation = (recommendation: RecommendationResponse) => {
         // 디버깅: API 응답 확인
@@ -361,18 +409,22 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         );
     };
 
-    const handleAnalyze = async () => {
+    const handleAnalyze = useCallback(async () => {
         try {
             const result = await arrangementAnalysis.mutateAsync({
                 arrangementId: arrangement.id,
             });
-            setAnalysisResult(result);
-            setShowAnalysisModal(true);
+            if (isMountedRef.current) {
+                setAnalysisResult(result);
+                setShowAnalysisModal(true);
+            }
         } catch (error) {
             console.error('분석 실패:', error);
-            alert('배치 분석에 실패했습니다.');
+            if (isMountedRef.current) {
+                alert('배치 분석에 실패했습니다.');
+            }
         }
-    };
+    }, [arrangement.id, arrangementAnalysis]);
 
     return (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 bg-[var(--color-surface)] border-b border-[var(--color-border-default)]">
