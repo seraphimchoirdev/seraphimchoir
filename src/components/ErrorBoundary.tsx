@@ -3,6 +3,9 @@
 import React, { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'ErrorBoundary' });
 
 interface Props {
   children: ReactNode;
@@ -44,7 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // 에러 로깅 (프로덕션에서는 외부 서비스로 전송 가능)
-    console.error('Error Boundary caught an error:', error, errorInfo);
+    logger.error('Error caught:', { error: error.message, componentStack: errorInfo.componentStack });
 
     this.setState({
       error,

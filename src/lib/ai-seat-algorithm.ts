@@ -12,6 +12,9 @@
  */
 
 import { recommendRowDistribution } from './row-distribution-recommender';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'AI-Seat' });
 
 export interface Member {
   id: string;
@@ -1077,7 +1080,7 @@ function assignSeatsToRows(
   // === SMART FALLBACK: 학습된 열 범위(PART_COL_CONSTRAINTS) 기반 미배치 대원 배치 ===
   // 4단계 우선순위: (1) overflow행+학습열범위 → (2) preferred행+학습열범위 → (3) 열범위확장(±2) → (4) 아무빈좌석
   if (unplacedMembers.length > 0) {
-    console.log(`[AI] ${unplacedMembers.length}명 미배치 → smart fallback 시도 (학습 데이터 기반)`);
+    logger.debug(`${unplacedMembers.length}명 미배치 → smart fallback 시도 (학습 데이터 기반)`);
 
     /**
      * 파트별 fallback 좌석 찾기 (getAdjustedColConstraints 활용)
@@ -1170,7 +1173,7 @@ function assignSeatsToRows(
           const startCol = bassCol ? bassCol.max + 1 : rowCap - 2;
           for (let col = rowCap; col >= Math.max(startCol, rowCap - 3); col--) {
             if (!occupiedSeats.has(seatKey(row, col))) {
-              console.log(`[AI] ${member.name}(${part}) row ${row} 오른쪽 배치: ${row}행 ${col}열`);
+              logger.debug(`${member.name}(${part}) row ${row} 오른쪽 배치: ${row}행 ${col}열`);
               return { row, col };
             }
           }
@@ -1192,7 +1195,7 @@ function assignSeatsToRows(
           );
           for (let col = overflowMin; col <= overflowMax; col++) {
             if (!occupiedSeats.has(seatKey(row, col))) {
-              console.log(`[AI] ${member.name}(${part}) overflow 영역 배치: ${row}행 ${col}열`);
+              logger.debug(`${member.name}(${part}) overflow 영역 배치: ${row}행 ${col}열`);
               return { row, col };
             }
           }
@@ -1209,7 +1212,7 @@ function assignSeatsToRows(
             const bassCol = getAdjustedColConstraints('BASS', row, rowCap);
             if (bassCol && col >= bassCol.min) continue;
           }
-          console.warn(`[AI] ${member.name}(${part}) 최후 배치: ${row}행 ${col}열 (영역 침범 불가피)`);
+          logger.warn(`${member.name}(${part}) 최후 배치: ${row}행 ${col}열 (영역 침범 불가피)`);
           return { row, col };
         }
       }
@@ -1223,7 +1226,7 @@ function assignSeatsToRows(
           const maxAllowedCol = bassCol ? Math.floor(bassCol.avg) : rowCap;
           for (let col = 1; col <= maxAllowedCol; col++) {
             if (!occupiedSeats.has(seatKey(row, col))) {
-              console.warn(`[AI] ${member.name}(${part}) BASS 경계 배치: ${row}행 ${col}열 (수작업 최소화)`);
+              logger.warn(`${member.name}(${part}) BASS 경계 배치: ${row}행 ${col}열 (수작업 최소화)`);
               return { row, col };
             }
           }
@@ -1246,7 +1249,7 @@ function assignSeatsToRows(
         });
         occupiedSeats.add(seatKey(fallbackSeat.row, fallbackSeat.col));
       } else {
-        console.warn(`[AI] ${member.name}(${member.part}) 배치 실패: 좌석 부족`);
+        logger.warn(`${member.name}(${member.part}) 배치 실패: 좌석 부족`);
       }
     }
   }
@@ -1331,7 +1334,7 @@ export function generateAISeatingArrangement(
     partSeats[part].push({ row: seat.row, col: seat.col, name: seat.member_name });
   }
 
-  console.log('\n[DEBUG] === 파트별 배치 현황 ===');
+  logger.debug('=== 파트별 배치 현황 ===');
   for (const part of ['SOPRANO', 'ALTO', 'TENOR', 'BASS']) {
     const ps = partSeats[part] || [];
     if (ps.length === 0) continue;
@@ -1342,23 +1345,23 @@ export function generateAISeatingArrangement(
       rowGroups[s.row].push(s.col);
     }
 
-    console.log(`[${part}] 총 ${ps.length}명:`);
+    logger.debug(`[${part}] 총 ${ps.length}명:`);
     for (const row of Object.keys(rowGroups).map(Number).sort((a, b) => a - b)) {
       const cols = rowGroups[row].sort((a, b) => a - b);
       const constraint = getAdjustedColConstraints(part, row, rowCapacities[row - 1]);
       const constraintStr = constraint ? `학습범위: ${constraint.min}-${constraint.max}` : '(학습데이터 없음)';
-      console.log(`  ${row}행: col ${cols.join(', ')} [${constraintStr}]`);
+      logger.debug(`  ${row}행: col ${cols.join(', ')} [${constraintStr}]`);
 
       // 범위 이탈 체크
       if (constraint) {
         const outOfRange = cols.filter(c => c < constraint.min || c > constraint.max);
         if (outOfRange.length > 0) {
-          console.log(`    ⚠️ 범위 이탈: col ${outOfRange.join(', ')}`);
+          logger.debug(`    ⚠️ 범위 이탈: col ${outOfRange.join(', ')}`);
         }
       }
     }
   }
-  console.log('[DEBUG] === 배치 현황 끝 ===\n');
+  logger.debug('=== 배치 현황 끝 ===');
 
   // 7. 그리드 압축 - 빈좌석 제거
   // 각 행에서 실제로 사용된 최대 열 번호를 찾아 rowCapacities 조정
@@ -1377,7 +1380,7 @@ export function generateAISeatingArrangement(
 
   const totalSeatsBeforeAdjust = rowCapacities.reduce((a, b) => a + b, 0);
   const totalSeatsAfterAdjust = adjustedRowCapacities.reduce((a, b) => a + b, 0);
-  console.log(`[AI] 그리드 압축: ${totalSeatsBeforeAdjust}석 → ${totalSeatsAfterAdjust}석 (${totalSeatsBeforeAdjust - totalSeatsAfterAdjust}석 감소)`);
+  logger.debug(`그리드 압축: ${totalSeatsBeforeAdjust}석 → ${totalSeatsAfterAdjust}석 (${totalSeatsBeforeAdjust - totalSeatsAfterAdjust}석 감소)`);
 
   // 8. 결과 반환
   return {

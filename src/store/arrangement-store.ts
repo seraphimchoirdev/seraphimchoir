@@ -13,6 +13,9 @@ import {
     findNearestEmptySeatInExpandedZone,
 } from '@/lib/part-zone-analyzer';
 import { selectRowLeaders, type RowLeaderCandidate } from '@/lib/row-leader-utils';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'ArrangementStore' });
 
 type Part = Database['public']['Enums']['part'];
 
@@ -494,7 +497,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         const { gridLayout, assignments } = state;
 
         if (!gridLayout) {
-            console.warn('[RowLeader] gridLayout이 없어 자동 지정 불가');
+            logger.warn('gridLayout이 없어 자동 지정 불가');
             return [];
         }
 
@@ -523,7 +526,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
             assignments: newAssignments,
         });
 
-        console.log(`[RowLeader] 자동 지정 완료: ${candidates.length}명`);
+        logger.debug(`자동 지정 완료: ${candidates.length}명`);
         return candidates;
     },
 
@@ -542,7 +545,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
                 }
             });
 
-            console.log(`[RowLeader] 전체 해제: ${clearedCount}명`);
+            logger.debug(`전체 해제: ${clearedCount}명`);
 
             return {
                 _history: saveToHistory(state),
@@ -735,10 +738,10 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
                     searchLevel,
                 });
 
-                console.log(`[AutoPlace] ${member.memberName}(${member.part}) → (${row}, ${col}) [${searchLevel}]`);
+                logger.debug(`${member.memberName}(${member.part}) → (${row}, ${col}) [${searchLevel}]`);
             } else {
                 stillUnassigned.push(member);
-                console.log(`[AutoPlace] ${member.memberName}(${member.part}) - 배치 실패: 빈 좌석 없음`);
+                logger.debug(`${member.memberName}(${member.part}) - 배치 실패: 빈 좌석 없음`);
             }
         }
 
@@ -784,7 +787,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
                 // 다른 파트면 당기기 중단 (파트 경계 보호)
                 if (member.part !== targetPart) {
-                    console.log(`[Pull] 파트 경계 도달: ${member.part} ≠ ${targetPart}, 당기기 중단`);
+                    logger.debug(`파트 경계 도달: ${member.part} ≠ ${targetPart}, 당기기 중단`);
                     break;
                 }
 
@@ -793,7 +796,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
                 newAssignments[newKey] = { ...member, col: currentEmptyCol };
                 delete newAssignments[key];
 
-                console.log(`[Pull] ${member.memberName}(${member.part}) ${col}→${currentEmptyCol}`);
+                logger.debug(`${member.memberName}(${member.part}) ${col}→${currentEmptyCol}`);
 
                 // 다음 빈 자리는 방금 이동한 위치
                 currentEmptyCol = col;
@@ -832,11 +835,11 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
                 const lastCol = newCapacities[rowIndex];
                 const lastKey = `${row}-${lastCol}`;
                 if (newAssignments[lastKey]) {
-                    console.warn(`[Shrink] 경고: ${row}행 ${lastCol}열에 멤버가 있어 미배치됨`);
+                    logger.warn(`${row}행 ${lastCol}열에 멤버가 있어 미배치됨`);
                     delete newAssignments[lastKey];
                 }
                 newCapacities[rowIndex]--;
-                console.log(`[Shrink] ${row}행 오른쪽 축소: ${newCapacities[rowIndex] + 1}→${newCapacities[rowIndex]}`);
+                logger.debug(`${row}행 오른쪽 축소: ${newCapacities[rowIndex] + 1}→${newCapacities[rowIndex]}`);
             } else {
                 // 왼쪽 파트(SOPRANO/TENOR) 축소:
                 // pullSamePartMembersLeft 후 빈 자리는 파트 경계(중앙 부근)에 있음
@@ -855,7 +858,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
                 if (emptyCol > 0) {
                     // 빈 자리 오른쪽 멤버들을 왼쪽으로 당기기
-                    console.log(`[Shrink] ${row}행 빈 자리 발견: col ${emptyCol}, 오른쪽 멤버들 왼쪽으로 당김`);
+                    logger.debug(`${row}행 빈 자리 발견: col ${emptyCol}, 오른쪽 멤버들 왼쪽으로 당김`);
                     for (let col = emptyCol + 1; col <= maxCol; col++) {
                         const key = `${row}-${col}`;
                         const member = newAssignments[key];
@@ -869,7 +872,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
                 // 오른쪽 끝 용량 축소 (이제 마지막 열은 비어있음)
                 newCapacities[rowIndex]--;
-                console.log(`[Shrink] ${row}행 왼쪽 파트 축소 완료: ${newCapacities[rowIndex] + 1}→${newCapacities[rowIndex]}`);
+                logger.debug(`${row}행 왼쪽 파트 축소 완료: ${newCapacities[rowIndex] + 1}→${newCapacities[rowIndex]}`);
             }
 
             return {
@@ -929,7 +932,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         }
 
         if (!candidateMember || candidateCol === null) {
-            console.log(`[CrossRow] ${backRow}행에서 ${part} 멤버를 찾을 수 없음`);
+            logger.debug(`${backRow}행에서 ${part} 멤버를 찾을 수 없음`);
             return false;
         }
 
@@ -945,7 +948,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         };
         delete newAssignments[oldKey];
 
-        console.log(`[CrossRow] ${candidateMember.memberName}(${part}) ${backRow}행${candidateCol}열 → ${frontRow}행${emptyCol}열`);
+        logger.debug(`${candidateMember.memberName}(${part}) ${backRow}행${candidateCol}열 → ${frontRow}행${emptyCol}열`);
 
         set({
             _history: saveToHistory(state),
@@ -1013,7 +1016,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         const shouldMove = (backRowCount - frontRowCount) >= threshold;
 
         if (shouldMove) {
-            console.log(`[CrossRow] 불균형 감지: ${frontRow}행(${frontRowCount}명) vs ${backRow}행(${backRowCount}명), 차이: ${backRowCount - frontRowCount}명`);
+            logger.debug(`불균형 감지: ${frontRow}행(${frontRowCount}명) vs ${backRow}행(${backRowCount}명), 차이: ${backRowCount - frontRowCount}명`);
         }
 
         return shouldMove;
@@ -1071,14 +1074,14 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
                     newAssignments[newKey] = { ...member, col: newCol };
 
                     if (member.col !== newCol) {
-                        console.log(`[Compact] ${row}행: ${member.memberName} ${member.col}→${newCol}`);
+                        logger.debug(`${row}행: ${member.memberName} ${member.col}→${newCol}`);
                         totalCompacted++;
                     }
                 });
             }
 
             if (totalCompacted > 0) {
-                console.log(`[Compact] 총 ${totalCompacted}명 좌석 정리 완료`);
+                logger.debug(`총 ${totalCompacted}명 좌석 정리 완료`);
             }
 
             return { assignments: newAssignments };
