@@ -2,13 +2,49 @@
 
 import Link from 'next/link';
 import { format } from 'date-fns/format';
+import { differenceInDays } from 'date-fns/differenceInDays';
+import { AlertTriangle } from 'lucide-react';
 import { useDeleteMember } from '@/hooks/useMembers';
 import type { Database } from '@/types/database.types';
 import { useState } from 'react';
 
-type Member = Database['public']['Tables']['members']['Row'];
+type Member = Database['public']['Tables']['members']['Row'] & {
+  last_service_date?: string | null;
+  last_practice_date?: string | null;
+};
 type Part = Database['public']['Enums']['part'];
 type MemberStatus = Database['public']['Enums']['member_status'];
+
+/**
+ * 출석일 기준 색상 스타일 반환
+ */
+const getAttendanceDateStyle = (dateStr: string | null | undefined): { textClass: string; showWarning: boolean } => {
+  if (!dateStr) {
+    return { textClass: 'text-neutral-400', showWarning: false };
+  }
+  const daysSince = differenceInDays(new Date(), new Date(dateStr));
+  if (daysSince <= 14) {
+    return { textClass: 'text-[var(--color-success-600)]', showWarning: false };
+  }
+  if (daysSince <= 30) {
+    return { textClass: 'text-neutral-600', showWarning: false };
+  }
+  if (daysSince <= 60) {
+    return { textClass: 'text-[var(--color-warning-600)]', showWarning: false };
+  }
+  if (daysSince <= 90) {
+    return { textClass: 'text-orange-600', showWarning: true };
+  }
+  return { textClass: 'text-[var(--color-error-600)]', showWarning: true };
+};
+
+/**
+ * 날짜 포맷팅 (항상 yy.MM.dd 형식)
+ */
+const formatAttendanceDate = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '-';
+  return format(new Date(dateStr), 'yy.MM.dd');
+};
 
 interface MemberCardProps {
   member: Member;
@@ -111,6 +147,47 @@ export default function MemberCard({ member, onDelete }: MemberCardProps) {
             <span className="font-medium">특이사항:</span> {member.notes}
           </div>
         )}
+      </div>
+
+      {/* 출석 정보 */}
+      <div className="mb-3 p-3 bg-[var(--color-background-secondary)] rounded-lg">
+        <div className="text-xs font-semibold text-[var(--color-text-secondary)] mb-2">출석 현황</div>
+        <div className="grid grid-cols-2 gap-3">
+          {/* 최근 등단 */}
+          <div className="flex flex-col">
+            <span className="text-[10px] text-[var(--color-text-tertiary)] mb-0.5">최근 등단</span>
+            {(() => {
+              const style = getAttendanceDateStyle(member.last_service_date);
+              return (
+                <div className="flex items-center gap-1">
+                  <span className={`text-sm font-semibold ${style.textClass}`}>
+                    {formatAttendanceDate(member.last_service_date)}
+                  </span>
+                  {style.showWarning && (
+                    <AlertTriangle className="w-3 h-3 text-current" />
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+          {/* 최근 연습 */}
+          <div className="flex flex-col">
+            <span className="text-[10px] text-[var(--color-text-tertiary)] mb-0.5">최근 연습</span>
+            {(() => {
+              const style = getAttendanceDateStyle(member.last_practice_date);
+              return (
+                <div className="flex items-center gap-1">
+                  <span className={`text-sm font-semibold ${style.textClass}`}>
+                    {formatAttendanceDate(member.last_practice_date)}
+                  </span>
+                  {style.showWarning && (
+                    <AlertTriangle className="w-3 h-3 text-current" />
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
       </div>
 
       {/* 휴직 정보 (휴직대원일 때만 표시) */}

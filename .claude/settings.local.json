@@ -71,13 +71,28 @@
       "Bash(package.json )",
       "Bash(package-lock.json)",
       "Bash(npm run dev:*)",
-      "mcp__plugin_playwright_playwright__browser_resize"
+      "mcp__plugin_playwright_playwright__browser_resize",
+      "Bash(for f in ml_2025-*_2부예배.json)",
+      "Bash(do jq:*)",
+      "Bash(done)",
+      "Bash(find:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(for f in ml_2025-*.json)",
+      "mcp__supabase__execute_sql",
+      "Bash(git push:*)",
+      "Bash(npm ls:*)",
+      "Bash(PGPASSWORD=postgres psql:*)",
+      "Bash(xargs -I {} sh -c 'echo \"\"\"\"=== {} ===\"\"\"\" && head -50 {}')",
+      "mcp__supabase__list_tables",
+      "Bash(xargs -I {} sh -c 'echo \"\"\"\"=== {} ===\"\"\"\" && head -c 3000 {}')"
     ],
     "deny": [],
     "ask": []
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
-    "context7"
+    "context7",
+    "supabase"
   ]
 }

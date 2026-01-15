@@ -17,8 +17,11 @@ const queryParamsSchema = z.object({
   part: PartEnum.optional().nullish(),
   search: z.string().optional().nullish(),
   member_status: MemberStatusEnum.optional().nullish(),
-  sortBy: z.enum(['name', 'part', 'createdAt']).optional().default('createdAt'),
+  sortBy: z.enum(['name', 'part', 'createdAt', 'lastServiceDate', 'lastPracticeDate']).optional().default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+  // 장기 미출석 필터 (일수 기준)
+  absentDaysService: z.coerce.number().int().min(0).optional().nullish(),
+  absentDaysPractice: z.coerce.number().int().min(0).optional().nullish(),
 });
 
 // Member creation schema
@@ -71,6 +74,8 @@ export async function GET(request: NextRequest) {
       member_status: searchParams.get('member_status') ?? undefined,
       sortBy: searchParams.get('sortBy') ?? undefined,
       sortOrder: searchParams.get('sortOrder') ?? undefined,
+      absentDaysService: searchParams.get('absentDaysService') ?? undefined,
+      absentDaysPractice: searchParams.get('absentDaysPractice') ?? undefined,
     };
 
     const validation = queryParamsSchema.safeParse(rawParams);
@@ -102,11 +107,13 @@ export async function GET(request: NextRequest) {
       name: 'name',
       part: 'part',
       createdAt: 'created_at',
+      lastServiceDate: 'last_service_date',
+      lastPracticeDate: 'last_practice_date',
     };
 
-    // Supabase query (members_public view 사용 - 암호화 필드 제외)
+    // Supabase query (members_with_attendance view 사용 - 출석 정보 포함)
     let query = supabase
-      .from('members_public')
+      .from('members_with_attendance')
       .select('*', { count: 'exact' });
 
     // 파트 필터링
@@ -131,6 +138,25 @@ export async function GET(request: NextRequest) {
       query = query.eq('member_status', params.member_status);
     }
 
+    // 장기 미출석 필터링
+    // absentDaysService: 등단 미출석 일수 이상인 대원 필터링
+    if (params.absentDaysService && params.absentDaysService > 0) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - params.absentDaysService);
+      const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+      // last_service_date가 null이거나 cutoffDate 이전인 경우
+      query = query.or(`last_service_date.is.null,last_service_date.lt.${cutoffDateStr}`);
+    }
+
+    // absentDaysPractice: 연습 미출석 일수 이상인 대원 필터링
+    if (params.absentDaysPractice && params.absentDaysPractice > 0) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - params.absentDaysPractice);
+      const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+      // last_practice_date가 null이거나 cutoffDate 이전인 경우
+      query = query.or(`last_practice_date.is.null,last_practice_date.lt.${cutoffDateStr}`);
+    }
+
     // 정렬 적용
     const sortColumn = columnMap[params.sortBy];
     query = query.order(sortColumn, { ascending: params.sortOrder === 'asc' });
@@ -145,6 +171,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '찬양대원 목록을 불러오는데 실패했습니다' }, { status: 500 });
     }
 
+    // members_with_attendance 뷰에서 이미 출석 정보가 포함되어 있음
+
     // 페이지네이션 메타데이터 계산
     const total = count || 0;
     const totalPages = Math.ceil(total / params.limit);
@@ -158,7 +186,7 @@ export async function GET(request: NextRequest) {
       hasPrev: page > 1,
     };
 
-    const response: PaginatedResponse<typeof members[0]> = {
+    const response: PaginatedResponse<(typeof members)[0]> = {
       data: members || [],
       meta,
     };

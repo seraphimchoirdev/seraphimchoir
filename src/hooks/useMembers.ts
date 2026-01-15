@@ -22,6 +22,9 @@ export interface MemberFilters {
   limit?: number;
   sortBy?: SortByField;
   sortOrder?: SortOrder;
+  // 장기 미출석 필터 (일수 기준)
+  absentDaysService?: number;   // 등단 미출석 일수 (예: 30, 60, 90)
+  absentDaysPractice?: number;  // 연습 미출석 일수
 }
 
 // API 응답 타입
@@ -49,6 +52,13 @@ export function useMembers(filters?: MemberFilters) {
       if (filters?.limit && filters.limit > 0) params.append('limit', filters.limit.toString());
       if (filters?.sortBy) params.append('sortBy', filters.sortBy);
       if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
+      // 장기 미출석 필터
+      if (filters?.absentDaysService && filters.absentDaysService > 0) {
+        params.append('absentDaysService', filters.absentDaysService.toString());
+      }
+      if (filters?.absentDaysPractice && filters.absentDaysPractice > 0) {
+        params.append('absentDaysPractice', filters.absentDaysPractice.toString());
+      }
 
       const response = await fetch(`/api/members?${params.toString()}`);
 

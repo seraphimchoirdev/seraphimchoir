@@ -258,8 +258,8 @@ export async function POST(
         // 그리드 레이아웃 설정 (요청에서 받거나 기본값)
         const gridLayout: MLGridLayout | undefined = body.gridLayout ? {
           rows: body.gridLayout.rows,
-          row_capacities: body.gridLayout.rowCapacities,
-          zigzag_pattern: body.gridLayout.zigzagPattern,
+          rowCapacities: body.gridLayout.rowCapacities,
+          zigzagPattern: body.gridLayout.zigzagPattern,
         } : undefined;
 
         console.log('[ML] Requesting recommendation from Python service...');

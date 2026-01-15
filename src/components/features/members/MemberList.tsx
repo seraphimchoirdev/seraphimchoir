@@ -95,6 +95,17 @@ export default function MemberList() {
   const [sortOrder, setSortOrder] = useState<SortOrder>(
     (searchParams.get('sortOrder') as SortOrder) || 'desc'
   );
+  // 장기 미출석 필터 상태
+  const [absentDaysService, setAbsentDaysService] = useState<number | undefined>(
+    searchParams.get('absentDaysService')
+      ? Number(searchParams.get('absentDaysService'))
+      : undefined
+  );
+  const [absentDaysPractice, setAbsentDaysPractice] = useState<number | undefined>(
+    searchParams.get('absentDaysPractice')
+      ? Number(searchParams.get('absentDaysPractice'))
+      : undefined
+  );
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -112,6 +123,9 @@ export default function MemberList() {
     if (limit !== 20) params.set('limit', limit.toString());
     if (sortBy !== 'createdAt') params.set('sortBy', sortBy);
     if (sortOrder !== 'desc') params.set('sortOrder', sortOrder);
+    // 장기 미출석 필터 URL 파라미터
+    if (absentDaysService) params.set('absentDaysService', absentDaysService.toString());
+    if (absentDaysPractice) params.set('absentDaysPractice', absentDaysPractice.toString());
 
     const newUrl = params.toString()
       ? `/members?${params.toString()}`
@@ -125,6 +139,8 @@ export default function MemberList() {
     limit,
     sortBy,
     sortOrder,
+    absentDaysService,
+    absentDaysPractice,
     router,
   ]);
 
@@ -137,6 +153,8 @@ export default function MemberList() {
     limit,
     sortBy,
     sortOrder,
+    absentDaysService,
+    absentDaysPractice,
   };
 
   // React Query로 데이터 페칭
@@ -197,10 +215,16 @@ export default function MemberList() {
             onSortChange={handleSortByChange}
             sortOrder={sortOrder}
             onSortOrderChange={setSortOrder}
+            absentDaysService={absentDaysService}
+            onAbsentDaysServiceChange={setAbsentDaysService}
+            absentDaysPractice={absentDaysPractice}
+            onAbsentDaysPracticeChange={setAbsentDaysPractice}
             onReset={() => {
               setSearchInput('');
               setSelectedPart('ALL');
               setSelectedStatus('ALL');
+              setAbsentDaysService(undefined);
+              setAbsentDaysPractice(undefined);
               setCurrentPage(1);
             }}
           />

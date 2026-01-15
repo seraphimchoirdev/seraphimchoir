@@ -5,7 +5,9 @@ import { useState, useCallback, useMemo, memo } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns/format';
 import { addMonths } from 'date-fns/addMonths';
-import { Eye, Edit2, Trash2, ChevronDown, Loader2, X } from 'lucide-react';
+import { differenceInDays } from 'date-fns/differenceInDays';
+import { differenceInMonths } from 'date-fns/differenceInMonths';
+import { Eye, Edit2, Trash2, ChevronDown, Loader2, X, AlertTriangle, CheckCircle2, Calendar, RotateCcw } from 'lucide-react';
 import MemberAvatar from './MemberAvatar';
 import { useDeleteMember, useUpdateMember } from '@/hooks/useMembers';
 import {
@@ -13,14 +15,56 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Database } from '@/types/database.types';
 
-type Member = Database['public']['Tables']['members']['Row'];
+type Member = Database['public']['Tables']['members']['Row'] & {
+  last_service_date?: string | null;
+  last_practice_date?: string | null;
+};
 type Part = Database['public']['Enums']['part'];
 type MemberStatus = Database['public']['Enums']['member_status'];
+
+/**
+ * 출석일 기준 색상 스타일 반환
+ * - 2주일 이내: 초록 (정상)
+ * - 1개월 이내: 기본
+ * - 1-2개월: 노랑 (주의)
+ * - 2-3개월: 주황 (경고)
+ * - 3개월 이상: 빨강 (위험)
+ */
+const getAttendanceDateStyle = (dateStr: string | null | undefined): { textClass: string; showWarning: boolean } => {
+  if (!dateStr) {
+    return { textClass: 'text-neutral-400', showWarning: false };
+  }
+
+  const daysSince = differenceInDays(new Date(), new Date(dateStr));
+
+  if (daysSince <= 14) {
+    return { textClass: 'text-[var(--color-success-600)]', showWarning: false };
+  }
+  if (daysSince <= 30) {
+    return { textClass: 'text-neutral-600', showWarning: false };
+  }
+  if (daysSince <= 60) {
+    return { textClass: 'text-[var(--color-warning-600)]', showWarning: false };
+  }
+  if (daysSince <= 90) {
+    return { textClass: 'text-orange-600', showWarning: true };
+  }
+  return { textClass: 'text-[var(--color-error-600)]', showWarning: true };
+};
+
+/**
+ * 날짜 포맷팅 (항상 yy.MM.dd 형식)
+ */
+const formatAttendanceDate = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '-';
+  return format(new Date(dateStr), 'yy.MM.dd');
+};
 
 // 휴직 정보 폼 데이터
 interface LeaveInfoFormData {
@@ -29,6 +73,39 @@ interface LeaveInfoFormData {
   leave_duration_months: number | null;
   expected_return_date: string;
 }
+
+// 복직 처리 정보
+interface ReturnFromLeaveInfo {
+  memberId: string;
+  memberName: string;
+  leaveStartDate: string | null;
+  leaveDurationDays: number;
+  leaveDurationMonths: number;
+  requiredPracticeSessions: number;
+  targetStatus: MemberStatus;
+}
+
+/**
+ * 휴직 기간에 따른 재등단 조건 계산
+ * - 1개월 미만: 2회 연습 참여
+ * - 1개월 이상: 4회 연습 참여
+ */
+const calculateRequiredPracticeSessions = (leaveStartDate: string | null): { days: number; months: number; sessions: number } => {
+  if (!leaveStartDate) {
+    // 휴직 시작일이 없으면 기본값 (1개월 이상으로 간주)
+    return { days: 30, months: 1, sessions: 4 };
+  }
+
+  const startDate = new Date(leaveStartDate);
+  const today = new Date();
+  const days = differenceInDays(today, startDate);
+  const months = differenceInMonths(today, startDate);
+
+  // 1개월 미만이면 2회, 1개월 이상이면 4회
+  const sessions = months < 1 ? 2 : 4;
+
+  return { days, months, sessions };
+};
 
 interface MemberTableProps {
   members: Member[];
@@ -154,7 +231,20 @@ const MemberRow = memo(function MemberRow({
                 <ChevronDown className="w-3 h-3" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-32">
+            <DropdownMenuContent align="start" className="w-36">
+              {/* 휴직대원일 때 복직 옵션 표시 */}
+              {member.member_status === 'ON_LEAVE' && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => onStatusChange(member.id, 'REGULAR')}
+                    className="cursor-pointer text-xs text-[var(--color-success-700)] font-medium"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-2" />
+                    복직대원
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               {STATUS_OPTIONS.map((status) => (
                 <DropdownMenuItem
                   key={status}
@@ -196,6 +286,40 @@ const MemberRow = memo(function MemberRow({
         <span className="text-sm text-neutral-600">
           {member.joined_date ? format(new Date(member.joined_date), 'yyyy.MM.dd') : '-'}
         </span>
+      </td>
+
+      {/* 최근 등단일 */}
+      <td className="px-4 py-4 whitespace-nowrap">
+        {(() => {
+          const style = getAttendanceDateStyle(member.last_service_date);
+          return (
+            <div className="flex items-center gap-1">
+              <span className={`text-sm font-medium ${style.textClass}`}>
+                {formatAttendanceDate(member.last_service_date)}
+              </span>
+              {style.showWarning && (
+                <AlertTriangle className="w-3.5 h-3.5 text-current" />
+              )}
+            </div>
+          );
+        })()}
+      </td>
+
+      {/* 최근 연습 출석일 */}
+      <td className="px-4 py-4 whitespace-nowrap">
+        {(() => {
+          const style = getAttendanceDateStyle(member.last_practice_date);
+          return (
+            <div className="flex items-center gap-1">
+              <span className={`text-sm font-medium ${style.textClass}`}>
+                {formatAttendanceDate(member.last_practice_date)}
+              </span>
+              {style.showWarning && (
+                <AlertTriangle className="w-3.5 h-3.5 text-current" />
+              )}
+            </div>
+          );
+        })()}
       </td>
 
       {/* 액션 버튼 */}
@@ -243,6 +367,8 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
     leave_duration_months: 3,
     expected_return_date: format(addMonths(new Date(), 3), 'yyyy-MM-dd'),
   });
+  // 복직 처리 모달 상태
+  const [returnModalInfo, setReturnModalInfo] = useState<ReturnFromLeaveInfo | null>(null);
 
   const deleteMutation = useDeleteMember();
   const updateMutation = useUpdateMember();
@@ -271,7 +397,7 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
   }, [deleteMutation, onRefetch]);
 
   const handleStatusChange = useCallback(async (memberId: string, newStatus: MemberStatus) => {
-    // 휴직으로 변경할 때는 모달을 띄움
+    // 휴직으로 변경할 때는 휴직 정보 입력 모달을 띄움
     if (newStatus === 'ON_LEAVE') {
       setLeaveModalMemberId(memberId);
       // 폼 초기화
@@ -285,23 +411,28 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
       return;
     }
 
-    // 휴직에서 다른 상태로 변경할 때는 휴직 정보 초기화
+    // 휴직에서 다른 상태로 변경할 때는 복직 처리 모달을 띄움
+    const currentMember = members.find((m) => m.id === memberId);
+    if (currentMember?.member_status === 'ON_LEAVE') {
+      const { days, months, sessions } = calculateRequiredPracticeSessions(currentMember.leave_start_date);
+      setReturnModalInfo({
+        memberId,
+        memberName: currentMember.name,
+        leaveStartDate: currentMember.leave_start_date,
+        leaveDurationDays: days,
+        leaveDurationMonths: months,
+        requiredPracticeSessions: sessions,
+        targetStatus: newStatus,
+      });
+      return;
+    }
+
+    // 일반 상태 변경
     setUpdatingStatusId(memberId);
     try {
-      const updateData: Partial<Member> = { member_status: newStatus };
-
-      // 휴직 상태에서 벗어날 때 휴직 정보 초기화
-      const currentMember = members.find((m) => m.id === memberId);
-      if (currentMember?.member_status === 'ON_LEAVE') {
-        updateData.leave_reason = null;
-        updateData.leave_start_date = null;
-        updateData.leave_duration_months = null;
-        updateData.expected_return_date = null;
-      }
-
       await updateMutation.mutateAsync({
         id: memberId,
-        data: updateData,
+        data: { member_status: newStatus },
       });
       onRefetch?.();
     } catch (error) {
@@ -373,6 +504,36 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
     setLeaveModalMemberId(null);
   }, []);
 
+  // 복직 처리 확인 핸들러
+  const handleReturnFromLeaveConfirm = useCallback(async () => {
+    if (!returnModalInfo) return;
+
+    setUpdatingStatusId(returnModalInfo.memberId);
+    try {
+      await updateMutation.mutateAsync({
+        id: returnModalInfo.memberId,
+        data: {
+          member_status: returnModalInfo.targetStatus,
+          // 휴직 정보 초기화
+          leave_reason: null,
+          leave_start_date: null,
+          leave_duration_months: null,
+          expected_return_date: null,
+        },
+      });
+      onRefetch?.();
+      setReturnModalInfo(null);
+    } catch (error) {
+      console.error('Return from leave error:', error);
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  }, [returnModalInfo, updateMutation, onRefetch]);
+
+  const handleCancelReturn = useCallback(() => {
+    setReturnModalInfo(null);
+  }, []);
+
   return (
     <>
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -408,6 +569,18 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
                 className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider"
               >
                 임명일
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider"
+              >
+                최근 등단
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider"
+              >
+                최근 연습
               </th>
               <th
                 scope="col"
@@ -614,6 +787,141 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
                   </span>
                 ) : (
                   '휴직 처리'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 복직 처리 확인 모달 */}
+      {returnModalInfo && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={handleCancelReturn}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 모달 헤더 */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-neutral-900">
+                복직 처리
+              </h3>
+              <button
+                onClick={handleCancelReturn}
+                className="p-1 text-neutral-400 hover:text-neutral-600 transition-colors"
+                aria-label="닫기"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 대원 정보 */}
+            <div className="flex items-center gap-3 p-3 bg-[var(--color-success-50)] border border-[var(--color-success-200)] rounded-lg mb-4">
+              <CheckCircle2 className="w-8 h-8 text-[var(--color-success-600)]" />
+              <div>
+                <div className="text-sm font-medium text-neutral-900">
+                  {returnModalInfo.memberName}
+                </div>
+                <div className="text-xs text-[var(--color-success-600)]">
+                  {STATUS_LABELS[returnModalInfo.targetStatus]}(으)로 변경됩니다
+                </div>
+              </div>
+            </div>
+
+            {/* 휴직 기간 정보 */}
+            <div className="bg-neutral-50 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-4 h-4 text-neutral-500" />
+                <span className="text-sm font-medium text-neutral-700">휴직 기간</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-neutral-500">휴직 시작일</span>
+                  <p className="font-medium text-neutral-900">
+                    {returnModalInfo.leaveStartDate
+                      ? format(new Date(returnModalInfo.leaveStartDate), 'yyyy.MM.dd')
+                      : '기록 없음'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-neutral-500">휴직 기간</span>
+                  <p className="font-medium text-neutral-900">
+                    {returnModalInfo.leaveDurationMonths >= 1
+                      ? `약 ${returnModalInfo.leaveDurationMonths}개월 (${returnModalInfo.leaveDurationDays}일)`
+                      : `${returnModalInfo.leaveDurationDays}일`}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 재등단 조건 안내 */}
+            <div className="bg-[var(--color-primary-50)] border border-[var(--color-primary-200)] rounded-lg p-4 mb-4">
+              <h4 className="text-sm font-semibold text-[var(--color-primary-700)] mb-2">
+                📋 재등단 조건
+              </h4>
+              <div className="space-y-2">
+                <p className="text-sm text-[var(--color-primary-900)]">
+                  {returnModalInfo.leaveDurationMonths < 1 ? (
+                    <>
+                      휴직 기간이 <strong>1개월 미만</strong>이므로,
+                      <br />
+                      <strong className="text-[var(--color-primary-700)]">연습 2회 참여</strong> 후 재등단 가능합니다.
+                    </>
+                  ) : (
+                    <>
+                      휴직 기간이 <strong>1개월 이상</strong>이므로,
+                      <br />
+                      <strong className="text-[var(--color-primary-700)]">연습 4회 참여</strong> 후 재등단 가능합니다.
+                    </>
+                  )}
+                </p>
+                <div className="flex items-center gap-2 pt-2 border-t border-[var(--color-primary-200)]">
+                  <div className="flex-1 text-center py-2 bg-white rounded-md">
+                    <div className="text-2xl font-bold text-[var(--color-primary-600)]">
+                      {returnModalInfo.requiredPracticeSessions}회
+                    </div>
+                    <div className="text-xs text-neutral-500">필요 연습 참여</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-neutral-500 mb-4">
+              ※ 복직 처리 후 위 조건을 충족해야 예배 등단이 가능합니다.
+              파트장에게 연습 참여 확인을 받으세요.
+            </p>
+
+            {/* 에러 메시지 */}
+            {updateMutation.error && (
+              <p className="text-sm text-red-600 mb-4">
+                {updateMutation.error.message}
+              </p>
+            )}
+
+            {/* 액션 버튼 */}
+            <div className="flex gap-2">
+              <button
+                onClick={handleCancelReturn}
+                className="flex-1 px-4 py-2 text-sm font-medium text-neutral-700 bg-neutral-100 rounded-md hover:bg-neutral-200 transition-colors"
+                disabled={updatingStatusId === returnModalInfo.memberId}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleReturnFromLeaveConfirm}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-[var(--color-success-600)] rounded-md hover:bg-[var(--color-success-700)] disabled:opacity-50 transition-colors"
+                disabled={updatingStatusId === returnModalInfo.memberId}
+              >
+                {updatingStatusId === returnModalInfo.memberId ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    처리 중...
+                  </span>
+                ) : (
+                  '복직 처리'
                 )}
               </button>
             </div>

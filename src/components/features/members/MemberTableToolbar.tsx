@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Check, SlidersHorizontal, PlusCircle } from 'lucide-react';
+import { X, Check, PlusCircle, ArrowUpDown, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import {
     DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import type { Database } from '@/types/database.types';
+import type { SortByField, SortOrder } from '@/types/api';
 
 type Part = Database['public']['Enums']['part'];
 type MemberStatus = Database['public']['Enums']['member_status'];
@@ -24,10 +25,15 @@ interface MemberTableToolbarProps {
     selectedStatus: MemberStatus | 'ALL';
     onStatusChange: (value: MemberStatus | 'ALL') => void;
     onReset: () => void;
-    sortBy: string;
-    onSortChange: (value: any) => void;
-    sortOrder: 'asc' | 'desc';
-    onSortOrderChange: (value: 'asc' | 'desc') => void;
+    sortBy: SortByField;
+    onSortChange: (value: SortByField) => void;
+    sortOrder: SortOrder;
+    onSortOrderChange: (value: SortOrder) => void;
+    // 장기 미출석 필터
+    absentDaysService?: number;
+    onAbsentDaysServiceChange: (value: number | undefined) => void;
+    absentDaysPractice?: number;
+    onAbsentDaysPracticeChange: (value: number | undefined) => void;
 }
 
 const PARTS: { value: Part; label: string }[] = [
@@ -44,6 +50,22 @@ const MEMBER_STATUSES: { value: MemberStatus; label: string }[] = [
     { value: 'RESIGNED', label: '사직대원' },
 ];
 
+// 정렬 기준 옵션
+const SORT_OPTIONS: { value: SortByField; label: string }[] = [
+    { value: 'name', label: '이름순' },
+    { value: 'part', label: '파트순' },
+    { value: 'createdAt', label: '등록일순' },
+    { value: 'lastServiceDate', label: '최근 등단일순' },
+    { value: 'lastPracticeDate', label: '최근 연습일순' },
+];
+
+// 장기 미출석 기간 옵션
+const ABSENT_PERIOD_OPTIONS: { value: number; label: string }[] = [
+    { value: 30, label: '1개월 이상' },
+    { value: 60, label: '2개월 이상' },
+    { value: 90, label: '3개월 이상' },
+];
+
 export function MemberTableToolbar({
     searchTerm,
     onSearchChange,
@@ -56,8 +78,19 @@ export function MemberTableToolbar({
     onSortChange,
     sortOrder,
     onSortOrderChange,
+    absentDaysService,
+    onAbsentDaysServiceChange,
+    absentDaysPractice,
+    onAbsentDaysPracticeChange,
 }: MemberTableToolbarProps) {
-    const isFiltered = searchTerm !== '' || selectedPart !== 'ALL' || selectedStatus !== 'ALL';
+    const isFiltered =
+        searchTerm !== '' ||
+        selectedPart !== 'ALL' ||
+        selectedStatus !== 'ALL' ||
+        absentDaysService !== undefined ||
+        absentDaysPractice !== undefined ||
+        sortBy !== 'createdAt' ||
+        sortOrder !== 'desc';
 
     return (
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center justify-between">
@@ -149,6 +182,117 @@ export function MemberTableToolbar({
                                     </DropdownMenuItem>
                                 ))}
                             </div>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* 정렬 */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8 border-dashed">
+                                <ArrowUpDown className="mr-2 h-4 w-4" />
+                                정렬
+                                {(sortBy !== 'createdAt' || sortOrder !== 'desc') && (
+                                    <>
+                                        <div className="mx-2 h-4 w-[1px] bg-[var(--color-border-default)]" />
+                                        <Badge variant="secondary" className="rounded-sm px-1 font-normal">
+                                            {SORT_OPTIONS.find(s => s.value === sortBy)?.label}
+                                            {sortOrder === 'asc' ? ' ↑' : ' ↓'}
+                                        </Badge>
+                                    </>
+                                )}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-[200px]">
+                            <div className="px-2 py-1.5 text-sm font-semibold">정렬 기준</div>
+                            <DropdownMenuSeparator />
+                            {SORT_OPTIONS.map((option) => (
+                                <DropdownMenuItem
+                                    key={option.value}
+                                    onClick={() => onSortChange(option.value)}
+                                    className="justify-between"
+                                >
+                                    {option.label}
+                                    {sortBy === option.value && <Check className="h-4 w-4" />}
+                                </DropdownMenuItem>
+                            ))}
+                            <DropdownMenuSeparator />
+                            <div className="px-2 py-1.5 text-sm font-semibold">정렬 순서</div>
+                            <DropdownMenuItem
+                                onClick={() => onSortOrderChange('asc')}
+                                className="justify-between"
+                            >
+                                오름차순
+                                {sortOrder === 'asc' && <Check className="h-4 w-4" />}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => onSortOrderChange('desc')}
+                                className="justify-between"
+                            >
+                                내림차순
+                                {sortOrder === 'desc' && <Check className="h-4 w-4" />}
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* 장기 미출석 필터 */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8 border-dashed">
+                                <Clock className="mr-2 h-4 w-4" />
+                                미출석
+                                {(absentDaysService || absentDaysPractice) && (
+                                    <>
+                                        <div className="mx-2 h-4 w-[1px] bg-[var(--color-border-default)]" />
+                                        <Badge variant="secondary" className="rounded-sm px-1 font-normal text-[var(--color-warning-700)]">
+                                            {absentDaysService
+                                                ? `등단 ${Math.floor(absentDaysService / 30)}개월+`
+                                                : `연습 ${Math.floor((absentDaysPractice || 0) / 30)}개월+`}
+                                        </Badge>
+                                    </>
+                                )}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-[220px]">
+                            <div className="px-2 py-1.5 text-sm font-semibold">등단 미출석 기간</div>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    onAbsentDaysServiceChange(undefined);
+                                }}
+                                className="justify-between"
+                            >
+                                전체
+                                {!absentDaysService && !absentDaysPractice && <Check className="h-4 w-4" />}
+                            </DropdownMenuItem>
+                            {ABSENT_PERIOD_OPTIONS.map((option) => (
+                                <DropdownMenuItem
+                                    key={`service-${option.value}`}
+                                    onClick={() => {
+                                        onAbsentDaysServiceChange(option.value);
+                                        onAbsentDaysPracticeChange(undefined);
+                                    }}
+                                    className="justify-between"
+                                >
+                                    {option.label}
+                                    {absentDaysService === option.value && <Check className="h-4 w-4" />}
+                                </DropdownMenuItem>
+                            ))}
+                            <DropdownMenuSeparator />
+                            <div className="px-2 py-1.5 text-sm font-semibold">연습 미출석 기간</div>
+                            <DropdownMenuSeparator />
+                            {ABSENT_PERIOD_OPTIONS.map((option) => (
+                                <DropdownMenuItem
+                                    key={`practice-${option.value}`}
+                                    onClick={() => {
+                                        onAbsentDaysPracticeChange(option.value);
+                                        onAbsentDaysServiceChange(undefined);
+                                    }}
+                                    className="justify-between"
+                                >
+                                    {option.label}
+                                    {absentDaysPractice === option.value && <Check className="h-4 w-4" />}
+                                </DropdownMenuItem>
+                            ))}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>

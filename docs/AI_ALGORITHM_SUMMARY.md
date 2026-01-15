@@ -3,15 +3,17 @@
 ## 📊 학습 데이터 현황
 
 ### 데이터 규모
+
 - **총 배치 패턴**: 40개
 - **총 좌석 데이터**: 3,139석
 - **서비스 분포**:
   - 2부예배: 33회
   - 오후찬양예배: 5회
-  - 국극기도회: 1회
+  - 구국기도회: 1회
   - 부활주일: 1회
 
 ### 인원 범위
+
 - **최소 인원**: 45명
 - **최대 인원**: 90명
 - **평균 인원**: 78.5명
@@ -22,24 +24,28 @@
 ## 🎵 학습된 파트별 배치 패턴
 
 ### TENOR (테너)
+
 - **총 인원**: 516명
 - **선호 행**: 0행(43.8%), 1행(31.6%), 2행(24.6%)
 - **평균 배치 위치**: 0.81행
 - **결론**: **앞쪽 행(0-2행) 우선 배치**
 
 ### BASS (베이스)
+
 - **총 인원**: 574명
 - **선호 행**: 1행(39.7%), 0행(35.0%), 2행(25.3%)
 - **평균 배치 위치**: 0.90행
 - **결론**: **앞쪽 행(0-2행) 우선 배치**
 
 ### SOPRANO (소프라노)
+
 - **총 인원**: 1,230명
 - **선호 행**: 3행(28.5%), 4행(26.3%), 5행(23.6%)
 - **평균 배치 위치**: 3.44행
 - **결론**: **뒤쪽 행(2-5행) 우선 배치**
 
 ### ALTO (알토)
+
 - **총 인원**: 816명
 - **선호 행**: 4행(29.9%), 3행(28.2%), 5행(27.7%)
 - **평균 배치 위치**: 3.71행
@@ -48,17 +54,20 @@
 ## 🤖 구현된 AI 알고리즘
 
 ### 알고리즘 위치
+
 `src/lib/ai-seat-algorithm.ts`
 
 ### 핵심 기능
 
 #### 1. 행 구성 자동 계산 (`calculateRowCapacities`)
+
 ```typescript
 // 55명 이하: 5행 구성 (균등 배분)
 // 56명 이상: 6행 구성 (앞쪽 행이 적고 뒤쪽으로 갈수록 많아짐)
 ```
 
 #### 2. 멤버 그룹화 및 정렬 (`groupAndSortMembers`)
+
 ```typescript
 // 정렬 순서:
 // 1. 파트 리더 우선
@@ -67,6 +76,7 @@
 ```
 
 #### 3. 파트별 행 분배 (`distributePartsToRows`)
+
 ```typescript
 const PART_ROW_PREFERENCES = {
   TENOR: { preferred_rows: [0, 1, 2], weight: 1.0 },
@@ -77,12 +87,14 @@ const PART_ROW_PREFERENCES = {
 ```
 
 #### 4. 지그재그 패턴 적용 (`assignSeatsInZigzag`)
+
 ```typescript
 // 짝수 행: 왼쪽부터 배치
 // 홀수 행: 오른쪽부터 배치
 ```
 
 ### 메인 함수
+
 ```typescript
 export function generateAISeatingArrangement(
   attendingMembers: Member[]
@@ -90,9 +102,11 @@ export function generateAISeatingArrangement(
 ```
 
 **입력**:
+
 - `attendingMembers`: 출석 가능한 찬양대원 목록
 
 **출력**:
+
 ```typescript
 {
   grid_layout: {
@@ -146,6 +160,7 @@ export function generateAISeatingArrangement(
 ### 실제 데이터 검증 (`scripts/test_ai_algorithm.py`)
 
 **검증 완료**:
+
 - 40개 배치 패턴 분석 완료
 - 파트별 선호 행 패턴 일치
 - 총 인원별 행 구성 규칙 일치
@@ -153,9 +168,11 @@ export function generateAISeatingArrangement(
 ## 🔗 Next.js API 통합
 
 ### API 엔드포인트
+
 `POST /api/arrangements/[id]/recommend`
 
 ### 변경 사항
+
 기존에 외부 Python ML 서비스를 호출하던 방식에서, 내장 TypeScript AI 알고리즘으로 변경:
 
 ```typescript
@@ -168,6 +185,7 @@ const recommendation = generateAISeatingArrangement(availableMembers);
 ```
 
 ### 장점
+
 1. **외부 의존성 제거**: Python 서비스 불필요
 2. **빠른 응답**: 서버리스 환경에서도 즉시 응답
 3. **타입 안정성**: TypeScript로 구현되어 타입 체크 가능
@@ -176,6 +194,7 @@ const recommendation = generateAISeatingArrangement(availableMembers);
 ## 📈 알고리즘 성능
 
 ### 55명 배치 예시
+
 ```
 총 인원: 55명
 파트 분포: SOPRANO 21, ALTO 15, TENOR 9, BASS 10
@@ -191,6 +210,7 @@ const recommendation = generateAISeatingArrangement(availableMembers);
 ```
 
 **검증**:
+
 - ✅ TENOR/BASS는 0-2행에 집중 배치
 - ✅ SOPRANO/ALTO는 2-4행에 집중 배치
 - ✅ 총 55명 완전 배치
