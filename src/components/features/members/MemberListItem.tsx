@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useDeleteMember, useUpdateMember } from '@/hooks/useMembers';
 import type { Database } from '@/types/database.types';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { format } from 'date-fns/format';
 import { addMonths } from 'date-fns/addMonths';
 import { differenceInDays } from 'date-fns/differenceInDays';
@@ -97,7 +97,7 @@ const calculateRequiredPracticeSessions = (leaveStartDate: string | null): { day
     return { days, months, sessions };
 };
 
-export default function MemberListItem({ member, onDelete }: MemberListItemProps) {
+function MemberListItem({ member, onDelete }: MemberListItemProps) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
@@ -569,3 +569,5 @@ export default function MemberListItem({ member, onDelete }: MemberListItemProps
         </>
     );
 }
+
+export default memo(MemberListItem);

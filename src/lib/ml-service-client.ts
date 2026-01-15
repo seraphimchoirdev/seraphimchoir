@@ -3,9 +3,11 @@
  * Python FastAPI ML 서비스와 통신하는 클라이언트
  */
 
+import { ML_SERVICE_CONFIG } from './constants';
+
 // 환경 변수
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
-const ML_SERVICE_TIMEOUT = Number(process.env.ML_SERVICE_TIMEOUT) || 10000;
+const ML_SERVICE_TIMEOUT = Number(process.env.ML_SERVICE_TIMEOUT) || ML_SERVICE_CONFIG.DEFAULT_TIMEOUT;
 const ML_SERVICE_ENABLED = process.env.ML_SERVICE_ENABLED !== "false";
 
 // Types
@@ -103,7 +105,7 @@ export async function checkMLServiceHealth(): Promise<MLHealthResponse | null> {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), ML_SERVICE_CONFIG.HEALTH_CHECK_TIMEOUT);
 
     const response = await fetch(`${ML_SERVICE_URL}/api/v1/health`, {
       method: "GET",

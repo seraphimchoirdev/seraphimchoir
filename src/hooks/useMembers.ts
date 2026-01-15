@@ -1,13 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Database } from '@/types/database.types';
 import type { PaginatedResponse, SortByField, SortOrder } from '@/types/api';
-
-// React Query stale time 설정
-// 멤버 데이터는 상대적으로 자주 변경되지 않으므로 5분 유지
-const STALE_TIME = {
-  MEMBERS_LIST: 1000 * 60 * 5, // 5분 - 목록 데이터
-  MEMBER_DETAIL: 1000 * 60 * 2, // 2분 - 상세 데이터 (수정 가능성이 더 높음)
-} as const;
+import { STALE_TIME } from '@/lib/constants';
 
 type Member = Database['public']['Tables']['members']['Row'];
 type MemberInsert = Database['public']['Tables']['members']['Insert'];
@@ -69,7 +63,7 @@ export function useMembers(filters?: MemberFilters) {
 
       return response.json() as Promise<MembersResponse>;
     },
-    staleTime: STALE_TIME.MEMBERS_LIST,
+    staleTime: STALE_TIME.LONG,
   });
 }
 
@@ -92,7 +86,7 @@ export function useMember(id: string | undefined) {
       return response.json() as Promise<MemberResponse>;
     },
     enabled: !!id, // id가 있을 때만 쿼리 실행
-    staleTime: STALE_TIME.MEMBER_DETAIL,
+    staleTime: STALE_TIME.MEDIUM,
   });
 }
 

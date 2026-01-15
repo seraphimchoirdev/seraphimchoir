@@ -6,7 +6,7 @@ import { differenceInDays } from 'date-fns/differenceInDays';
 import { AlertTriangle } from 'lucide-react';
 import { useDeleteMember } from '@/hooks/useMembers';
 import type { Database } from '@/types/database.types';
-import { useState } from 'react';
+import { useState, memo } from 'react';
 
 type Member = Database['public']['Tables']['members']['Row'] & {
   last_service_date?: string | null;
@@ -84,7 +84,7 @@ const STATUS_COLORS: Record<MemberStatus, string> = {
   RESIGNED: 'bg-[var(--color-error-100)] text-[var(--color-error-700)] border-[var(--color-error-200)]',
 };
 
-export default function MemberCard({ member, onDelete }: MemberCardProps) {
+function MemberCard({ member, onDelete }: MemberCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const deleteMutation = useDeleteMember();
 
@@ -281,3 +281,5 @@ export default function MemberCard({ member, onDelete }: MemberCardProps) {
     </div>
   );
 }
+
+export default memo(MemberCard);

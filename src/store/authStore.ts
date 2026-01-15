@@ -11,6 +11,7 @@ import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { AUTH_CONFIG } from '@/lib/constants';
 
 // UserProfile 타입 정의 (대원 연결 정보 포함)
 export interface UserProfile {
@@ -187,7 +188,7 @@ export const useAuthStore = create<AuthStore>()(
             // 네트워크 이슈 등으로 응답이 없어도 로컬 상태는 초기화해야 함
             try {
               const signOutPromise = supabase.auth.signOut();
-              const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ error: new Error('Timeout') }), 2000));
+              const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ error: new Error('Timeout') }), AUTH_CONFIG.SIGN_OUT_TIMEOUT));
 
               await Promise.race([signOutPromise, timeoutPromise]);
             } catch (e) {
