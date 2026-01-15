@@ -334,12 +334,41 @@ export default memo(MemberListItem);
 
 ---
 
-## 향후 권장 사항
+## 향후 권장 사항 (모두 완료)
 
-1. **나머지 console.log 정리**: 약 200개 이상의 console 호출이 남아있음 (점진적 마이그레이션 권장)
-2. **추가 Error Boundary**: 다른 주요 라우트에도 error.tsx 추가 고려
-3. **상수 파일 활용 확대**: 다른 훅/컴포넌트에서도 constants.ts 활용
-4. **React.memo 추가 적용**: 다른 목록 아이템 컴포넌트에도 적용 고려
+| # | 권장 사항 | 상태 | 커밋 |
+|---|-----------|------|------|
+| 1 | 나머지 console.log 정리 (62개 파일) | ✅ 완료 | `66d988a` |
+| 2 | 추가 Error Boundary (6개 라우트) | ✅ 완료 | `50597eb` |
+| 3 | 상수 파일 활용 확대 (9개 훅) | ✅ 완료 | `50597eb` |
+| 4 | React.memo 추가 적용 (5개 컴포넌트) | ✅ 완료 | `50597eb` |
+
+### 상세 내역
+
+#### 1. Console.log → Logger 전환 (`66d988a`)
+- 62개 파일에서 console 호출을 `createLogger` 유틸리티로 전환
+- 환경별 로깅 레벨 적용 (dev: 모두 출력, prod: warn/error만)
+
+#### 2. Error Boundary 추가 (`50597eb`)
+- `src/app/attendances/error.tsx`
+- `src/app/admin/error.tsx`
+- `src/app/dashboard/error.tsx`
+- `src/app/documents/error.tsx`
+- `src/app/service-schedules/error.tsx`
+- `src/app/statistics/error.tsx`
+
+#### 3. 상수 활용 확대 (`50597eb`)
+매직 넘버를 `STALE_TIME` 상수로 교체:
+- `useMemberAttendanceStats.ts`, `useAttendanceStatistics.ts`, `useStageStatistics.ts`
+- `useServiceSchedules.ts`, `usePastArrangement.ts`, `useArrangements.ts`
+- `useDocuments.ts`, `useAttendanceDeadlines.ts`, `useChoirEvents.ts`
+
+#### 4. React.memo 추가 적용 (`50597eb`)
+- `MemberRow.tsx` - 출석 목록 행
+- `MemberChip.tsx` - 컴팩트 출석 칩
+- `CalendarDayCell.tsx` - 캘린더 일자 셀
+- `ClickableMember.tsx` - 좌석 배치 대원 버튼
+- `AttendanceStatsCard.tsx` - 통계 카드
 
 ---
 
