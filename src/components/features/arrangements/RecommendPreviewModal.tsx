@@ -27,8 +27,7 @@ export default function RecommendPreviewModal({
     metrics = {
       placementRate: 1.0,
       partBalance: 0.8,
-      heightOrder: 0.75,
-      leaderPosition: 0.85
+      heightOrder: 0.75
     },
     unassignedMembers = []
   } = recommendation || {};
@@ -128,11 +127,6 @@ export default function RecommendPreviewModal({
                 label="키 순서"
                 value={metrics.heightOrder}
                 description="키 순서 패턴 준수도"
-              />
-              <MetricCard
-                label="리더 위치"
-                value={metrics.leaderPosition}
-                description="파트장 위치 적합도"
               />
             </div>
           </div>

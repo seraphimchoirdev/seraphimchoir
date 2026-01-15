@@ -29,10 +29,10 @@ export default function RecommendButton({
 
   const handleRecommend = async () => {
     try {
-      // gridLayout을 전달하지 않으면 API가 멤버 수에 맞는 그리드를 자동 생성
+      // 사용자가 설정한 gridLayout을 API에 전달
       const result = await recommendMutation.mutateAsync({
         arrangementId,
-        // gridLayout 제거 - AI가 멤버 수에 맞게 자동 계산
+        gridLayout,  // 사용자 설정 그리드 전달
       });
 
       setRecommendation(result);

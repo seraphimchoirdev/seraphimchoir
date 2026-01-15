@@ -22,7 +22,6 @@ export interface RecommendationMetrics {
   placementRate: number;
   partBalance: number;
   heightOrder: number;
-  leaderPosition: number;
 }
 
 export interface RecommendationResponse {

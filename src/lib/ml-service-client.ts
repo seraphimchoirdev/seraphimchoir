@@ -20,8 +20,8 @@ export interface MLMemberInput {
 
 export interface MLGridLayout {
   rows: number;
-  row_capacities: number[];
-  zigzag_pattern: "even" | "odd" | "none";
+  rowCapacities: number[];      // Python: alias="rowCapacities"
+  zigzagPattern: "even" | "odd" | "none";  // Python: alias="zigzagPattern"
 }
 
 export interface MLRecommendRequest {
@@ -30,8 +30,8 @@ export interface MLRecommendRequest {
 }
 
 export interface MLSeatRecommendation {
-  member_id: string;
-  member_name: string;
+  memberId: string;      // Python: alias="memberId"
+  memberName: string;    // Python: alias="memberName"
   part: string;
   row: number;
   col: number;
@@ -39,8 +39,8 @@ export interface MLSeatRecommendation {
 
 export interface MLRecommendResponse {
   seats: MLSeatRecommendation[];
-  grid_layout: MLGridLayout;
-  quality_score: number;
+  gridLayout: MLGridLayout;       // Python: alias="gridLayout"
+  qualityScore: number;           // Python: alias="qualityScore"
   metrics: {
     placementRate: number;
     partBalance: number;
@@ -52,15 +52,15 @@ export interface MLRecommendResponse {
     placedMembers: number;
     statsLoaded: number;
   };
-  unassigned_members: string[];
+  unassignedMembers: string[];    // Python: alias="unassignedMembers"
   source: "python-ml";
 }
 
 export interface MLHealthResponse {
   status: "healthy" | "degraded" | "unhealthy";
   version: string;
-  model_loaded: boolean;
-  database_connected: boolean;
+  modelLoaded: boolean;      // Python ML 서비스가 camelCase로 반환
+  databaseConnected: boolean;
 }
 
 export interface MLTrainResponse {
@@ -128,7 +128,7 @@ export async function checkMLServiceHealth(): Promise<MLHealthResponse | null> {
  */
 export async function isMLServiceReady(): Promise<boolean> {
   const health = await checkMLServiceHealth();
-  return health !== null && health.status === "healthy" && health.model_loaded;
+  return health !== null && health.status === "healthy" && health.modelLoaded;
 }
 
 /**

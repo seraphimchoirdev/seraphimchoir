@@ -270,7 +270,7 @@ export async function POST(
 
         console.log('[ML] Python service response:', {
           seats: mlResponse.seats.length,
-          quality: mlResponse.quality_score,
+          quality: mlResponse.qualityScore,
         });
 
         // ML 서비스 응답을 API 응답 형식으로 변환
@@ -278,16 +278,16 @@ export async function POST(
         // 프론트엔드(SeatSlot, Grid Calculator)도 1-based를 사용하므로 변환 불필요
         const formattedMLResponse = {
           seats: mlResponse.seats.map(seat => ({
-            memberId: seat.member_id,
-            memberName: seat.member_name,
+            memberId: seat.memberId,       // Python이 camelCase로 반환
+            memberName: seat.memberName,
             row: seat.row,
             col: seat.col,
             part: seat.part
           })),
           gridLayout: {
-            rows: mlResponse.grid_layout.rows,
-            rowCapacities: mlResponse.grid_layout.row_capacities,
-            zigzagPattern: mlResponse.grid_layout.zigzag_pattern
+            rows: mlResponse.gridLayout.rows,
+            rowCapacities: mlResponse.gridLayout.rowCapacities,
+            zigzagPattern: mlResponse.gridLayout.zigzagPattern
           },
           metadata: {
             totalMembers: mlResponse.metadata.totalMembers,
@@ -295,9 +295,9 @@ export async function POST(
             dataSource: 'db' as const,
             preferencesLoaded: mlResponse.metadata.statsLoaded,
           },
-          qualityScore: mlResponse.quality_score,
+          qualityScore: mlResponse.qualityScore,
           metrics: mlResponse.metrics,
-          unassignedMembers: mlResponse.unassigned_members,
+          unassignedMembers: mlResponse.unassignedMembers,
           source: 'python-ml' as const,
         };
 

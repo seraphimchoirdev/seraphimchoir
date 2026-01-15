@@ -31,6 +31,14 @@ PART_RULES = {
     "BASS": {"side": "right", "preferred_rows": [4, 5, 6], "overflow_rows": []},
 }
 
+# 통계 없는 대원을 위한 파트별 기본값
+PART_DEFAULT_VALUES = {
+    "SOPRANO": {"preferred_row": 2, "preferred_col": 5},   # 1-3행 왼쪽
+    "ALTO":    {"preferred_row": 2, "preferred_col": 11},  # 1-3행 오른쪽
+    "TENOR":   {"preferred_row": 5, "preferred_col": 5},   # 4-6행 왼쪽
+    "BASS":    {"preferred_row": 5, "preferred_col": 10},  # 4-6행 오른쪽
+}
+
 
 class SeatRecommender:
     """GradientBoosting 기반 좌석 추천 모델 (v2)"""
@@ -74,18 +82,22 @@ class SeatRecommender:
             experience,
         ]
 
-        # 통계 피처
+        # 통계 피처 (파트별 기본값 적용)
+        default_vals = PART_DEFAULT_VALUES.get(part, PART_DEFAULT_VALUES["SOPRANO"])
+        default_row = default_vals["preferred_row"]
+        default_col = default_vals["preferred_col"]
+
         if stats:
             features.extend([
-                stats.get("preferred_row", 3) or 3,
-                stats.get("preferred_col", 8) or 8,
+                stats.get("preferred_row") or default_row,
+                stats.get("preferred_col") or default_col,
                 (stats.get("row_consistency", 50) or 50) / 100,
                 (stats.get("col_consistency", 50) or 50) / 100,
                 1 if stats.get("is_fixed_seat", False) else 0,
                 min(stats.get("total_appearances", 0) or 0, 50) / 50,
             ])
         else:
-            features.extend([3, 8, 0.5, 0.5, 0, 0])
+            features.extend([default_row, default_col, 0.5, 0.5, 0, 0])
 
         # 컨텍스트 피처
         if context:
@@ -391,7 +403,7 @@ class SeatRecommender:
 
                     return new_row, new_col
 
-        # 규칙 준수 실패 시, 규칙 무시하고 빈 좌석 찾기
+        # 규칙 준수 실패 시, 열 규칙만 완화 (행 규칙은 반드시 준수!)
         for distance in range(1, max(rows, max(row_capacities, default=15)) + 1):
             for dr in range(-distance, distance + 1):
                 for dc in range(-distance, distance + 1):
@@ -401,6 +413,9 @@ class SeatRecommender:
                     new_row = row + dr
                     new_col = col + dc
 
+                    # 행 규칙은 반드시 준수 (TENOR/BASS는 4-6행, SOPRANO/ALTO는 1-3행)
+                    if new_row not in valid_rows_0based:
+                        continue
                     if new_row < 0 or new_row >= rows:
                         continue
                     if new_col < 0 or new_col >= row_capacities[new_row]:

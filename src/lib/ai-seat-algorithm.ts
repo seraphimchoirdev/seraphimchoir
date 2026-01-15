@@ -1360,11 +1360,30 @@ export function generateAISeatingArrangement(
   }
   console.log('[DEBUG] === 배치 현황 끝 ===\n');
 
-  // 7. 결과 반환
+  // 7. 그리드 압축 - 빈좌석 제거
+  // 각 행에서 실제로 사용된 최대 열 번호를 찾아 rowCapacities 조정
+  const adjustedRowCapacities: number[] = [];
+  for (let row = 1; row <= numRows; row++) {
+    const seatsInRow = seats.filter(s => s.row === row);
+    if (seatsInRow.length > 0) {
+      // 해당 행에서 가장 오른쪽에 배치된 열 번호
+      const maxCol = Math.max(...seatsInRow.map(s => s.col));
+      adjustedRowCapacities.push(maxCol);
+    } else {
+      // 해당 행에 배치된 대원이 없으면 0
+      adjustedRowCapacities.push(0);
+    }
+  }
+
+  const totalSeatsBeforeAdjust = rowCapacities.reduce((a, b) => a + b, 0);
+  const totalSeatsAfterAdjust = adjustedRowCapacities.reduce((a, b) => a + b, 0);
+  console.log(`[AI] 그리드 압축: ${totalSeatsBeforeAdjust}석 → ${totalSeatsAfterAdjust}석 (${totalSeatsBeforeAdjust - totalSeatsAfterAdjust}석 감소)`);
+
+  // 8. 결과 반환
   return {
     grid_layout: {
       rows: numRows,
-      row_capacities: rowCapacities,
+      row_capacities: adjustedRowCapacities,  // 압축된 용량
       zigzag_pattern: 'even',
     },
     seats,
