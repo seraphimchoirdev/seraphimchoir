@@ -19,8 +19,15 @@ import { DEFAULT_GRID_LAYOUT, GridLayout } from '@/types/grid';
 import MemberSidebar from '@/components/features/seats/MemberSidebar';
 import SeatsGrid from '@/components/features/seats/SeatsGrid';
 import Navigation from '@/components/layout/Navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ArrangementEditorPage({ params }: { params: Promise<{ id: string }> }) {
+    const { hasRole, isLoading: authLoading } = useAuth();
+
+    // 편집 권한: ADMIN, CONDUCTOR만
+    const canEdit = hasRole(['ADMIN', 'CONDUCTOR']);
+    // 긴급 수정 권한: ADMIN, CONDUCTOR, MANAGER
+    const canEmergencyEdit = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
     const { id } = use(params);
     const { data: arrangement, isLoading, error } = useArrangement(id);
     const { setAssignments, setGridLayout, gridLayout, clearHistory, compactAllRows } = useArrangementStore();
@@ -79,14 +86,19 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         }).length;
     }, [membersData, attendanceMap]);
 
-    // 배치표 상태에 따른 읽기 전용 모드 (CONFIRMED 상태면 읽기 전용)
-    const isReadOnly = arrangement?.status === 'CONFIRMED';
+    // 배치표 상태 및 권한에 따른 읽기 전용 모드
+    // - CONFIRMED 상태: 모두 읽기 전용
+    // - SHARED 상태: canEmergencyEdit 권한이 없으면 읽기 전용
+    // - DRAFT 상태: canEdit 권한이 없으면 읽기 전용
+    const isReadOnly = arrangement?.status === 'CONFIRMED' ||
+        (arrangement?.status === 'SHARED' && !canEmergencyEdit) ||
+        (arrangement?.status === 'DRAFT' && !canEdit);
 
-    // 긴급 수정 모드 (SHARED 상태에서만 컨텍스트 메뉴 표시)
+    // 긴급 수정 모드 (SHARED 상태에서 canEmergencyEdit 권한이 있을 때만)
     // DRAFT: 일반 편집 모드 (더블클릭으로 제거)
-    // SHARED: 긴급 수정 모드 (컨텍스트 메뉴 표시)
+    // SHARED: 긴급 수정 모드 (컨텍스트 메뉴 표시) - 권한 필요
     // CONFIRMED: 읽기 전용 모드 (수정 불가)
-    const isEmergencyMode = arrangement?.status === 'SHARED';
+    const isEmergencyMode = arrangement?.status === 'SHARED' && canEmergencyEdit;
 
     // 긴급 등단 불가 처리 훅 (단순화된 버전)
     // - 파트 영역 고려: 같은 파트만 당기기
@@ -151,7 +163,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         }
     }, [arrangement, attendances, isServiceAvailable, setAssignments, setGridLayout, clearHistory, compactAllRows, gridLayout]);
 
-    if (isLoading) {
+    if (isLoading || authLoading) {
         return (
             <div className="h-screen flex items-center justify-center">
                 <Spinner size="lg" />

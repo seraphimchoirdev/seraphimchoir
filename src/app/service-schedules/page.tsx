@@ -6,6 +6,7 @@ import { QuarterSelector, QuarterlyCalendar, ServiceScheduleDialog, ServiceSched
 import EventDialog from '@/components/features/service-schedules/EventDialog';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
 import { useChoirEvents } from '@/hooks/useChoirEvents';
+import { useAuth } from '@/hooks/useAuth';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,15 @@ import {
 import { AlertCircle, Plus, FileSpreadsheet, Music, PartyPopper } from 'lucide-react';
 
 export default function ServiceSchedulesPage() {
+  const { hasRole, isLoading: authLoading } = useAuth();
+
+  // 일정 조회 권한: ADMIN, CONDUCTOR, MANAGER, STAFF, PART_LEADER
+  const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER']);
+  // 예배 일정 관리 권한: ADMIN, CONDUCTOR, MANAGER만
+  const canManageService = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
+  // 행사 일정 관리 권한: 현재는 ADMIN, CONDUCTOR, MANAGER만 (향후 대원 승인제 도입 예정)
+  const canManageEvents = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
+
   const currentDate = new Date();
   const [year, setYear] = useState(currentDate.getFullYear());
   const [quarter, setQuarter] = useState(
@@ -55,6 +65,32 @@ export default function ServiceSchedulesPage() {
     refetchEvents();
   }, [refetch, refetchEvents]);
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+        <Navigation />
+        <div className="flex items-center justify-center py-20">
+          <Spinner size="lg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasPermission) {
+    return (
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Alert variant="error">
+            <AlertDescription>
+              찬양대 일정 페이지에 접근할 권한이 없습니다.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[var(--color-background-tertiary)]">
       <Navigation />
@@ -72,32 +108,40 @@ export default function ServiceSchedulesPage() {
               </p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              <Button
-                onClick={() => setIsImporterOpen(true)}
-                variant="outline"
-                className="gap-2"
-              >
-                <FileSpreadsheet className="h-4 w-4" />
-                <span className="hidden sm:inline">일괄 등록</span>
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">일정 추가</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setIsServiceDialogOpen(true)} className="gap-2 cursor-pointer">
-                    <Music className="h-4 w-4 text-[var(--color-primary-600)]" />
-                    예배 일정
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsEventDialogOpen(true)} className="gap-2 cursor-pointer">
-                    <PartyPopper className="h-4 w-4 text-[var(--color-accent-600)]" />
-                    행사 일정
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {canManageService && (
+                <Button
+                  onClick={() => setIsImporterOpen(true)}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  <span className="hidden sm:inline">일괄 등록</span>
+                </Button>
+              )}
+              {(canManageService || canManageEvents) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      <span className="hidden sm:inline">일정 추가</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {canManageService && (
+                      <DropdownMenuItem onClick={() => setIsServiceDialogOpen(true)} className="gap-2 cursor-pointer">
+                        <Music className="h-4 w-4 text-[var(--color-primary-600)]" />
+                        예배 일정
+                      </DropdownMenuItem>
+                    )}
+                    {canManageEvents && (
+                      <DropdownMenuItem onClick={() => setIsEventDialogOpen(true)} className="gap-2 cursor-pointer">
+                        <PartyPopper className="h-4 w-4 text-[var(--color-accent-600)]" />
+                        행사 일정
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               <QuarterSelector
                 year={year}
                 quarter={quarter}
@@ -140,29 +184,35 @@ export default function ServiceSchedulesPage() {
       </div>
 
       {/* 예배 일정 추가 다이얼로그 */}
-      <ServiceScheduleDialog
-        open={isServiceDialogOpen}
-        onOpenChange={setIsServiceDialogOpen}
-        schedule={null}
-        date={null}
-        onSuccess={handleRefresh}
-      />
+      {canManageService && (
+        <ServiceScheduleDialog
+          open={isServiceDialogOpen}
+          onOpenChange={setIsServiceDialogOpen}
+          schedule={null}
+          date={null}
+          onSuccess={handleRefresh}
+        />
+      )}
 
       {/* 행사 일정 추가 다이얼로그 */}
-      <EventDialog
-        open={isEventDialogOpen}
-        onOpenChange={setIsEventDialogOpen}
-        event={null}
-        date={null}
-        onSuccess={handleRefresh}
-      />
+      {canManageEvents && (
+        <EventDialog
+          open={isEventDialogOpen}
+          onOpenChange={setIsEventDialogOpen}
+          event={null}
+          date={null}
+          onSuccess={handleRefresh}
+        />
+      )}
 
       {/* 일괄 등록 다이얼로그 */}
-      <ServiceScheduleImporter
-        open={isImporterOpen}
-        onOpenChange={setIsImporterOpen}
-        onSuccess={handleRefresh}
-      />
+      {canManageService && (
+        <ServiceScheduleImporter
+          open={isImporterOpen}
+          onOpenChange={setIsImporterOpen}
+          onSuccess={handleRefresh}
+        />
+      )}
     </div>
   );
 }

@@ -14,11 +14,16 @@ import ArrangementPagination from '@/components/features/arrangements/Arrangemen
 import CreateArrangementDialog from '@/components/features/arrangements/CreateArrangementDialog';
 import { useArrangements } from '@/hooks/useArrangements';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAuth } from '@/hooks/useAuth';
 
 function ArrangementsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { hasRole } = useAuth();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+    // 자리배치 생성/편집 권한: ADMIN, CONDUCTOR만
+    const canCreateArrangement = hasRole(['ADMIN', 'CONDUCTOR']);
 
     // URL에서 초기값 가져오기
     const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
@@ -129,10 +134,12 @@ function ArrangementsContent() {
                                 )}
                             </p>
                         </div>
-                        <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            새 배치표 만들기
-                        </Button>
+                        {canCreateArrangement && (
+                            <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
+                                <Plus className="h-4 w-4" />
+                                새 배치표 만들기
+                            </Button>
+                        )}
                     </div>
 
                     {/* 필터 UI */}
@@ -179,10 +186,12 @@ function ArrangementsContent() {
                         </>
                     )}
 
-                    <CreateArrangementDialog
-                        open={isCreateDialogOpen}
-                        onOpenChange={setIsCreateDialogOpen}
-                    />
+                    {canCreateArrangement && (
+                        <CreateArrangementDialog
+                            open={isCreateDialogOpen}
+                            onOpenChange={setIsCreateDialogOpen}
+                        />
+                    )}
                 </div>
             </div>
         </div>

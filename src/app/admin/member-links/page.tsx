@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Navigation from '@/components/layout/Navigation';
-import { useAuth } from '@/hooks/useAuth';
 import { usePendingLinkRequests, useApproveMemberLink, useRejectMemberLink } from '@/hooks/useMemberLink';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -17,38 +15,12 @@ const PART_LABELS: Record<string, string> = {
 };
 
 export default function MemberLinksAdminPage() {
-  const { profile, hasRole, isLoading: authLoading } = useAuth();
   const [selectedPart, setSelectedPart] = useState<string>('');
 
-  // PART_LEADER는 자기 파트만 조회
-  const filterPart = profile?.role === 'PART_LEADER' ? undefined : selectedPart || undefined;
-
-  const { data: pendingRequests, isLoading, error } = usePendingLinkRequests(filterPart);
+  // ADMIN만 접근 가능 (layout.tsx에서 체크)
+  const { data: pendingRequests, isLoading, error } = usePendingLinkRequests(selectedPart || undefined);
   const approveMutation = useApproveMemberLink();
   const rejectMutation = useRejectMemberLink();
-
-  // 권한 확인
-  const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']);
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
-      </div>
-    );
-  }
-
-  if (!hasPermission) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Alert variant="error">
-          <AlertDescription>
-            이 페이지에 접근할 권한이 없습니다.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
 
   const handleApprove = async (userId: string) => {
     try {
@@ -69,41 +41,37 @@ export default function MemberLinksAdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-      <Navigation />
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-            <UserCheck className="h-6 w-6" />
-            대원 연결 승인
-          </h1>
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+          <UserCheck className="h-6 w-6" />
+          대원 연결 승인
+        </h1>
         <p className="mt-2 text-[var(--color-text-secondary)]">
           카카오 로그인 사용자의 대원 연결 요청을 승인하거나 거부합니다.
         </p>
       </div>
 
-      {/* 파트 필터 (PART_LEADER 제외) */}
-      {profile?.role !== 'PART_LEADER' && (
-        <div className="mb-6 flex gap-2 flex-wrap">
+      {/* 파트 필터 - ADMIN은 모든 파트 조회 가능 */}
+      <div className="mb-6 flex gap-2 flex-wrap">
+        <Button
+          variant={selectedPart === '' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setSelectedPart('')}
+        >
+          전체
+        </Button>
+        {['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'].map((part) => (
           <Button
-            variant={selectedPart === '' ? 'default' : 'outline'}
+            key={part}
+            variant={selectedPart === part ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setSelectedPart('')}
+            onClick={() => setSelectedPart(part)}
           >
-            전체
+            {PART_LABELS[part]}
           </Button>
-          {['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'].map((part) => (
-            <Button
-              key={part}
-              variant={selectedPart === part ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedPart(part)}
-            >
-              {PART_LABELS[part]}
-            </Button>
-          ))}
-        </div>
-      )}
+        ))}
+      </div>
 
       {/* 에러 표시 */}
       {error && (
@@ -197,7 +165,6 @@ export default function MemberLinksAdminPage() {
           )}
         </>
       )}
-      </div>
     </div>
   );
 }

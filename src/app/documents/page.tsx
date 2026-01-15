@@ -59,25 +59,32 @@ export default function DocumentsPage() {
   const uploadMutation = useUploadDocument();
   const deleteMutation = useDeleteDocument();
 
-  // 권한 확인
-  const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
+  // 권한 확인: 조회는 STAFF까지, 업로드/삭제는 MANAGER까지
+  const canView = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF']);
+  const canManage = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+        <Navigation />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
+        </div>
       </div>
     );
   }
 
-  if (!hasPermission) {
+  if (!canView) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Alert variant="error">
-          <AlertDescription>
-            이 페이지에 접근할 권한이 없습니다.
-          </AlertDescription>
-        </Alert>
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Alert variant="error">
+            <AlertDescription>
+              문서 아카이브에 접근할 권한이 없습니다.
+            </AlertDescription>
+          </Alert>
+        </div>
       </div>
     );
   }
@@ -142,14 +149,16 @@ export default function DocumentsPage() {
             회의록, 소식지, 회계자료 등 찬양대 문서를 관리합니다.
           </p>
         </div>
-        <Button onClick={() => setIsUploadOpen(true)}>
-          <Upload className="h-4 w-4 mr-2" />
-          문서 업로드
-        </Button>
+        {canManage && (
+          <Button onClick={() => setIsUploadOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            문서 업로드
+          </Button>
+        )}
       </div>
 
       {/* 업로드 폼 */}
-      {isUploadOpen && (
+      {canManage && isUploadOpen && (
         <div className="mb-8 p-6 border border-[var(--color-border)] rounded-lg bg-[var(--color-background-secondary)]">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-medium">새 문서 업로드</h2>
@@ -332,6 +341,7 @@ export default function DocumentsPage() {
               document={doc}
               onDelete={() => handleDelete(doc.id, doc.title)}
               isDeleting={deleteMutation.isPending}
+              canDelete={canManage}
             />
           ))}
         </div>
@@ -353,6 +363,7 @@ function DocumentCard({
   document: doc,
   onDelete,
   isDeleting,
+  canDelete,
 }: {
   document: {
     id: string;
@@ -368,6 +379,7 @@ function DocumentCard({
   };
   onDelete: () => void;
   isDeleting: boolean;
+  canDelete: boolean;
 }) {
   const { data: downloadUrl } = useDocumentDownloadUrl(doc.file_path);
 
@@ -432,24 +444,26 @@ function DocumentCard({
           variant="outline"
           onClick={() => downloadUrl && window.open(downloadUrl, '_blank')}
           disabled={!downloadUrl}
-          className="flex-1"
+          className={canDelete ? 'flex-1' : 'w-full'}
         >
           <Download className="h-4 w-4 mr-1" />
           다운로드
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onDelete}
-          disabled={isDeleting}
-          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-        >
-          {isDeleting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Trash2 className="h-4 w-4" />
-          )}
-        </Button>
+        {canDelete && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onDelete}
+            disabled={isDeleting}
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

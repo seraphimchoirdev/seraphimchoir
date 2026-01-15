@@ -5,6 +5,7 @@ import Navigation from '@/components/layout/Navigation';
 import { useAuth } from '@/hooks/useAuth';
 import AttendanceList from '@/components/features/attendances/AttendanceList';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Music } from 'lucide-react';
 import { format } from 'date-fns/format';
@@ -19,7 +20,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
 
 export default function AttendancesPage() {
-  const { profile } = useAuth();
+  const { hasRole, isLoading: authLoading } = useAuth();
+
+  // 출석 관리 권한: ADMIN, CONDUCTOR, MANAGER, PART_LEADER
+  const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']);
 
   // 기본값: 다가오는 주일 (오늘이 주일이면 오늘)
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
@@ -65,6 +69,32 @@ export default function AttendancesPage() {
     const dateStr = format(date, 'yyyy-MM-dd');
     return !serviceScheduleDates.has(dateStr);
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+        <Navigation />
+        <div className="flex items-center justify-center py-20">
+          <Spinner size="lg" variant="default" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasPermission) {
+    return (
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Alert variant="error">
+            <AlertDescription>
+              출석 관리 페이지에 접근할 권한이 없습니다.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-background-tertiary)]">
@@ -132,15 +162,6 @@ export default function AttendancesPage() {
                 </div>
               </div>
           </div>
-
-          {/* 권한 없음 메시지 */}
-          {!profile?.role && (
-            <Alert variant="warning">
-              <AlertDescription>
-                아직 관리자가 역할을 부여하지 않았습니다. 역할이 부여되면 출석을 등록하고 관리할 수 있습니다.
-              </AlertDescription>
-            </Alert>
-          )}
 
           {/* 출석 목록 */}
           <div className="bg-white rounded-xl shadow-sm p-6">

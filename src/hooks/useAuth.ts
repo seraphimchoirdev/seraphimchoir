@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import type { User } from '@supabase/supabase-js';
+import { RolePermissions, type UserRole, type RolePermissionSet } from '@/app/api/auth/types';
 
 export interface UserProfile {
   id: string;
@@ -154,4 +155,45 @@ export const useHasRole = (requiredRoles: string[]) => {
 
 export const useIsAdmin = () => {
   return useAuthStore((state) => state.isAdmin());
+};
+
+/**
+ * 특정 권한 확인 훅
+ *
+ * RolePermissions 매트릭스를 사용하여 현재 사용자의 특정 권한을 확인합니다.
+ *
+ * @example
+ * ```tsx
+ * const canEditArrangements = usePermission('canEditArrangements');
+ * const canManageMembers = usePermission('canManageMembers');
+ *
+ * if (!canEditArrangements) return <Alert>편집 권한이 없습니다.</Alert>;
+ * ```
+ */
+export const usePermission = (permission: keyof RolePermissionSet): boolean => {
+  const profile = useAuthStore((state) => state.profile);
+
+  if (!profile?.role) return false;
+
+  const rolePermissions = RolePermissions[profile.role as UserRole];
+  if (!rolePermissions) return false;
+
+  return rolePermissions[permission] ?? false;
+};
+
+/**
+ * 현재 사용자의 모든 권한 객체 반환
+ *
+ * @example
+ * ```tsx
+ * const permissions = useAllPermissions();
+ * if (permissions?.canManageDocuments) { ... }
+ * ```
+ */
+export const useAllPermissions = (): RolePermissionSet | null => {
+  const profile = useAuthStore((state) => state.profile);
+
+  if (!profile?.role) return null;
+
+  return RolePermissions[profile.role as UserRole] ?? null;
 };

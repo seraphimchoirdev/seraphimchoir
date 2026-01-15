@@ -8,7 +8,36 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Spinner } from '@/components/ui/spinner';
 
 export default function MembersPage() {
-  const { profile } = useAuth();
+  const { hasRole, isLoading: authLoading } = useAuth();
+
+  // 대원 관리 권한: ADMIN, CONDUCTOR, MANAGER만
+  const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+        <Navigation />
+        <div className="flex items-center justify-center py-20">
+          <Spinner size="lg" variant="default" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasPermission) {
+    return (
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Alert variant="error">
+            <AlertDescription>
+              찬양대원 관리 페이지에 접근할 권한이 없습니다.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-background-tertiary)]">
@@ -23,15 +52,6 @@ export default function MembersPage() {
               찬양대원의 정보를 등록하고 관리할 수 있습니다.
             </p>
           </div>
-
-          {/* 권한 없음 메시지 */}
-          {!profile?.role && (
-            <Alert variant="warning">
-              <AlertDescription>
-                아직 관리자가 역할을 부여하지 않았습니다. 역할이 부여되면 찬양대원을 등록하고 관리할 수 있습니다.
-              </AlertDescription>
-            </Alert>
-          )}
 
           {/* 목록 */}
           <Suspense

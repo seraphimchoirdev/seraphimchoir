@@ -3,25 +3,25 @@ import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 /**
  * PATCH /api/auth/roles
- * 사용자의 역할(role)을 변경합니다.
+ * 사용자의 역할(role)과 직책(title)을 변경합니다.
  * ADMIN 권한이 필요합니다.
  */
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, role } = body;
+    const { userId, role, title } = body;
 
-    // 입력 검증
-    if (!userId || !role) {
+    // 입력 검증 - userId는 필수, role/title은 선택
+    if (!userId) {
       return NextResponse.json(
-        { error: 'userId와 role을 모두 입력해주세요.' },
+        { error: 'userId를 입력해주세요.' },
         { status: 400 }
       );
     }
 
-    // role 유효성 검증
-    const validRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER'];
-    if (!validRoles.includes(role)) {
+    // role 유효성 검증 (role이 제공된 경우에만)
+    const validRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER'];
+    if (role && !validRoles.includes(role)) {
       return NextResponse.json(
         {
           error: `유효하지 않은 역할입니다. 사용 가능한 역할: ${validRoles.join(', ')}`
@@ -94,10 +94,25 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // 역할 업데이트
+    // 업데이트할 필드 구성
+    const updateData: { role?: string | null; title?: string | null; updated_at: string } = {
+      updated_at: new Date().toISOString(),
+    };
+
+    // role이 빈 문자열이면 null로, 그렇지 않으면 값 사용
+    if (role !== undefined) {
+      updateData.role = role || null;
+    }
+
+    // title 필드 처리
+    if (title !== undefined) {
+      updateData.title = title || null;
+    }
+
+    // 역할/직책 업데이트
     const { data: updatedProfile, error: updateError } = await adminClient
       .from('user_profiles')
-      .update({ role, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', userId)
       .select()
       .single();
@@ -110,10 +125,14 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    const roleLabel = role ? `역할: ${role}` : '';
+    const titleLabel = title ? `직책: ${title}` : '';
+    const changeLabel = [roleLabel, titleLabel].filter(Boolean).join(', ') || '정보';
+
     return NextResponse.json(
       {
         profile: updatedProfile,
-        message: `${targetUser.name}님의 역할이 ${role}로 변경되었습니다.`,
+        message: `${targetUser.name}님의 ${changeLabel}가 변경되었습니다.`,
       },
       { status: 200 }
     );
