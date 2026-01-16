@@ -232,3 +232,152 @@ Supabase 프로젝트를 생성한 후:
 2. 프로젝트 URL과 API 키를 환경 변수에 설정
 3. 마이그레이션 푸시: `npx supabase db push`
 4. Vercel 등에 Next.js 앱 배포
+
+## Git 워크플로우
+
+### 브랜치 전략 (GitFlow)
+
+이 프로젝트는 GitFlow 전략을 따릅니다:
+
+#### 주요 브랜치
+- **main**: 프로덕션 배포용 안정 브랜치
+- **develop**: 개발 통합 브랜치 (기본 작업 브랜치)
+
+#### 보조 브랜치
+- **feature/***: 새 기능 개발 (`develop`에서 분기, `develop`으로 머지)
+- **fix/***: 버그 수정 (`develop`에서 분기)
+- **refactor/***: 리팩토링 (`develop`에서 분기)
+- **release/***: 릴리스 준비 (`develop` → `main` + `develop`)
+- **hotfix/***: 긴급 프로덕션 수정 (`main` → `main` + `develop`)
+
+### 브랜치 명명 규칙
+
+```
+feature/<설명>          # 예: feature/kakao-login
+feature/<이슈번호>-<설명>  # 예: feature/42-attendance-export
+fix/<설명>              # 예: fix/hydration-mismatch
+release/v<버전>         # 예: release/v0.2.0
+hotfix/v<버전>          # 예: hotfix/v0.2.1
+```
+
+### 커밋 메시지 컨벤션
+
+Conventional Commits 형식을 따릅니다:
+
+```
+<type>(<scope>): <subject>
+
+[body]
+
+[footer]
+```
+
+#### 타입
+- **feat**: 새 기능 추가
+- **fix**: 버그 수정
+- **refactor**: 코드 리팩토링 (기능 변경 없음)
+- **chore**: 빌드, 설정, 의존성 변경
+- **docs**: 문서 수정
+- **test**: 테스트 추가/수정
+- **style**: 코드 포맷팅, 세미콜론 누락 등
+
+#### 예시
+
+```bash
+feat(auth): Kakao OAuth 로그인 구현
+fix(arrangements): hydration mismatch 버그 수정
+refactor(store): Zustand 스토어 타입 개선
+chore: .gitignore 업데이트
+```
+
+### 버전 관리
+
+Semantic Versioning (SemVer)을 따릅니다: `MAJOR.MINOR.PATCH`
+- **MAJOR**: 호환되지 않는 API 변경
+- **MINOR**: 하위 호환 기능 추가
+- **PATCH**: 하위 호환 버그 수정
+
+현재 버전: `0.x.x` (1.0 정식 릴리스 전)
+
+### 일반적인 워크플로우
+
+#### 기능 개발
+
+```bash
+# 1. develop에서 feature 브랜치 생성
+git checkout develop
+git pull origin develop
+git checkout -b feature/new-feature
+
+# 2. 작업 및 커밋
+git add .
+git commit -m "feat(scope): 기능 설명"
+
+# 3. develop에 푸시 및 PR 생성
+git push -u origin feature/new-feature
+# GitHub에서 PR 생성 (develop ← feature/new-feature)
+
+# 4. 머지 후 로컬 정리
+git checkout develop
+git pull origin develop
+git branch -d feature/new-feature
+```
+
+#### 릴리스
+
+```bash
+# 1. release 브랜치 생성
+git checkout develop
+git checkout -b release/v0.2.0
+
+# 2. 버전 업데이트, 최종 테스트, 버그 수정
+# 3. main과 develop에 머지
+git checkout main
+git merge release/v0.2.0
+git tag v0.2.0
+git push origin main --tags
+
+git checkout develop
+git merge release/v0.2.0
+git push origin develop
+
+# 4. release 브랜치 삭제
+git branch -d release/v0.2.0
+```
+
+#### 핫픽스 (긴급 수정)
+
+```bash
+# 1. main에서 hotfix 브랜치 생성
+git checkout main
+git checkout -b hotfix/v0.2.1
+
+# 2. 수정 및 커밋
+git commit -m "fix(critical): 긴급 버그 수정"
+
+# 3. main과 develop 모두에 머지
+git checkout main
+git merge hotfix/v0.2.1
+git tag v0.2.1
+git push origin main --tags
+
+git checkout develop
+git merge hotfix/v0.2.1
+git push origin develop
+```
+
+### 브랜치 보호 규칙 (권장)
+
+GitHub에서 다음 브랜치 보호 규칙을 설정하는 것을 권장합니다:
+
+**Settings → Branches → Add branch protection rule**
+
+#### main 브랜치
+- [x] Require a pull request before merging
+- [x] Require status checks to pass before merging (CI가 있는 경우)
+- [x] Do not allow bypassing the above settings
+- [ ] Require linear history (선택적)
+
+#### develop 브랜치
+- [x] Require a pull request before merging (선택적 - 소규모 팀은 직접 푸시 허용 가능)
+- [x] Require status checks to pass before merging (CI가 있는 경우)
