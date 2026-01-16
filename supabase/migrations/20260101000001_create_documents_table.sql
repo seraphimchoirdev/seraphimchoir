@@ -78,10 +78,12 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT ARRAY_AGG(DISTINCT tag)
-  FROM documents, unnest(tags) AS tag
-  WHERE tag IS NOT NULL AND tag != ''
-  ORDER BY tag;
+  SELECT ARRAY_AGG(tag ORDER BY tag)
+  FROM (
+    SELECT DISTINCT unnest(tags) AS tag
+    FROM documents
+  ) AS distinct_tags
+  WHERE tag IS NOT NULL AND tag != '';
 $$;
 
 GRANT EXECUTE ON FUNCTION get_all_document_tags() TO authenticated;

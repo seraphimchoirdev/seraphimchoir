@@ -26,7 +26,7 @@ COMMENT ON COLUMN choir_events.description IS '행사 설명';
 CREATE TRIGGER set_updated_at_choir_events
   BEFORE UPDATE ON choir_events
   FOR EACH ROW
-  EXECUTE FUNCTION public.set_updated_at();
+  EXECUTE FUNCTION public.update_updated_at_column();
 
 -- RLS 정책
 ALTER TABLE choir_events ENABLE ROW LEVEL SECURITY;
