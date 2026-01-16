@@ -13,7 +13,7 @@
  * - LRU Cache: 최근 계산된 패턴 캐싱 (45-95명 범위, ~50개)
  */
 
-import rowDistributionPatterns from '@/../training_data/row_distribution_patterns.json';
+import rowDistributionPatterns from '@/data/row_distribution_patterns.json';
 
 export interface RowDistributionRecommendation {
   rows: number;

@@ -65,7 +65,7 @@ let fallbackPreferences: Map<string, PreferredSeat> | null = null;
 function getJSONFallbackPreferences(): Map<string, PreferredSeat> {
   if (!fallbackPreferences) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const memberPreferencesData = require('@/../training_data/member_seat_preferences.json');
+    const memberPreferencesData = require('@/data/member_seat_preferences.json');
     fallbackPreferences = loadLearnedPreferences(
       memberPreferencesData as LearnedMemberPreference[]
     );
