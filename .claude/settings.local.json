@@ -85,7 +85,11 @@
       "Bash(PGPASSWORD=postgres psql:*)",
       "Bash(xargs -I {} sh -c 'echo \"\"\"\"=== {} ===\"\"\"\" && head -50 {}')",
       "mcp__supabase__list_tables",
-      "Bash(xargs -I {} sh -c 'echo \"\"\"\"=== {} ===\"\"\"\" && head -c 3000 {}')"
+      "Bash(xargs -I {} sh -c 'echo \"\"\"\"=== {} ===\"\"\"\" && head -c 3000 {}')",
+      "Bash(sort:*)",
+      "Bash(du -sh:*)",
+      "Bash(xargs:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
