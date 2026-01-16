@@ -19,11 +19,18 @@ import { useAuth } from '@/hooks/useAuth';
 function ArrangementsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { hasRole } = useAuth();
+    const { hasRole, isLoading: isAuthLoading } = useAuth();
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
     // 자리배치 생성/편집 권한: ADMIN, CONDUCTOR만
-    const canCreateArrangement = hasRole(['ADMIN', 'CONDUCTOR']);
+    // 클라이언트에서만 권한 확인 (hydration mismatch 방지)
+    const [canCreateArrangement, setCanCreateArrangement] = useState(false);
+
+    useEffect(() => {
+        if (!isAuthLoading) {
+            setCanCreateArrangement(hasRole(['ADMIN', 'CONDUCTOR']));
+        }
+    }, [isAuthLoading, hasRole]);
 
     // URL에서 초기값 가져오기
     const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
