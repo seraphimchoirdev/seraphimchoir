@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
+// Edge 런타임 사용 (Vercel 배포 호환성)
+export const runtime = 'edge';
+
 /**
  * Next.js 미들웨어
  *
