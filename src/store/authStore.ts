@@ -16,6 +16,35 @@ import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'AuthStore' });
 
+/**
+ * Supabase Auth 에러 메시지를 한글로 변환
+ */
+function translateAuthError(error: Error): Error {
+  const errorMessages: Record<string, string> = {
+    'Invalid login credentials': '이메일 또는 비밀번호가 올바르지 않습니다.',
+    'Email not confirmed': '이메일 인증이 완료되지 않았습니다.',
+    'User not found': '사용자를 찾을 수 없습니다.',
+    'Invalid email or password': '이메일 또는 비밀번호가 올바르지 않습니다.',
+    'Email rate limit exceeded': '잠시 후 다시 시도해주세요.',
+    'Password should be at least 6 characters': '비밀번호는 최소 6자 이상이어야 합니다.',
+    'User already registered': '이미 등록된 이메일입니다.',
+    'Signup requires a valid password': '유효한 비밀번호를 입력해주세요.',
+    'Unable to validate email address: invalid format': '유효한 이메일 형식이 아닙니다.',
+  };
+
+  const translatedMessage = Object.entries(errorMessages).find(([key]) =>
+    error.message.includes(key)
+  );
+
+  if (translatedMessage) {
+    const newError = new Error(translatedMessage[1]);
+    newError.name = error.name;
+    return newError;
+  }
+
+  return error;
+}
+
 // UserProfile 타입 정의 (대원 연결 정보 포함)
 export interface UserProfile {
   id: string;
@@ -102,8 +131,9 @@ export const useAuthStore = create<AuthStore>()(
             });
 
             if (error) {
-              set({ error, isLoading: false }, false, 'auth/signIn/error');
-              return { error };
+              const translatedError = translateAuthError(error);
+              set({ error: translatedError, isLoading: false }, false, 'auth/signIn/error');
+              return { error: translatedError };
             }
 
             // fetchUser는 onAuthStateChange에서 자동 호출되지만,
@@ -115,7 +145,7 @@ export const useAuthStore = create<AuthStore>()(
             }, false, 'auth/signIn/success');
             return { error: null };
           } catch (error) {
-            const err = error as Error;
+            const err = translateAuthError(error as Error);
             set({ error: err, isLoading: false }, false, 'auth/signIn/catch');
             return { error: err };
           }
@@ -156,7 +186,7 @@ export const useAuthStore = create<AuthStore>()(
           try {
             set({ isLoading: true, error: null }, false, 'auth/signUp/start');
 
-            const { data, error } = await supabase.auth.signUp({
+            const { error } = await supabase.auth.signUp({
               email,
               password,
               options: {
@@ -167,14 +197,15 @@ export const useAuthStore = create<AuthStore>()(
             });
 
             if (error) {
-              set({ error, isLoading: false }, false, 'auth/signUp/error');
-              return { error };
+              const translatedError = translateAuthError(error);
+              set({ error: translatedError, isLoading: false }, false, 'auth/signUp/error');
+              return { error: translatedError };
             }
 
             set({ isLoading: false }, false, 'auth/signUp/success');
             return { error: null };
           } catch (error) {
-            const err = error as Error;
+            const err = translateAuthError(error as Error);
             set({ error: err, isLoading: false }, false, 'auth/signUp/catch');
             return { error: err };
           }
