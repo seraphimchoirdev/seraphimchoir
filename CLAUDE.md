@@ -366,10 +366,3 @@ git checkout develop
 git merge hotfix/v0.2.1
 git push origin develop
 ```
-
-### 팀 확장 시 참고사항
-
-팀원이 늘어나면 다음을 고려하세요:
-- GitHub에서 브랜치 보호 규칙 설정 (PR 필수, CI 통과 필수)
-- 코드 리뷰 프로세스 도입
-- CODEOWNERS 파일 추가
