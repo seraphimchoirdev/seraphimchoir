@@ -202,7 +202,10 @@ function isInOtherPartTerritory(
         return true; // SOPRANO 영역 침범
       }
     }
-    // TENOR/BASS는 row 1-3 자체가 금지이므로 여기서 체크 안 함
+    // TENOR/BASS는 row 1-3 자체가 금지
+    if (currentPart === 'TENOR' || currentPart === 'BASS') {
+      return true; // TENOR/BASS의 row 1-3 배치 금지
+    }
     return false;
   }
 
@@ -606,12 +609,19 @@ function distributePartsToRows(
   }
 
   // === STEP 3: ALTO overflow → 4행에만 배치 (5-6행 금지) ===
-  // 학습 범위: 4행 col 11-16 (약 6석)
+  // 동적 용량: 학습 범위 기준 6석이지만, ALTO 인원이 많으면 확장
   if (altoRemaining > 0 && numRows >= 4) {
     const row = 4;
     const rowCapacity = rowCapacities[row - 1];
-    // ALTO 4행 overflow: 오른쪽 끝 약 6석 (학습 범위 기준)
-    const altoOverflowCap = Math.min(6, rowCapacity - rowTotals[row - 1]);
+    const availableSpace = rowCapacity - rowTotals[row - 1];
+
+    // 동적 overflow 용량: 기본 6석, 필요시 가용 공간까지 확장
+    // ALTO 전원 배치를 위해 필요한 만큼 사용
+    const baseOverflowCap = 6;
+    const altoOverflowCap = Math.min(
+      Math.max(baseOverflowCap, altoRemaining), // 필요한 만큼 확장
+      availableSpace // 최대 가용 공간까지
+    );
 
     if (altoOverflowCap > 0) {
       const toPlace = Math.min(altoRemaining, altoOverflowCap);
@@ -1093,7 +1103,41 @@ function assignSeatsToRows(
       const preferredRows = rules.preferredRows as readonly number[];
       const overflowRows = rules.overflowRows as readonly number[];
 
-      // 1순위: overflow 행 + 학습된 열 범위
+      // 헬퍼: 해당 행에서 오른쪽 파트(ALTO/BASS)의 최소 열 찾기
+      const findMinRightPartCol = (rowNum: number): number => {
+        let minCol = MAX_ROW_CAPACITY + 1;
+        for (const seat of seats) {
+          if (seat.row === rowNum && (seat.part === 'ALTO' || seat.part === 'BASS')) {
+            if (seat.col < minCol) minCol = seat.col;
+          }
+        }
+        return minCol;
+      };
+
+      // 헬퍼: 해당 행에서 왼쪽 파트(SOPRANO/TENOR)의 최대 열 찾기
+      const findMaxLeftPartCol = (rowNum: number): number => {
+        let maxCol = 0;
+        for (const seat of seats) {
+          if (seat.row === rowNum && (seat.part === 'SOPRANO' || seat.part === 'TENOR')) {
+            if (seat.col > maxCol) maxCol = seat.col;
+          }
+        }
+        return maxCol;
+      };
+
+      // 좌우 제약 체크 헬퍼
+      const isValidForLeftRightConstraint = (row: number, col: number, partType: string): boolean => {
+        const isLeftPart = partType === 'SOPRANO' || partType === 'TENOR';
+        if (isLeftPart) {
+          const minRightCol = findMinRightPartCol(row);
+          return col < minRightCol; // 오른쪽 파트보다 왼쪽에 있어야 함
+        } else {
+          const maxLeftCol = findMaxLeftPartCol(row);
+          return col > maxLeftCol; // 왼쪽 파트보다 오른쪽에 있어야 함
+        }
+      };
+
+      // 1순위: overflow 행 + 학습된 열 범위 (좌우 제약 포함)
       for (const row of overflowRows) {
         if (row > numRows) continue;
         const rowCap = rowCapacities[row - 1];
@@ -1101,13 +1145,13 @@ function assignSeatsToRows(
         if (!constraint) continue;
 
         for (let col = constraint.min; col <= constraint.max; col++) {
-          if (!occupiedSeats.has(seatKey(row, col))) {
-            return { row, col };
-          }
+          if (occupiedSeats.has(seatKey(row, col))) continue;
+          if (!isValidForLeftRightConstraint(row, col, part)) continue;
+          return { row, col };
         }
       }
 
-      // 2순위: preferred 행 + 학습된 열 범위
+      // 2순위: preferred 행 + 학습된 열 범위 (좌우 제약 포함)
       for (const row of preferredRows) {
         if (row > numRows) continue;
         const rowCap = rowCapacities[row - 1];
@@ -1115,14 +1159,14 @@ function assignSeatsToRows(
         if (!constraint) continue;
 
         for (let col = constraint.min; col <= constraint.max; col++) {
-          if (!occupiedSeats.has(seatKey(row, col))) {
-            return { row, col };
-          }
+          if (occupiedSeats.has(seatKey(row, col))) continue;
+          if (!isValidForLeftRightConstraint(row, col, part)) continue;
+          return { row, col };
         }
       }
 
       // 3순위: 모든 허용 행 + 열 범위 확장 (±2열)
-      // 다른 파트 영역 침범 방지 체크 포함
+      // 다른 파트 영역 침범 방지 체크 + 좌우 제약 포함
       const allAllowedRows = part === 'ALTO'
         ? [1, 2, 3, 4]  // ALTO는 5-6행 금지
         : [...preferredRows, ...overflowRows];
@@ -1141,15 +1185,22 @@ function assignSeatsToRows(
           if (occupiedSeats.has(seatKey(row, col))) continue;
           // 다른 파트 영역 침범 체크 (SOPRANO overflow, ALTO overflow 등)
           if (isInOtherPartTerritory(row, col, part, rowCap)) continue;
+          // 좌우 제약 체크
+          if (!isValidForLeftRightConstraint(row, col, part)) continue;
           return { row, col };
         }
       }
 
-      // 4순위: 아무 빈좌석 (파트 영역 체크 포함, ALTO는 5-6행 회피)
+      // 4순위: 아무 빈좌석 (파트 영역 체크 포함)
+      // - ALTO: 5-6행 금지 → [1, 2, 3, 4]
+      // - TENOR/BASS: 1-3행 금지 → [4, 5, 6]
+      // - SOPRANO: 모든 행 허용
       // 4-1: 다른 파트 영역 침범 안 하는 빈좌석 우선
       const lastResortRows = part === 'ALTO'
         ? [1, 2, 3, 4]
-        : Array.from({ length: numRows }, (_, i) => i + 1);
+        : part === 'TENOR' || part === 'BASS'
+          ? [4, 5, 6].filter(r => r <= numRows)
+          : Array.from({ length: numRows }, (_, i) => i + 1);
 
       for (const row of lastResortRows) {
         const rowCap = rowCapacities[row - 1];
@@ -1202,33 +1253,124 @@ function assignSeatsToRows(
         }
       }
 
-      // 4-3: 정말 좌석이 없으면 아무 빈좌석 (최후의 수단, 단 TENOR는 BASS 영역 피함)
+      // 4-3: 정말 좌석이 없으면 아무 빈좌석 (최후의 수단)
+      // MAX_ROW_CAPACITY 사용: distribution이 rowCapacities 초과 배분할 수 있음
+      // 좌우 분할 규칙 유지: SOPRANO/TENOR는 왼쪽부터, ALTO/BASS는 오른쪽부터 탐색
+      const isLeftPart = part === 'SOPRANO' || part === 'TENOR';
+
       for (const row of lastResortRows) {
+        const maxCap = MAX_ROW_CAPACITY; // rowCapacities 초과 허용
         const rowCap = rowCapacities[row - 1];
-        for (let col = 1; col <= rowCap; col++) {
-          if (occupiedSeats.has(seatKey(row, col))) continue;
-          // TENOR는 BASS 전용 영역(col >= BASS.min) 피함
-          if (part === 'TENOR' && row >= 4) {
-            const bassCol = getAdjustedColConstraints('BASS', row, rowCap);
-            if (bassCol && col >= bassCol.min) continue;
+
+        if (isLeftPart) {
+          // 왼쪽 파트: col 1부터 순차 탐색
+          // 이미 배치된 오른쪽 파트보다 오른쪽으로 가지 않음
+          const minRightCol = findMinRightPartCol(row);
+          for (let col = 1; col <= maxCap; col++) {
+            if (occupiedSeats.has(seatKey(row, col))) continue;
+            // 기존 오른쪽 파트보다 오른쪽에 배치하지 않음
+            if (col >= minRightCol) continue;
+            // TENOR는 BASS 전용 영역(col >= BASS.min) 피함
+            if (part === 'TENOR' && row >= 4) {
+              const bassCol = getAdjustedColConstraints('BASS', row, rowCap);
+              if (bassCol && col >= bassCol.min) continue;
+            }
+            logger.warn(`${member.name}(${part}) 최후 배치: ${row}행 ${col}열 (영역 침범 불가피)`);
+            return { row, col };
           }
-          logger.warn(`${member.name}(${part}) 최후 배치: ${row}행 ${col}열 (영역 침범 불가피)`);
-          return { row, col };
+        } else {
+          // 오른쪽 파트: col maxCap부터 역순 탐색
+          // 이미 배치된 왼쪽 파트보다 왼쪽으로 가지 않음
+          const maxLeftCol = findMaxLeftPartCol(row);
+          for (let col = maxCap; col >= 1; col--) {
+            if (occupiedSeats.has(seatKey(row, col))) continue;
+            // 기존 왼쪽 파트보다 왼쪽에 배치하지 않음
+            if (col <= maxLeftCol) continue;
+            logger.warn(`${member.name}(${part}) 최후 배치: ${row}행 ${col}열 (영역 침범 불가피)`);
+            return { row, col };
+          }
         }
       }
 
-      // 4-4: TENOR 전용 - BASS 영역 진입하되, BASS avg 이하로 제한 (경계 근처에 배치)
+      // 4-4: TENOR 전용 - BASS 영역 진입하되, 기존 BASS보다 오른쪽으로 가지 않음
       if (part === 'TENOR') {
         for (const row of lastResortRows) {
           const rowCap = rowCapacities[row - 1];
           const bassCol = getAdjustedColConstraints('BASS', row, rowCap);
-          // BASS avg까지만 허용 (col 14 같은 극단적 위치 방지)
-          const maxAllowedCol = bassCol ? Math.floor(bassCol.avg) : rowCap;
+          const minRightCol = findMinRightPartCol(row);  // 기존 ALTO/BASS 위치
+          // BASS avg까지만 허용, 그리고 기존 오른쪽 파트보다 왼쪽에 배치
+          const maxAllowedCol = Math.min(
+            bassCol ? Math.floor(bassCol.avg) : rowCap,
+            minRightCol - 1
+          );
           for (let col = 1; col <= maxAllowedCol; col++) {
             if (!occupiedSeats.has(seatKey(row, col))) {
               logger.warn(`${member.name}(${part}) BASS 경계 배치: ${row}행 ${col}열 (수작업 최소화)`);
               return { row, col };
             }
+          }
+        }
+      }
+
+      // 4-5: 최후의 최후 - TENOR/BASS가 rows 4-6에서 자리를 못 찾으면 모든 행 허용
+      // 좌우 분할 규칙 강화: 기존 반대 파트 위치 존중
+      // TENOR/BASS는 선호 행(4-6)을 먼저 탐색, 그 후 rows 1-3
+      if (part === 'TENOR' || part === 'BASS') {
+        // 선호 행 먼저, 그 후 나머지 행
+        const preferredRows = Array.from(
+          { length: Math.max(0, numRows - 3) },
+          (_, i) => i + 4
+        ).filter(r => r <= numRows);
+        const otherRows = [1, 2, 3].filter(r => r <= numRows);
+        const orderedRows = [...preferredRows, ...otherRows];
+
+        for (const row of orderedRows) {
+          const rowCap = rowCapacities[row - 1];
+          const midPoint = Math.ceil(rowCap / 2);  // 중간점 계산
+
+          if (part === 'TENOR') {
+            // TENOR: 왼쪽부터 탐색, 기존 오른쪽 파트보다 오른쪽으로 가지 않음
+            const minRightCol = findMinRightPartCol(row);
+            const maxCol = Math.min(
+              row <= 3 ? midPoint : MAX_ROW_CAPACITY,
+              minRightCol - 1
+            );
+            for (let col = 1; col <= maxCol; col++) {
+              if (!occupiedSeats.has(seatKey(row, col))) {
+                logger.warn(`${member.name}(${part}) 최후의 최후 배치: ${row}행 ${col}열`);
+                return { row, col };
+              }
+            }
+          } else {
+            // BASS: 오른쪽부터 탐색, 기존 왼쪽 파트보다 왼쪽으로 가지 않음
+            const maxLeftCol = findMaxLeftPartCol(row);
+            const minCol = Math.max(
+              row <= 3 ? midPoint + 1 : 1,
+              maxLeftCol + 1
+            );
+            for (let col = MAX_ROW_CAPACITY; col >= minCol; col--) {
+              if (!occupiedSeats.has(seatKey(row, col))) {
+                logger.warn(`${member.name}(${part}) 최후의 최후 배치: ${row}행 ${col}열`);
+                return { row, col };
+              }
+            }
+          }
+        }
+      }
+
+      // 4-6: 절대 최후 - 모든 제약 무시, 빈 좌석 아무데나 배치 (배치 실패 방지)
+      // TENOR/BASS는 선호 행(4-6)을 먼저 탐색
+      const isLowerPart = part === 'TENOR' || part === 'BASS';
+      const rows46 = isLowerPart
+        ? [...Array.from({ length: Math.max(0, numRows - 3) }, (_, i) => i + 4).filter(r => r <= numRows),
+           ...Array.from({ length: Math.min(3, numRows) }, (_, i) => i + 1)]
+        : Array.from({ length: numRows }, (_, i) => i + 1);
+
+      for (const row of rows46) {
+        for (let col = 1; col <= MAX_ROW_CAPACITY; col++) {
+          if (!occupiedSeats.has(seatKey(row, col))) {
+            logger.warn(`${member.name}(${part}) 절대 최후 배치: ${row}행 ${col}열 (제약 무시)`);
+            return { row, col };
           }
         }
       }
@@ -1250,6 +1392,39 @@ function assignSeatsToRows(
         occupiedSeats.add(seatKey(fallbackSeat.row, fallbackSeat.col));
       } else {
         logger.warn(`${member.name}(${member.part}) 배치 실패: 좌석 부족`);
+      }
+    }
+  }
+
+  // === 후처리: 좌우 분할 위반 수정 ===
+  // 같은 행에서 왼쪽 파트(SOPRANO/TENOR)가 오른쪽 파트(ALTO/BASS)보다 오른쪽에 있으면 교환
+  for (let row = 1; row <= rowCapacities.length; row++) {
+    const rowSeats = seats.filter(s => s.row === row);
+    const leftParts = rowSeats.filter(s => s.part === 'SOPRANO' || s.part === 'TENOR');
+    const rightParts = rowSeats.filter(s => s.part === 'ALTO' || s.part === 'BASS');
+
+    if (leftParts.length === 0 || rightParts.length === 0) continue;
+
+    // 왼쪽 파트의 최대 열과 오른쪽 파트의 최소 열 찾기
+    const maxLeftCol = Math.max(...leftParts.map(s => s.col));
+    const minRightCol = Math.min(...rightParts.map(s => s.col));
+
+    // 위반이 있으면 교환
+    if (maxLeftCol > minRightCol) {
+      // 위반하는 좌석들 찾기
+      const violatingLeftSeats = leftParts.filter(s => s.col >= minRightCol).sort((a, b) => b.col - a.col);
+      const violatingRightSeats = rightParts.filter(s => s.col <= maxLeftCol).sort((a, b) => a.col - b.col);
+
+      // 교환 수행
+      const swapCount = Math.min(violatingLeftSeats.length, violatingRightSeats.length);
+      for (let i = 0; i < swapCount; i++) {
+        const leftSeat = violatingLeftSeats[i];
+        const rightSeat = violatingRightSeats[i];
+        // 열 교환
+        const tempCol = leftSeat.col;
+        leftSeat.col = rightSeat.col;
+        rightSeat.col = tempCol;
+        logger.debug(`좌우 위반 수정: ${leftSeat.member_name}(${leftSeat.part}) ↔ ${rightSeat.member_name}(${rightSeat.part}) in row ${row}`);
       }
     }
   }
@@ -1304,8 +1479,8 @@ export function generateAISeatingArrangement(
     partCounts[member.part]++;
   });
 
-  // 2. ML 학습 데이터 기반 행 구성 추천
-  const recommendation = recommendRowDistribution(totalMembers);
+  // 2. ML 학습 데이터 기반 행 구성 추천 (ALTO 용량 조정 포함)
+  const recommendation = recommendRowDistribution(totalMembers, partCounts);
   const rowCapacities = recommendation.rowCapacities;
   const numRows = recommendation.rows;
 
