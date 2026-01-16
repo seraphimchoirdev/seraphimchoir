@@ -224,6 +224,45 @@ npx supabase db reset
 # http://localhost:54323
 ```
 
+## Supabase 개발 전략 (솔로 개발자용)
+
+### 권장 워크플로우: 로컬 전용 개발 (월 $0)
+
+솔로 개발자에게 Supabase 브랜칭은 오버킬입니다. 로컬 Supabase로 충분합니다.
+
+```
+로컬 Supabase (Docker) ──테스트 완료──▶ 프로덕션 Supabase (원격)
+    npx supabase start                      npx supabase db push
+    npx supabase db reset
+```
+
+### 마이그레이션 워크플로우
+
+```bash
+# 1. 마이그레이션 생성
+npx supabase migration new add_new_feature
+
+# 2. 로컬에서 검증 (무한 반복 가능)
+npx supabase db reset   # 마이그레이션 + seed 적용, 문제시 수정
+
+# 3. 프로덕션 배포 (검증 완료 후)
+npx supabase db push    # 원격에 마이그레이션 적용
+```
+
+### Seed 데이터
+
+`supabase/seed.sql`에 테스트 데이터가 정의되어 있습니다:
+- 로컬 `db reset` 시 자동 적용
+- 다음/지난 주일 출석 데이터 자동 생성
+
+### 브랜칭 (필요시에만)
+
+브랜칭이 필요한 경우:
+- 대규모 데이터 마이그레이션 테스트
+- 외부 리뷰어와 협업
+
+비용: 브랜치당 ~$0.01344/시간 (사용 후 즉시 삭제 권장)
+
 ## 배포
 
 Supabase 프로젝트를 생성한 후:

@@ -1,0 +1,56 @@
+# Documentation
+/docs
+README.md
+
+# ML Service (별도 배포)
+/ml-service
+
+# Training data
+/training_data
+
+# Scripts (개발용)
+/scripts
+
+# Test files
+__tests__
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+jest.config.ts
+jest.setup.ts
+jest.polyfills.ts
+
+# Playwright MCP
+/.playwright-mcp
+
+# Environment files (Vercel에서 직접 설정)
+.env
+.env.local
+.env.development
+
+# IDE & Editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Task Master
+/.taskmaster
+
+# Design files
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!components.json
+
+# Supabase local config
+/supabase/config.toml
+
+# Python virtual environment
+/.venv
+
+# Misc
+member_refer.jpg
+enable-rls.sql
