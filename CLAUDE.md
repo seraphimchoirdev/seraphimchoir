@@ -313,15 +313,16 @@ git checkout -b feature/new-feature
 git add .
 git commit -m "feat(scope): 기능 설명"
 
-# 3. develop에 푸시 및 PR 생성
-git push -u origin feature/new-feature
-# GitHub에서 PR 생성 (develop ← feature/new-feature)
-
-# 4. 머지 후 로컬 정리
+# 3. develop에 머지 및 푸시
 git checkout develop
-git pull origin develop
+git merge feature/new-feature
+git push origin develop
+
+# 4. feature 브랜치 정리
 git branch -d feature/new-feature
 ```
+
+> **참고**: 작은 수정은 feature 브랜치 없이 develop에서 직접 작업해도 됩니다.
 
 #### 릴리스
 
@@ -366,18 +367,9 @@ git merge hotfix/v0.2.1
 git push origin develop
 ```
 
-### 브랜치 보호 규칙 (권장)
+### 팀 확장 시 참고사항
 
-GitHub에서 다음 브랜치 보호 규칙을 설정하는 것을 권장합니다:
-
-**Settings → Branches → Add branch protection rule**
-
-#### main 브랜치
-- [x] Require a pull request before merging
-- [x] Require status checks to pass before merging (CI가 있는 경우)
-- [x] Do not allow bypassing the above settings
-- [ ] Require linear history (선택적)
-
-#### develop 브랜치
-- [x] Require a pull request before merging (선택적 - 소규모 팀은 직접 푸시 허용 가능)
-- [x] Require status checks to pass before merging (CI가 있는 경우)
+팀원이 늘어나면 다음을 고려하세요:
+- GitHub에서 브랜치 보호 규칙 설정 (PR 필수, CI 통과 필수)
+- 코드 리뷰 프로세스 도입
+- CODEOWNERS 파일 추가
