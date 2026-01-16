@@ -53,3 +53,11 @@ seatimg/
 # Python virtual environments
 .venv/
 venv/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Supabase temp files
+supabase/data_export.sql
+supabase/full_schema_dump.sql
+*.sql.bak
