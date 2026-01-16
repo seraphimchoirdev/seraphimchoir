@@ -44,6 +44,7 @@ jest.polyfills.ts
 !package-lock.json
 !tsconfig.json
 !components.json
+!src/data/*.json
 
 # Supabase local config
 /supabase/config.toml
