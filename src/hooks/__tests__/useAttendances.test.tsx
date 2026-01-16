@@ -237,7 +237,7 @@ describe('useUpdateAttendance', () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        is_available: false,
+        is_service_available: false,
         notes: '결석',
       }),
     });
