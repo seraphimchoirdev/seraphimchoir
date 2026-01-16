@@ -279,7 +279,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
     removeMember: (row, col) =>
         set((state) => {
             const key = `${row}-${col}`;
-            const { [key]: removed, ...rest } = state.assignments;
+            const { [key]: _removed, ...rest } = state.assignments;
             return {
                 _history: saveToHistory(state),
                 assignments: rest,

@@ -242,7 +242,6 @@ function calculate5RowDistribution(
   closestPattern: LearnedPattern
 ): RowDistributionRecommendation {
   const basePerRow = Math.floor(totalMembers / 5);
-  const remainder = totalMembers % 5;
 
   // 학습된 패턴 (UI 순서): [많음, 중간, 작음, 작음, 매우 작음]
   // 역순 패턴: 45명 [9,9,10,9,8], 52명 [10,11,10,11,10], 53명 [11,12,11,10,9]
