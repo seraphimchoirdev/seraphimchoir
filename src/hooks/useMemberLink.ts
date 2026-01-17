@@ -16,6 +16,16 @@ interface AvailableMember {
   id: string;
   name: string;
   part: string;
+  /** 자리배치/출석체크 대상 여부. false=지휘자,반주자 등 비등단 구성원 */
+  is_singer: boolean;
+}
+
+// 연결 요청 시 전달할 데이터
+interface CreateMemberLinkInput {
+  member_id: string;
+  /** 등단자인 경우 필수, 비등단자(지휘자/반주자)는 선택 */
+  height_cm?: number;
+  regular_member_since?: string;
 }
 
 // 연결 요청 정보 (member는 Supabase 관계 조회로 인해 배열로 반환됨)
@@ -30,6 +40,7 @@ interface MemberLinkRequestRaw {
     id: string;
     name: string;
     part: string;
+    is_singer: boolean;
   }[];
 }
 
@@ -45,13 +56,14 @@ interface MemberLinkRequest {
     id: string;
     name: string;
     part: string;
+    is_singer: boolean;
   } | null;
 }
 
-// 연결 가능한 대원 목록 조회
-export function useAvailableMembers(part?: string) {
+// 연결 가능한 대원 목록 조회 (이름 검색 지원)
+export function useAvailableMembers(searchQuery?: string) {
   return useQuery({
-    queryKey: ['available-members', part],
+    queryKey: ['available-members', searchQuery],
     queryFn: async () => {
       const supabase = createClient();
 
@@ -64,16 +76,16 @@ export function useAvailableMembers(part?: string) {
 
       const linkedMemberIds = linkedProfiles?.map(p => p.linked_member_id) || [];
 
-      // 연결되지 않은 정대원 조회
+      // 연결되지 않은 정대원 조회 (is_singer 포함 - 지휘자/반주자 구분용)
       let query = supabase
         .from('members')
-        .select('id, name, part')
+        .select('id, name, part, is_singer')
         .eq('member_status', 'REGULAR')
         .order('name');
 
-      // 파트 필터
-      if (part) {
-        query = query.eq('part', part);
+      // 이름 검색 필터
+      if (searchQuery && searchQuery.trim().length > 0) {
+        query = query.ilike('name', `%${searchQuery.trim()}%`);
       }
 
       const { data, error } = await query;
@@ -81,23 +93,32 @@ export function useAvailableMembers(part?: string) {
       if (error) throw error;
 
       // 이미 연결된 대원 제외
-      const availableMembers = data?.filter(m => !linkedMemberIds.includes(m.id)) || [];
+      const availableMembers = (data || [])
+        .filter(m => !linkedMemberIds.includes(m.id))
+        .map(m => ({
+          id: m.id,
+          name: m.name,
+          part: m.part,
+          is_singer: m.is_singer ?? true, // 기본값 true (마이그레이션 전 대원 호환)
+        }));
 
       return availableMembers as AvailableMember[];
     },
+    // 검색어가 있을 때만 쿼리 실행
+    enabled: true,
   });
 }
 
-// 연결 요청 생성
+// 연결 요청 생성 (키, 정대원 임명일 포함)
 export function useRequestMemberLink() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (memberId: string) => {
+    mutationFn: async (data: CreateMemberLinkInput) => {
       const res = await fetch('/api/member-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ member_id: memberId }),
+        body: JSON.stringify(data),
       });
 
       if (!res.ok) {
@@ -133,7 +154,8 @@ export function usePendingLinkRequests(part?: string) {
           member:members!user_profiles_linked_member_id_fkey(
             id,
             name,
-            part
+            part,
+            is_singer
           )
         `)
         .eq('link_status', 'pending')
@@ -160,16 +182,23 @@ export function usePendingLinkRequests(part?: string) {
   });
 }
 
+// 연결 승인 입력 타입
+interface ApproveMemberLinkInput {
+  userId: string;
+  /** 비등단자(is_singer=false)인 경우 역할 지정: CONDUCTOR 또는 ACCOMPANIST */
+  role?: 'CONDUCTOR' | 'ACCOMPANIST';
+}
+
 // 연결 승인
 export function useApproveMemberLink() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (userId: string) => {
+    mutationFn: async ({ userId, role }: ApproveMemberLinkInput) => {
       const res = await fetch(`/api/member-link/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'approve' }),
+        body: JSON.stringify({ action: 'approve', role }),
       });
 
       if (!res.ok) {

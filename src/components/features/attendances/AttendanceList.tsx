@@ -80,6 +80,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
 
     const { data: membersData, isLoading: membersLoading } = useMembers({
         member_status: 'REGULAR',
+        is_singer: true, // 등단자만 (지휘자/반주자 제외)
         limit: 100,
     });
 

@@ -67,11 +67,12 @@ export async function POST(request: NextRequest) {
         }
 
         // 2. 출석 데이터 처리 - 배치된 대원은 등단 가능, 나머지는 등단 불가
-        // 2-1. 모든 정대원 조회 (REGULAR 상태인 대원만)
+        // 2-1. 모든 정대원 조회 (REGULAR 상태 등단자만 - 지휘자/반주자 제외)
         const { data: allMembers, error: membersError } = await supabase
             .from('members')
             .select('id')
-            .eq('member_status', 'REGULAR');
+            .eq('member_status', 'REGULAR')
+            .eq('is_singer', true);
 
         if (membersError) {
             logger.error('Members fetch error:', membersError);

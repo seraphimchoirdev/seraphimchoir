@@ -19,8 +19,13 @@ export interface UserProfile {
 
 /**
  * 사용자 역할
+ * - ADMIN: 관리자
+ * - CONDUCTOR: 지휘자
+ * - ACCOMPANIST: 반주자
+ * - MANAGER: 매니저
+ * - PART_LEADER: 파트장
  */
-export type UserRole = 'ADMIN' | 'CONDUCTOR' | 'MANAGER' | 'PART_LEADER';
+export type UserRole = 'ADMIN' | 'CONDUCTOR' | 'ACCOMPANIST' | 'MANAGER' | 'PART_LEADER';
 
 /**
  * Auth 에러

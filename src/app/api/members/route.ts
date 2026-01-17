@@ -20,6 +20,8 @@ const queryParamsSchema = z.object({
   part: PartEnum.optional().nullish(),
   search: z.string().optional().nullish(),
   member_status: MemberStatusEnum.optional().nullish(),
+  // 자리배치/출석체크 대상 필터 (true=등단자만, false=비등단자만)
+  is_singer: z.enum(['true', 'false']).transform(v => v === 'true').optional().nullish(),
   sortBy: z.enum(['name', 'part', 'createdAt', 'lastServiceDate', 'lastPracticeDate']).optional().default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
   // 장기 미출석 필터 (일수 기준)
@@ -75,6 +77,7 @@ export async function GET(request: NextRequest) {
       part: searchParams.get('part') ?? undefined,
       search: searchParams.get('search') ?? undefined,
       member_status: searchParams.get('member_status') ?? undefined,
+      is_singer: searchParams.get('is_singer') ?? undefined,
       sortBy: searchParams.get('sortBy') ?? undefined,
       sortOrder: searchParams.get('sortOrder') ?? undefined,
       absentDaysService: searchParams.get('absentDaysService') ?? undefined,
@@ -139,6 +142,11 @@ export async function GET(request: NextRequest) {
     // 상태 필터링
     if (params.member_status) {
       query = query.eq('member_status', params.member_status);
+    }
+
+    // 등단자/비등단자 필터링 (지휘자, 반주자 등 구분)
+    if (params.is_singer !== undefined && params.is_singer !== null) {
+      query = query.eq('is_singer', params.is_singer);
     }
 
     // 장기 미출석 필터링

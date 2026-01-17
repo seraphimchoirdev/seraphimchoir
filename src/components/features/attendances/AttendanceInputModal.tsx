@@ -39,9 +39,10 @@ export default function AttendanceInputModal({
 }: AttendanceInputModalProps) {
   const dateString = format(date, 'yyyy-MM-dd');
 
-  // 회원 목록 조회 (활동중인 회원만)
+  // 회원 목록 조회 (활동중인 등단자만 - 지휘자/반주자 제외)
   const { data: membersResponse, isLoading: isMembersLoading } = useMembers({
     member_status: 'REGULAR',
+    is_singer: true, // 등단자만 (지휘자/반주자 제외)
     limit: 1000, // 모든 회원 가져오기
   });
 

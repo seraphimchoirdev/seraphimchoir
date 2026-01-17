@@ -74,11 +74,12 @@ export async function POST(
     }
 
     // 해당 날짜의 등단 가능 인원 수 조회
-    // 1. 모든 정대원 수
+    // 1. 모든 정대원 수 (등단자만 - 지휘자/반주자 제외)
     const { count: totalRegularMembers } = await supabase
       .from('members')
       .select('*', { count: 'exact', head: true })
-      .eq('member_status', 'REGULAR');
+      .eq('member_status', 'REGULAR')
+      .eq('is_singer', true);
 
     // 2. 해당 날짜에 등단 불가능으로 표시된 인원
     const { count: unavailableCount } = await supabase

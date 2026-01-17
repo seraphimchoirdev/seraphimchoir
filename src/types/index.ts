@@ -12,6 +12,29 @@ export type Part = Enums<'part'>;
 export type MemberStatus = Enums<'member_status'>;
 
 // Extended types
+
+/**
+ * members_public 뷰에 해당하는 타입
+ * - is_singer: 자리배치/출석체크 대상 여부 (false=지휘자,반주자)
+ * - height_cm: 키 (cm)
+ * - regular_member_since: 정대원 임명일
+ *
+ * 주의: 마이그레이션 후 `npx supabase gen types`로 재생성 필요
+ */
+export interface MemberPublic extends Omit<Member, 'conductor_notes_auth_tag' | 'conductor_notes_iv' | 'encrypted_conductor_notes'> {
+  is_singer: boolean;
+  height_cm: number | null;
+  regular_member_since: string | null;
+}
+
+/**
+ * members_with_attendance 뷰에 해당하는 타입
+ */
+export interface MemberWithLastAttendance extends MemberPublic {
+  last_service_date: string | null;
+  last_practice_date: string | null;
+}
+
 export interface MemberWithAttendances extends Member {
   attendances: Attendance[];
 }

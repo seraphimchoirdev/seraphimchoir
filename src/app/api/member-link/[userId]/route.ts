@@ -53,7 +53,7 @@ export async function PATCH(
 
     // 요청 본문 파싱
     const body = await request.json();
-    const { action } = body;
+    const { action, role: requestedRole } = body;
 
     if (!action || !['approve', 'reject'].includes(action)) {
       return NextResponse.json(
@@ -62,7 +62,16 @@ export async function PATCH(
       );
     }
 
-    // 대상 사용자 프로필 조회
+    // 비등단자 역할 요청 시 유효성 검증
+    const validNonSingerRoles = ['CONDUCTOR', 'ACCOMPANIST'];
+    if (requestedRole && !validNonSingerRoles.includes(requestedRole)) {
+      return NextResponse.json(
+        { error: '비등단자 역할은 CONDUCTOR 또는 ACCOMPANIST만 가능합니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 대상 사용자 프로필 조회 (is_singer 포함)
     const { data: targetProfile, error: targetError } = await supabase
       .from('user_profiles')
       .select(`
@@ -72,7 +81,8 @@ export async function PATCH(
         member:members!user_profiles_linked_member_id_fkey(
           id,
           name,
-          part
+          part,
+          is_singer
         )
       `)
       .eq('id', userId)
@@ -116,13 +126,47 @@ export async function PATCH(
 
     // 승인 또는 거부 처리
     if (action === 'approve') {
+      // 연결된 대원의 is_singer 확인
+      const memberData = targetProfile.member;
+      const targetMemberForRole = Array.isArray(memberData) ? memberData[0] : memberData;
+      const isSinger = targetMemberForRole?.is_singer ?? true;
+
+      // 비등단자인데 역할이 지정되지 않은 경우 에러
+      if (!isSinger && !requestedRole) {
+        return NextResponse.json(
+          { error: '비등단자(지휘자/반주자)의 역할을 선택해주세요.' },
+          { status: 400 }
+        );
+      }
+
+      // 현재 사용자의 role 확인 (이미 더 높은 권한이 있으면 유지)
+      const { data: currentRole } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      // 역할 결정 로직:
+      // - 이미 role이 있으면 유지
+      // - 비등단자면 requestedRole 사용 (CONDUCTOR 또는 ACCOMPANIST)
+      // - 등단자면 MEMBER
+      const updateData: Record<string, unknown> = {
+        link_status: 'approved',
+        link_approved_by: user.id,
+        link_approved_at: new Date().toISOString(),
+      };
+
+      if (!currentRole?.role) {
+        if (!isSinger && requestedRole) {
+          updateData.role = requestedRole;
+        } else {
+          updateData.role = 'MEMBER';
+        }
+      }
+
       const { error: updateError } = await supabase
         .from('user_profiles')
-        .update({
-          link_status: 'approved',
-          link_approved_by: user.id,
-          link_approved_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', userId);
 
       if (updateError) {
@@ -133,9 +177,11 @@ export async function PATCH(
         );
       }
 
+      const assignedRole = updateData.role || currentRole?.role || 'MEMBER';
       return NextResponse.json({
         success: true,
-        message: '연결이 승인되었습니다.',
+        message: `연결이 승인되었습니다. (역할: ${assignedRole})`,
+        role: assignedRole,
       });
     } else {
       // 거부: linked_member_id 초기화

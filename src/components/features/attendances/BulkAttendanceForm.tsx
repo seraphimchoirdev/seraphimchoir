@@ -46,10 +46,11 @@ export default function BulkAttendanceForm() {
     errors?: Array<{ chunk?: number; error?: string; message?: string }>;
   } | null>(null);
 
-  // 회원 목록 조회 (REGULAR 상태만, 최대 100명)
+  // 회원 목록 조회 (REGULAR 상태 등단자만, 최대 100명 - 지휘자/반주자 제외)
   const { data: membersResponse, isLoading: isMembersLoading } = useMembers({
     limit: 100,
     member_status: 'REGULAR',
+    is_singer: true, // 등단자만 (지휘자/반주자 제외)
   });
 
   const members = membersResponse?.data || [];

@@ -17,6 +17,7 @@ import {
     type AvailableMember,
     type GridLayout,
     type MemberSeatPreference,
+    type PartPlacementRules,
 } from '@/lib/past-arrangement-mapper';
 import { loadPartPlacementRules } from '@/lib/part-placement-rules-loader';
 
@@ -119,11 +120,12 @@ export async function POST(
         // 2. 모든 정대원 + 출석 데이터 병렬 조회
         // 출석 레코드가 없는 대원도 기본값 true(등단 가능)로 처리
         const [membersResult, attendancesResult] = await Promise.all([
-            // 모든 정대원 조회
+            // 모든 정대원 조회 (등단자만 - 지휘자/반주자 제외)
             supabase
                 .from('members')
                 .select('id, name, part')
-                .eq('member_status', 'REGULAR'),
+                .eq('member_status', 'REGULAR')
+                .eq('is_singer', true),
             // 해당 날짜의 모든 출석 데이터 조회 (필터 없이)
             supabase
                 .from('attendances')
@@ -275,7 +277,7 @@ export async function POST(
             currentGridLayout,
             availableMembers: availableMemberList,
             memberPreferences,  // ML 선호 좌석 데이터 전달
-            learnedRules,       // 학습된 파트 배치 규칙 전달
+            learnedRules: learnedRules as PartPlacementRules,  // 학습된 파트 배치 규칙 전달
         });
 
         // 7. 응답

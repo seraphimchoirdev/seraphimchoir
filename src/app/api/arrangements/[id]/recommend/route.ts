@@ -175,11 +175,12 @@ export async function POST(
     logger.debug('Querying members and attendances for date:', arrangement.date);
 
     const [membersResult, attendancesResult, profilesResult] = await Promise.all([
-      // 모든 정대원 조회 (experience 컬럼은 스키마에 없으므로 제외)
+      // 모든 정대원 조회 (등단자만 - 지휘자/반주자 제외, experience 컬럼은 스키마에 없으므로 제외)
       supabase
         .from('members')
         .select('id, name, part, height, member_status')
-        .eq('member_status', 'REGULAR'),
+        .eq('member_status', 'REGULAR')
+        .eq('is_singer', true),
 
       // 해당 날짜의 모든 출석 데이터 조회 (필터 없이)
       supabase

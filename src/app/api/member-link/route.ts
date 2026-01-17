@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     // 요청 본문 파싱
     const body = await request.json();
-    const { member_id } = body;
+    const { member_id, height_cm, regular_member_since } = body;
 
     if (!member_id) {
       return NextResponse.json(
@@ -35,10 +35,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // 대원 존재 여부 확인
+    // 대원 존재 여부 확인 (is_singer 포함) - 검증 전에 먼저 조회
     const { data: member, error: memberError } = await supabase
       .from('members')
-      .select('id, name, part, member_status')
+      .select('id, name, part, member_status, is_singer')
       .eq('id', member_id)
       .single();
 
@@ -55,6 +55,27 @@ export async function POST(request: Request) {
         { error: '정대원만 연결할 수 있습니다.' },
         { status: 400 }
       );
+    }
+
+    // is_singer 값 (기본값 true - 마이그레이션 전 호환)
+    const isSinger = member.is_singer ?? true;
+
+    // 등단자(is_singer=true)인 경우에만 키 검증 (필수)
+    if (isSinger) {
+      if (!height_cm || typeof height_cm !== 'number' || height_cm < 100 || height_cm > 250) {
+        return NextResponse.json(
+          { error: '키는 100cm ~ 250cm 사이의 숫자로 입력해주세요.' },
+          { status: 400 }
+        );
+      }
+
+      // 정대원 임명일 형식 검증 (선택)
+      if (regular_member_since && !/^\d{4}-\d{2}-\d{2}$/.test(regular_member_since)) {
+        return NextResponse.json(
+          { error: '정대원 임명일은 YYYY-MM-DD 형식이어야 합니다.' },
+          { status: 400 }
+        );
+      }
     }
 
     // 이미 다른 사용자에게 연결되어 있는지 확인
@@ -99,6 +120,29 @@ export async function POST(request: Request) {
         { error: '이미 연결 요청이 대기중입니다.' },
         { status: 400 }
       );
+    }
+
+    // 등단자(is_singer=true)인 경우에만 대원 정보 업데이트 (키, 정대원 임명일)
+    if (isSinger && height_cm) {
+      const memberUpdate: { height_cm: number; regular_member_since?: string } = {
+        height_cm,
+      };
+      if (regular_member_since) {
+        memberUpdate.regular_member_since = regular_member_since;
+      }
+
+      const { error: memberUpdateError } = await supabase
+        .from('members')
+        .update(memberUpdate)
+        .eq('id', member_id);
+
+      if (memberUpdateError) {
+        logger.error('대원 정보 업데이트 실패:', memberUpdateError);
+        return NextResponse.json(
+          { error: '대원 정보 업데이트에 실패했습니다.' },
+          { status: 500 }
+        );
+      }
     }
 
     // 연결 요청 생성

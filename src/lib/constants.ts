@@ -119,3 +119,33 @@ export const HTTP_STATUS = {
   CONFLICT: 409,
   INTERNAL_SERVER_ERROR: 500,
 } as const;
+
+// ========================================
+// 역할(Role) 상수
+// ========================================
+export const ROLE_LABELS: Record<string, string> = {
+  ADMIN: '관리자',
+  CONDUCTOR: '지휘자',
+  ACCOMPANIST: '반주자',
+  MANAGER: '매니저',
+  PART_LEADER: '파트장',
+} as const;
+
+/**
+ * 역할 계층 (숫자가 높을수록 높은 권한)
+ * - 배치/출석 수정: PART_LEADER 이상
+ * - 배치표 생성: CONDUCTOR 이상
+ * - 시스템 관리: ADMIN만
+ */
+export const ROLE_HIERARCHY: Record<string, number> = {
+  ADMIN: 100,
+  CONDUCTOR: 80,
+  ACCOMPANIST: 30,
+  MANAGER: 60,
+  PART_LEADER: 40,
+} as const;
+
+/**
+ * 비등단 구성원(지휘자, 반주자 등)에게 부여 가능한 역할
+ */
+export const NON_SINGER_ROLES = ['CONDUCTOR', 'ACCOMPANIST'] as const;

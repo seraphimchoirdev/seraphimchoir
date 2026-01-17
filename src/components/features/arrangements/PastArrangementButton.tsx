@@ -35,9 +35,10 @@ export default function PastArrangementButton({
     // 현재 그리드 레이아웃 (AI 추천 분배로 변경된 값 포함)
     const gridLayout = useArrangementStore((state) => state.gridLayout);
 
-    // 현재 날짜의 출석 가능 인원 조회 (유사도 계산용)
+    // 현재 날짜의 출석 가능 인원 조회 (유사도 계산용 - 등단자만)
     const { data: membersData } = useMembers({
         member_status: 'REGULAR',
+        is_singer: true, // 등단자만 (지휘자/반주자 제외)
         limit: 100,
     });
     const { data: attendances } = useAttendances({

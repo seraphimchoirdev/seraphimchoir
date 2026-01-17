@@ -48,9 +48,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     // 초기 로드 완료 추적 (compactAllRows 중복 실행 방지)
     const initialLoadDoneRef = useRef(false);
 
-    // 모든 정대원 조회 (AI 추천 분배 인원수 계산용)
+    // 모든 정대원 조회 (AI 추천 분배 인원수 계산용 - 등단자만)
     const { data: membersData } = useMembers({
         member_status: 'REGULAR',
+        is_singer: true, // 등단자만 (지휘자/반주자 제외)
         limit: 100,
     });
 

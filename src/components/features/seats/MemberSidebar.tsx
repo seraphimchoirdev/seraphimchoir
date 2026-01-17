@@ -40,9 +40,10 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
         [placedMemberIdsArray]
     );
 
-    // 모든 정대원 조회 (API limit 최대값: 100)
+    // 모든 정대원 조회 (등단자만 - 지휘자/반주자 제외, API limit 최대값: 100)
     const { data: membersData, isLoading: membersLoading } = useMembers({
         member_status: 'REGULAR',
+        is_singer: true, // 등단자만 (지휘자/반주자 제외)
         limit: 100,
     });
 

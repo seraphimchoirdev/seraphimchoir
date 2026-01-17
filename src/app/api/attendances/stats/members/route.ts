@@ -72,11 +72,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 1. 모든 정대원 목록 조회
+    // 1. 모든 정대원 목록 조회 (등단자만 - 지휘자/반주자 제외)
     let membersQuery = supabase
       .from('members')
       .select('id, name, part')
-      .eq('member_status', 'REGULAR');
+      .eq('member_status', 'REGULAR')
+      .eq('is_singer', true); // 등단자만 (지휘자/반주자 제외)
 
     if (part) {
       membersQuery = membersQuery.eq('part', part);

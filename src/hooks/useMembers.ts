@@ -12,6 +12,8 @@ export interface MemberFilters {
   part?: Database['public']['Enums']['part'];
   search?: string;
   member_status?: Database['public']['Enums']['member_status'];
+  /** 자리배치/출석체크 대상만 조회 (true=등단자만, false=비등단자만) */
+  is_singer?: boolean;
   page?: number;
   limit?: number;
   sortBy?: SortByField;
@@ -42,6 +44,7 @@ export function useMembers(filters?: MemberFilters) {
       if (filters?.part) params.append('part', filters.part);
       if (filters?.search && filters.search.trim()) params.append('search', filters.search);
       if (filters?.member_status) params.append('member_status', filters.member_status);
+      if (filters?.is_singer !== undefined) params.append('is_singer', String(filters.is_singer));
       if (filters?.page && filters.page > 0) params.append('page', filters.page.toString());
       if (filters?.limit && filters.limit > 0) params.append('limit', filters.limit.toString());
       if (filters?.sortBy) params.append('sortBy', filters.sortBy);
