@@ -34,6 +34,7 @@ const createMemberSchema = z.object({
   name: z.string().min(2, '이름은 최소 2자 이상이어야 합니다').max(50, '이름은 최대 50자까지 입력 가능합니다'),
   part: PartEnum,
   is_leader: z.boolean().default(false),
+  is_singer: z.boolean().default(true), // 등단 여부 (false=지휘자/반주자 등 비등단)
   member_status: MemberStatusEnum.default('NEW'),
   joined_date: z.string().optional(), // YYYY-MM-DD 형식, 미입력 시 오늘 날짜
   phone_number: z.string().nullable().optional(),

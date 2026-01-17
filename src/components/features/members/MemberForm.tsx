@@ -52,6 +52,7 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
     name: member?.name || '',
     part: member?.part || ('SOPRANO' as Part),
     is_leader: member?.is_leader || false,
+    is_singer: member?.is_singer ?? true, // 등단 여부 (기본값: true)
     member_status: member?.member_status || ('NEW' as MemberStatus),
     joined_date: member?.joined_date || new Date().toISOString().split('T')[0],
     height: member?.height?.toString() || '',
@@ -129,6 +130,7 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
       name: formData.name,
       part: formData.part,
       is_leader: formData.is_leader,
+      is_singer: formData.is_singer,
       member_status: formData.member_status,
       joined_date: formData.joined_date,
       height: formData.height ? parseInt(formData.height, 10) : null,
@@ -290,7 +292,7 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
             </div>
 
             {/* 파트장 여부 */}
-            <div className="flex items-center gap-2 pt-2 md:col-span-2">
+            <div className="flex items-center gap-2 pt-2">
               <input
                 type="checkbox"
                 id="is_leader"
@@ -303,6 +305,30 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
                 파트장으로 지정
               </Label>
             </div>
+
+            {/* 등단 여부 */}
+            <div className="flex items-center gap-2 pt-2">
+              <input
+                type="checkbox"
+                id="is_singer"
+                name="is_singer"
+                checked={formData.is_singer}
+                onChange={handleChange}
+                className="h-4 w-4 rounded border-[var(--color-border-default)] text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)] cursor-pointer"
+              />
+              <Label htmlFor="is_singer" className="cursor-pointer font-normal">
+                등단자 (출석/자리배치 대상)
+              </Label>
+            </div>
+
+            {/* 비등단자 안내 */}
+            {!formData.is_singer && (
+              <div className="md:col-span-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  비등단자(지휘자, 반주자 등)는 출석체크 및 자리배치 대상에서 제외됩니다.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

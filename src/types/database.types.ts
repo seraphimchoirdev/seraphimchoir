@@ -320,9 +320,12 @@ export type Database = {
           encrypted_conductor_notes: string | null
           expected_return_date: string | null
           height: number | null
+          height_cm: number | null
           id: string
           is_leader: boolean
+          is_singer: boolean
           joined_date: string
+          regular_member_since: string | null
           leave_duration_months: number | null
           leave_reason: string | null
           leave_start_date: string | null
@@ -341,9 +344,12 @@ export type Database = {
           encrypted_conductor_notes?: string | null
           expected_return_date?: string | null
           height?: number | null
+          height_cm?: number | null
           id?: string
           is_leader?: boolean
+          is_singer?: boolean
           joined_date: string
+          regular_member_since?: string | null
           leave_duration_months?: number | null
           leave_reason?: string | null
           leave_start_date?: string | null
@@ -362,9 +368,12 @@ export type Database = {
           encrypted_conductor_notes?: string | null
           expected_return_date?: string | null
           height?: number | null
+          height_cm?: number | null
           id?: string
           is_leader?: boolean
+          is_singer?: boolean
           joined_date?: string
+          regular_member_since?: string | null
           leave_duration_months?: number | null
           leave_reason?: string | null
           leave_start_date?: string | null
@@ -638,37 +647,46 @@ export type Database = {
         Row: {
           created_at: string | null
           email: string | null
+          height_cm: number | null
           id: string | null
           is_leader: boolean | null
+          is_singer: boolean | null
           member_status: Database["public"]["Enums"]["member_status"] | null
           name: string | null
           notes: string | null
           part: Database["public"]["Enums"]["part"] | null
           phone_number: string | null
+          regular_member_since: string | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           email?: string | null
+          height_cm?: number | null
           id?: string | null
           is_leader?: boolean | null
+          is_singer?: boolean | null
           member_status?: Database["public"]["Enums"]["member_status"] | null
           name?: string | null
           notes?: string | null
           part?: Database["public"]["Enums"]["part"] | null
           phone_number?: string | null
+          regular_member_since?: string | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           email?: string | null
+          height_cm?: number | null
           id?: string | null
           is_leader?: boolean | null
+          is_singer?: boolean | null
           member_status?: Database["public"]["Enums"]["member_status"] | null
           name?: string | null
           notes?: string | null
           part?: Database["public"]["Enums"]["part"] | null
           phone_number?: string | null
+          regular_member_since?: string | null
           updated_at?: string | null
         }
         Relationships: []

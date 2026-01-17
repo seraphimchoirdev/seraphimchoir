@@ -15,6 +15,7 @@ const updateMemberSchema = z.object({
   name: z.string().min(2).max(50).optional(),
   part: PartEnum.optional(),
   is_leader: z.boolean().optional(),
+  is_singer: z.boolean().optional(), // 등단 여부 (false=지휘자/반주자 등 비등단)
   member_status: MemberStatusEnum.optional(),
   phone_number: z.string().nullable().optional(),
   email: z.string().email().nullable().optional(),
