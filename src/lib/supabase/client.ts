@@ -22,5 +22,11 @@ export function createClient() {
     );
   }
 
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  return createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,    // 토큰 자동 갱신 (만료 전 자동으로 새 토큰 발급)
+      persistSession: true,      // 세션 localStorage 저장 (브라우저 종료 후에도 유지)
+      detectSessionInUrl: true,  // URL에서 세션 감지 (OAuth 콜백 처리용)
+    },
+  });
 }

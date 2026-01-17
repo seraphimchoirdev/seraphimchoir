@@ -1,0 +1,21 @@
+{
+    "name": "새로핌ON | SeraphimON",
+    "short_name": "SeraphimON",
+    "description": "새문안교회 새로핌찬양대를 위한 종합 플랫폼",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4A8FD3",
+    "icons": [
+        {
+            "src": "/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

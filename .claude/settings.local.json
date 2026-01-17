@@ -89,7 +89,16 @@
       "Bash(sort:*)",
       "Bash(du -sh:*)",
       "Bash(xargs:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "mcp__context7__query-docs",
+      "WebSearch",
+      "WebFetch(domain:supabase.com)",
+      "Bash(npx supabase:*)",
+      "mcp__plugin_serena_serena__initial_instructions",
+      "mcp__plugin_serena_serena__list_memories",
+      "mcp__plugin_serena_serena__list_dir",
+      "mcp__plugin_serena_serena__activate_project",
+      "mcp__plugin_serena_serena__think_about_collected_information"
     ],
     "deny": [],
     "ask": []

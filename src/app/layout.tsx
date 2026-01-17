@@ -4,8 +4,14 @@ import { Providers } from "@/lib/providers";
 
 
 export const metadata: Metadata = {
-  title: "찬양대 자리배치 시스템",
-  description: "AI 기반 찬양대 자리배치 자동화 솔루션",
+  title: "새로핌ON | SeraphimON",
+  description: "새문안교회 새로핌찬양대를 위한 종합 플랫폼",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192x192.png",
+    shortcut: "/icon-192x192.png",
+    apple: "/icon-512x512.png",
+  },
 };
 
 export default function RootLayout({

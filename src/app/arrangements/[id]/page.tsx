@@ -258,7 +258,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             {/* 모바일/태블릿: 상단 그리드 + 하단 대원 목록 (Split View) */}
             <div className="flex lg:hidden flex-col flex-1 overflow-hidden relative">
                 {/* 상단: 좌석 그리드 (Scrollable) */}
-                <div className="flex-1 overflow-hidden relative">
+                <div className="flex-1 overflow-auto relative">
                     <SeatsGrid
                         ref={mobileCaptureRef}
                         gridLayout={gridLayout}

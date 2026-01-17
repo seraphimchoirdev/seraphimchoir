@@ -133,7 +133,7 @@ function ArrangementsContent() {
                         <div>
                             <h1 className="heading-2 text-[var(--color-text-primary)]">자리배치 관리</h1>
                             <p className="text-[var(--color-text-secondary)] mt-1">
-                                찬양대 자리배치표를 생성하고 관리합니다.
+                                예배별 자리배치표를 생성하고 관리합니다.
                                 {meta.total > 0 && (
                                     <span className="ml-2 text-[var(--color-text-tertiary)]">
                                         (총 {meta.total}개)

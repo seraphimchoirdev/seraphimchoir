@@ -35,7 +35,8 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
 
 export interface ChoirEventFilters {
   year?: number;
-  quarter?: number; // 1-4
+  quarter?: number; // 1-4 (분기 필터, 호환성 유지)
+  month?: number; // 1-12 (월 필터)
   startDate?: string;
   endDate?: string;
   eventType?: EventType;
@@ -48,6 +49,22 @@ function getQuarterDateRange(year: number, quarter: number) {
   const startMonth = (quarter - 1) * 3;
   const startDate = new Date(year, startMonth, 1);
   const endDate = new Date(year, startMonth + 3, 0);
+
+  return {
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0],
+  };
+}
+
+/**
+ * 월 시작/종료 날짜 계산
+ * @param year 연도
+ * @param month 월 (1-12, 1-based)
+ */
+function getMonthDateRange(year: number, month: number) {
+  // month는 1-based이므로 month - 1로 0-based로 변환
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0); // 해당 월의 마지막 날
 
   return {
     startDate: startDate.toISOString().split('T')[0],
@@ -69,8 +86,16 @@ export function useChoirEvents(filters?: ChoirEventFilters) {
         .select('*')
         .order('date', { ascending: true });
 
-      // 분기 필터
-      if (filters?.year && filters?.quarter) {
+      // 월 필터 (우선순위: month > quarter)
+      if (filters?.year && filters?.month) {
+        const { startDate, endDate } = getMonthDateRange(
+          filters.year,
+          filters.month
+        );
+        query = query.gte('date', startDate).lte('date', endDate);
+      }
+      // 분기 필터 (하위 호환성 유지)
+      else if (filters?.year && filters?.quarter) {
         const { startDate, endDate } = getQuarterDateRange(
           filters.year,
           filters.quarter

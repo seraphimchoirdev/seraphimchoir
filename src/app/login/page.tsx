@@ -4,8 +4,8 @@ import { Metadata } from 'next';
 import { Loader2 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: '로그인 - Choir Seat Arranger',
-  description: '찬양대 자리배치 시스템 로그인',
+  title: '로그인 - 새로핌ON',
+  description: '새문안교회 새로핌찬양대 로그인',
 };
 
 export default function LoginPage() {

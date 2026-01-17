@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import BulkAttendanceTabs from '@/components/features/attendances/BulkAttendanceTabs';
 
 export const metadata: Metadata = {
-  title: '일괄 출석 입력 | 찬양대 자리배치',
+  title: '일괄 출석 입력 | 새로핌ON',
   description: '찬양대원 출석을 일괄로 입력합니다',
 };
 
