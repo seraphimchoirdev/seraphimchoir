@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback, RefObject } from 'react';
 import { createLogger } from '@/lib/logger';
-import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2, BarChart3, Lock, Send, Share2, CheckCircle2, AlertTriangle, Sparkles, Trash2, ChevronDown } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2, Lock, Share2, CheckCircle2, AlertTriangle, Sparkles, Trash2, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,13 +21,10 @@ import { useImageGeneration } from '@/hooks/useImageGeneration';
 import { useArrangementStore } from '@/store/arrangement-store';
 import RecommendButton from './RecommendButton';
 import PastArrangementButton from './PastArrangementButton';
-import PerformanceReportModal from './PerformanceReportModal';
 import { ServiceScheduleBadge } from '@/components/features/service-schedules';
-import { useArrangementAnalysis } from '@/hooks/useArrangementAnalysis';
 import type { Database, Json, ArrangementStatus } from '@/types/database.types';
 import type { RecommendationResponse } from '@/hooks/useRecommendSeats';
 import type { ApplyPastResponse } from '@/hooks/usePastArrangement';
-import type { ArrangementAnalysisResponse } from '@/types/analysis';
 
 const logger = createLogger({ prefix: 'ArrangementHeader' });
 
@@ -43,7 +40,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
     const router = useRouter();
     const updateArrangement = useUpdateArrangement();
     const updateSeats = useUpdateSeats();
-    const { isGenerating, downloadAsImage, copyToClipboard } = useImageGeneration();
+    const { isGenerating, downloadAsImage, copyToClipboard, shareImage, canShare, isMobile } = useImageGeneration();
     const {
         assignments,
         gridLayout,
@@ -110,9 +107,6 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
     const [title, setTitle] = useState(arrangement.title);
     const [conductor, setConductor] = useState(arrangement.conductor || '');
     const [isSaving, setIsSaving] = useState(false);
-    const [showAnalysisModal, setShowAnalysisModal] = useState(false);
-    const [analysisResult, setAnalysisResult] = useState<ArrangementAnalysisResponse | null>(null);
-    const arrangementAnalysis = useArrangementAnalysis();
 
     // 컴포넌트 마운트 상태 추적 (메모리 누수 방지)
     const isMountedRef = useRef(true);
@@ -165,10 +159,30 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         } catch (error) {
             logger.error('클립보드 복사 실패:', error);
             if (isMountedRef.current) {
-                alert('클립보드 복사에 실패했습니다. 브라우저 설정을 확인해주세요.');
+                const message = error instanceof Error ? error.message : '클립보드 복사에 실패했습니다.';
+                alert(message);
             }
         }
     }, [copyToClipboard, getActiveCaptureRef]);
+
+    const handleShareImage = useCallback(async () => {
+        const captureRef = getActiveCaptureRef();
+        if (!captureRef?.current) {
+            alert('캡처할 영역을 찾을 수 없습니다.');
+            return;
+        }
+        try {
+            const filename = `배치표_${arrangement.date}_${title.replace(/\s+/g, '_')}`;
+            await shareImage(captureRef.current, filename);
+            // 공유 성공 시 alert 불필요 (OS의 공유 UI가 표시됨)
+        } catch (error) {
+            logger.error('이미지 공유 실패:', error);
+            if (isMountedRef.current) {
+                const message = error instanceof Error ? error.message : '이미지 공유에 실패했습니다.';
+                alert(message);
+            }
+        }
+    }, [arrangement.date, title, shareImage, getActiveCaptureRef]);
 
     // Sync local state if props change (e.g. refetch)
     useEffect(() => {
@@ -412,23 +426,6 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         );
     };
 
-    const handleAnalyze = useCallback(async () => {
-        try {
-            const result = await arrangementAnalysis.mutateAsync({
-                arrangementId: arrangement.id,
-            });
-            if (isMountedRef.current) {
-                setAnalysisResult(result);
-                setShowAnalysisModal(true);
-            }
-        } catch (error) {
-            logger.error('분석 실패:', error);
-            if (isMountedRef.current) {
-                alert('배치 분석에 실패했습니다.');
-            }
-        }
-    }, [arrangement.id, arrangementAnalysis]);
-
     return (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 bg-[var(--color-surface)] border-b border-[var(--color-border-default)]">
             <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
@@ -569,19 +566,6 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                         <span className="hidden sm:inline">초기화</span>
                     </Button>
                 )}
-                <Button
-                    variant="outline"
-                    onClick={handleAnalyze}
-                    disabled={isSaving || arrangementAnalysis.isPending || Object.keys(assignments).length === 0}
-                    className="gap-2 h-11 sm:h-10 text-sm"
-                >
-                    {arrangementAnalysis.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                        <BarChart3 className="h-4 w-4" />
-                    )}
-                    <span className="hidden sm:inline">분석</span>
-                </Button>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
@@ -598,20 +582,33 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                        {/* 모바일에서 Web Share API 지원 시 공유하기 옵션 우선 표시 */}
+                        {canShare && (
+                            <DropdownMenuItem
+                                onClick={isGenerating ? undefined : handleShareImage}
+                                className={isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                            >
+                                <Share2 className="mr-2 h-4 w-4" />
+                                공유하기
+                            </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                             onClick={isGenerating ? undefined : handleDownloadImage}
                             className={isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                         >
                             <Download className="mr-2 h-4 w-4" />
-                            PNG 다운로드
+                            {isMobile ? '이미지 저장' : 'PNG 다운로드'}
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={isGenerating ? undefined : handleCopyToClipboard}
-                            className={isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                        >
-                            <Copy className="mr-2 h-4 w-4" />
-                            클립보드 복사
-                        </DropdownMenuItem>
+                        {/* 데스크톱에서만 클립보드 복사 표시 (모바일에서는 제한적) */}
+                        {!isMobile && (
+                            <DropdownMenuItem
+                                onClick={isGenerating ? undefined : handleCopyToClipboard}
+                                className={isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                            >
+                                <Copy className="mr-2 h-4 w-4" />
+                                클립보드 복사
+                            </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
 {/* 상태별 버튼 렌더링 */}
@@ -677,14 +674,6 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                     </>
                 )}
             </div>
-
-            {/* 분석 리포트 모달 */}
-            {showAnalysisModal && analysisResult && (
-                <PerformanceReportModal
-                    analysis={analysisResult}
-                    onClose={() => setShowAnalysisModal(false)}
-                />
-            )}
         </div>
     );
 }
