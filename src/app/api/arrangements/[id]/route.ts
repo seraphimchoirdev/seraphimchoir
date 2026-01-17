@@ -126,10 +126,18 @@ export async function PATCH(
             .update(updateData)
             .eq('id', id)
             .select()
-            .single();
+            .maybeSingle();
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+
+        // RLS로 인해 업데이트가 차단된 경우 (0개 행 반환)
+        if (!data) {
+            return NextResponse.json(
+                { error: '배치표를 수정할 권한이 없습니다. ADMIN 또는 CONDUCTOR 역할이 필요합니다.' },
+                { status: 403 }
+            );
         }
 
         return NextResponse.json(data);
