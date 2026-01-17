@@ -1,13 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useMyProfile, useUpdateMyProfile } from '@/hooks/useMyProfile';
+import { usePWA } from '@/hooks/usePWA';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Navigation from '@/components/layout/Navigation';
-import { Loader2, User, Save, AlertTriangle, Info, Calendar, Music, Users } from 'lucide-react';
+import {
+  Loader2,
+  User,
+  Save,
+  AlertTriangle,
+  Info,
+  Calendar,
+  Music,
+  Users,
+  Smartphone,
+  Download,
+  Bell,
+  BellOff,
+  Check,
+  Share,
+  PlusSquare,
+} from 'lucide-react';
 
 const PART_LABELS: Record<string, string> = {
   SOPRANO: '소프라노',
@@ -23,11 +40,24 @@ export default function MyPage() {
   const { data: profile, isLoading: profileLoading } = useMyProfile();
   const updateMutation = useUpdateMyProfile();
 
+  // PWA 훅
+  const {
+    isInstalled,
+    canInstall,
+    installApp,
+    isIOS,
+    pushPermission,
+    canRequestPush,
+    requestPushPermission,
+    supportsPushInPWA,
+  } = usePWA();
+
   // 폼 상태
   const [heightCm, setHeightCm] = useState<string>('');
   const [regularMemberSince, setRegularMemberSince] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showIOSGuide, setShowIOSGuide] = useState(false);
 
   // 프로필 데이터로 폼 초기화
   useEffect(() => {
@@ -177,6 +207,201 @@ export default function MyPage() {
             </div>
           </div>
         </div>
+
+        {/* PWA 설정 */}
+        <div className="bg-[var(--color-background-secondary)] rounded-lg border border-[var(--color-border)] p-6 mb-6">
+          <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
+            <Smartphone className="h-5 w-5" />
+            앱 설정
+          </h2>
+          <div className="space-y-4">
+            {/* 앱 설치 상태 */}
+            <div className="flex items-center justify-between p-4 bg-[var(--color-background-tertiary)] rounded-lg">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    isInstalled
+                      ? 'bg-green-100 dark:bg-green-900/30'
+                      : 'bg-[var(--color-primary)]/10'
+                  }`}
+                >
+                  {isInstalled ? (
+                    <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <Download className="w-5 h-5 text-[var(--color-primary)]" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium text-[var(--color-text-primary)]">
+                    {isInstalled ? '앱 설치됨' : '앱 설치하기'}
+                  </p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    {isInstalled
+                      ? '홈 화면에서 바로 실행할 수 있습니다'
+                      : '홈 화면에 추가하여 앱처럼 사용하세요'}
+                  </p>
+                </div>
+              </div>
+              {!isInstalled && (
+                <>
+                  {canInstall && (
+                    <Button size="sm" onClick={installApp}>
+                      설치
+                    </Button>
+                  )}
+                  {isIOS && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowIOSGuide(true)}
+                    >
+                      안내 보기
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* 푸시 알림 상태 */}
+            <div className="flex items-center justify-between p-4 bg-[var(--color-background-tertiary)] rounded-lg">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    pushPermission === 'granted'
+                      ? 'bg-green-100 dark:bg-green-900/30'
+                      : pushPermission === 'denied'
+                        ? 'bg-red-100 dark:bg-red-900/30'
+                        : 'bg-[var(--color-primary)]/10'
+                  }`}
+                >
+                  {pushPermission === 'granted' ? (
+                    <Bell className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  ) : pushPermission === 'denied' ? (
+                    <BellOff className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  ) : (
+                    <Bell className="w-5 h-5 text-[var(--color-primary)]" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium text-[var(--color-text-primary)]">
+                    {pushPermission === 'granted'
+                      ? '알림 활성화됨'
+                      : pushPermission === 'denied'
+                        ? '알림 차단됨'
+                        : '푸시 알림'}
+                  </p>
+                  <p className="text-sm text-[var(--color-text-secondary)]">
+                    {pushPermission === 'granted'
+                      ? '예배 일정, 출석 투표 알림을 받습니다'
+                      : pushPermission === 'denied'
+                        ? '브라우저 설정에서 알림을 허용해주세요'
+                        : '예배 일정, 출석 투표 알림을 받아보세요'}
+                  </p>
+                </div>
+              </div>
+              {canRequestPush && (
+                <Button size="sm" variant="outline" onClick={requestPushPermission}>
+                  허용하기
+                </Button>
+              )}
+            </div>
+
+            {/* iOS 푸시 미지원 안내 */}
+            {isIOS && !supportsPushInPWA && !isInstalled && (
+              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  iOS에서 푸시 알림을 받으려면 먼저 앱을 홈 화면에 설치해주세요.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* iOS 설치 가이드 모달 */}
+        {showIOSGuide && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 animate-in fade-in duration-300">
+            <div className="w-full max-w-lg bg-[var(--color-background-secondary)] rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300">
+              <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[var(--color-primary)]/10 rounded-xl flex items-center justify-center">
+                    <Smartphone className="w-5 h-5 text-[var(--color-primary)]" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-[var(--color-text-primary)]">
+                      새로핌ON 설치하기
+                    </h2>
+                    <p className="text-xs text-[var(--color-text-secondary)]">
+                      홈 화면에서 바로 실행하세요
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowIOSGuide(false)}
+                  className="p-2 rounded-full hover:bg-[var(--color-background-tertiary)] transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-4 space-y-4">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[var(--color-primary)] text-white rounded-full flex items-center justify-center text-sm font-bold">
+                    1
+                  </div>
+                  <div>
+                    <p className="font-medium text-[var(--color-text-primary)]">
+                      공유 버튼을 탭하세요
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                      Safari 하단의{' '}
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--color-background-tertiary)] rounded">
+                        <Share className="w-4 h-4" />
+                      </span>{' '}
+                      버튼
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[var(--color-primary)] text-white rounded-full flex items-center justify-center text-sm font-bold">
+                    2
+                  </div>
+                  <div>
+                    <p className="font-medium text-[var(--color-text-primary)]">
+                      &quot;홈 화면에 추가&quot;를 선택
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--color-background-tertiary)] rounded">
+                        <PlusSquare className="w-4 h-4" />
+                        홈 화면에 추가
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[var(--color-primary)] text-white rounded-full flex items-center justify-center text-sm font-bold">
+                    3
+                  </div>
+                  <div>
+                    <p className="font-medium text-[var(--color-text-primary)]">
+                      &quot;추가&quot;를 탭하세요
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                      오른쪽 상단의 추가 버튼을 탭하면 완료!
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 border-t border-[var(--color-border)]">
+                <Button
+                  onClick={() => setShowIOSGuide(false)}
+                  className="w-full"
+                  variant="outline"
+                >
+                  닫기
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 수정 가능한 정보 */}
         <div className="bg-[var(--color-background-secondary)] rounded-lg border border-[var(--color-border)] p-6">
