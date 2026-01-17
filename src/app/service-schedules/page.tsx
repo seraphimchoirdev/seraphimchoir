@@ -21,8 +21,8 @@ import { AlertCircle, Plus, FileSpreadsheet, Music, PartyPopper } from 'lucide-r
 export default function ServiceSchedulesPage() {
   const { hasRole, isLoading: authLoading } = useAuth();
 
-  // 일정 조회 권한: ADMIN, CONDUCTOR, MANAGER, STAFF, PART_LEADER
-  const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER']);
+  // 일정 조회 권한: 모든 역할
+  const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']);
   // 예배 일정 관리 권한: ADMIN, CONDUCTOR, MANAGER만
   const canManageService = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
   // 행사 일정 관리 권한: 현재는 ADMIN, CONDUCTOR, MANAGER만 (향후 대원 승인제 도입 예정)

@@ -83,8 +83,8 @@ export default function Navigation() {
     { href: '/attendances', label: '출석 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
     { href: '/statistics', label: '출석 통계', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
 
-    // 찬양대 일정 (ADMIN, CONDUCTOR, MANAGER, STAFF, PART_LEADER - MEMBER 제외)
-    { href: '/service-schedules', label: '찬양대 일정', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER']) },
+    // 찬양대 일정 (모든 역할 조회 가능)
+    { href: '/service-schedules', label: '찬양대 일정', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']) },
 
     // 자리배치 (조회는 모든 역할, 편집은 페이지에서 제한)
     { href: '/arrangements', label: '자리배치', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']) },
@@ -94,6 +94,7 @@ export default function Navigation() {
 
     // 대원 연결된 사용자용 메뉴 (역할 무관, 대원 연결됨)
     { href: '/my-attendance', label: '내 출석', show: isMemberLinked() },
+    { href: '/mypage', label: '마이페이지', show: isMemberLinked() },
   ].filter(link => link.show);
 
   return (
@@ -107,7 +108,7 @@ export default function Navigation() {
                 href="/dashboard"
                 className="text-xl font-bold text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
               >
-                찬양대 자리배치 시스템
+                새로핌ON
               </Link>
               {/* 데스크톱 네비게이션 - lg(1024px) 이상에서 표시 */}
               <div className="hidden lg:flex gap-4">
@@ -181,6 +182,15 @@ export default function Navigation() {
                       </div>
                     )}
                     <DropdownMenuSeparator />
+                    {/* MyPage Link */}
+                    {isMemberLinked() && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/mypage" className="cursor-pointer">
+                          <User className="h-4 w-4 mr-2" />
+                          마이페이지
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     {/* Logout */}
                     <DropdownMenuItem
                       onClick={() => setIsLogoutDialogOpen(true)}

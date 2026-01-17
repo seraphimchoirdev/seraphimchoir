@@ -8,7 +8,8 @@ type ServiceScheduleUpdate = Database['public']['Tables']['service_schedules']['
 
 export interface ServiceScheduleFilters {
   year?: number;
-  quarter?: number; // 1-4
+  quarter?: number; // 1-4 (분기 필터, 호환성 유지)
+  month?: number; // 1-12 (월 필터)
   startDate?: string;
   endDate?: string;
   date?: string; // 단일 날짜
@@ -28,6 +29,7 @@ export function useServiceSchedules(filters?: ServiceScheduleFilters) {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.year) params.append('year', filters.year.toString());
+      if (filters?.month) params.append('month', filters.month.toString());
       if (filters?.quarter) params.append('quarter', filters.quarter.toString());
       if (filters?.startDate) params.append('startDate', filters.startDate);
       if (filters?.endDate) params.append('endDate', filters.endDate);
