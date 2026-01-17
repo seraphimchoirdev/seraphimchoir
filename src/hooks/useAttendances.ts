@@ -26,6 +26,8 @@ export interface AttendanceFilters {
   is_available?: boolean; // backward compatibility
   is_service_available?: boolean;
   is_practice_attended?: boolean;
+  /** 탭 포커스 시 자동 갱신 (긴급 모드에서 출석 변경 반영용) */
+  refetchOnWindowFocus?: boolean;
 }
 
 /**
@@ -33,23 +35,26 @@ export interface AttendanceFilters {
  * @param filters - 필터링 옵션
  */
 export function useAttendances(filters?: AttendanceFilters) {
+  // refetchOnWindowFocus는 React Query 옵션이므로 API 파라미터에서 제외
+  const { refetchOnWindowFocus, ...apiFilters } = filters || {};
+
   return useQuery<Attendance[]>({
-    queryKey: ['attendances', filters],
+    queryKey: ['attendances', apiFilters],
     queryFn: async () => {
       const params = new URLSearchParams();
 
-      if (filters?.member_id) params.append('member_id', filters.member_id);
-      if (filters?.date) params.append('date', filters.date);
-      if (filters?.start_date) params.append('start_date', filters.start_date);
-      if (filters?.end_date) params.append('end_date', filters.end_date);
-      if (filters?.is_available !== undefined) {
-        params.append('is_available', filters.is_available.toString());
+      if (apiFilters?.member_id) params.append('member_id', apiFilters.member_id);
+      if (apiFilters?.date) params.append('date', apiFilters.date);
+      if (apiFilters?.start_date) params.append('start_date', apiFilters.start_date);
+      if (apiFilters?.end_date) params.append('end_date', apiFilters.end_date);
+      if (apiFilters?.is_available !== undefined) {
+        params.append('is_available', apiFilters.is_available.toString());
       }
-      if (filters?.is_service_available !== undefined) {
-        params.append('is_service_available', filters.is_service_available.toString());
+      if (apiFilters?.is_service_available !== undefined) {
+        params.append('is_service_available', apiFilters.is_service_available.toString());
       }
-      if (filters?.is_practice_attended !== undefined) {
-        params.append('is_practice_attended', filters.is_practice_attended.toString());
+      if (apiFilters?.is_practice_attended !== undefined) {
+        params.append('is_practice_attended', apiFilters.is_practice_attended.toString());
       }
 
       const response = await fetch(`/api/attendances?${params.toString()}`);
@@ -60,6 +65,8 @@ export function useAttendances(filters?: AttendanceFilters) {
       return response.json();
     },
     staleTime: STALE_TIME.ATTENDANCES_LIST,
+    // 긴급 모드에서 탭 포커스 시 자동 갱신 (출석 관리 변경사항 반영)
+    refetchOnWindowFocus: refetchOnWindowFocus ?? false,
   });
 }
 

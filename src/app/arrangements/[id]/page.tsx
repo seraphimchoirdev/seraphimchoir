@@ -55,9 +55,17 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         limit: 100,
     });
 
+    // 긴급 수정 모드 (SHARED 상태에서 canEmergencyEdit 권한이 있을 때만)
+    // DRAFT: 일반 편집 모드 (더블클릭으로 제거)
+    // SHARED: 긴급 수정 모드 (컨텍스트 메뉴 표시) - 권한 필요
+    // CONFIRMED: 읽기 전용 모드 (수정 불가)
+    const isEmergencyMode = arrangement?.status === 'SHARED' && canEmergencyEdit;
+
     // 해당 날짜의 출석 데이터 조회 (필터 없이 전체)
+    // ⭐ 긴급 모드에서는 탭 포커스 시 자동 갱신 (출석 관리에서 변경 후 돌아올 때)
     const { data: attendances } = useAttendances({
         date: arrangement?.date,
+        refetchOnWindowFocus: isEmergencyMode,
     });
 
     // 출석 데이터를 memberId로 빠르게 조회하기 위한 Map
@@ -97,12 +105,6 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     const isReadOnly = arrangement?.status === 'CONFIRMED' ||
         (arrangement?.status === 'SHARED' && !canEmergencyEdit) ||
         (arrangement?.status === 'DRAFT' && !canEdit);
-
-    // 긴급 수정 모드 (SHARED 상태에서 canEmergencyEdit 권한이 있을 때만)
-    // DRAFT: 일반 편집 모드 (더블클릭으로 제거)
-    // SHARED: 긴급 수정 모드 (컨텍스트 메뉴 표시) - 권한 필요
-    // CONFIRMED: 읽기 전용 모드 (수정 불가)
-    const isEmergencyMode = arrangement?.status === 'SHARED' && canEmergencyEdit;
 
     // 긴급 등단 불가 처리 훅 (단순화된 버전)
     // - 파트 영역 고려: 같은 파트만 당기기
@@ -237,7 +239,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 )}
 
                 {/* Member Sidebar */}
-                <MemberSidebar date={arrangement.date} hidePlaced={true} />
+                <MemberSidebar date={arrangement.date} hidePlaced={true} isEmergencyMode={isEmergencyMode} />
 
                 {/* Seats Grid */}
                 <SeatsGrid
@@ -308,6 +310,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                             date={arrangement.date}
                             hidePlaced={true}
                             compact={true}
+                            isEmergencyMode={isEmergencyMode}
                         />
                     </div>
                 </div>

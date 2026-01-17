@@ -18,6 +18,8 @@ interface MemberSidebarProps {
     date: string;
     hidePlaced?: boolean;
     compact?: boolean;
+    /** 긴급 수정 모드 (SHARED 상태에서 대원 추가 배치 허용) */
+    isEmergencyMode?: boolean;
 }
 
 const PARTS: Part[] = ['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'];
@@ -27,7 +29,7 @@ const selectPlacedMemberIdsArray = (state: { assignments: Record<string, { membe
     return Object.values(state.assignments).map(a => a.memberId);
 };
 
-const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, compact = false }: MemberSidebarProps) {
+const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, compact = false, isEmergencyMode = false }: MemberSidebarProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPart, setSelectedPart] = useState<Part | 'ALL'>('ALL');
 
@@ -48,8 +50,10 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
     });
 
     // 해당 날짜의 출석 데이터 조회 (필터 없이 전체)
+    // ⭐ 긴급 모드에서는 탭 포커스 시 자동 갱신 (출석 관리에서 변경 후 돌아올 때)
     const { data: attendances, isLoading: attendancesLoading } = useAttendances({
         date,
+        refetchOnWindowFocus: isEmergencyMode,
     });
 
     const isLoading = membersLoading || attendancesLoading;
