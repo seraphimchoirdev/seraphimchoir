@@ -78,7 +78,7 @@ export default function LoginForm() {
                     로그인
                 </h2>
                 <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                    새로핌ON에 오신 것을 환영합니다
+                    새로핌On에 오신 것을 환영합니다
                 </p>
             </div>
 

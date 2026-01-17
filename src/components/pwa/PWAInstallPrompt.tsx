@@ -111,7 +111,7 @@ export function PWAInstallPrompt() {
               앱으로 설치하기
             </h3>
             <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-              새로핌ON을 홈 화면에 추가하여 더 빠르게 이용하세요
+              새로핌On을 홈 화면에 추가하여 더 빠르게 이용하세요
             </p>
           </div>
 

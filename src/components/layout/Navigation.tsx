@@ -108,7 +108,7 @@ export default function Navigation() {
                 href="/dashboard"
                 className="text-xl font-bold text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
               >
-                새로핌ON
+                새로핌On
               </Link>
               {/* 데스크톱 네비게이션 - lg(1024px) 이상에서 표시 */}
               <div className="hidden lg:flex gap-4">

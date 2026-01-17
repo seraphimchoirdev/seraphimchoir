@@ -26,7 +26,7 @@
 // messaging.onBackgroundMessage((payload) => {
 //   console.log('[FCM SW] 백그라운드 메시지 수신:', payload);
 
-//   const notificationTitle = payload.notification?.title || '새로핌ON';
+//   const notificationTitle = payload.notification?.title || '새로핌On';
 //   const notificationOptions = {
 //     body: payload.notification?.body || '',
 //     icon: '/icon-192x192.png',

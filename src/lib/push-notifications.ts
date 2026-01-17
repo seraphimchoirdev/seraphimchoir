@@ -79,7 +79,7 @@ export function onForegroundMessage(
   //   console.log('[Push] 포그라운드 메시지 수신:', payload);
 
   //   const notification: PushNotificationPayload = {
-  //     title: payload.notification?.title || '새로핌ON',
+  //     title: payload.notification?.title || '새로핌On',
   //     body: payload.notification?.body || '',
   //     icon: payload.notification?.icon || '/icon-192x192.png',
   //     url: payload.data?.url || '/',

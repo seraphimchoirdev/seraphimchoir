@@ -4,7 +4,7 @@ import { Providers } from "@/lib/providers";
 
 
 export const metadata: Metadata = {
-  title: "새로핌ON | SeraphimON",
+  title: "새로핌On",
   description: "새문안교회 새로핌찬양대를 위한 종합 플랫폼",
   manifest: "/manifest.json",
   icons: {

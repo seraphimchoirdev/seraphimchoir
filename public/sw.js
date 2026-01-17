@@ -1,4 +1,4 @@
-// Service Worker for SeraphimON PWA
+// Service Worker for 새로핌On PWA
 const CACHE_NAME = 'seraphimon-v1';
 const STATIC_CACHE_NAME = 'seraphimon-static-v1';
 
@@ -88,7 +88,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || '새로핌ON', options)
+    self.registration.showNotification(data.title || '새로핌On', options)
   );
 });
 
