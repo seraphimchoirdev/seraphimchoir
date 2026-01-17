@@ -6,9 +6,10 @@ import {
     UserPlus,
     CalendarDays,
     LayoutGrid,
-    FileText,
-    Settings,
-    MessageCircle,
+    // TODO: 페이지 구현 후 활성화
+    // FileText,
+    // Settings,
+    // MessageCircle,
 } from 'lucide-react';
 
 export default function QuickActions() {
@@ -31,24 +32,25 @@ export default function QuickActions() {
             icon: <LayoutGrid className="h-4 w-4" />,
             variant: 'outline' as const,
         },
-        {
-            label: '지휘자 메모',
-            href: '/conductor-notes', // 임시 경로
-            icon: <FileText className="h-4 w-4" />,
-            variant: 'ghost' as const,
-        },
-        {
-            label: '카카오톡 공유',
-            href: '#',
-            icon: <MessageCircle className="h-4 w-4" />,
-            variant: 'ghost' as const,
-        },
-        {
-            label: '설정',
-            href: '/settings',
-            icon: <Settings className="h-4 w-4" />,
-            variant: 'ghost' as const,
-        },
+        // TODO: 아래 기능들은 페이지 구현 후 활성화
+        // {
+        //     label: '지휘자 메모',
+        //     href: '/conductor-notes',
+        //     icon: <FileText className="h-4 w-4" />,
+        //     variant: 'ghost' as const,
+        // },
+        // {
+        //     label: '카카오톡 공유',
+        //     href: '#',
+        //     icon: <MessageCircle className="h-4 w-4" />,
+        //     variant: 'ghost' as const,
+        // },
+        // {
+        //     label: '설정',
+        //     href: '/settings',
+        //     icon: <Settings className="h-4 w-4" />,
+        //     variant: 'ghost' as const,
+        // },
     ];
 
     return (

@@ -45,6 +45,7 @@ jest.polyfills.ts
 !tsconfig.json
 !components.json
 !src/data/*.json
+!public/manifest.json
 
 # Supabase local config
 /supabase/config.toml
