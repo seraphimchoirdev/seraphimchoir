@@ -24,9 +24,10 @@ export default function LoginForm() {
 
     // URL에서 에러 파라미터 확인
     const urlError = searchParams.get('error');
-    const errorMessage = urlError === 'oauth_failed' ? '카카오 로그인에 실패했습니다.'
+    const errorMessage = urlError === 'oauth_failed' ? '카카오 로그인에 실패했습니다. 다시 시도해주세요.'
         : urlError === 'user_fetch_failed' ? '사용자 정보를 가져오는데 실패했습니다.'
-        : urlError === 'no_code' ? '인증 코드가 없습니다.'
+        : urlError === 'session_required' ? '로그인이 필요합니다. 아래 카카오 로그인 버튼을 눌러주세요.'
+        : urlError === 'no_code' ? '로그인이 필요합니다. 아래 카카오 로그인 버튼을 눌러주세요.'
         : null;
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -88,6 +89,16 @@ export default function LoginForm() {
                     <Alert variant="error">
                         <AlertDescription>{error || errorMessage}</AlertDescription>
                     </Alert>
+                )}
+
+                {/* 다중 기기 로그인 안내 */}
+                {(urlError === 'session_required' || urlError === 'no_code') && (
+                    <div className="text-sm text-[var(--color-text-secondary)] bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+                        <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">💡 다른 기기에서 로그인하시나요?</p>
+                        <p className="text-blue-800 dark:text-blue-200">
+                            다른 기기나 브라우저에서 로그인하려면 아래 카카오 로그인 버튼을 다시 눌러주세요.
+                        </p>
+                    </div>
                 )}
 
                 <div className="text-center">
