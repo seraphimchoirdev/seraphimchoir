@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createLogger } from '@/lib/logger';
+import { authRateLimiter, getClientIp, createRateLimitErrorResponse } from '@/lib/security/rate-limiter';
 
 const logger = createLogger({ prefix: 'AuthLogin' });
 
@@ -10,6 +11,18 @@ const logger = createLogger({ prefix: 'AuthLogin' });
  */
 export async function POST(request: NextRequest) {
   try {
+    // Rate Limiting: 무차별 대입 공격 방어 (5회/분)
+    const ip = getClientIp(request);
+    const { success, reset } = await authRateLimiter.limit(ip);
+
+    if (!success) {
+      logger.warn(`Rate limit exceeded for login attempt from IP: ${ip}`);
+      return NextResponse.json(
+        createRateLimitErrorResponse(reset),
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body;
 

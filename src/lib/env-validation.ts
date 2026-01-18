@@ -51,6 +51,14 @@ const SERVER_ENV_VARS = {
       return null;
     },
   },
+  UPSTASH_REDIS_REST_URL: {
+    description: 'Upstash Redis REST URL (Rate Limiting용)',
+    requiredFor: 'API Rate Limiting (프로덕션 환경 권장)',
+  },
+  UPSTASH_REDIS_REST_TOKEN: {
+    description: 'Upstash Redis REST Token (Rate Limiting용)',
+    requiredFor: 'API Rate Limiting (프로덕션 환경 권장)',
+  },
 } as const;
 
 /**

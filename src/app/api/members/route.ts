@@ -232,6 +232,19 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Rate Limiting: 대량 데이터 생성 방지 (100회/분)
+    const { apiRateLimiter, getClientIp, createRateLimitErrorResponse } = await import('@/lib/security/rate-limiter');
+    const ip = getClientIp(request);
+    const { success, reset } = await apiRateLimiter.limit(ip);
+
+    if (!success) {
+      logger.warn(`Rate limit exceeded for member creation from IP: ${ip}`);
+      return NextResponse.json(
+        createRateLimitErrorResponse(reset),
+        { status: 429 }
+      );
+    }
+
     const supabase = await createClient();
 
     // 인증 확인

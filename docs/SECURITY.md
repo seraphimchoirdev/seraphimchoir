@@ -24,9 +24,9 @@
 | **XSS 방어** | ✅ 완료 | React auto-escaping + Input Sanitization |
 | **CSRF 방어** | ⚠️ 부분 | SameSite 쿠키 (Supabase 기본 설정) |
 | **보안 헤더** | ✅ 완료 | CSP, X-Frame-Options 등 |
-| **Input Validation** | ✅ 완료 | Zod 스키마 검증 |
+| **Input Validation** | ✅ 완료 | Zod 스키마 검증 + Input Sanitization |
 | **Row Level Security** | ✅ 완료 | Supabase RLS 정책 |
-| **Rate Limiting** | ⚠️ 권장 | 프로덕션 환경에서 Vercel/Upstash 사용 권장 |
+| **Rate Limiting** | ✅ 완료 | Upstash Redis 기반 (로그인 5회/분, 회원가입 3회/분, API 100회/분) |
 
 ---
 
@@ -143,65 +143,101 @@ const confirmDeletion = async () => {
 
 ## Rate Limiting (DDoS 방어)
 
-### ⚠️ 프로덕션 환경 필수
+### ✅ 구현 완료 (Upstash Redis 기반)
 
-프로덕션 환경에서는 **Vercel + Upstash Redis**를 사용한 Rate Limiting이 필요합니다.
+**Upstash Redis**를 사용한 IP 기반 Rate Limiting이 구현되어 있습니다.
 
-### 설치 및 설정
+### 구현된 Rate Limiters
+
+| Rate Limiter | 제한 | 적용 위치 | 목적 |
+|-------------|-----|---------|-----|
+| `authRateLimiter` | 5회/분 | `/api/auth/login` | 무차별 대입 공격 방어 |
+| `signupRateLimiter` | 3회/분 | `/api/auth/signup` | 스팸 계정 생성 방지 |
+| `apiRateLimiter` | 100회/분 | `/api/members (POST)` | 대량 데이터 생성 방지 |
+
+### 환경 변수 설정
+
+프로덕션 배포 시 다음 환경 변수를 설정하세요:
 
 1. **Upstash Redis 생성**
-   ```bash
-   # Upstash 대시보드에서 Redis 데이터베이스 생성
-   # https://upstash.com/
-   ```
+   - https://upstash.com/ 에서 무료 계정 생성
+   - Redis 데이터베이스 생성 (Primary region: Tokyo 권장)
 
-2. **패키지 설치**
+2. **환경 변수 설정** (`.env.local` 또는 Vercel 대시보드)
    ```bash
-   npm install @upstash/ratelimit @upstash/redis
-   ```
-
-3. **환경 변수 설정** (`.env.local`)
-   ```bash
-   UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
+   UPSTASH_REDIS_REST_URL=https://xxx-xxx-xxx.upstash.io
    UPSTASH_REDIS_REST_TOKEN=AXX...
    ```
 
-4. **Rate Limiter 생성** (`src/lib/security/rate-limiter.ts`)
-   ```typescript
-   import { Ratelimit } from '@upstash/ratelimit';
-   import { Redis } from '@upstash/redis';
+### 개발 환경
 
-   export const authRateLimiter = new Ratelimit({
-     redis: Redis.fromEnv(),
-     limiter: Ratelimit.slidingWindow(5, '1 m'), // 5회/분
-     analytics: true,
-   });
+환경 변수가 설정되지 않은 경우 Rate Limiting이 **자동으로 비활성화**됩니다.
+로컬 개발 시 제한 없이 테스트할 수 있습니다.
 
-   export const apiRateLimiter = new Ratelimit({
-     redis: Redis.fromEnv(),
-     limiter: Ratelimit.slidingWindow(100, '1 m'), // 100회/분
-     analytics: true,
-   });
-   ```
+### 구현 코드
 
-5. **API Route에 적용**
-   ```typescript
-   import { authRateLimiter } from '@/lib/security/rate-limiter';
+`src/lib/security/rate-limiter.ts`에 구현되어 있습니다:
 
-   export async function POST(request: Request) {
-     const ip = request.headers.get('x-forwarded-for') ?? 'anonymous';
-     const { success } = await authRateLimiter.limit(ip);
+```typescript
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
-     if (!success) {
-       return NextResponse.json(
-         { error: '너무 많은 요청입니다. 잠시 후 다시 시도해주세요.' },
-         { status: 429 }
-       );
-     }
+// Redis 클라이언트 생성 (환경 변수 없으면 null 반환)
+const redis = createRedisClient();
 
-     // ... 로직 계속
-   }
-   ```
+// 로그인 Rate Limiter (5회/분)
+export const authRateLimiter = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(5, '1 m'),
+      analytics: true,
+      prefix: 'ratelimit:auth',
+    })
+  : disabledRateLimiter;
+
+// 회원가입 Rate Limiter (3회/분)
+export const signupRateLimiter = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(3, '1 m'),
+      analytics: true,
+      prefix: 'ratelimit:signup',
+    })
+  : disabledRateLimiter;
+
+// API Rate Limiter (100회/분)
+export const apiRateLimiter = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(100, '1 m'),
+      analytics: true,
+      prefix: 'ratelimit:api',
+    })
+  : disabledRateLimiter;
+```
+
+**API Route에 적용하는 방법:**
+
+```typescript
+import { authRateLimiter, getClientIp, createRateLimitErrorResponse } from '@/lib/security/rate-limiter';
+
+export async function POST(request: Request) {
+  // IP 주소 추출
+  const ip = getClientIp(request);
+
+  // Rate Limit 확인
+  const { success, reset } = await authRateLimiter.limit(ip);
+
+  if (!success) {
+    return NextResponse.json(
+      createRateLimitErrorResponse(reset),
+      { status: 429 }
+    );
+  }
+
+  // ... 로직 계속
+}
+```
 
 ### 권장 Rate Limit 설정
 
