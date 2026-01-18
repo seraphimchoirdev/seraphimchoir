@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -77,7 +78,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'", // Tailwind CSS를 위해 unsafe-inline 허용
               "img-src 'self' data: https://*.supabase.co blob:", // Supabase Storage 이미지 허용
               "font-src 'self' data:",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co", // Supabase API/Realtime 허용
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io", // Supabase API/Realtime + Sentry 허용
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -89,4 +90,25 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withBundleAnalyzer(nextConfig);
+// Sentry 설정 옵션
+const sentryConfig = {
+  // Sentry 설정 파일 자동 로드
+  // - sentry.client.config.ts
+  // - sentry.server.config.ts
+  // - sentry.edge.config.ts
+  silent: true, // 빌드 로그 최소화
+
+  // 소스맵 업로드 설정 (프로덕션 디버깅용)
+  // 프로덕션 환경에서만 소스맵 업로드 (SENTRY_AUTH_TOKEN 필요)
+  widenClientFileUpload: true,
+  hideSourceMaps: true, // 프로덕션 빌드에서 소스맵 숨김
+  disableLogger: true, // Sentry 로거 비활성화
+
+  // 자동 계측 설정
+  automaticVercelMonitors: true, // Vercel 배포 시 자동 모니터링
+};
+
+export default withSentryConfig(
+  withBundleAnalyzer(nextConfig),
+  sentryConfig
+);

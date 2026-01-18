@@ -59,6 +59,22 @@ const SERVER_ENV_VARS = {
     description: 'Upstash Redis REST Token (Rate Limiting용)',
     requiredFor: 'API Rate Limiting (프로덕션 환경 권장)',
   },
+  NEXT_PUBLIC_SENTRY_DSN: {
+    description: 'Sentry DSN (에러 트래킹용)',
+    requiredFor: '프로덕션 에러 모니터링 (권장)',
+  },
+  SENTRY_ORG: {
+    description: 'Sentry Organization (소스맵 업로드용)',
+    requiredFor: '프로덕션 디버깅 (선택적)',
+  },
+  SENTRY_PROJECT: {
+    description: 'Sentry Project (소스맵 업로드용)',
+    requiredFor: '프로덕션 디버깅 (선택적)',
+  },
+  SENTRY_AUTH_TOKEN: {
+    description: 'Sentry Auth Token (소스맵 업로드용)',
+    requiredFor: '프로덕션 디버깅 (선택적)',
+  },
 } as const;
 
 /**
