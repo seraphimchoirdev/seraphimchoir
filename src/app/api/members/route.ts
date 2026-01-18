@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { PaginatedResponse, PaginationMeta } from '@/types/api';
 import { createLogger } from '@/lib/logger';
+import { sanitizers } from '@/lib/security/input-sanitizer';
 
 const logger = createLogger({ prefix: 'MembersAPI' });
 
@@ -29,17 +30,30 @@ const queryParamsSchema = z.object({
   absentDaysPractice: z.coerce.number().int().min(0).optional().nullish(),
 });
 
-// Member creation schema
+// Member creation schema (with input sanitization)
 const createMemberSchema = z.object({
-  name: z.string().min(2, '이름은 최소 2자 이상이어야 합니다').max(50, '이름은 최대 50자까지 입력 가능합니다'),
+  name: z.string()
+    .min(2, '이름은 최소 2자 이상이어야 합니다')
+    .max(50, '이름은 최대 50자까지 입력 가능합니다')
+    .transform(sanitizers.sanitizeMemberName), // XSS 방어: HTML 태그 제거
   part: PartEnum,
   is_leader: z.boolean().default(false),
   is_singer: z.boolean().default(true), // 등단 여부 (false=지휘자/반주자 등 비등단)
   member_status: MemberStatusEnum.default('NEW'),
   joined_date: z.string().optional(), // YYYY-MM-DD 형식, 미입력 시 오늘 날짜
-  phone_number: z.string().nullable().optional(),
-  email: z.string().email('올바른 이메일 형식이 아닙니다').nullable().optional(),
-  notes: z.string().nullable().optional(),
+  phone_number: z.string()
+    .nullable()
+    .optional()
+    .transform(v => v ? sanitizers.sanitizePhoneNumber(v) : null), // 전화번호 정규화
+  email: z.string()
+    .email('올바른 이메일 형식이 아닙니다')
+    .nullable()
+    .optional()
+    .transform(v => v ? sanitizers.sanitizeEmail(v) : null), // 이메일 정규화
+  notes: z.string()
+    .nullable()
+    .optional()
+    .transform(v => v ? sanitizers.sanitizeTextNote(v, 1000) : null), // XSS 방어: HTML 태그 제거, 길이 제한
 });
 
 /**
