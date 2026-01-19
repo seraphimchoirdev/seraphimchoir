@@ -11,19 +11,6 @@ export default function SplashScreen() {
     const [imageError, setImageError] = useState(false);
 
     useEffect(() => {
-        // PWA 환경 감지
-        const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
-                      // @ts-ignore - iOS Safari
-                      window.navigator.standalone === true ||
-                      document.referrer.includes('android-app://');
-
-        // PWA 환경에서는 커스텀 스플래시 스크린 즉시 숨김 (네이티브 스플래시만 사용)
-        if (isPWA) {
-            setIsVisible(false);
-            splashManager.setAppReady();
-            return;
-        }
-
         let minDisplayTimer: NodeJS.Timeout;
         let maxDisplayTimer: NodeJS.Timeout;
         let fadeTimer: NodeJS.Timeout;
@@ -37,17 +24,17 @@ export default function SplashScreen() {
             }, 500);
         };
 
-        // 최소 표시 시간 (1.5초) 후 이미지가 로드되었거나 에러가 발생했으면 숨김
+        // 최소 표시 시간 (2초) 후 이미지가 로드되었거나 에러가 발생했으면 숨김
         minDisplayTimer = setTimeout(() => {
             if (imageLoaded || imageError) {
                 hideSplash();
             }
-        }, 1500);
+        }, 2000);
 
-        // 최대 3초 후에는 무조건 숨김 (fallback)
+        // 최대 3.5초 후에는 무조건 숨김 (fallback)
         maxDisplayTimer = setTimeout(() => {
             hideSplash();
-        }, 3000);
+        }, 3500);
 
         // 페이지가 완전히 로드되면 스플래시 숨김
         const handlePageLoad = () => {
