@@ -2,8 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createLogger } from '@/lib/logger';
 import { signupRateLimiter, getClientIp, createRateLimitErrorResponse } from '@/lib/security/rate-limiter';
+import { z } from 'zod';
+import { sanitizeRequestBody } from '@/lib/api/sanitization-middleware';
+import { sanitizers } from '@/lib/security/input-sanitizer';
 
 const logger = createLogger({ prefix: 'AuthSignup' });
+
+// 회원가입 요청 스키마 (sanitization 포함)
+const signupSchema = z.object({
+  email: z.string()
+    .email('올바른 이메일 형식이 아닙니다')
+    .transform(v => sanitizers.sanitizeEmail(v)),
+  password: z.string()
+    .min(6, '비밀번호는 최소 6자 이상이어야 합니다'),
+  name: z.string()
+    .min(2, '이름은 최소 2자 이상이어야 합니다')
+    .max(50, '이름은 최대 50자까지 입력 가능합니다')
+    .transform(sanitizers.sanitizeMemberName),
+});
 
 /**
  * POST /api/auth/signup
@@ -23,41 +39,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { email, password, name } = body;
-
-    // 입력 검증
-    if (!email || !password || !name) {
-      return NextResponse.json(
-        { error: '이메일, 비밀번호, 이름을 모두 입력해주세요.' },
-        { status: 400 }
-      );
+    // 요청 body sanitization 및 검증
+    let validatedData;
+    try {
+      validatedData = await sanitizeRequestBody(request, signupSchema);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: error.errors[0].message },
+          { status: 400 }
+        );
+      }
+      throw error;
     }
 
-    // 이메일 형식 검증
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: '올바른 이메일 형식이 아닙니다.' },
-        { status: 400 }
-      );
-    }
-
-    // 비밀번호 길이 검증 (최소 6자)
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: '비밀번호는 최소 6자 이상이어야 합니다.' },
-        { status: 400 }
-      );
-    }
-
-    // 이름 길이 검증
-    if (name.trim().length < 2) {
-      return NextResponse.json(
-        { error: '이름은 최소 2자 이상이어야 합니다.' },
-        { status: 400 }
-      );
-    }
+    const { email, password, name } = validatedData;
 
     const supabase = await createClient();
 
@@ -67,7 +63,7 @@ export async function POST(request: NextRequest) {
       password,
       options: {
         data: {
-          name: name.trim(),
+          name: name, // 이미 sanitized
         },
       },
     });

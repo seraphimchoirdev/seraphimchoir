@@ -163,3 +163,68 @@ export function createRateLimitErrorResponse(resetTime: number = 60) {
     retryAfter: Math.ceil(resetTime / 1000), // 초 단위로 변환
   };
 }
+
+/**
+ * Redis 연결 상태 확인 (헬스체크)
+ *
+ * @returns Redis 연결 상태 및 정보
+ */
+export async function checkRedisConnection(): Promise<{
+  isConnected: boolean;
+  isProduction: boolean;
+  error?: string;
+}> {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (!redis) {
+    return {
+      isConnected: false,
+      isProduction,
+      error: 'Redis client not initialized. Check UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN',
+    };
+  }
+
+  try {
+    // Redis PING 명령으로 연결 확인
+    await redis.ping();
+    return {
+      isConnected: true,
+      isProduction,
+    };
+  } catch (error) {
+    logger.error('Redis connection check failed:', error);
+    return {
+      isConnected: false,
+      isProduction,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * 프로덕션 환경에서 Rate Limiting 필수 검증
+ * 애플리케이션 시작 시 호출하여 프로덕션 안전성 확보
+ */
+export async function validateRateLimitingForProduction(): Promise<void> {
+  const status = await checkRedisConnection();
+
+  if (status.isProduction && !status.isConnected) {
+    const errorMessage =
+      '🚨 Rate Limiting 검증 실패!\n\n' +
+      'Production 환경에서 Rate Limiting이 활성화되지 않았습니다.\n' +
+      `에러: ${status.error}\n\n` +
+      'Upstash Redis 설정을 확인하세요:\n' +
+      '1. https://console.upstash.com 에서 Redis 데이터베이스 생성\n' +
+      '2. UPSTASH_REDIS_REST_URL과 UPSTASH_REDIS_REST_TOKEN을 .env에 설정\n\n' +
+      '개발 환경에서 테스트하려면 NODE_ENV=development로 설정하세요.';
+
+    logger.error(errorMessage);
+    throw new Error(errorMessage);
+  }
+
+  if (status.isConnected) {
+    logger.info('✅ Rate Limiting이 정상적으로 활성화되었습니다.');
+  } else {
+    logger.warn('⚠️ Rate Limiting이 비활성화되었습니다 (개발 환경).');
+  }
+}

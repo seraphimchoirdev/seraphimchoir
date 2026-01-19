@@ -1,0 +1,136 @@
+/**
+ * Content Security Policy (CSP) Nonce 유틸리티
+ *
+ * 프로덕션 환경에서 인라인 스크립트를 안전하게 실행하기 위한 nonce 생성 및 관리
+ */
+
+import { randomBytes } from 'crypto';
+import { headers } from 'next/headers';
+
+/**
+ * CSP nonce 생성
+ *
+ * @returns 128비트 무작위 nonce (base64 인코딩)
+ */
+export function generateNonce(): string {
+  return randomBytes(16).toString('base64');
+}
+
+/**
+ * 환경별 CSP 정책 생성
+ *
+ * @param nonce - 프로덕션 환경에서 사용할 nonce (개발 환경에서는 무시)
+ * @returns CSP 헤더 문자열
+ */
+export function generateCSPHeader(nonce?: string): string {
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  // 기본 CSP 지시어
+  const directives: Record<string, string[]> = {
+    'default-src': ["'self'"],
+    'script-src': isDevelopment
+      ? ["'self'", "'unsafe-eval'", "'unsafe-inline'"] // 개발 환경: Next.js 개발 도구 지원
+      : ["'self'", `'nonce-${nonce}'`], // 프로덕션: nonce 기반 보안
+    'style-src': isDevelopment
+      ? ["'self'", "'unsafe-inline'"] // 개발 환경: Tailwind JIT 지원
+      : ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"], // 프로덕션: Tailwind 인라인 스타일 때문에 unsafe-inline 유지
+    'img-src': ["'self'", 'data:', 'https://*.supabase.co', 'blob:'],
+    'font-src': ["'self'", 'data:'],
+    'connect-src': [
+      "'self'",
+      'https://*.supabase.co',
+      'wss://*.supabase.co',
+      'https://*.ingest.sentry.io',
+      'https://*.upstash.com', // Upstash Redis
+    ],
+    'frame-ancestors': ["'none'"],
+    'base-uri': ["'self'"],
+    'form-action': ["'self'"],
+    'object-src': ["'none'"],
+    'script-src-elem': isDevelopment
+      ? undefined // 개발 환경에서는 script-src와 동일
+      : ["'self'", `'nonce-${nonce}'`],
+    'style-src-elem': isDevelopment
+      ? undefined // 개발 환경에서는 style-src와 동일
+      : ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"],
+    'upgrade-insecure-requests': isDevelopment ? undefined : [''],
+    'block-all-mixed-content': isDevelopment ? undefined : [''],
+  };
+
+  // 지시어를 CSP 문자열로 변환
+  const policy = Object.entries(directives)
+    .filter(([_, values]) => values !== undefined && values.length > 0)
+    .map(([directive, values]) => {
+      if (values.length === 1 && values[0] === '') {
+        return directive; // 값이 없는 지시어 (upgrade-insecure-requests 등)
+      }
+      return `${directive} ${values.join(' ')}`;
+    })
+    .join('; ');
+
+  return policy;
+}
+
+/**
+ * 현재 요청의 nonce 가져오기 (서버 컴포넌트용)
+ *
+ * @returns 현재 요청의 CSP nonce
+ */
+export async function getNonce(): Promise<string | undefined> {
+  const headersList = await headers();
+  return headersList.get('x-nonce') || undefined;
+}
+
+/**
+ * Script 태그에 nonce 속성 추가하는 헬퍼
+ *
+ * @example
+ * ```tsx
+ * import { getNonceProps } from '@/lib/security/csp-nonce';
+ *
+ * export default async function Page() {
+ *   const nonceProps = await getNonceProps();
+ *   return (
+ *     <script {...nonceProps} dangerouslySetInnerHTML={{ __html: 'console.log("Hello")' }} />
+ *   );
+ * }
+ * ```
+ */
+export async function getNonceProps(): Promise<{ nonce?: string }> {
+  const nonce = await getNonce();
+  return nonce ? { nonce } : {};
+}
+
+/**
+ * 인라인 스타일에 nonce 속성 추가하는 헬퍼
+ */
+export async function getStyleNonceProps(): Promise<{ nonce?: string }> {
+  const nonce = await getNonce();
+  return nonce ? { nonce } : {};
+}
+
+/**
+ * CSP 리포트 URI 설정 (선택적)
+ * Sentry나 별도의 CSP 리포트 수집 서비스로 위반 사항을 전송
+ */
+export function getCSPReportUri(): string | undefined {
+  // 프로덕션에서만 CSP 위반 리포트 수집
+  if (process.env.NODE_ENV === 'production' && process.env.CSP_REPORT_URI) {
+    return process.env.CSP_REPORT_URI;
+  }
+  return undefined;
+}
+
+/**
+ * CSP 헤더 전체 생성 (report-uri 포함)
+ */
+export function generateFullCSPHeader(nonce?: string): string {
+  let cspHeader = generateCSPHeader(nonce);
+
+  const reportUri = getCSPReportUri();
+  if (reportUri) {
+    cspHeader += `; report-uri ${reportUri}`;
+  }
+
+  return cspHeader;
+}

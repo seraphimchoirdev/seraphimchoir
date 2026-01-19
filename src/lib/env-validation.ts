@@ -53,11 +53,13 @@ const SERVER_ENV_VARS = {
   },
   UPSTASH_REDIS_REST_URL: {
     description: 'Upstash Redis REST URL (Rate Limiting용)',
-    requiredFor: 'API Rate Limiting (프로덕션 환경 권장)',
+    requiredFor: 'API Rate Limiting (프로덕션 환경 필수)',
+    requiredInProduction: true,
   },
   UPSTASH_REDIS_REST_TOKEN: {
     description: 'Upstash Redis REST Token (Rate Limiting용)',
-    requiredFor: 'API Rate Limiting (프로덕션 환경 권장)',
+    requiredFor: 'API Rate Limiting (프로덕션 환경 필수)',
+    requiredInProduction: true,
   },
   NEXT_PUBLIC_SENTRY_DSN: {
     description: 'Sentry DSN (에러 트래킹용)',
@@ -98,9 +100,19 @@ export function validateEnvironment(): EnvValidationResult {
 
   // 서버 환경변수 검증 (서버에서만 실행될 때)
   if (typeof window === 'undefined') {
+    const isProduction = process.env.NODE_ENV === 'production';
+
     for (const [key, config] of Object.entries(SERVER_ENV_VARS)) {
       const value = process.env[key];
-      if (!value) {
+
+      // 프로덕션에서 필수인 환경변수 체크
+      if (!value && 'requiredInProduction' in config && config.requiredInProduction && isProduction) {
+        errors.push(
+          `❌ ${key}가 설정되지 않았습니다 (프로덕션 필수).\n` +
+          `   설명: ${config.description}\n` +
+          `   필요한 기능: ${config.requiredFor}`
+        );
+      } else if (!value) {
         warnings.push(
           `⚠️ ${key}가 설정되지 않았습니다.\n` +
           `   설명: ${config.description}\n` +

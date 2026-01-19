@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
@@ -106,9 +107,16 @@ export default function Navigation() {
             <div className="flex items-center gap-6">
               <Link
                 href="/dashboard"
-                className="text-xl font-bold text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)] transition-colors"
+                className="flex items-center"
               >
-                새로핌On
+                <Image
+                  src="/images/logo_seraphim_on.png"
+                  alt="새로핌:On"
+                  width={180}
+                  height={60}
+                  className="h-12 w-auto object-contain"
+                  priority
+                />
               </Link>
               {/* 데스크톱 네비게이션 - lg(1024px) 이상에서 표시 */}
               <div className="hidden lg:flex gap-4">
@@ -173,10 +181,10 @@ export default function Navigation() {
                           <span className="text-xs text-[var(--color-text-tertiary)]">대원 연결</span>
                           <Badge variant={
                             profile.link_status === 'approved' ? 'success' :
-                            profile.link_status === 'pending' ? 'warning' : 'destructive'
+                              profile.link_status === 'pending' ? 'warning' : 'destructive'
                           }>
                             {profile.link_status === 'approved' ? '승인됨' :
-                             profile.link_status === 'pending' ? '대기중' : '거절됨'}
+                              profile.link_status === 'pending' ? '대기중' : '거절됨'}
                           </Badge>
                         </div>
                       </div>

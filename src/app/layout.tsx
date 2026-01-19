@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   },
 };
 
+import SplashScreen from "@/components/layout/SplashScreen";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,6 +35,7 @@ export default function RootLayout({
         className="antialiased bg-[var(--color-background-primary)] text-[var(--color-text-primary)]"
         suppressHydrationWarning
       >
+        <SplashScreen />
         <Providers>
           {children}
         </Providers>
