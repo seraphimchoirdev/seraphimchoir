@@ -27,7 +27,9 @@
       "Bash(git log:*)",
       "Bash(npm test:*)",
       "Bash(npm run build:*)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(node scripts/create-transparent-icons.js:*)",
+      "Bash(node scripts/create-splash-icons.js:*)"
     ],
     "deny": [],
     "ask": []

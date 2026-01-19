@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#4A8FD3",
+  "theme_color": "#ffffff",
   "lang": "ko-KR",
   "categories": ["lifestyle", "social", "utilities"],
   "icons": [
@@ -34,6 +34,18 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/splash-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/splash-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "shortcuts": [
@@ -63,5 +75,18 @@
     }
   ],
   "related_applications": [],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "splash_pages": {
+    "640x1136": "/splash-icon-512x512.png",
+    "750x1334": "/splash-icon-512x512.png",
+    "1242x2208": "/splash-icon-512x512.png",
+    "1125x2436": "/splash-icon-512x512.png",
+    "828x1792": "/splash-icon-512x512.png",
+    "1242x2688": "/splash-icon-512x512.png",
+    "1170x2532": "/splash-icon-512x512.png",
+    "1284x2778": "/splash-icon-512x512.png",
+    "1536x2048": "/splash-icon-512x512.png",
+    "1668x2224": "/splash-icon-512x512.png",
+    "2048x2732": "/splash-icon-512x512.png"
+  }
 }
