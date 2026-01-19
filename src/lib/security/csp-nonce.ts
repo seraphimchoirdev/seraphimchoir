@@ -115,22 +115,57 @@ export async function getStyleNonceProps(): Promise<{ nonce?: string }> {
  */
 export function getCSPReportUri(): string | undefined {
   // 프로덕션에서만 CSP 위반 리포트 수집
-  if (process.env.NODE_ENV === 'production' && process.env.CSP_REPORT_URI) {
-    return process.env.CSP_REPORT_URI;
+  if (process.env.NODE_ENV === 'production') {
+    // 환경변수로 설정된 CSP Report URI 사용
+    if (process.env.CSP_REPORT_URI) {
+      return process.env.CSP_REPORT_URI;
+    }
+
+    // Sentry DSN이 있으면 Sentry CSP 리포팅 사용
+    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+      // Sentry DSN에서 project ID 추출
+      const match = process.env.NEXT_PUBLIC_SENTRY_DSN.match(/https:\/\/(.+)@(.+)\.ingest\.sentry\.io\/(\d+)/);
+      if (match) {
+        const [, publicKey, org, projectId] = match;
+        return `https://sentry.io/api/${projectId}/security/?sentry_key=${publicKey}`;
+      }
+    }
   }
   return undefined;
 }
 
 /**
- * CSP 헤더 전체 생성 (report-uri 포함)
+ * CSP 헤더 전체 생성 (report-uri 및 report-to 포함)
  */
 export function generateFullCSPHeader(nonce?: string): string {
   let cspHeader = generateCSPHeader(nonce);
 
   const reportUri = getCSPReportUri();
   if (reportUri) {
+    // report-uri (구형 브라우저 호환)
     cspHeader += `; report-uri ${reportUri}`;
+
+    // report-to (최신 표준)
+    // Report-To 헤더는 별도로 설정해야 함
+    cspHeader += `; report-to csp-endpoint`;
   }
 
   return cspHeader;
+}
+
+/**
+ * Report-To 헤더 생성 (최신 Reporting API)
+ */
+export function generateReportToHeader(): string | undefined {
+  const reportUri = getCSPReportUri();
+  if (!reportUri) return undefined;
+
+  const reportTo = {
+    group: 'csp-endpoint',
+    max_age: 10886400, // 126일
+    endpoints: [{ url: reportUri }],
+    include_subdomains: true,
+  };
+
+  return JSON.stringify(reportTo);
 }

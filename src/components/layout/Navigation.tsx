@@ -112,9 +112,9 @@ export default function Navigation() {
                 <Image
                   src="/images/logo_seraphim_on.png"
                   alt="새로핌:On"
-                  width={180}
-                  height={60}
-                  className="h-12 w-auto object-contain"
+                  width={879}
+                  height={368}
+                  className="h-16 w-auto object-contain"
                   priority
                 />
               </Link>

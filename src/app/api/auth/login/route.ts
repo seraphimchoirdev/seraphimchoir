@@ -5,6 +5,7 @@ import { authRateLimiter, getClientIp, createRateLimitErrorResponse } from '@/li
 import { z } from 'zod';
 import { sanitizeRequestBody } from '@/lib/api/sanitization-middleware';
 import { sanitizers } from '@/lib/security/input-sanitizer';
+import { logLoginEvent, logRateLimitExceeded } from '@/lib/security/audit-logger';
 
 const logger = createLogger({ prefix: 'AuthLogin' });
 
@@ -30,6 +31,8 @@ export async function POST(request: NextRequest) {
 
     if (!success) {
       logger.warn(`Rate limit exceeded for login attempt from IP: ${ip}`);
+      // 감사 로그: Rate limit 위반
+      await logRateLimitExceeded(request, '/api/auth/login');
       return NextResponse.json(
         createRateLimitErrorResponse(reset),
         { status: 429 }
@@ -63,6 +66,15 @@ export async function POST(request: NextRequest) {
     if (error) {
       logger.error('Login error:', error);
 
+      // 감사 로그: 로그인 실패
+      await logLoginEvent(
+        request,
+        false,
+        email,
+        undefined,
+        error.message
+      );
+
       // 인증 실패 (이메일 또는 비밀번호 불일치)
       if (error.message.includes('Invalid login credentials')) {
         return NextResponse.json(
@@ -88,6 +100,14 @@ export async function POST(request: NextRequest) {
       logger.error('Profile fetch error:', profileError);
       // 프로필 조회 실패는 로그인 자체를 막지 않음
     }
+
+    // 감사 로그: 로그인 성공
+    await logLoginEvent(
+      request,
+      true,
+      data.user.email,
+      data.user.id
+    );
 
     return NextResponse.json(
       {

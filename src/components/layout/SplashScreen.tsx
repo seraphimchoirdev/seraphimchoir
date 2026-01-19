@@ -31,8 +31,8 @@ export default function SplashScreen() {
                 <Image
                     src="/images/logo_seraphim_on.png"
                     alt="새로핌:On"
-                    width={240}
-                    height={80}
+                    width={879}
+                    height={368}
                     className="w-48 h-auto object-contain md:w-64"
                     priority
                 />

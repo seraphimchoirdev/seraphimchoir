@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
-import { generateNonce, generateFullCSPHeader } from '@/lib/security/csp-nonce';
+import { generateNonce, generateFullCSPHeader, generateReportToHeader } from '@/lib/security/csp-nonce';
 
 export async function middleware(request: NextRequest) {
   // Supabase 세션 업데이트
@@ -22,6 +22,12 @@ export async function middleware(request: NextRequest) {
 
       // 응답 헤더에 CSP 추가
       response.headers.set('Content-Security-Policy', cspHeader);
+
+      // Report-To 헤더 추가 (최신 Reporting API)
+      const reportToHeader = generateReportToHeader();
+      if (reportToHeader) {
+        response.headers.set('Report-To', reportToHeader);
+      }
 
       // nonce를 다른 컴포넌트에서 사용할 수 있도록 헤더에 추가
       response.headers.set('x-nonce', nonce);
