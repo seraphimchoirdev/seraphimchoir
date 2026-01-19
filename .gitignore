@@ -61,3 +61,4 @@ venv/
 supabase/data_export.sql
 supabase/full_schema_dump.sql
 *.sql.bak
+.claude/settings.local.json
