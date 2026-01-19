@@ -52,18 +52,20 @@ export function generateCSPHeader(nonce?: string): string {
     'default-src': ["'self'"],
     'script-src': isDevelopment
       ? ["'self'", "'unsafe-eval'", "'unsafe-inline'"] // 개발 환경: Next.js 개발 도구 지원
-      : ["'self'", `'nonce-${nonce}'`], // 프로덕션: nonce 기반 보안
+      : ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"], // 프로덕션: Vercel Analytics 등을 위해 unsafe-inline 추가
     'style-src': isDevelopment
-      ? ["'self'", "'unsafe-inline'"] // 개발 환경: Tailwind JIT 지원
-      : ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"], // 프로덕션: Tailwind 인라인 스타일 때문에 unsafe-inline 유지
+      ? ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'] // 개발 환경: Tailwind JIT 지원
+      : ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'", 'https://cdn.jsdelivr.net'], // 프로덕션: Tailwind 인라인 스타일 때문에 unsafe-inline 유지
     'img-src': ["'self'", 'data:', 'https://*.supabase.co', 'blob:'],
-    'font-src': ["'self'", 'data:'],
+    'font-src': ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
     'connect-src': [
       "'self'",
       'https://*.supabase.co',
       'wss://*.supabase.co',
       'https://*.ingest.sentry.io',
       'https://*.upstash.com', // Upstash Redis
+      'https://vitals.vercel-analytics.com', // Vercel Analytics
+      'https://*.vercel-insights.com', // Vercel Speed Insights
     ],
     'frame-ancestors': ["'none'"],
     'base-uri': ["'self'"],
@@ -71,10 +73,10 @@ export function generateCSPHeader(nonce?: string): string {
     'object-src': ["'none'"],
     'script-src-elem': isDevelopment
       ? undefined // 개발 환경에서는 script-src와 동일
-      : ["'self'", `'nonce-${nonce}'`],
+      : ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"],
     'style-src-elem': isDevelopment
       ? undefined // 개발 환경에서는 style-src와 동일
-      : ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"],
+      : ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
     'upgrade-insecure-requests': isDevelopment ? undefined : [''],
     'block-all-mixed-content': isDevelopment ? undefined : [''],
   };
