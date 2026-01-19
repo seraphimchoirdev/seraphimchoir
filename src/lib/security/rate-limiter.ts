@@ -201,30 +201,52 @@ export async function checkRedisConnection(): Promise<{
   }
 }
 
+// 싱글톤 패턴을 위한 검증 상태 추적
+let rateLimitingValidated = false;
+let validationPromise: Promise<void> | null = null;
+
 /**
  * 프로덕션 환경에서 Rate Limiting 필수 검증
  * 애플리케이션 시작 시 호출하여 프로덕션 안전성 확보
+ * 싱글톤 패턴으로 중복 검증 방지
  */
 export async function validateRateLimitingForProduction(): Promise<void> {
-  const status = await checkRedisConnection();
-
-  if (status.isProduction && !status.isConnected) {
-    const errorMessage =
-      '🚨 Rate Limiting 검증 실패!\n\n' +
-      'Production 환경에서 Rate Limiting이 활성화되지 않았습니다.\n' +
-      `에러: ${status.error}\n\n` +
-      'Upstash Redis 설정을 확인하세요:\n' +
-      '1. https://console.upstash.com 에서 Redis 데이터베이스 생성\n' +
-      '2. UPSTASH_REDIS_REST_URL과 UPSTASH_REDIS_REST_TOKEN을 .env에 설정\n\n' +
-      '개발 환경에서 테스트하려면 NODE_ENV=development로 설정하세요.';
-
-    logger.error(errorMessage);
-    throw new Error(errorMessage);
+  // 이미 검증이 완료된 경우
+  if (rateLimitingValidated) {
+    return;
   }
 
-  if (status.isConnected) {
-    logger.info('✅ Rate Limiting이 정상적으로 활성화되었습니다.');
-  } else {
-    logger.warn('⚠️ Rate Limiting이 비활성화되었습니다 (개발 환경).');
+  // 검증이 진행 중인 경우
+  if (validationPromise) {
+    return validationPromise;
   }
+
+  // 검증 시작
+  validationPromise = (async () => {
+    const status = await checkRedisConnection();
+
+    if (status.isProduction && !status.isConnected) {
+      const errorMessage =
+        '🚨 Rate Limiting 검증 실패!\n\n' +
+        'Production 환경에서 Rate Limiting이 활성화되지 않았습니다.\n' +
+        `에러: ${status.error}\n\n` +
+        'Upstash Redis 설정을 확인하세요:\n' +
+        '1. https://console.upstash.com 에서 Redis 데이터베이스 생성\n' +
+        '2. UPSTASH_REDIS_REST_URL과 UPSTASH_REDIS_REST_TOKEN을 .env에 설정\n\n' +
+        '개발 환경에서 테스트하려면 NODE_ENV=development로 설정하세요.';
+
+      logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    if (status.isConnected) {
+      logger.info('✅ Rate Limiting이 정상적으로 활성화되었습니다.');
+    } else {
+      logger.warn('⚠️ Rate Limiting이 비활성화되었습니다 (개발 환경).');
+    }
+
+    rateLimitingValidated = true;
+  })();
+
+  return validationPromise;
 }

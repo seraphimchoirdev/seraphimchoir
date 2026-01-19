@@ -79,6 +79,26 @@ const nextConfig: NextConfig = {
         key: 'Permissions-Policy',
         value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
       },
+      // HTTPS 강제 (HSTS) - 프로덕션에서만
+      ...(process.env.NODE_ENV === 'production' ? [{
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload',
+      }] : []),
+      // DNS 프리페치 제어
+      {
+        key: 'X-DNS-Prefetch-Control',
+        value: 'off',
+      },
+      // IE 다운로드 시 파일 실행 방지
+      {
+        key: 'X-Download-Options',
+        value: 'noopen',
+      },
+      // 크로스 도메인 정책
+      {
+        key: 'X-Permitted-Cross-Domain-Policies',
+        value: 'none',
+      },
     ];
 
     // 개발 환경에서만 CSP 헤더 추가 (프로덕션은 미들웨어에서 처리)

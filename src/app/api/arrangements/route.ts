@@ -16,13 +16,16 @@ const gridLayoutSchema = z.object({
 const createArrangementSchema = z.object({
     title: z.string()
         .min(1, '제목을 입력해주세요')
+        .max(200, '제목은 최대 200자까지 입력 가능합니다')
         .transform(sanitizers.stripHtml), // XSS 방어
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '유효한 날짜 형식이 아닙니다'),
     conductor: z.string()
+        .max(10, '지휘자명은 최대 10자까지 입력 가능합니다')
         .nullable()
         .optional()
         .transform(v => v ? sanitizers.sanitizeMemberName(v) : null), // 지휘자명 sanitize
     service_info: z.string()
+        .max(500, '예배정보는 최대 500자까지 입력 가능합니다')
         .nullable()
         .optional()
         .transform(v => v ? sanitizers.sanitizeTextNote(v, 500) : null), // 예배정보 sanitize
@@ -32,12 +35,13 @@ const createArrangementSchema = z.object({
 
 // GET 쿼리 파라미터 스키마
 const getArrangementsQuerySchema = z.object({
-    page: z.coerce.number().int().min(1).default(1),
+    page: z.coerce.number().int().min(1).max(1000).default(1), // 페이지 상한 추가
     limit: z.coerce.number().int().min(1).max(100).default(20),
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    serviceType: z.string().optional(),
+    serviceType: z.string().max(50).optional(), // 서비스 타입 길이 제한
     search: z.string()
+        .max(100, '검색어는 최대 100자까지 입력 가능합니다')
         .optional()
         .transform(v => v ? sanitizers.stripHtml(v.toLowerCase()) : undefined), // 검색어 sanitize
 });

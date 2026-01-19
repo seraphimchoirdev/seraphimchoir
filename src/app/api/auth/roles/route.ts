@@ -80,7 +80,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Admin client를 사용하여 역할 업데이트 (RLS 우회)
-    const adminClient = createAdminClient();
+    const adminClient = await createAdminClient();
 
     // 대상 사용자 존재 확인
     const { data: targetUser, error: targetUserError } = await adminClient

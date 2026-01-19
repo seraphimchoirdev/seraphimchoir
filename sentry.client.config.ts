@@ -5,6 +5,7 @@
  */
 
 import * as Sentry from '@sentry/nextjs';
+import { createBeforeSendHandler, createBeforeTransactionHandler } from '@/lib/sentry/sanitize';
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -32,28 +33,10 @@ Sentry.init({
   ],
 
   // 에러 전송 전 필터링 (민감한 정보 제거)
-  beforeSend(event, hint) {
-    // 개발 환경에서는 콘솔에만 출력하고 전송하지 않음
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Sentry Event (dev):', event);
-      console.error('Original Error:', hint.originalException);
-      return null; // 전송하지 않음
-    }
+  beforeSend: createBeforeSendHandler() as any,
 
-    // 민감한 정보 필터링 (예: 이메일, 토큰 등)
-    if (event.request) {
-      // 쿠키 제거
-      delete event.request.cookies;
-
-      // Authorization 헤더 제거
-      if (event.request.headers) {
-        delete event.request.headers['authorization'];
-        delete event.request.headers['cookie'];
-      }
-    }
-
-    return event;
-  },
+  // Transaction 이벤트 필터링
+  beforeSendTransaction: createBeforeTransactionHandler() as any,
 
   // 무시할 에러 패턴
   ignoreErrors: [

@@ -41,7 +41,7 @@ export async function createClient() {
  * Service Role Key를 사용하여 RLS를 우회합니다.
  * 주의: 클라이언트에 노출하지 마세요!
  */
-export function createAdminClient() {
+export async function createAdminClient() {
   return createServerClient(
     getSupabaseUrl(),
     getSupabaseServiceRoleKey(),

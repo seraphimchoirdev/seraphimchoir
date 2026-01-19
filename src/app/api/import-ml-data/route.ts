@@ -32,7 +32,7 @@ interface MLData {
 }
 
 export async function POST(request: NextRequest) {
-    const supabase = createAdminClient();
+    const supabase = await createAdminClient();
 
     try {
         const { filename } = await request.json();

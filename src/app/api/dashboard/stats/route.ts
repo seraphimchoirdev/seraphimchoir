@@ -9,7 +9,7 @@ import { startOfWeek, startOfMonth, endOfMonth, addDays, format } from 'date-fns
  */
 export async function GET() {
     try {
-        const supabase = createAdminClient();
+        const supabase = await createAdminClient();
         const now = new Date();
 
         // 1. 총 찬양대원 (REGULAR 또는 NEW 상태인 대원 - 활동 중인 대원)

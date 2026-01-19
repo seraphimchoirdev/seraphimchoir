@@ -26,11 +26,9 @@ export function generateNonce(): string {
     const buffer = crypto.randomBytes(16);
     array.set(buffer);
   }
-  // 둘 다 없는 경우 Math.random 사용 (보안성 낮음, 개발용)
+  // 둘 다 없는 경우 에러 발생 (보안상 중요)
   else {
-    for (let i = 0; i < array.length; i++) {
-      array[i] = Math.floor(Math.random() * 256);
-    }
+    throw new Error('No secure random number generator available. Cannot generate CSP nonce.');
   }
 
   // base64 인코딩
