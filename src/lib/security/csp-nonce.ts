@@ -52,10 +52,10 @@ export function generateCSPHeader(nonce?: string): string {
     'default-src': ["'self'"],
     'script-src': isDevelopment
       ? ["'self'", "'unsafe-eval'", "'unsafe-inline'"] // 개발 환경: Next.js 개발 도구 지원
-      : ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"], // 프로덕션: Vercel Analytics 등을 위해 unsafe-inline 추가
+      : ["'self'", "'unsafe-inline'"], // 프로덕션: nonce 제거하고 unsafe-inline만 사용
     'style-src': isDevelopment
       ? ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'] // 개발 환경: Tailwind JIT 지원
-      : ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'", 'https://cdn.jsdelivr.net'], // 프로덕션: Tailwind 인라인 스타일 때문에 unsafe-inline 유지
+      : ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'], // 프로덕션: nonce 제거하고 unsafe-inline만 사용
     'img-src': ["'self'", 'data:', 'https://*.supabase.co', 'blob:'],
     'font-src': ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
     'connect-src': [
@@ -66,6 +66,7 @@ export function generateCSPHeader(nonce?: string): string {
       'https://*.upstash.com', // Upstash Redis
       'https://vitals.vercel-analytics.com', // Vercel Analytics
       'https://*.vercel-insights.com', // Vercel Speed Insights
+      'https://cdn.jsdelivr.net', // Pretendard 폰트 소스맵
     ],
     'frame-ancestors': ["'none'"],
     'base-uri': ["'self'"],
@@ -73,10 +74,10 @@ export function generateCSPHeader(nonce?: string): string {
     'object-src': ["'none'"],
     'script-src-elem': isDevelopment
       ? undefined // 개발 환경에서는 script-src와 동일
-      : ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'"],
+      : ["'self'", "'unsafe-inline'"],
     'style-src-elem': isDevelopment
       ? undefined // 개발 환경에서는 style-src와 동일
-      : ["'self'", `'nonce-${nonce}'`, "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+      : ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
     'upgrade-insecure-requests': isDevelopment ? undefined : [''],
     'block-all-mixed-content': isDevelopment ? undefined : [''],
   };
