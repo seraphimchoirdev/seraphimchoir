@@ -34,8 +34,8 @@ export async function sanitizeRequestBody<T extends z.ZodTypeAny>(
     return parsed;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      logger.warn('Request validation failed:', error.errors);
-      throw new ValidationError('입력 데이터가 유효하지 않습니다', error.errors);
+      logger.warn('Request validation failed:', error.issues);
+      throw new ValidationError('입력 데이터가 유효하지 않습니다', error.issues);
     }
     throw error;
   }
@@ -73,8 +73,8 @@ export function sanitizeQueryParams<T extends z.ZodTypeAny>(
     return schema.parse(sanitizedParams);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      logger.warn('Query params validation failed:', error.errors);
-      throw new ValidationError('쿼리 파라미터가 유효하지 않습니다', error.errors);
+      logger.warn('Query params validation failed:', error.issues);
+      throw new ValidationError('쿼리 파라미터가 유효하지 않습니다', error.issues);
     }
     throw error;
   }
@@ -116,7 +116,13 @@ export const commonSchemas = {
   // 이메일 필드
   email: z.string()
     .email('올바른 이메일 형식이 아닙니다')
-    .transform(v => sanitizers.sanitizeEmail(v)),
+    .transform(v => {
+      const sanitized = sanitizers.sanitizeEmail(v);
+      if (!sanitized) {
+        throw new Error('올바른 이메일 형식이 아닙니다');
+      }
+      return sanitized;
+    }),
 
   // 이름 필드 (한글/영문만 허용)
   name: z.string()
@@ -166,7 +172,7 @@ export const commonSchemas = {
 export class ValidationError extends Error {
   constructor(
     message: string,
-    public readonly errors: z.ZodError['errors']
+    public readonly errors: z.ZodIssue[]
   ) {
     super(message);
     this.name = 'ValidationError';

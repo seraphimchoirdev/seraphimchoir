@@ -170,7 +170,7 @@ async function notifyCriticalEvent(data: AuditLogData): Promise<void> {
       const Sentry = await import('@sentry/nextjs');
       Sentry.captureMessage(`Critical security event: ${data.event_type}`, {
         level: 'error',
-        extra: data,
+        extra: { ...data } as Record<string, any>,
         tags: {
           event_type: data.event_type,
           category: data.event_category,

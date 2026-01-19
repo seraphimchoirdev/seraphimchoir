@@ -4,16 +4,40 @@
  * 프로덕션 환경에서 인라인 스크립트를 안전하게 실행하기 위한 nonce 생성 및 관리
  */
 
-import { randomBytes } from 'crypto';
 import { headers } from 'next/headers';
 
 /**
  * CSP nonce 생성
+ * Edge Runtime과 Node.js 환경 모두 지원
  *
  * @returns 128비트 무작위 nonce (base64 인코딩)
  */
 export function generateNonce(): string {
-  return randomBytes(16).toString('base64');
+  // Edge Runtime과 Node.js 모두에서 작동하는 방법 사용
+  const array = new Uint8Array(16);
+
+  // Edge Runtime에서는 Web Crypto API 사용
+  if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.getRandomValues) {
+    globalThis.crypto.getRandomValues(array);
+  }
+  // Node.js 환경 (fallback)
+  else if (typeof require !== 'undefined') {
+    const crypto = require('crypto');
+    const buffer = crypto.randomBytes(16);
+    array.set(buffer);
+  }
+  // 둘 다 없는 경우 Math.random 사용 (보안성 낮음, 개발용)
+  else {
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 256);
+    }
+  }
+
+  // base64 인코딩
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
 }
 
 /**
@@ -26,7 +50,7 @@ export function generateCSPHeader(nonce?: string): string {
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   // 기본 CSP 지시어
-  const directives: Record<string, string[]> = {
+  const directives: Record<string, string[] | undefined> = {
     'default-src': ["'self'"],
     'script-src': isDevelopment
       ? ["'self'", "'unsafe-eval'", "'unsafe-inline'"] // 개발 환경: Next.js 개발 도구 지원
@@ -61,11 +85,14 @@ export function generateCSPHeader(nonce?: string): string {
   const policy = Object.entries(directives)
     .filter(([_, values]) => values !== undefined && values.length > 0)
     .map(([directive, values]) => {
+      // TypeScript에게 values가 undefined가 아님을 확신시킴
+      if (!values) return '';
       if (values.length === 1 && values[0] === '') {
         return directive; // 값이 없는 지시어 (upgrade-insecure-requests 등)
       }
       return `${directive} ${values.join(' ')}`;
     })
+    .filter(Boolean)
     .join('; ');
 
   return policy;

@@ -12,7 +12,13 @@ const logger = createLogger({ prefix: 'AuthSignup' });
 const signupSchema = z.object({
   email: z.string()
     .email('올바른 이메일 형식이 아닙니다')
-    .transform(v => sanitizers.sanitizeEmail(v)),
+    .transform(v => {
+      const sanitized = sanitizers.sanitizeEmail(v);
+      if (!sanitized) {
+        throw new Error('올바른 이메일 형식이 아닙니다');
+      }
+      return sanitized;
+    }),
   password: z.string()
     .min(6, '비밀번호는 최소 6자 이상이어야 합니다'),
   name: z.string()
@@ -46,7 +52,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
-          { error: error.errors[0].message },
+          { error: error.issues[0].message },
           { status: 400 }
         );
       }
