@@ -7,13 +7,33 @@ import { splashManager } from '@/lib/splash-manager';
 export default function SplashScreen() {
     const [isVisible, setIsVisible] = useState(true);
     const [isFading, setIsFading] = useState(false);
+    const [isShowing, setIsShowing] = useState(false); // 페이드 인용
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
+
+    // 페이드 인 애니메이션
+    useEffect(() => {
+        const showTimer = setTimeout(() => {
+            setIsShowing(true);
+        }, 50); // 약간의 딜레이 후 페이드 인 시작
+
+        return () => clearTimeout(showTimer);
+    }, []);
 
     useEffect(() => {
         let minDisplayTimer: NodeJS.Timeout;
         let maxDisplayTimer: NodeJS.Timeout;
         let fadeTimer: NodeJS.Timeout;
+
+        // PWA 환경 감지 (표시 시간 조절용)
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                      // @ts-ignore - iOS Safari
+                      window.navigator.standalone === true ||
+                      document.referrer.includes('android-app://');
+
+        // PWA는 더 길게, 웹은 기본 시간
+        const minDisplayTime = isPWA ? 2500 : 1500;  // PWA: 2.5초, 웹: 1.5초
+        const maxDisplayTime = isPWA ? 4500 : 3000;  // PWA: 4.5초, 웹: 3초
 
         const hideSplash = () => {
             setIsFading(true);
@@ -21,20 +41,20 @@ export default function SplashScreen() {
                 setIsVisible(false);
                 // 스플래시가 숨겨진 후 앱이 준비됨을 알림
                 splashManager.setAppReady();
-            }, 500);
+            }, 800); // 페이드 아웃 시간 증가 (더 부드러운 전환)
         };
 
-        // 최소 표시 시간 (2초) 후 이미지가 로드되었거나 에러가 발생했으면 숨김
+        // 최소 표시 시간 후 이미지가 로드되었거나 에러가 발생했으면 숨김
         minDisplayTimer = setTimeout(() => {
             if (imageLoaded || imageError) {
                 hideSplash();
             }
-        }, 2000);
+        }, minDisplayTime);
 
-        // 최대 3.5초 후에는 무조건 숨김 (fallback)
+        // 최대 표시 시간 후에는 무조건 숨김 (fallback)
         maxDisplayTimer = setTimeout(() => {
             hideSplash();
-        }, 3500);
+        }, maxDisplayTime);
 
         // 페이지가 완전히 로드되면 스플래시 숨김
         const handlePageLoad = () => {
@@ -78,11 +98,13 @@ export default function SplashScreen() {
 
     return (
         <div
-            className={`fixed inset-0 z-[100] flex items-center justify-center bg-white transition-opacity duration-500 ${
-                isFading ? 'opacity-0' : 'opacity-100'
+            className={`fixed inset-0 z-[100] flex items-center justify-center bg-white transition-all duration-700 ${
+                !isShowing ? 'opacity-0' : isFading ? 'opacity-0' : 'opacity-100'
             }`}
         >
-            <div className="relative flex flex-col items-center animate-in zoom-in-95 duration-700">
+            <div className={`relative flex flex-col items-center transition-transform duration-700 ${
+                isShowing ? 'scale-100' : 'scale-95'
+            }`}>
                 {!imageError ? (
                     <Image
                         src="/logo_seraphim_on.png"
