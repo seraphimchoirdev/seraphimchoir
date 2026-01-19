@@ -114,7 +114,7 @@ export default function Navigation() {
                   alt="새로핌:On"
                   width={879}
                   height={368}
-                  className="h-16 w-auto object-contain"
+                  className="h-[44px] w-auto object-contain"
                   priority
                 />
               </Link>
