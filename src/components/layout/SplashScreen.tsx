@@ -27,9 +27,9 @@ export default function SplashScreen() {
 
         // PWA 환경 감지 (표시 시간 조절용)
         const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
-                      // @ts-ignore - iOS Safari
-                      window.navigator.standalone === true ||
-                      document.referrer.includes('android-app://');
+            // @ts-ignore - iOS Safari
+            window.navigator.standalone === true ||
+            document.referrer.includes('android-app://');
 
         // PWA는 더 길게, 웹은 기본 시간
         const minDisplayTime = isPWA ? 2500 : 1500;  // PWA: 2.5초, 웹: 1.5초
@@ -98,20 +98,18 @@ export default function SplashScreen() {
 
     return (
         <div
-            className={`fixed inset-0 z-[100] flex items-center justify-center bg-white transition-all duration-700 ${
-                !isShowing ? 'opacity-0' : isFading ? 'opacity-0' : 'opacity-100'
-            }`}
+            className={`fixed inset-0 z-[100] flex items-center justify-center bg-white transition-all duration-700 ${!isShowing ? 'opacity-0' : isFading ? 'opacity-0' : 'opacity-100'
+                }`}
         >
-            <div className={`relative flex flex-col items-center transition-transform duration-700 ${
-                isShowing ? 'scale-100' : 'scale-95'
-            }`}>
+            <div className={`relative flex flex-col items-center transition-transform duration-700 ${isShowing ? 'scale-100' : 'scale-95'
+                }`}>
                 {!imageError ? (
                     <Image
-                        src="/logo_seraphim_on.png"
+                        src="/icon-512x512.png"
                         alt="새로핌:On"
-                        width={879}
-                        height={368}
-                        className="w-48 h-auto object-contain md:w-64"
+                        width={512}
+                        height={512}
+                        className="w-48 h-48 object-contain md:w-64 md:h-64"
                         priority
                         onLoad={handleImageLoad}
                         onError={handleImageError}
