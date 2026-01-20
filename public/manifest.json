@@ -9,7 +9,11 @@
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "lang": "ko-KR",
-  "categories": ["lifestyle", "social", "utilities"],
+  "categories": [
+    "lifestyle",
+    "social",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "/icon-192x192.png",
@@ -75,18 +79,5 @@
     }
   ],
   "related_applications": [],
-  "prefer_related_applications": false,
-  "splash_pages": {
-    "640x1136": "/splash-icon-512x512.png",
-    "750x1334": "/splash-icon-512x512.png",
-    "1242x2208": "/splash-icon-512x512.png",
-    "1125x2436": "/splash-icon-512x512.png",
-    "828x1792": "/splash-icon-512x512.png",
-    "1242x2688": "/splash-icon-512x512.png",
-    "1170x2532": "/splash-icon-512x512.png",
-    "1284x2778": "/splash-icon-512x512.png",
-    "1536x2048": "/splash-icon-512x512.png",
-    "1668x2224": "/splash-icon-512x512.png",
-    "2048x2732": "/splash-icon-512x512.png"
-  }
+  "prefer_related_applications": false
 }

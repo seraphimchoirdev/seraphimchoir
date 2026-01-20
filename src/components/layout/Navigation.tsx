@@ -110,10 +110,10 @@ export default function Navigation() {
                 className="flex items-center"
               >
                 <Image
-                  src="/images/logo_seraphim_on.png"
+                  src="/title_logo.png"
                   alt="새로핌:On"
-                  width={879}
-                  height={368}
+                  width={3200}
+                  height={1344}
                   className="h-[44px] w-auto object-contain"
                   priority
                 />
