@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest",
+    "test:quick": "jest --bail --maxWorkers=2 --passWithNoTests",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "check:redis": "tsx scripts/check-redis.ts",
