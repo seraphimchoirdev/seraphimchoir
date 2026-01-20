@@ -50,7 +50,10 @@
       "Bash(npx claude-code-templates@latest --hook=development-tools/smart-formatting --yes)",
       "Bash(npx claude-code-templates@latest --hook=development-tools/change-tracker --yes)",
       "Bash(npx claude-code-templates@latest --setting=statusline/context-monitor --yes)",
-      "Bash(npx claude-code-templates@latest --setting=environment/development-utils --yes)"
+      "Bash(npx claude-code-templates@latest --setting=environment/development-utils --yes)",
+      "Bash(npx claude-code-templates@latest --skill=creative-design/frontend-design --yes)",
+      "Bash(npx claude-code-templates@latest --skill=development/senior-frontend --yes)",
+      "Bash(python .claude/skills/senior-frontend/scripts/component_generator.py:*)"
     ],
     "deny": [],
     "ask": []
