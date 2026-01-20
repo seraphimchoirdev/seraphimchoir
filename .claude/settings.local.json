@@ -53,7 +53,9 @@
       "Bash(npx claude-code-templates@latest --setting=environment/development-utils --yes)",
       "Bash(npx claude-code-templates@latest --skill=creative-design/frontend-design --yes)",
       "Bash(npx claude-code-templates@latest --skill=development/senior-frontend --yes)",
-      "Bash(python .claude/skills/senior-frontend/scripts/component_generator.py:*)"
+      "Bash(python .claude/skills/senior-frontend/scripts/component_generator.py:*)",
+      "Bash(npx claude-code-templates@latest --skill=development/senior-backend --yes)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []
