@@ -2,7 +2,10 @@
   "env": {
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "8000",
     "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1",
-    "DISABLE_COST_WARNINGS": "1"
+    "DISABLE_COST_WARNINGS": "1",
+    "USE_BUILTIN_RIPGREP": "1",
+    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
+    "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "0"
   },
   "permissions": {
     "allow": [
@@ -46,7 +49,8 @@
       "Bash(npx claude-code-templates@latest --hook=development-tools/lint-on-save --yes)",
       "Bash(npx claude-code-templates@latest --hook=development-tools/smart-formatting --yes)",
       "Bash(npx claude-code-templates@latest --hook=development-tools/change-tracker --yes)",
-      "Bash(npx claude-code-templates@latest --setting=statusline/context-monitor --yes)"
+      "Bash(npx claude-code-templates@latest --setting=statusline/context-monitor --yes)",
+      "Bash(npx claude-code-templates@latest --setting=environment/development-utils --yes)"
     ],
     "deny": [],
     "ask": []
