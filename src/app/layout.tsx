@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   description: "새문안교회 새로핌찬양대를 위한 종합 플랫폼",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon-192x192.png",
-    shortcut: "/icon-192x192.png",
-    apple: "/icon-512x512.png",
+    icon: "/icon-192x192.png?v=2",
+    shortcut: "/icon-192x192.png?v=2",
+    apple: "/icon-512x512.png?v=2",
   },
   appleWebApp: {
     capable: true,

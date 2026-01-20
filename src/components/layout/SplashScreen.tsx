@@ -105,7 +105,7 @@ export default function SplashScreen() {
                 }`}>
                 {!imageError ? (
                     <Image
-                        src="/icon-512x512.png"
+                        src="/icon-512x512.png?v=2"
                         alt="새로핌:On"
                         width={512}
                         height={512}
