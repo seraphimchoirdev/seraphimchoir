@@ -55,7 +55,8 @@
       "Bash(npx claude-code-templates@latest --skill=development/senior-frontend --yes)",
       "Bash(python .claude/skills/senior-frontend/scripts/component_generator.py:*)",
       "Bash(npx claude-code-templates@latest --skill=development/senior-backend --yes)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(npx claude-code-templates@latest:*)"
     ],
     "deny": [],
     "ask": []
