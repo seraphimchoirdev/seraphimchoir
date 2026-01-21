@@ -1,13 +1,18 @@
 {
+  "env": {
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "8000",
+    "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1",
+    "DISABLE_COST_WARNINGS": "1",
+    "USE_BUILTIN_RIPGREP": "1",
+    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
+    "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "0"
+  },
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nchore(claude): autoApprove 설정에 git 및 파일 명령어 추가\n\nGit 워크플로우와 파일 작업을 위한 bash 명령어를 자동 승인 목록에 추가:\n- git checkout, git merge\n- 파일 작업 명령어\n- maskable 아이콘 생성 스크립트\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
       "Bash(npx tsc:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat(security): 종합 보안 강화 구현\n\nXSS, SQL Injection, Clickjacking 등 주요 웹 보안 취약점에 대한\n다층 방어 체계를 구축했습니다.\n\n**주요 변경사항:**\n\n1. **보안 헤더 추가 (next.config.ts)**\n   - Content-Security-Policy (CSP): XSS 공격 영향 최소화\n   - X-Frame-Options: Clickjacking 공격 방어\n   - X-Content-Type-Options: MIME 타입 스니핑 차단\n   - Referrer-Policy: 프라이버시 보호\n   - Permissions-Policy: 불필요한 브라우저 기능 비활성화\n\n2. **Input Sanitization 유틸리티 (src/lib/security/input-sanitizer.ts)**\n   - HTML 태그 제거 (XSS 방어)\n   - SQL Injection 위험 문자 제거\n   - 이메일/URL/전화번호 검증 및 정규화\n   - 텍스트 길이 제한 (DDoS 방어)\n   - Zod transform과 통합 가능한 sanitizer 체인\n\n3. **API Route에 Sanitization 적용**\n   - members API에 입력 검증 및 정제 추가\n   - Zod 스키마에 transform을 통한 자동 sanitization\n   - 모든 사용자 입력이 저장 전 정제됨\n\n4. **보안 문서 작성 (docs/SECURITY.md)**\n   - SQL Injection 방어 가이드\n   - XSS 방어 전략\n   - CSRF 방어 설명\n   - Rate Limiting 구현 가이드 (Upstash Redis)\n   - 프로덕션 배포 체크리스트\n\n**보안 개선 효과:**\n- ✅ XSS 공격: 다층 방어 (React auto-escape + sanitization + CSP)\n- ✅ SQL Injection: Supabase + 추가 sanitization\n- ✅ Clickjacking: X-Frame-Options로 차단\n- ✅ MIME 스니핑: X-Content-Type-Options로 방어\n- ⚠️ Rate Limiting: 문서화 완료, 프로덕션에서 Upstash 권장\n\n**다음 단계:**\n프로덕션 배포 시 Upstash Redis를 사용한 Rate Limiting 구현 권장\n(docs/SECURITY.md 참고)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(npx @sentry/wizard@latest:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat(monitoring): Sentry 에러 트래킹 시스템 구축\n\n프로덕션 환경에서 에러를 자동으로 Sentry에 리포트하여 빠른 이슈 파악 및\n해결이 가능하도록 Sentry 통합을 완료했습니다.\n\n**주요 구현사항:**\n\n1. **Sentry 패키지 설치** (@sentry/nextjs)\n   - Next.js 16 공식 지원\n   - 클라이언트, 서버, Edge Runtime 모두 지원\n\n2. **Sentry 설정 파일 생성**\n   - `sentry.client.config.ts` - 브라우저 에러 트래킹\n   - `sentry.server.config.ts` - 서버/API 에러 트래킹\n   - `sentry.edge.config.ts` - Edge Runtime 에러 트래킹\n   - `instrumentation.ts` - Next.js 16 계측 설정\n\n3. **Next.js 통합** (`next.config.ts`)\n   - withSentryConfig로 Next.js 설정 래핑\n   - 소스맵 업로드 설정 (프로덕션 디버깅용)\n   - CSP 헤더에 Sentry 도메인 추가\n\n4. **민감한 정보 필터링**\n   - Authorization 헤더, 쿠키 자동 제거\n   - 환경 변수 마스킹\n   - 비밀번호, 토큰 등 민감 필드 제거\n   - 개발 환경에서는 콘솔에만 출력 (전송 안 함)\n\n5. **성능 모니터링 옵션**\n   - 트레이스 샘플링 (프로덕션 10-20%)\n   - 세션 재생 (에러 발생 시 100%, 일반 10%)\n   - HTTP 요청 추적\n   - 브라우저 성능 추적\n\n6. **환경 변수 설정**\n   - `.env.example` 업데이트\n   - `env-validation.ts`에 Sentry 환경 변수 검증 추가\n   - `.gitignore`에 .env.example 제외 규칙 추가\n\n**프로덕션 배포 시 필요한 작업:**\n\n1. Sentry 계정 생성 (https://sentry.io/signup/)\n2. 새 프로젝트 생성 (Platform: Next.js 선택)\n3. DSN 복사 → `.env.local` 또는 Vercel 환경 변수에 설정:\n   ```\n   NEXT_PUBLIC_SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx\n   ```\n4. (선택) 소스맵 업로드용 Auth Token 생성 및 설정:\n   ```\n   SENTRY_ORG=your-org\n   SENTRY_PROJECT=seraphimon\n   SENTRY_AUTH_TOKEN=sntrys_xxx\n   ```\n\n**주요 기능:**\n✅ 자동 에러 캡처 (클라이언트/서버/Edge 모두)\n✅ 성능 모니터링 (API 응답 시간, 페이지 로딩 속도)\n✅ 소스맵 지원 (프로덕션 코드 디버깅)\n✅ 사용자 컨텍스트 (에러 발생 시 사용자 정보 첨부)\n✅ Release 추적 (Git 커밋 기반 버전 관리)\n\n**의존성:**\n- @sentry/nextjs (v9 이상)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "WebSearch",
       "WebFetch(domain:docs.sentry.io)",
       "Bash(claude mcp add:*)",
@@ -34,7 +39,22 @@
       "Bash(npx claude-code-templates@latest --hook=pre-tool/update-search-year --yes)",
       "Bash(npx claude-code-templates@latest --hook=automation/dependency-checker --yes)",
       "Bash(npx claude-code-templates@latest --hook=automation/deployment-health-monitor --yes)",
-      "Bash(VERCEL_TOKEN=\"vcp_7RO4wgAbWpnPvVTKbNU5FVmGa5YwZJWGsxwnjrgCGwyTgto0H32ljyan\" curl -s -H \"Authorization: Bearer vcp_7RO4wgAbWpnPvVTKbNU5FVmGa5YwZJWGsxwnjrgCGwyTgto0H32ljyan\" \"https://api.vercel.com/v2/user\")"
+      "Bash(npx claude-code-templates@latest --hook=automation/simple-notifications --yes)",
+      "Bash(npx claude-code-templates@latest --hook=git-workflow/auto-git-add --yes)",
+      "Bash(npx claude-code-templates@latest --hook=git-workflow/smart-commit --yes)",
+      "Bash(npx claude-code-templates@latest --hook=development-tools/lint-on-save --yes)",
+      "Bash(npx claude-code-templates@latest --hook=development-tools/smart-formatting --yes)",
+      "Bash(npx claude-code-templates@latest --hook=development-tools/change-tracker --yes)",
+      "Bash(npx claude-code-templates@latest --setting=statusline/context-monitor --yes)",
+      "Bash(npx claude-code-templates@latest --setting=environment/development-utils --yes)",
+      "Bash(npx claude-code-templates@latest --skill=creative-design/frontend-design --yes)",
+      "Bash(npx claude-code-templates@latest --skill=development/senior-frontend --yes)",
+      "Bash(python .claude/skills/senior-frontend/scripts/component_generator.py:*)",
+      "Bash(npx claude-code-templates@latest --skill=development/senior-backend --yes)",
+      "Bash(python:*)",
+      "Bash(npx claude-code-templates@latest:*)",
+      "Bash(npm install:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []
@@ -74,6 +94,42 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.js || \"$CLAUDE_TOOL_FILE_PATH\" == *.ts || \"$CLAUDE_TOOL_FILE_PATH\" == *.jsx || \"$CLAUDE_TOOL_FILE_PATH\" == *.tsx ]]; then npx eslint \"$CLAUDE_TOOL_FILE_PATH\" --fix 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.py ]]; then pylint \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.rb ]]; then rubocop \"$CLAUDE_TOOL_FILE_PATH\" --auto-correct 2>/dev/null || true; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.js || \"$CLAUDE_TOOL_FILE_PATH\" == *.ts || \"$CLAUDE_TOOL_FILE_PATH\" == *.jsx || \"$CLAUDE_TOOL_FILE_PATH\" == *.tsx || \"$CLAUDE_TOOL_FILE_PATH\" == *.json || \"$CLAUDE_TOOL_FILE_PATH\" == *.css || \"$CLAUDE_TOOL_FILE_PATH\" == *.html ]]; then npx prettier --write \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.py ]]; then black \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.go ]]; then gofmt -w \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.rs ]]; then rustfmt \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; elif [[ \"$CLAUDE_TOOL_FILE_PATH\" == *.php ]]; then php-cs-fixer fix \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date '+%Y-%m-%d %H:%M:%S')] File modified: $CLAUDE_TOOL_FILE_PATH\" >> ~/.claude/changes.log"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date '+%Y-%m-%d %H:%M:%S')] File created: $CLAUDE_TOOL_FILE_PATH\" >> ~/.claude/changes.log"
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -100,5 +156,9 @@
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash -c 'input=$(cat); MODEL=$(echo \"$input\" | jq -r \".model.display_name\"); DIR=$(echo \"$input\" | jq -r \".workspace.current_dir\"); BRANCH=\"\"; if git rev-parse --git-dir >/dev/null 2>&1; then BRANCH=\" | 🌿 $(git branch --show-current 2>/dev/null)\"; fi; echo \"[$MODEL] 📁 ${DIR##*/}$BRANCH\"'"
   }
 }
