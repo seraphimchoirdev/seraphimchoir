@@ -25,8 +25,8 @@ async function generateMaskableIcon(size) {
   const outputIcon = path.join(publicDir, `icon-maskable-${size}x${size}.png`);
 
   // 안전 영역은 전체의 80% (가장자리 10%씩 패딩)
-  // 실제로는 약 65-70%로 더 여유를 두어 다양한 마스크에서 안전하게 표시
-  const safeZoneRatio = 0.70;
+  // PWA 공식 스펙 기준 80%
+  const safeZoneRatio = 0.80;
   const logoSize = Math.round(size * safeZoneRatio);
   const padding = Math.round((size - logoSize) / 2);
 
@@ -72,7 +72,7 @@ async function main() {
   console.log('🎨 Generating Maskable Icons for PWA\n');
   console.log('Source: icon-512x512.png');
   console.log('Background: White (#FFFFFF)');
-  console.log('Safe zone: 70% (extra margin for various mask shapes)\n');
+  console.log('Safe zone: 80% (PWA standard safe zone)\n');
 
   // 192x192와 512x512 두 가지 크기 생성
   await generateMaskableIcon(192);
