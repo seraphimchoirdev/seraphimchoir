@@ -10,12 +10,9 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nchore(claude): autoApprove 설정에 git 및 파일 명령어 추가\n\nGit 워크플로우와 파일 작업을 위한 bash 명령어를 자동 승인 목록에 추가:\n- git checkout, git merge\n- 파일 작업 명령어\n- maskable 아이콘 생성 스크립트\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
       "Bash(npx tsc:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat(security): 종합 보안 강화 구현\n\nXSS, SQL Injection, Clickjacking 등 주요 웹 보안 취약점에 대한\n다층 방어 체계를 구축했습니다.\n\n**주요 변경사항:**\n\n1. **보안 헤더 추가 (next.config.ts)**\n   - Content-Security-Policy (CSP): XSS 공격 영향 최소화\n   - X-Frame-Options: Clickjacking 공격 방어\n   - X-Content-Type-Options: MIME 타입 스니핑 차단\n   - Referrer-Policy: 프라이버시 보호\n   - Permissions-Policy: 불필요한 브라우저 기능 비활성화\n\n2. **Input Sanitization 유틸리티 (src/lib/security/input-sanitizer.ts)**\n   - HTML 태그 제거 (XSS 방어)\n   - SQL Injection 위험 문자 제거\n   - 이메일/URL/전화번호 검증 및 정규화\n   - 텍스트 길이 제한 (DDoS 방어)\n   - Zod transform과 통합 가능한 sanitizer 체인\n\n3. **API Route에 Sanitization 적용**\n   - members API에 입력 검증 및 정제 추가\n   - Zod 스키마에 transform을 통한 자동 sanitization\n   - 모든 사용자 입력이 저장 전 정제됨\n\n4. **보안 문서 작성 (docs/SECURITY.md)**\n   - SQL Injection 방어 가이드\n   - XSS 방어 전략\n   - CSRF 방어 설명\n   - Rate Limiting 구현 가이드 (Upstash Redis)\n   - 프로덕션 배포 체크리스트\n\n**보안 개선 효과:**\n- ✅ XSS 공격: 다층 방어 (React auto-escape + sanitization + CSP)\n- ✅ SQL Injection: Supabase + 추가 sanitization\n- ✅ Clickjacking: X-Frame-Options로 차단\n- ✅ MIME 스니핑: X-Content-Type-Options로 방어\n- ⚠️ Rate Limiting: 문서화 완료, 프로덕션에서 Upstash 권장\n\n**다음 단계:**\n프로덕션 배포 시 Upstash Redis를 사용한 Rate Limiting 구현 권장\n(docs/SECURITY.md 참고)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(npx @sentry/wizard@latest:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat(monitoring): Sentry 에러 트래킹 시스템 구축\n\n프로덕션 환경에서 에러를 자동으로 Sentry에 리포트하여 빠른 이슈 파악 및\n해결이 가능하도록 Sentry 통합을 완료했습니다.\n\n**주요 구현사항:**\n\n1. **Sentry 패키지 설치** (@sentry/nextjs)\n   - Next.js 16 공식 지원\n   - 클라이언트, 서버, Edge Runtime 모두 지원\n\n2. **Sentry 설정 파일 생성**\n   - `sentry.client.config.ts` - 브라우저 에러 트래킹\n   - `sentry.server.config.ts` - 서버/API 에러 트래킹\n   - `sentry.edge.config.ts` - Edge Runtime 에러 트래킹\n   - `instrumentation.ts` - Next.js 16 계측 설정\n\n3. **Next.js 통합** (`next.config.ts`)\n   - withSentryConfig로 Next.js 설정 래핑\n   - 소스맵 업로드 설정 (프로덕션 디버깅용)\n   - CSP 헤더에 Sentry 도메인 추가\n\n4. **민감한 정보 필터링**\n   - Authorization 헤더, 쿠키 자동 제거\n   - 환경 변수 마스킹\n   - 비밀번호, 토큰 등 민감 필드 제거\n   - 개발 환경에서는 콘솔에만 출력 (전송 안 함)\n\n5. **성능 모니터링 옵션**\n   - 트레이스 샘플링 (프로덕션 10-20%)\n   - 세션 재생 (에러 발생 시 100%, 일반 10%)\n   - HTTP 요청 추적\n   - 브라우저 성능 추적\n\n6. **환경 변수 설정**\n   - `.env.example` 업데이트\n   - `env-validation.ts`에 Sentry 환경 변수 검증 추가\n   - `.gitignore`에 .env.example 제외 규칙 추가\n\n**프로덕션 배포 시 필요한 작업:**\n\n1. Sentry 계정 생성 (https://sentry.io/signup/)\n2. 새 프로젝트 생성 (Platform: Next.js 선택)\n3. DSN 복사 → `.env.local` 또는 Vercel 환경 변수에 설정:\n   ```\n   NEXT_PUBLIC_SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx\n   ```\n4. (선택) 소스맵 업로드용 Auth Token 생성 및 설정:\n   ```\n   SENTRY_ORG=your-org\n   SENTRY_PROJECT=seraphimon\n   SENTRY_AUTH_TOKEN=sntrys_xxx\n   ```\n\n**주요 기능:**\n✅ 자동 에러 캡처 (클라이언트/서버/Edge 모두)\n✅ 성능 모니터링 (API 응답 시간, 페이지 로딩 속도)\n✅ 소스맵 지원 (프로덕션 코드 디버깅)\n✅ 사용자 컨텍스트 (에러 발생 시 사용자 정보 첨부)\n✅ Release 추적 (Git 커밋 기반 버전 관리)\n\n**의존성:**\n- @sentry/nextjs (v9 이상)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "WebSearch",
       "WebFetch(domain:docs.sentry.io)",
       "Bash(claude mcp add:*)",
@@ -42,7 +39,6 @@
       "Bash(npx claude-code-templates@latest --hook=pre-tool/update-search-year --yes)",
       "Bash(npx claude-code-templates@latest --hook=automation/dependency-checker --yes)",
       "Bash(npx claude-code-templates@latest --hook=automation/deployment-health-monitor --yes)",
-      "Bash(VERCEL_TOKEN=\"vcp_7RO4wgAbWpnPvVTKbNU5FVmGa5YwZJWGsxwnjrgCGwyTgto0H32ljyan\" curl -s -H \"Authorization: Bearer vcp_7RO4wgAbWpnPvVTKbNU5FVmGa5YwZJWGsxwnjrgCGwyTgto0H32ljyan\" \"https://api.vercel.com/v2/user\")",
       "Bash(npx claude-code-templates@latest --hook=automation/simple-notifications --yes)",
       "Bash(npx claude-code-templates@latest --hook=git-workflow/auto-git-add --yes)",
       "Bash(npx claude-code-templates@latest --hook=git-workflow/smart-commit --yes)",
@@ -56,7 +52,9 @@
       "Bash(python .claude/skills/senior-frontend/scripts/component_generator.py:*)",
       "Bash(npx claude-code-templates@latest --skill=development/senior-backend --yes)",
       "Bash(python:*)",
-      "Bash(npx claude-code-templates@latest:*)"
+      "Bash(npx claude-code-templates@latest:*)",
+      "Bash(npm install:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []
@@ -94,51 +92,6 @@
             "type": "command",
             "command": "bash -c 'input=$(cat); COMMAND=$(echo \"$input\" | jq -r \".tool_input.command // empty\"); SUCCESS=$(echo \"$input\" | jq -r \".tool_response.success // false\"); if [[ \"$COMMAND\" =~ (vercel|deploy|build) ]] && [ -n \"$VERCEL_TOKEN\" ] && [ -n \"$VERCEL_PROJECT_ID\" ]; then echo \"🏥 Deployment Health Monitor: Checking deployment status...\"; DEPLOY_DATA=$(curl -s -H \"Authorization: Bearer $VERCEL_TOKEN\" \"https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&limit=5\" 2>/dev/null); if [ -n \"$DEPLOY_DATA\" ] && [ \"$DEPLOY_DATA\" != \"null\" ]; then RECENT_DEPLOYMENTS=$(echo \"$DEPLOY_DATA\" | jq -r \".deployments[]\"); TOTAL_DEPLOYMENTS=$(echo \"$DEPLOY_DATA\" | jq \".deployments | length\"); SUCCESS_COUNT=0; ERROR_COUNT=0; BUILDING_COUNT=0; echo \"📊 Recent deployment analysis ($TOTAL_DEPLOYMENTS deployments):\"; echo \"$DEPLOY_DATA\" | jq -r \".deployments[] | \\\"State: \\(.state) | Created: \\(.created | todateiso8601) | URL: \\(.url // \\\"N/A\\\")\\\"\"; for state in $(echo \"$DEPLOY_DATA\" | jq -r \".deployments[].state\"); do case \"$state\" in READY) ((SUCCESS_COUNT++));; ERROR|CANCELED) ((ERROR_COUNT++));; BUILDING|QUEUED) ((BUILDING_COUNT++));; esac; done; SUCCESS_RATE=$(( SUCCESS_COUNT * 100 / TOTAL_DEPLOYMENTS )); echo \"\" ; echo \"📈 Deployment Health Summary:\"; echo \"✅ Successful: $SUCCESS_COUNT/$TOTAL_DEPLOYMENTS ($SUCCESS_RATE%)\"; echo \"❌ Failed: $ERROR_COUNT/$TOTAL_DEPLOYMENTS\"; echo \"🔄 In Progress: $BUILDING_COUNT/$TOTAL_DEPLOYMENTS\"; if [ $ERROR_COUNT -gt 0 ]; then echo \"\" >&2; echo \"🚨 DEPLOYMENT HEALTH ALERT!\" >&2; echo \"Recent failures detected: $ERROR_COUNT failed deployments\" >&2; echo \"Success rate: $SUCCESS_RATE%\" >&2; echo \"\" >&2; echo \"🔍 Failed deployments:\" >&2; echo \"$DEPLOY_DATA\" | jq -r \".deployments[] | select(.state == \\\"ERROR\\\" or .state == \\\"CANCELED\\\") | \\\"❌ \\(.created | todateiso8601): \\(.url // \\\"No URL\\\")\\\"\" >&2; echo \"\" >&2; echo \"💡 Troubleshooting steps:\" >&2; echo \"• Check Vercel dashboard for detailed error logs\" >&2; echo \"• Review recent code changes\" >&2; echo \"• Verify environment variables are set\" >&2; echo \"• Check for build script errors\" >&2; if [ $SUCCESS_RATE -lt 50 ]; then echo \"🚨 CRITICAL: Success rate below 50%!\" >&2; exit 2; fi; elif [ $SUCCESS_RATE -lt 80 ]; then echo \"⚠️ Warning: Success rate below 80%\"; fi; if [ $BUILDING_COUNT -gt 2 ]; then echo \"⏳ Multiple builds in progress ($BUILDING_COUNT)\"; echo \"💡 This might indicate build queue issues\"; fi; LATEST_DEPLOY=$(echo \"$DEPLOY_DATA\" | jq -r \".deployments[0]\"); LATEST_STATE=$(echo \"$LATEST_DEPLOY\" | jq -r \".state\"); LATEST_URL=$(echo \"$LATEST_DEPLOY\" | jq -r \".url // empty\"); LATEST_CREATED=$(echo \"$LATEST_DEPLOY\" | jq -r \".created\"); if [ -n \"$LATEST_CREATED\" ] && [ \"$LATEST_CREATED\" != \"null\" ]; then MINUTES_AGO=$(( ($(date +%s) - $LATEST_CREATED/1000) / 60 )); echo \"🕒 Latest deployment: $LATEST_STATE ($MINUTES_AGO minutes ago)\"; if [ -n \"$LATEST_URL\" ]; then echo \"🌐 URL: https://$LATEST_URL\"; fi; fi; echo \"✅ Deployment health check completed\"; else echo \"❌ Unable to fetch deployment data from Vercel API\"; fi; else echo \"ℹ️ Deployment health monitoring skipped (not a deployment command or missing tokens)\"; fi'",
             "timeout": 30
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if command -v osascript >/dev/null 2>&1; then osascript -e 'display notification \"Tool: $CLAUDE_TOOL_NAME completed\" with title \"Claude Code\"'; elif command -v notify-send >/dev/null 2>&1; then notify-send 'Claude Code' \"Tool: $CLAUDE_TOOL_NAME completed\"; fi"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [[ -f package.json ]] && npm run test:quick --silent >/dev/null 2>&1; then echo '✅ Tests passed'; else echo '⚠️ Tests may need attention'; fi"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|MultiEdit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if [[ -n \"$CLAUDE_TOOL_FILE_PATH\" ]] && git rev-parse --git-dir >/dev/null 2>&1; then git add \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; fi"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if git rev-parse --git-dir >/dev/null 2>&1 && [[ -n \"$CLAUDE_TOOL_FILE_PATH\" ]]; then git add \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null; CHANGED_LINES=$(git diff --cached --numstat \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null | awk '{print $1+$2}'); if [[ $CHANGED_LINES -gt 0 ]]; then FILENAME=$(basename \"$CLAUDE_TOOL_FILE_PATH\"); if [[ $CHANGED_LINES -lt 10 ]]; then SIZE=\"minor\"; elif [[ $CHANGED_LINES -lt 50 ]]; then SIZE=\"moderate\"; else SIZE=\"major\"; fi; MSG=\"Update $FILENAME: $SIZE changes ($CHANGED_LINES lines)\"; git commit -m \"$MSG\" \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; fi; fi"
-          }
-        ]
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if git rev-parse --git-dir >/dev/null 2>&1 && [[ -n \"$CLAUDE_TOOL_FILE_PATH\" ]]; then git add \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null; FILENAME=$(basename \"$CLAUDE_TOOL_FILE_PATH\"); git commit -m \"Add new file: $FILENAME\" \"$CLAUDE_TOOL_FILE_PATH\" 2>/dev/null || true; fi"
           }
         ]
       },
@@ -206,6 +159,6 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "python3 .claude/scripts/context-monitor.py"
+    "command": "bash -c 'input=$(cat); MODEL=$(echo \"$input\" | jq -r \".model.display_name\"); DIR=$(echo \"$input\" | jq -r \".workspace.current_dir\"); BRANCH=\"\"; if git rev-parse --git-dir >/dev/null 2>&1; then BRANCH=\" | 🌿 $(git branch --show-current 2>/dev/null)\"; fi; echo \"[$MODEL] 📁 ${DIR##*/}$BRANCH\"'"
   }
 }

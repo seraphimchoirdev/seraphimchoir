@@ -110,7 +110,6 @@ export default function SplashScreen() {
                         width={512}
                         height={512}
                         className="w-48 h-48 object-contain md:w-64 md:h-64"
-                        priority
                         onLoad={handleImageLoad}
                         onError={handleImageError}
                         unoptimized={process.env.NODE_ENV === 'production'}
