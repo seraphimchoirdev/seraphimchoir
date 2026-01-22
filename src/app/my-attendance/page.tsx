@@ -8,7 +8,7 @@ import { useUpcomingVoteDeadlines, getTimeUntilDeadline } from '@/hooks/useVoteD
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Calendar, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
-import Navigation from '@/components/layout/Navigation';
+import AppShell from '@/components/layout/AppShell';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'MyAttendancePage' });
@@ -144,9 +144,9 @@ export default function MyAttendancePage() {
   const isLoading = schedulesLoading || deadlinesLoading || attendancesLoading;
 
   return (
-    <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-      <Navigation />
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <AppShell>
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
             <Calendar className="h-6 w-6" />
@@ -256,8 +256,9 @@ export default function MyAttendancePage() {
             <li>• 마감 후에는 파트장이나 관리자에게 문의해주세요.</li>
             <li>• 선택하지 않으면 기본적으로 &quot;가능&quot;으로 처리됩니다.</li>
           </ul>
+          </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

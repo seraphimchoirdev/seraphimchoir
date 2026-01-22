@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
   reactCompiler: {
     compilationMode: 'annotation',
   },
+  // 로컬 이미지 쿼리 스트링 허용 (캐시 버스팅용)
+  images: {
+    localPatterns: [
+      {
+        pathname: '/**',
+      },
+    ],
+  },
   // @napi-rs/canvas는 native Node.js 모듈이라 번들링에서 제외
   serverExternalPackages: ['@napi-rs/canvas'],
 
@@ -43,7 +51,7 @@ const nextConfig: NextConfig = {
       ? [
           "default-src 'self'",
           "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // 개발: Next.js 개발 도구 지원
-          "style-src 'self' 'unsafe-inline'", // 개발: Tailwind JIT 지원
+          "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net", // 개발: Tailwind JIT + 외부 폰트 지원
           "img-src 'self' data: https://*.supabase.co blob:",
           "font-src 'self' data:",
           "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.upstash.com",

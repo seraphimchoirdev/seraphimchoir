@@ -10,7 +10,7 @@ import { createLogger } from '@/lib/logger';
 const logger = createLogger({ prefix: 'Navigation' });
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { Menu, X, User, Mail, LogOut, ChevronDown } from 'lucide-react';
+import { User, Mail, LogOut, ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -36,7 +36,6 @@ export default function Navigation() {
   const pathname = usePathname();
   const { user, profile, signOut } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const mounted = useMounted();
 
@@ -216,98 +215,54 @@ export default function Navigation() {
               )}
             </div>
 
-            {/* 모바일/태블릿 메뉴 버튼 - lg(1024px) 미만에서 표시 */}
+            {/* 모바일 프로필 Avatar - lg(1024px) 미만에서 표시 */}
             <div className="flex lg:hidden items-center">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                aria-label="메뉴 토글"
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </Button>
+              {mounted && user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 p-2 rounded-[var(--radius-base)] hover:bg-[var(--color-background-tertiary)] transition-colors cursor-pointer">
+                      <div className="w-8 h-8 rounded-full bg-[var(--color-primary-100)] flex items-center justify-center">
+                        <User className="h-4 w-4 text-[var(--color-primary-600)]" />
+                      </div>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64">
+                    {/* Profile Header */}
+                    <div className="px-3 py-3 border-b border-[var(--color-border-default)]">
+                      <p className="font-semibold">{profile?.name || '사용자'}</p>
+                      <p className="text-xs text-[var(--color-text-secondary)] truncate mt-0.5">
+                        {user.email}
+                      </p>
+                      <Badge variant={profile?.role ? 'default' : 'secondary'} className="mt-2 text-xs">
+                        {profile?.role ? RoleLabels[profile.role as UserRole] : '역할 미지정'}
+                      </Badge>
+                    </div>
+                    {/* MyPage Link */}
+                    {isMemberLinked() && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/mypage" className="cursor-pointer">
+                          <User className="h-4 w-4 mr-2" />
+                          마이페이지
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {/* Logout */}
+                    <DropdownMenuItem
+                      onClick={() => setIsLogoutDialogOpen(true)}
+                      className="text-[var(--color-error-600)] hover:bg-[var(--color-error-50)] cursor-pointer"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      로그아웃
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">로그인</Button>
+                </Link>
+              )}
             </div>
           </div>
-
-          {/* 모바일/태블릿 메뉴 - lg(1024px) 미만에서 표시 */}
-          {mobileMenuOpen && (
-            <div className="lg:hidden py-4 border-t border-[var(--color-border-subtle)] animate-in slide-in-from-top-2">
-              <div className="space-y-3">
-                {navLinks.map((link) => {
-                  const isActive = pathname.startsWith(link.href);
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`block px-3 py-2 rounded-[var(--radius-base)] text-base font-medium transition-colors ${isActive
-                        ? 'bg-[var(--color-primary-50)] text-[var(--color-primary-600)]'
-                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-text-primary)]'
-                        }`}
-                    >
-                      {link.label}
-                    </Link>
-                  );
-                })}
-                <div className="pt-3 border-t border-[var(--color-border-subtle)]">
-                  {mounted && user ? (
-                    <>
-                      {/* Profile Card */}
-                      <div className="px-3 py-3 bg-[var(--color-background-secondary)] rounded-[var(--radius-base)] mx-3 mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[var(--color-primary-100)] flex items-center justify-center flex-shrink-0">
-                            <User className="h-5 w-5 text-[var(--color-primary-600)]" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{profile?.name || '사용자'}</p>
-                            <p className="text-xs text-[var(--color-text-tertiary)] truncate">{user.email}</p>
-                          </div>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <Badge variant={profile?.role ? 'default' : 'secondary'} className="text-xs">
-                            {profile?.role ? RoleLabels[profile.role as UserRole] : '역할 미지정'}
-                          </Badge>
-                          {profile?.linked_member_id && (
-                            <Badge variant={profile.link_status === 'approved' ? 'success' : 'warning'} className="text-xs">
-                              대원 {profile.link_status === 'approved' ? '연결됨' : '대기중'}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      {/* Logout Button */}
-                      <div className="px-3 pt-2">
-                        <Button
-                          onClick={() => setIsLogoutDialogOpen(true)}
-                          disabled={isLoggingOut}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-center border-[var(--color-border-default)] hover:bg-[var(--color-error-50)] hover:text-[var(--color-error-600)] hover:border-[var(--color-error-200)]"
-                        >
-                          {isLoggingOut ? (
-                            <>
-                              <Spinner size="sm" className="mr-2" />
-                              로그아웃 중...
-                            </>
-                          ) : (
-                            <>
-                              <LogOut className="h-4 w-4 mr-2" />
-                              로그아웃
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="px-3 py-2">
-                      <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="ghost" size="sm" className="w-full justify-start">로그인</Button>
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </nav>
 

@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { Spinner } from '@/components/ui/spinner';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'HomePage' });
@@ -27,13 +26,8 @@ export default function Home() {
     }
   }, [isAuthenticated, hasHydrated, router]);
 
-  // 항상 로딩 표시 (리다이렉트 전까지)
+  // 스플래시 스크린이 표시되는 동안 빈 화면 유지 (스플래시가 덮고 있음)
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]" suppressHydrationWarning>
-      <div className="text-center">
-        <Spinner size="lg" variant="default" />
-        <p className="mt-4 text-[var(--color-text-secondary)] body-base">로딩 중...</p>
-      </div>
-    </div>
+    <div className="min-h-screen bg-white" suppressHydrationWarning />
   );
 }
