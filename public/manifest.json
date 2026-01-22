@@ -16,40 +16,16 @@
   ],
   "icons": [
     {
-      "src": "/icon-192x192.png?v=2",
+      "src": "/icon-maskable-192x192.png?v=3",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "/icon-512x512.png?v=2",
+      "src": "/icon-maskable-512x512.png?v=3",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-maskable-192x192.png?v=2",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-maskable-512x512.png?v=2",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/splash-icon-192x192.png?v=2",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/splash-icon-512x512.png?v=2",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
@@ -60,7 +36,7 @@
       "url": "/schedules",
       "icons": [
         {
-          "src": "/icon-192x192.png?v=2",
+          "src": "/icon-maskable-192x192.png?v=3",
           "sizes": "192x192"
         }
       ]
@@ -72,7 +48,7 @@
       "url": "/arrangements",
       "icons": [
         {
-          "src": "/icon-192x192.png?v=2",
+          "src": "/icon-maskable-192x192.png?v=3",
           "sizes": "192x192"
         }
       ]
