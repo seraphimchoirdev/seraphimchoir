@@ -189,15 +189,13 @@ export default function Navigation() {
                       </div>
                     )}
                     <DropdownMenuSeparator />
-                    {/* MyPage Link */}
-                    {isMemberLinked() && (
-                      <DropdownMenuItem asChild>
-                        <Link href="/mypage" className="cursor-pointer">
-                          <User className="h-4 w-4 mr-2" />
-                          마이페이지
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
+                    {/* MyPage Link - 모든 로그인 사용자 접근 가능 */}
+                    <DropdownMenuItem asChild>
+                      <Link href="/mypage" className="cursor-pointer">
+                        <User className="h-4 w-4 mr-2" />
+                        마이페이지
+                      </Link>
+                    </DropdownMenuItem>
                     {/* Logout */}
                     <DropdownMenuItem
                       onClick={() => setIsLogoutDialogOpen(true)}
@@ -237,15 +235,13 @@ export default function Navigation() {
                         {profile?.role ? RoleLabels[profile.role as UserRole] : '역할 미지정'}
                       </Badge>
                     </div>
-                    {/* MyPage Link */}
-                    {isMemberLinked() && (
-                      <DropdownMenuItem asChild>
-                        <Link href="/mypage" className="cursor-pointer">
-                          <User className="h-4 w-4 mr-2" />
-                          마이페이지
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
+                    {/* MyPage Link - 모든 로그인 사용자 접근 가능 */}
+                    <DropdownMenuItem asChild>
+                      <Link href="/mypage" className="cursor-pointer">
+                        <User className="h-4 w-4 mr-2" />
+                        마이페이지
+                      </Link>
+                    </DropdownMenuItem>
                     {/* Logout */}
                     <DropdownMenuItem
                       onClick={() => setIsLogoutDialogOpen(true)}
