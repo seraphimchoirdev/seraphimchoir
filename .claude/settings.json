@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "pattern": "git push.*main|git push origin main",
+        "command": ".claude/hooks/check-vercel-deployment.sh"
+      }
+    ]
+  }
+}
