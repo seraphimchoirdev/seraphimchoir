@@ -1,6 +1,6 @@
 'use client';
 
-import Navigation from '@/components/layout/Navigation';
+import AppShell from '@/components/layout/AppShell';
 import DashboardStats from '@/components/features/dashboard/DashboardStats';
 import QuickActions from '@/components/features/dashboard/QuickActions';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,10 +9,8 @@ export default function DashboardPage() {
     const { profile } = useAuth();
 
     return (
-        <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-            <Navigation />
-
-            <div className="py-8 px-4 sm:px-6 lg:px-8">
+        <AppShell>
+            <div className="min-h-screen bg-[var(--color-background-tertiary)] py-8 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-7xl mx-auto space-y-8">
                     {/* 환영 메시지 */}
                     <div>
@@ -81,6 +79,6 @@ export default function DashboardPage() {
                     </section>
                 </div>
             </div>
-        </div>
+        </AppShell>
     );
 }

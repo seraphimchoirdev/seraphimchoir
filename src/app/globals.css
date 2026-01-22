@@ -261,6 +261,26 @@
 
 @layer utilities {
 
+  /* Safe Area Insets for iOS PWA */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .pb-safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  /* Bottom Navigation용 콘텐츠 패딩 */
+  .pb-bottom-nav {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0));
+  }
+
+  @media (min-width: 1024px) {
+    .pb-bottom-nav {
+      padding-bottom: 0;
+    }
+  }
+
   /* Screen reader only - 스크린 리더 전용 텍스트 */
   .sr-only {
     position: absolute;

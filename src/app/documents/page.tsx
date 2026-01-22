@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import Navigation from '@/components/layout/Navigation';
+import AppShell from '@/components/layout/AppShell';
 import { useAuth } from '@/hooks/useAuth';
 import {
   useDocuments,
@@ -68,27 +68,27 @@ export default function DocumentsPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-        <Navigation />
-        <div className="flex items-center justify-center py-20">
+      <AppShell>
+        <div className="min-h-screen bg-[var(--color-background-tertiary)] flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   if (!canView) {
     return (
-      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-        <Navigation />
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
-          <Alert variant="error">
-            <AlertDescription>
-              문서 아카이브에 접근할 권한이 없습니다.
-            </AlertDescription>
-          </Alert>
+      <AppShell>
+        <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+          <div className="container mx-auto px-4 py-8 max-w-2xl">
+            <Alert variant="error">
+              <AlertDescription>
+                문서 아카이브에 접근할 권한이 없습니다.
+              </AlertDescription>
+            </Alert>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
@@ -139,9 +139,9 @@ export default function DocumentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-      <Navigation />
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <AppShell>
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
@@ -356,8 +356,9 @@ export default function DocumentsPage() {
           </p>
         </div>
       )}
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }
 

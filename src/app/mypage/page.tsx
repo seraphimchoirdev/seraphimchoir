@@ -7,7 +7,7 @@ import { useMyProfile, useUpdateMyProfile } from '@/hooks/useMyProfile';
 import { usePWA } from '@/hooks/usePWA';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import Navigation from '@/components/layout/Navigation';
+import AppShell from '@/components/layout/AppShell';
 import {
   Loader2,
   User,
@@ -107,27 +107,28 @@ export default function MyPage() {
   // 대원 연결 안됨
   if (!isMemberLinked()) {
     return (
-      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-        <Navigation />
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              먼저 대원 연결이 필요합니다.{' '}
-              <a href="/member-link" className="underline">대원 연결 페이지로 이동</a>
-            </AlertDescription>
-          </Alert>
+      <AppShell>
+        <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+          <div className="container mx-auto px-4 py-8 max-w-2xl">
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                먼저 대원 연결이 필요합니다.{' '}
+                <a href="/member-link" className="underline">대원 연결 페이지로 이동</a>
+              </AlertDescription>
+            </Alert>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   const member = profile?.member;
 
   return (
-    <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-      <Navigation />
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <AppShell>
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
         {/* 헤더 */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
@@ -478,7 +479,8 @@ export default function MyPage() {
             </Button>
           </form>
         </div>
+        </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

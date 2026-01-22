@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import Navigation from '@/components/layout/Navigation';
+import AppShell from '@/components/layout/AppShell';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Shield } from 'lucide-react';
 import Link from 'next/link';
@@ -23,35 +23,35 @@ export default function AdminLayout({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-        <Navigation />
-        <div className="flex items-center justify-center py-20">
+      <AppShell>
+        <div className="min-h-screen bg-[var(--color-background-tertiary)] flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   // ADMIN 권한만 접근 가능
   if (!hasRole(['ADMIN'])) {
     return (
-      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-        <Navigation />
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
-          <Alert variant="error">
-            <AlertDescription className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              관리자 권한이 필요합니다. 이 페이지에 접근할 수 없습니다.
-            </AlertDescription>
-          </Alert>
+      <AppShell>
+        <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+          <div className="container mx-auto px-4 py-8 max-w-2xl">
+            <Alert variant="error">
+              <AlertDescription className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                관리자 권한이 필요합니다. 이 페이지에 접근할 수 없습니다.
+              </AlertDescription>
+            </Alert>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
 
       {/* 관리자 서브 네비게이션 */}
       <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)]">
@@ -86,8 +86,9 @@ export default function AdminLayout({
         </div>
       </div>
 
-      {/* 페이지 콘텐츠 */}
-      {children}
-    </div>
+        {/* 페이지 콘텐츠 */}
+        {children}
+      </div>
+    </AppShell>
   );
 }

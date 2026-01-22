@@ -7,7 +7,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import Navigation from '@/components/layout/Navigation';
+import AppShell from '@/components/layout/AppShell';
 import ArrangementList from '@/components/features/arrangements/ArrangementList';
 import ArrangementFilters from '@/components/features/arrangements/ArrangementFilters';
 import ArrangementPagination from '@/components/features/arrangements/ArrangementPagination';
@@ -123,10 +123,8 @@ function ArrangementsContent() {
     };
 
     return (
-        <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-            <Navigation />
-
-            <div className="py-8 px-4 sm:px-6 lg:px-8">
+        <AppShell>
+            <div className="min-h-screen bg-[var(--color-background-tertiary)] py-8 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-7xl mx-auto space-y-6">
                     {/* 헤더 */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -201,7 +199,7 @@ function ArrangementsContent() {
                     )}
                 </div>
             </div>
-        </div>
+        </AppShell>
     );
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Navigation from '@/components/layout/Navigation';
+import AppShell from '@/components/layout/AppShell';
 import AttendanceStatistics from '@/components/features/attendances/AttendanceStatistics';
 import MemberAttendanceStats from '@/components/features/attendances/MemberAttendanceStats';
 import StageStatistics from '@/components/features/arrangements/StageStatistics';
@@ -20,33 +20,33 @@ export default function StatisticsPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-        <Navigation />
-        <div className="flex items-center justify-center py-20">
+      <AppShell>
+        <div className="min-h-screen bg-[var(--color-background-tertiary)] flex items-center justify-center py-20">
           <Spinner size="lg" variant="default" />
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   if (!hasPermission) {
     return (
-      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-        <Navigation />
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
-          <Alert variant="error">
-            <AlertDescription>
-              출석 통계 페이지에 접근할 권한이 없습니다.
-            </AlertDescription>
-          </Alert>
+      <AppShell>
+        <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+          <div className="container mx-auto px-4 py-8 max-w-2xl">
+            <Alert variant="error">
+              <AlertDescription>
+                출석 통계 페이지에 접근할 권한이 없습니다.
+              </AlertDescription>
+            </Alert>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
 
       <div className="py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-6">
@@ -86,6 +86,7 @@ export default function StatisticsPage() {
           {activeTab === 'stage-stats' && <StageStatistics />}
         </div>
       </div>
-    </div>
+      </div>
+    </AppShell>
   );
 }

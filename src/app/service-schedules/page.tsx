@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import Navigation from '@/components/layout/Navigation';
+import AppShell from '@/components/layout/AppShell';
 import { QuarterSelector, QuarterlyCalendar, ServiceScheduleDialog, ServiceScheduleImporter } from '@/components/features/service-schedules';
 import EventDialog from '@/components/features/service-schedules/EventDialog';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
@@ -67,33 +67,33 @@ export default function ServiceSchedulesPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-        <Navigation />
-        <div className="flex items-center justify-center py-20">
+      <AppShell>
+        <div className="min-h-screen bg-[var(--color-background-tertiary)] flex items-center justify-center py-20">
           <Spinner size="lg" />
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   if (!hasPermission) {
     return (
-      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-        <Navigation />
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
-          <Alert variant="error">
-            <AlertDescription>
-              찬양대 일정 페이지에 접근할 권한이 없습니다.
-            </AlertDescription>
-          </Alert>
+      <AppShell>
+        <div className="min-h-screen bg-[var(--color-background-tertiary)]">
+          <div className="container mx-auto px-4 py-8 max-w-2xl">
+            <Alert variant="error">
+              <AlertDescription>
+                찬양대 일정 페이지에 접근할 권한이 없습니다.
+              </AlertDescription>
+            </Alert>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-      <Navigation />
+    <AppShell>
+      <div className="min-h-screen bg-[var(--color-background-tertiary)]">
 
       <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto space-y-6">
@@ -182,6 +182,7 @@ export default function ServiceSchedulesPage() {
           )}
         </div>
       </div>
+      </div>
 
       {/* 예배 일정 추가 다이얼로그 */}
       {canManageService && (
@@ -213,6 +214,6 @@ export default function ServiceSchedulesPage() {
           onSuccess={handleRefresh}
         />
       )}
-    </div>
+    </AppShell>
   );
 }
