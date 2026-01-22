@@ -65,7 +65,7 @@ export default function BottomNavigation() {
     { href: '/service-schedules', label: '찬양대 일정', icon: <Calendar className="h-5 w-5" />, show: true },
     { href: '/documents', label: '문서 아카이브', icon: <FileText className="h-5 w-5" />, show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF']) },
     { href: '/admin', label: '관리자 페이지', icon: <Settings className="h-5 w-5" />, show: hasRole(['ADMIN']) },
-    { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: isMemberLinked() },
+    { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: true }, // 모든 로그인 사용자 접근 가능
   ].filter(item => item.show);
 
   // 일반 대원용 메인 메뉴 (4개 + 더보기)
@@ -79,7 +79,7 @@ export default function BottomNavigation() {
   // 일반 대원용 더보기 메뉴
   const memberMoreNav: NavItem[] = [
     { href: '/documents', label: '문서 아카이브', icon: <FileText className="h-5 w-5" />, show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF']) },
-    { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: isMemberLinked() },
+    { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: true }, // 모든 로그인 사용자 접근 가능
   ].filter(item => item.show);
 
   const mainNav = isManager ? managerMainNav : memberMainNav;
