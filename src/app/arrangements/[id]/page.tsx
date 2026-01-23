@@ -25,7 +25,6 @@ const logger = createLogger({ prefix: 'ArrangementEditorPage' });
 
 import MemberSidebar from '@/components/features/seats/MemberSidebar';
 import SeatsGrid from '@/components/features/seats/SeatsGrid';
-import Navigation from '@/components/layout/Navigation';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ArrangementEditorPage({ params }: { params: Promise<{ id: string }> }) {
@@ -340,7 +339,6 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
     return (
         <div className="flex flex-col h-screen bg-[var(--color-background-primary)]">
-            <Navigation />
             <ArrangementHeader
                 arrangement={arrangement}
                 desktopCaptureRef={desktopCaptureRef}
