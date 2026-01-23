@@ -1,22 +1,24 @@
 
 'use client';
 
-import { useEffect, use, useState, useMemo, useRef, useCallback } from 'react';
+import { useEffect, use, useState, useMemo, useRef, useCallback, ReactNode } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Settings, ChevronUp, ChevronDown } from 'lucide-react';
+import { Settings, ChevronUp, ChevronDown, CheckCircle2, ArrowRight, Sparkles, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ArrangementHeader from '@/components/features/arrangements/ArrangementHeader';
 import GridSettingsPanel from '@/components/features/arrangements/GridSettingsPanel';
+import { WorkflowPanel, WorkflowStep } from '@/components/features/arrangements/workflow';
 import { useArrangement } from '@/hooks/useArrangements';
-import { useArrangementStore } from '@/store/arrangement-store';
+import { useArrangementStore, WORKFLOW_STEPS } from '@/store/arrangement-store';
 import { useUndoRedoShortcuts } from '@/hooks/useUndoRedoShortcuts';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
 import { useEmergencyUnavailable } from '@/hooks/useEmergencyUnavailable';
-import { useWorkflowAutoAdvance } from '@/hooks/useWorkflowAutoAdvance';
+import { useWorkflowAutoAdvance, useCompleteCurrentStep } from '@/hooks/useWorkflowAutoAdvance';
 import { DEFAULT_GRID_LAYOUT, GridLayout } from '@/types/grid';
 import { calculateGridLayoutFromSeats } from '@/lib/utils/gridUtils';
+import { recommendRowDistribution } from '@/lib/row-distribution-recommender';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'ArrangementEditorPage' });
@@ -35,7 +37,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     const canEmergencyEdit = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
     const { id } = use(params);
     const { data: arrangement, isLoading, error } = useArrangement(id);
-    const { setAssignments, setGridLayout, gridLayout, clearHistory, compactAllRows, resetWorkflow } = useArrangementStore();
+    const { setAssignments, setGridLayout, gridLayout, clearHistory, compactAllRows, resetWorkflow, workflow } = useArrangementStore();
 
     // 키보드 단축키 훅 초기화 (Ctrl+Z/Y for Undo/Redo)
     useUndoRedoShortcuts();
@@ -102,6 +104,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
     // 워크플로우 자동 진행 훅 (위자드 모드에서 단계 완료 조건 자동 감지)
     useWorkflowAutoAdvance(totalMembers, arrangement?.status ?? undefined);
+
+    // 대원 목록 표시 여부: 4단계(수동 배치 조정)에서만
+    const showMemberSidebar = workflow.currentStep === 4;
 
     // 배치표 상태 및 권한에 따른 읽기 전용 모드
     // - CONFIRMED 상태: 모두 읽기 전용
@@ -213,7 +218,112 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         );
     }
 
-
+    // ============================================
+    // 워크플로우 단계별 컨텐츠 렌더링
+    // ============================================
+    const renderWorkflowStepContent = (step: WorkflowStep): ReactNode => {
+        switch (step) {
+            case 1:
+                // AI 추천 분배 (그리드 설정 추천)
+                return (
+                    <div className="space-y-3">
+                        <p className="text-sm text-[var(--color-text-secondary)]">
+                            출석 인원 <strong>{totalMembers}명</strong>을 기반으로 최적의 좌석 배치를 추천합니다.
+                        </p>
+                        <Button
+                            onClick={() => {
+                                const recommendation = recommendRowDistribution(totalMembers);
+                                setGridLayout({
+                                    rows: recommendation.rows,
+                                    rowCapacities: recommendation.rowCapacities,
+                                    zigzagPattern: gridLayout?.zigzagPattern ?? 'even',
+                                });
+                            }}
+                            className="w-full gap-2"
+                            disabled={totalMembers === 0}
+                        >
+                            <Zap className="w-4 h-4" />
+                            AI 추천 분배 적용
+                        </Button>
+                    </div>
+                );
+            case 2:
+                // 좌석 그리드 수동 조정
+                return (
+                    <GridSettingsPanel
+                        gridLayout={gridLayout}
+                        onChange={setGridLayout}
+                        totalMembers={totalMembers}
+                    />
+                );
+            case 3:
+                // AI 자동배치
+                return (
+                    <div className="space-y-3">
+                        <p className="text-sm text-[var(--color-text-secondary)]">
+                            파트, 키, 경력을 고려하여 좌석을 자동으로 배치합니다.
+                        </p>
+                        <p className="text-xs text-[var(--color-text-tertiary)]">
+                            상단 헤더의 <Sparkles className="w-3 h-3 inline" /> AI 자동 배치 버튼을 클릭하세요.
+                        </p>
+                    </div>
+                );
+            case 4:
+                // 수동 배치 조정
+                return (
+                    <div className="space-y-3">
+                        <p className="text-sm text-[var(--color-text-secondary)]">
+                            대원을 선택하고 좌석을 클릭하여 배치를 조정합니다.
+                        </p>
+                        <ul className="text-xs text-[var(--color-text-tertiary)] space-y-1 list-disc list-inside">
+                            <li>대원 목록에서 이름 클릭 → 좌석 클릭</li>
+                            <li>배치된 좌석 더블클릭으로 제거</li>
+                            <li>좌석 간 드래그로 이동</li>
+                        </ul>
+                    </div>
+                );
+            case 5:
+                // 행별 Offset 조정
+                return (
+                    <div className="space-y-3">
+                        <p className="text-sm text-[var(--color-text-secondary)]">
+                            지휘자 시야 확보를 위해 줄 위치를 조정합니다.
+                        </p>
+                        <p className="text-xs text-[var(--color-text-tertiary)]">
+                            좌측 그리드 설정에서 &quot;행별 세부 조정&quot;을 펼쳐 조정하세요.
+                        </p>
+                    </div>
+                );
+            case 6:
+                // 줄반장 지정
+                return (
+                    <div className="space-y-3">
+                        <p className="text-sm text-[var(--color-text-secondary)]">
+                            각 줄의 대표를 지정합니다.
+                        </p>
+                        <p className="text-xs text-[var(--color-text-tertiary)]">
+                            상단 헤더의 &quot;줄반장&quot; 메뉴에서 설정하세요.
+                        </p>
+                    </div>
+                );
+            case 7:
+                // 배치표 공유
+                return (
+                    <div className="space-y-3">
+                        <p className="text-sm text-[var(--color-text-secondary)]">
+                            배치표를 저장하고 공유합니다.
+                        </p>
+                        <div className="flex flex-col gap-2">
+                            <p className="text-xs text-[var(--color-text-tertiary)]">
+                                상단 헤더의 저장/공유 버튼을 이용하세요.
+                            </p>
+                        </div>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
 
     return (
         <div className="flex flex-col h-screen bg-[var(--color-background-primary)]">
@@ -226,13 +336,14 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
             {/* 데스크톱: 3패널 가로 배치 */}
             <div className="hidden lg:flex flex-1 overflow-hidden gap-4 p-4">
-                {/* Grid Settings Panel - 토글 가능 */}
+                {/* 워크플로우 패널 - 토글 가능 */}
                 {showGridSettings ? (
-                    <div className="relative animate-in slide-in-from-left duration-300">
-                        <GridSettingsPanel
-                            gridLayout={gridLayout}
-                            onChange={setGridLayout}
+                    <div className="relative animate-in slide-in-from-left duration-300 w-80 flex-shrink-0">
+                        <WorkflowPanel
+                            renderStepContent={renderWorkflowStepContent}
                             totalMembers={totalMembers}
+                            arrangementStatus={arrangement.status ?? undefined}
+                            className="h-full overflow-hidden"
                         />
                         {/* 접기 버튼 */}
                         <Button
@@ -240,7 +351,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                             variant="ghost"
                             size="sm"
                             className="absolute -right-3 top-4 z-10 bg-[var(--color-surface)] border border-[var(--color-border-default)] shadow-md hover:bg-[var(--color-background-secondary)]"
-                            title="그리드 설정 숨기기"
+                            title="워크플로우 패널 숨기기"
                         >
                             <ChevronDown className="h-4 w-4 rotate-90" />
                         </Button>
@@ -252,18 +363,20 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                             variant="outline"
                             size="sm"
                             className="flex-col h-auto py-4 px-3 gap-1 bg-[var(--color-surface)]"
-                            title="그리드 설정 열기"
+                            title="워크플로우 패널 열기"
                         >
                             <Settings className="h-5 w-5" />
                             <span className="text-[10px]" style={{ writingMode: 'vertical-rl' }}>
-                                그리드
+                                워크플로우
                             </span>
                         </Button>
                     </div>
                 )}
 
-                {/* Member Sidebar */}
-                <MemberSidebar date={arrangement.date} hidePlaced={true} isEmergencyMode={isEmergencyMode} />
+                {/* Member Sidebar - 수동 배치 조정 단계(4단계)에서만 표시 */}
+                {showMemberSidebar && (
+                    <MemberSidebar date={arrangement.date} hidePlaced={true} isEmergencyMode={isEmergencyMode} />
+                )}
 
                 {/* Seats Grid */}
                 <SeatsGrid
@@ -310,36 +423,38 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                     </Button>
                 </div>
 
-                {/* 하단: 대원 목록 (Collapsible) */}
-                <div
-                    className={`bg-[var(--color-surface)] border-t border-[var(--color-border-default)] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex flex-col z-20 transition-all duration-300 ease-in-out ${showMobileSidebar ? 'h-[320px]' : 'h-[40px]'
-                        }`}
-                >
-                    {/* Toggle Handle */}
-                    <button
-                        onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-                        className="flex items-center justify-center h-10 w-full hover:bg-[var(--color-background-secondary)] active:bg-[var(--color-background-tertiary)] transition-colors cursor-pointer"
-                        aria-label={showMobileSidebar ? "대원 목록 접기" : "대원 목록 펼치기"}
+                {/* 하단: 대원 목록 (Collapsible) - 수동 배치 조정 단계(4단계)에서만 표시 */}
+                {showMemberSidebar && (
+                    <div
+                        className={`bg-[var(--color-surface)] border-t border-[var(--color-border-default)] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex flex-col z-20 transition-all duration-300 ease-in-out ${showMobileSidebar ? 'h-[320px]' : 'h-[40px]'
+                            }`}
                     >
-                        <div className="w-10 h-1 rounded-full bg-[var(--color-text-tertiary)] opacity-30 mb-1" />
-                        {showMobileSidebar ? (
-                            <ChevronDown className="absolute right-4 h-4 w-4 text-[var(--color-text-tertiary)]" />
-                        ) : (
-                            <ChevronUp className="absolute right-4 h-4 w-4 text-[var(--color-text-tertiary)]" />
-                        )}
-                    </button>
+                        {/* Toggle Handle */}
+                        <button
+                            onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+                            className="flex items-center justify-center h-10 w-full hover:bg-[var(--color-background-secondary)] active:bg-[var(--color-background-tertiary)] transition-colors cursor-pointer"
+                            aria-label={showMobileSidebar ? "대원 목록 접기" : "대원 목록 펼치기"}
+                        >
+                            <div className="w-10 h-1 rounded-full bg-[var(--color-text-tertiary)] opacity-30 mb-1" />
+                            {showMobileSidebar ? (
+                                <ChevronDown className="absolute right-4 h-4 w-4 text-[var(--color-text-tertiary)]" />
+                            ) : (
+                                <ChevronUp className="absolute right-4 h-4 w-4 text-[var(--color-text-tertiary)]" />
+                            )}
+                        </button>
 
-                    <div className={`flex-1 overflow-hidden ${!showMobileSidebar && 'hidden'}`}>
-                        <MemberSidebar
-                            date={arrangement.date}
-                            hidePlaced={true}
-                            compact={true}
-                            isEmergencyMode={isEmergencyMode}
-                        />
+                        <div className={`flex-1 overflow-hidden ${!showMobileSidebar && 'hidden'}`}>
+                            <MemberSidebar
+                                date={arrangement.date}
+                                hidePlaced={true}
+                                compact={true}
+                                isEmergencyMode={isEmergencyMode}
+                            />
+                        </div>
                     </div>
-                </div>
+                )}
 
-                {/* Bottom Sheet - 그리드 설정 (여전히 시트로 유지) */}
+                {/* Bottom Sheet - 워크플로우 (모바일) */}
                 {showSettingsSheet && (
                     <>
                         {/* 배경 오버레이 */}
@@ -364,7 +479,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                             </div>
                             {/* 헤더 - flex-shrink-0로 항상 표시 보장 */}
                             <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-[var(--color-border-default)] bg-[var(--color-surface)]">
-                                <h2 className="text-lg font-bold text-[var(--color-text-primary)]">그리드 설정</h2>
+                                <h2 className="text-lg font-bold text-[var(--color-text-primary)]">워크플로우</h2>
                                 <Button
                                     onClick={() => setShowSettingsSheet(false)}
                                     variant="ghost"
@@ -375,12 +490,12 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                                     닫기
                                 </Button>
                             </div>
-                            {/* 설정 패널 - min-h-0으로 flex overflow 동작 보장 */}
+                            {/* 워크플로우 패널 - min-h-0으로 flex overflow 동작 보장 */}
                             <div className="flex-1 min-h-0 overflow-auto p-4">
-                                <GridSettingsPanel
-                                    gridLayout={gridLayout}
-                                    onChange={setGridLayout}
+                                <WorkflowPanel
+                                    renderStepContent={renderWorkflowStepContent}
                                     totalMembers={totalMembers}
+                                    arrangementStatus={arrangement.status ?? undefined}
                                 />
                             </div>
                         </div>
