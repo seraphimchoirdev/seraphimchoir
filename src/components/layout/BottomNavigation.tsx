@@ -12,8 +12,7 @@ import {
   MoreHorizontal,
   Calendar,
   CheckCircle,
-  BarChart3,
-  FileText,
+  Briefcase,
   Settings,
   User,
 } from 'lucide-react';
@@ -61,9 +60,8 @@ export default function BottomNavigation() {
 
   // 관리자용 더보기 메뉴
   const managerMoreNav: NavItem[] = [
-    { href: '/statistics', label: '출석 통계', icon: <BarChart3 className="h-5 w-5" />, show: true },
+    { href: '/management', label: '임원 포털', icon: <Briefcase className="h-5 w-5" />, show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF']) },
     { href: '/service-schedules', label: '찬양대 일정', icon: <Calendar className="h-5 w-5" />, show: true },
-    { href: '/documents', label: '문서 아카이브', icon: <FileText className="h-5 w-5" />, show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF']) },
     { href: '/admin', label: '관리자 페이지', icon: <Settings className="h-5 w-5" />, show: hasRole(['ADMIN']) },
     { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: true }, // 모든 로그인 사용자 접근 가능
   ].filter(item => item.show);
@@ -78,7 +76,7 @@ export default function BottomNavigation() {
 
   // 일반 대원용 더보기 메뉴
   const memberMoreNav: NavItem[] = [
-    { href: '/documents', label: '문서 아카이브', icon: <FileText className="h-5 w-5" />, show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF']) },
+    { href: '/management', label: '임원 포털', icon: <Briefcase className="h-5 w-5" />, show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF']) },
     { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: true }, // 모든 로그인 사용자 접근 가능
   ].filter(item => item.show);
 
