@@ -15,6 +15,7 @@ import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
 import { useEmergencyUnavailable } from '@/hooks/useEmergencyUnavailable';
 import { DEFAULT_GRID_LAYOUT, GridLayout } from '@/types/grid';
+import { calculateGridLayoutFromSeats } from '@/lib/utils/gridUtils';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'ArrangementEditorPage' });
@@ -152,11 +153,29 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 setAssignments(formattedSeats);
             }
 
-            // Load grid layout with fallback to default
+            // Load grid layout with fallback to calculated or default
             // gridLayout이 없을 때만 (최초 로드 시) DB 값 설정
             // 긴급 등단 불가 처리로 최적화된 레이아웃은 유지됨
             if (!gridLayout) {
-                const layout = (arrangement.grid_layout as GridLayout | null) || DEFAULT_GRID_LAYOUT;
+                let layout: GridLayout;
+
+                if (arrangement.grid_layout) {
+                    // DB에 저장된 grid_layout 사용
+                    layout = arrangement.grid_layout as unknown as GridLayout;
+                } else if (arrangement.seats && arrangement.seats.length > 0) {
+                    // grid_layout이 null이면 좌석 데이터에서 계산
+                    // (과거 배치표 호환용)
+                    layout = calculateGridLayoutFromSeats(arrangement.seats);
+                    logger.debug('Calculated grid layout from seats', {
+                        rows: layout.rows,
+                        rowCapacities: layout.rowCapacities,
+                        seatCount: arrangement.seats.length,
+                    });
+                } else {
+                    // 좌석도 없으면 기본값
+                    layout = DEFAULT_GRID_LAYOUT;
+                }
+
                 setGridLayout(layout);
             }
 

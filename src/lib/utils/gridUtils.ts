@@ -89,3 +89,54 @@ export function calculateTotalSeats(layout: GridLayout): number {
 export function getMaxRowCapacity(layout: GridLayout): number {
   return Math.max(...layout.rowCapacities, 0);
 }
+
+/**
+ * 좌석 데이터에서 GridLayout 계산
+ * grid_layout이 null인 과거 배치표 호환용
+ *
+ * @param seats 좌석 데이터 배열 (seat_row, seat_column 필수)
+ * @returns 계산된 GridLayout
+ *
+ * @example
+ * // DB에서 가져온 좌석 데이터
+ * const seats = [
+ *   { seat_row: 1, seat_column: 1, member_id: '...' },
+ *   { seat_row: 1, seat_column: 2, member_id: '...' },
+ *   { seat_row: 2, seat_column: 1, member_id: '...' },
+ * ];
+ * calculateGridLayoutFromSeats(seats);
+ * // → { rows: 2, rowCapacities: [2, 1], zigzagPattern: 'even' }
+ */
+export function calculateGridLayoutFromSeats(
+  seats: Array<{ seat_row: number; seat_column: number }>
+): GridLayout {
+  // 좌석 데이터가 없으면 기본값 반환
+  if (!seats || seats.length === 0) {
+    return {
+      rows: GRID_CONSTRAINTS.DEFAULT_ROWS,
+      rowCapacities: Array(GRID_CONSTRAINTS.DEFAULT_ROWS).fill(8),
+      zigzagPattern: 'even',
+    };
+  }
+
+  // 각 행별 최대 열 번호 계산
+  const rowMaxCols = new Map<number, number>();
+  seats.forEach(seat => {
+    const currentMax = rowMaxCols.get(seat.seat_row) || 0;
+    rowMaxCols.set(seat.seat_row, Math.max(currentMax, seat.seat_column));
+  });
+
+  // 행 수 결정 (1-based index이므로 최대 행 번호가 곧 행 수)
+  const maxRow = Math.max(...rowMaxCols.keys());
+
+  // 각 행의 용량 결정 (빈 행은 0으로 처리)
+  const rowCapacities = Array.from({ length: maxRow }, (_, i) =>
+    rowMaxCols.get(i + 1) || 0
+  );
+
+  return {
+    rows: maxRow,
+    rowCapacities,
+    zigzagPattern: 'even', // 기본 패턴
+  };
+}
