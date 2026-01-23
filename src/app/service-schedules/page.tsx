@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import AppShell from '@/components/layout/AppShell';
-import { QuarterSelector, QuarterlyCalendar, ServiceScheduleDialog, ServiceScheduleImporter } from '@/components/features/service-schedules';
+import { QuarterSelector, QuarterlyCalendar, MonthSelector, MonthlyCalendar, ServiceScheduleDialog, ServiceScheduleImporter } from '@/components/features/service-schedules';
 import EventDialog from '@/components/features/service-schedules/EventDialog';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
 import { useChoirEvents } from '@/hooks/useChoirEvents';
@@ -16,7 +16,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { AlertCircle, Plus, FileSpreadsheet, Music, PartyPopper } from 'lucide-react';
+import { AlertCircle, Plus, FileSpreadsheet, Music, PartyPopper, Calendar, CalendarRange } from 'lucide-react';
+
+type ViewMode = 'monthly' | 'quarterly';
 
 export default function ServiceSchedulesPage() {
   const { hasRole, isLoading: authLoading } = useAuth();
@@ -29,7 +31,9 @@ export default function ServiceSchedulesPage() {
   const canManageEvents = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
 
   const currentDate = new Date();
+  const [viewMode, setViewMode] = useState<ViewMode>('monthly');
   const [year, setYear] = useState(currentDate.getFullYear());
+  const [month, setMonth] = useState(currentDate.getMonth() + 1); // 1-12
   const [quarter, setQuarter] = useState(
     Math.ceil((currentDate.getMonth() + 1) / 3)
   );
@@ -43,10 +47,12 @@ export default function ServiceSchedulesPage() {
   // 일괄 등록 다이얼로그 상태
   const [isImporterOpen, setIsImporterOpen] = useState(false);
 
-  const { data, isLoading, error, refetch } = useServiceSchedules({
-    year,
-    quarter,
-  });
+  // 뷰 모드에 따른 필터 설정
+  const scheduleFilters = viewMode === 'monthly'
+    ? { year, month }
+    : { year, quarter };
+
+  const { data, isLoading, error, refetch } = useServiceSchedules(scheduleFilters);
 
   // 행사 데이터 조회
   const {
@@ -54,10 +60,7 @@ export default function ServiceSchedulesPage() {
     isLoading: eventsLoading,
     error: eventsError,
     refetch: refetchEvents,
-  } = useChoirEvents({
-    year,
-    quarter,
-  });
+  } = useChoirEvents(scheduleFilters);
 
   // 예배 일정과 행사 모두 refetch
   const handleRefresh = useCallback(() => {
@@ -97,17 +100,65 @@ export default function ServiceSchedulesPage() {
 
       <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto space-y-6">
-          {/* 헤더 */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* 헤더 - 타이틀 영역 */}
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">
+              찬양대 일정 관리
+            </h1>
+            <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+              {viewMode === 'monthly' ? '월별' : '분기별'} 예배 및 행사 일정을 관리합니다
+            </p>
+          </div>
+
+          {/* 컨트롤 영역 */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* 좌측: 날짜 선택기 */}
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">
-                찬양대 일정 관리
-              </h1>
-              <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-                분기별 예배 및 행사 일정을 관리합니다
-              </p>
+              {viewMode === 'monthly' ? (
+                <MonthSelector
+                  year={year}
+                  month={month}
+                  onChange={(y, m) => {
+                    setYear(y);
+                    setMonth(m);
+                  }}
+                />
+              ) : (
+                <QuarterSelector
+                  year={year}
+                  quarter={quarter}
+                  onChange={(y, q) => {
+                    setYear(y);
+                    setQuarter(q);
+                  }}
+                />
+              )}
             </div>
+
+            {/* 우측: 뷰 토글 + 액션 버튼 */}
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              {/* 뷰 전환 토글 */}
+              <div className="flex items-center border border-[var(--color-border-subtle)] rounded-lg p-0.5 bg-[var(--color-background-secondary)]">
+                <Button
+                  variant={viewMode === 'monthly' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="gap-1.5 h-8"
+                  onClick={() => setViewMode('monthly')}
+                >
+                  <Calendar className="h-4 w-4" />
+                  <span className="hidden sm:inline">월간</span>
+                </Button>
+                <Button
+                  variant={viewMode === 'quarterly' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="gap-1.5 h-8"
+                  onClick={() => setViewMode('quarterly')}
+                >
+                  <CalendarRange className="h-4 w-4" />
+                  <span className="hidden sm:inline">분기</span>
+                </Button>
+              </div>
+
               {canManageService && (
                 <Button
                   onClick={() => setIsImporterOpen(true)}
@@ -142,14 +193,6 @@ export default function ServiceSchedulesPage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-              <QuarterSelector
-                year={year}
-                quarter={quarter}
-                onChange={(y, q) => {
-                  setYear(y);
-                  setQuarter(q);
-                }}
-              />
             </div>
           </div>
 
@@ -172,13 +215,23 @@ export default function ServiceSchedulesPage() {
 
           {/* 캘린더 */}
           {!isLoading && !eventsLoading && !error && !eventsError && data && (
-            <QuarterlyCalendar
-              year={year}
-              quarter={quarter}
-              schedules={data.data}
-              events={eventsData?.data || []}
-              onRefresh={handleRefresh}
-            />
+            viewMode === 'monthly' ? (
+              <MonthlyCalendar
+                year={year}
+                month={month}
+                schedules={data.data}
+                events={eventsData?.data || []}
+                onRefresh={handleRefresh}
+              />
+            ) : (
+              <QuarterlyCalendar
+                year={year}
+                quarter={quarter}
+                schedules={data.data}
+                events={eventsData?.data || []}
+                onRefresh={handleRefresh}
+              />
+            )
           )}
         </div>
       </div>
