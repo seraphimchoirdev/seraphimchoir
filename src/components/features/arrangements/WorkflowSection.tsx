@@ -18,6 +18,10 @@ interface WorkflowSectionProps {
   autoAdvance?: boolean;
   /** 섹션 완료 표시 (외부에서 제어) */
   isCompleted?: boolean;
+  /** 단계 완료 가능 여부 (false면 "이 단계 완료" 버튼 비활성화) */
+  canComplete?: boolean;
+  /** 완료 불가 시 안내 메시지 */
+  cannotCompleteMessage?: string;
 }
 
 /**
@@ -37,6 +41,8 @@ export default function WorkflowSection({
   children,
   className,
   isCompleted: externalCompleted,
+  canComplete,
+  cannotCompleteMessage,
 }: WorkflowSectionProps) {
   const { workflow, toggleSection, goToStep, canAccessStep, completeStep } = useArrangementStore();
   const { currentStep, completedSteps, expandedSections, isWizardMode } = workflow;
@@ -200,11 +206,17 @@ export default function WorkflowSection({
 
           {/* 단계 완료/다음 버튼 (위자드 모드일 때) */}
           {isWizardMode && isCurrent && !isCompleted && (
-            <div className="mt-4 pt-4 border-t border-[var(--color-border-subtle)] flex justify-end">
+            <div className="mt-4 pt-4 border-t border-[var(--color-border-subtle)] flex flex-col items-end gap-2">
+              {canComplete === false && cannotCompleteMessage && (
+                <p className="text-xs text-[var(--color-text-tertiary)]">
+                  {cannotCompleteMessage}
+                </p>
+              )}
               <Button
                 variant="default"
                 size="sm"
                 onClick={handleComplete}
+                disabled={canComplete === false}
                 className="gap-1"
               >
                 <Check className="w-4 h-4" />

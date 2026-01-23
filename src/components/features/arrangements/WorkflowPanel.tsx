@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { useArrangementStore, WORKFLOW_STEPS, WorkflowStep } from '@/store/arrangement-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,14 @@ import WorkflowSection from './WorkflowSection';
 import WorkflowModeToggle from './WorkflowModeToggle';
 import { ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
 import { useSkipStep } from '@/hooks/useWorkflowAutoAdvance';
+
+/**
+ * 각 단계별 완료 조건 및 안내 메시지
+ */
+interface StepCompletionConfig {
+  canComplete: boolean;
+  message?: string;
+}
 
 interface WorkflowPanelProps {
   /** 각 단계의 컨텐츠를 렌더링하는 함수 */
@@ -41,9 +49,10 @@ interface WorkflowPanelProps {
  */
 export default function WorkflowPanel({
   renderStepContent,
+  totalMembers,
   className,
 }: WorkflowPanelProps) {
-  const { workflow, prevStep, nextStep } = useArrangementStore();
+  const { workflow, prevStep, nextStep, assignments, gridLayout } = useArrangementStore();
   const { skip } = useSkipStep();
   const { currentStep, isWizardMode } = workflow;
 
@@ -51,6 +60,49 @@ export default function WorkflowPanel({
 
   // 선택적 단계 (건너뛰기 가능)
   const optionalSteps: WorkflowStep[] = [5]; // Offset 조정
+
+  // 배치 상태 계산
+  const assignmentsCount = Object.keys(assignments).length;
+  const unassignedCount = totalMembers - assignmentsCount;
+
+  /**
+   * 단계별 완료 조건 계산
+   */
+  const stepCompletionConfigs = useMemo((): Record<WorkflowStep, StepCompletionConfig> => {
+    return {
+      1: {
+        // 1단계: AI 추천 분배 실행 필요 (또는 수동 설정)
+        canComplete: gridLayout?.isAIRecommended === true || gridLayout?.isManuallyConfigured === true,
+        message: 'AI 추천 분배를 실행하거나 수동으로 그리드를 설정해야 합니다.',
+      },
+      2: {
+        // 2단계: 수동 조정은 선택적이므로 항상 완료 가능
+        canComplete: true,
+      },
+      3: {
+        // 3단계: 배치된 멤버가 있어야 완료 가능 (핵심 변경)
+        canComplete: assignmentsCount > 0,
+        message: 'AI 자동배치 또는 과거 배치를 적용해야 합니다.',
+      },
+      4: {
+        // 4단계: 모든 멤버가 배치되어야 완료 가능
+        canComplete: totalMembers > 0 && unassignedCount === 0,
+        message: `미배치 멤버가 ${unassignedCount}명 있습니다. 모든 멤버를 배치해주세요.`,
+      },
+      5: {
+        // 5단계: 선택적 단계 - 항상 완료 가능
+        canComplete: true,
+      },
+      6: {
+        // 6단계: 선택적 단계 - 항상 완료 가능
+        canComplete: true,
+      },
+      7: {
+        // 7단계: 저장/공유 - 항상 완료 가능
+        canComplete: true,
+      },
+    };
+  }, [gridLayout?.isAIRecommended, gridLayout?.isManuallyConfigured, assignmentsCount, totalMembers, unassignedCount]);
 
   return (
     <Card className={className}>
@@ -109,11 +161,19 @@ export default function WorkflowPanel({
 
         {/* 워크플로우 섹션들 */}
         <div className="space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto">
-          {steps.map((stepMeta) => (
-            <WorkflowSection key={stepMeta.step} step={stepMeta.step}>
-              {renderStepContent(stepMeta.step)}
-            </WorkflowSection>
-          ))}
+          {steps.map((stepMeta) => {
+            const config = stepCompletionConfigs[stepMeta.step];
+            return (
+              <WorkflowSection
+                key={stepMeta.step}
+                step={stepMeta.step}
+                canComplete={config.canComplete}
+                cannotCompleteMessage={config.message}
+              >
+                {renderStepContent(stepMeta.step)}
+              </WorkflowSection>
+            );
+          })}
         </div>
       </CardContent>
     </Card>
