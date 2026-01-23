@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useCallback, memo } from 'react';
 import dynamic from 'next/dynamic';
-import { Plus, Edit2, Music, User, Star, Clock, MapPin, PartyPopper, Mic } from 'lucide-react';
+import { Plus, Edit2, Music, User, Star, Clock, MapPin, PartyPopper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -105,20 +105,6 @@ function isToday(dateStr: string): boolean {
 function isPast(dateStr: string): boolean {
   const today = new Date().toISOString().split('T')[0];
   return dateStr < today;
-}
-
-/**
- * 시간 포맷 (HH:mm:ss -> 오전/오후 X시 Y분) (컴포넌트 외부로 이동)
- */
-function formatTimeKorean(timeStr: string | null): string {
-  if (!timeStr) return '';
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  const period = hours < 12 ? '오전' : '오후';
-  const hour12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-  if (minutes === 0) {
-    return `${period} ${hour12}시`;
-  }
-  return `${period} ${hour12}시 ${minutes}분`;
 }
 
 // 개별 날짜 카드 컴포넌트 (메모이제이션)
@@ -271,49 +257,6 @@ const DateCard = memo(function DateCard({
                     </span>
                   </div>
                 )}
-
-                {/* 연습 정보 표시 */}
-                <div className="mt-2 pt-2 border-t border-[var(--color-border-subtle)] space-y-1">
-                  {/* 예배 전 연습 */}
-                  {schedule.has_pre_practice && (
-                    <div className="flex items-center gap-2 text-xs">
-                      <Mic className="h-3 w-3 text-blue-600 flex-shrink-0" />
-                      <span className="text-blue-700 font-medium">예배 전</span>
-                      <Clock className="h-3 w-3 text-blue-500" />
-                      <span className="text-blue-600">
-                        {schedule.pre_practice_start_time
-                          ? `${formatTimeKorean(schedule.pre_practice_start_time)} 부터`
-                          : '오전 7시 30분 부터'}
-                      </span>
-                      {schedule.pre_practice_location && (
-                        <>
-                          <MapPin className="h-3 w-3 text-blue-500" />
-                          <span className="text-blue-600">{schedule.pre_practice_location}</span>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* 예배 후 연습 (선택적) */}
-                  {schedule.has_post_practice && (
-                    <div className="flex items-center gap-2 text-xs">
-                      <Mic className="h-3 w-3 text-green-600 flex-shrink-0" />
-                      <span className="text-green-700 font-medium">예배 후</span>
-                      <Clock className="h-3 w-3 text-green-500" />
-                      <span className="text-green-600">
-                        {schedule.post_practice_start_time
-                          ? `${formatTimeKorean(schedule.post_practice_start_time)} 부터`
-                          : '오전 10시 30분 부터'}
-                      </span>
-                      {schedule.post_practice_location && (
-                        <>
-                          <MapPin className="h-3 w-3 text-green-500" />
-                          <span className="text-green-600">{schedule.post_practice_location}</span>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
 
                 {schedule.notes && (
                   <div className="text-[var(--color-text-tertiary)] mt-2 text-xs bg-[var(--color-background-secondary)] p-2 rounded">

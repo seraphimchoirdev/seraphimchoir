@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
 
   // 쿼리 파라미터
   const year = searchParams.get('year');
+  const month = searchParams.get('month');
   const quarter = searchParams.get('quarter');
   const startDate = searchParams.get('startDate');
   const endDate = searchParams.get('endDate');
@@ -38,6 +39,14 @@ export async function GET(request: NextRequest) {
   // 단일 날짜 조회
   if (date) {
     query = query.eq('date', date);
+  }
+  // 월별 필터링 (우선순위: month > quarter)
+  else if (year && month) {
+    const m = parseInt(month);
+    const lastDay = new Date(parseInt(year), m, 0).getDate();
+    const mStartDate = `${year}-${String(m).padStart(2, '0')}-01`;
+    const mEndDate = `${year}-${String(m).padStart(2, '0')}-${lastDay}`;
+    query = query.gte('date', mStartDate).lte('date', mEndDate);
   }
   // 분기 필터링
   else if (year && quarter) {
