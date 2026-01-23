@@ -76,6 +76,13 @@ export function useImageGeneration(
                 },
                 // 폰트 로딩 대기
                 skipFonts: false,
+                // data-capture-ignore 속성을 가진 요소 제외 (인라인 컨트롤 등)
+                filter: (node) => {
+                    if (node instanceof HTMLElement && node.dataset.captureIgnore !== undefined) {
+                        return false;
+                    }
+                    return true;
+                },
             });
 
             // Data URL을 Blob으로 변환

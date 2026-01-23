@@ -260,12 +260,14 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 );
             case 2:
                 // 좌석 그리드 수동 조정 (2단계에서는 줄 수/줄별 인원만 표시)
+                // embedded: WorkflowPanel 내부에서 Card wrapper 없이 렌더링 (중첩 Card 방지)
                 return (
                     <GridSettingsPanel
                         gridLayout={gridLayout}
                         onChange={setGridLayout}
                         totalMembers={totalMembers}
                         workflowStep={2}
+                        embedded
                     />
                 );
             case 3:
@@ -302,7 +304,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                             지휘자 시야 확보를 위해 줄 위치를 조정합니다.
                         </p>
                         <p className="text-xs text-[var(--color-text-tertiary)]">
-                            좌측 그리드 설정에서 &quot;행별 세부 조정&quot;을 펼쳐 조정하세요.
+                            각 행 양쪽의 화살표 버튼으로 위치를 조정하세요.
                         </p>
                     </div>
                 );
@@ -402,6 +404,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                     onEmergencyUnavailable={handleEmergencyUnavailable}
                     isReadOnly={isReadOnly}
                     isEmergencyMode={isEmergencyMode}
+                    workflowStep={workflow.currentStep}
                 />
             </div>
 
@@ -421,6 +424,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                         onEmergencyUnavailable={handleEmergencyUnavailable}
                         isReadOnly={isReadOnly}
                         isEmergencyMode={isEmergencyMode}
+                        workflowStep={workflow.currentStep}
                     />
 
                     {/* 그리드 설정 버튼 (Floating) */}

@@ -3,6 +3,7 @@
 
 import { useMemo, forwardRef } from 'react';
 import SeatSlot from './SeatSlot';
+import InlineRowOffsetControl from './InlineRowOffsetControl';
 import { GridLayout, DEFAULT_GRID_LAYOUT } from '@/types/grid';
 import type { Database } from '@/types/database.types';
 
@@ -34,10 +35,12 @@ interface SeatsGridProps {
     isReadOnly?: boolean;
     /** 긴급 수정 모드 (SHARED 상태에서만 true) - 컨텍스트 메뉴 표시 조건 */
     isEmergencyMode?: boolean;
+    /** 현재 워크플로우 단계 (5단계에서 인라인 오프셋 컨트롤 표시) */
+    workflowStep?: number;
 }
 
 const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
-    { gridLayout, arrangementInfo, showCaptureInfo = false, onEmergencyUnavailable, isReadOnly = false, isEmergencyMode = false },
+    { gridLayout, arrangementInfo, showCaptureInfo = false, onEmergencyUnavailable, isReadOnly = false, isEmergencyMode = false, workflowStep },
     ref
 ) {
     // Fallback to default if no gridLayout provided
@@ -45,6 +48,12 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
 
     // 캡처 푸터에 필요한 assignments 가져오기
     const assignments = useArrangementStore((state) => state.assignments);
+    // 행별 오프셋 설정 함수 (Step 5 인라인 컨트롤용)
+    const setRowOffset = useArrangementStore((state) => state.setRowOffset);
+
+    // Step 5에서 인라인 오프셋 컨트롤 표시 여부
+    // (showCaptureInfo는 헤더/푸터 표시 여부일 뿐, 편집 모드와 무관)
+    const showInlineOffsetControls = workflowStep === 5;
 
     // 행별로 그룹화된 좌석 데이터
     const seatsByRow = useMemo(
@@ -76,25 +85,39 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                             .map((rowData) => (
                                 <div
                                     key={rowData.rowIndex}
-                                    className="flex gap-1.5 sm:gap-2"
-                                    style={{
-                                        // Zigzag: 행 전체를 오른쪽으로 이동 (오프셋 값에 비례)
-                                        // --zigzag-offset은 0.5칸 기준이므로, offset * 2 배율 적용
-                                        paddingLeft: rowData.offset > 0
-                                            ? `calc(var(--zigzag-offset) * ${rowData.offset * 2})`
-                                            : '0',
-                                    }}
+                                    className="flex items-center gap-1"
                                 >
-                                    {rowData.seats.map((seat) => (
-                                        <SeatSlot
-                                            key={`${seat.row}-${seat.col}`}
-                                            row={seat.row}
-                                            col={seat.col}
-                                            onEmergencyUnavailable={onEmergencyUnavailable}
-                                            isReadOnly={isReadOnly}
-                                            isEmergencyMode={isEmergencyMode}
+                                    {/* Step 5: 인라인 오프셋 컨트롤 (왼쪽) */}
+                                    {showInlineOffsetControls && (
+                                        <InlineRowOffsetControl
+                                            rowNumber={rowData.rowIndex}
+                                            currentOffset={layout.rowOffsets?.[rowData.rowIndex - 1]}
+                                            onChange={(offset) => setRowOffset(rowData.rowIndex, offset)}
                                         />
-                                    ))}
+                                    )}
+
+                                    {/* 좌석 행 */}
+                                    <div
+                                        className="flex gap-1.5 sm:gap-2"
+                                        style={{
+                                            // Zigzag: 행 전체를 오른쪽으로 이동 (오프셋 값에 비례)
+                                            // --zigzag-offset은 0.5칸 기준이므로, offset * 2 배율 적용
+                                            paddingLeft: rowData.offset > 0
+                                                ? `calc(var(--zigzag-offset) * ${rowData.offset * 2})`
+                                                : '0',
+                                        }}
+                                    >
+                                        {rowData.seats.map((seat) => (
+                                            <SeatSlot
+                                                key={`${seat.row}-${seat.col}`}
+                                                row={seat.row}
+                                                col={seat.col}
+                                                onEmergencyUnavailable={onEmergencyUnavailable}
+                                                isReadOnly={isReadOnly}
+                                                isEmergencyMode={isEmergencyMode}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
                             ))}
                     </div>
