@@ -94,10 +94,10 @@ export function useWorkflowAutoAdvance(
     const evaluateSteps = (): StepCompletionResult[] => {
       const results: StepCompletionResult[] = [];
 
-      // 1단계: AI 추천 분배 (gridLayout 존재)
+      // 1단계: AI 추천 분배 (AI가 실제로 추천한 경우에만 완료)
       results.push({
         step: 1,
-        isCompleted: !!gridLayout && !gridLayout.isManuallyConfigured,
+        isCompleted: !!gridLayout && gridLayout.isAIRecommended === true,
         reason: 'AI 추천으로 그리드 설정됨',
       });
 

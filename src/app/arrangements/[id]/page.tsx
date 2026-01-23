@@ -171,18 +171,29 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
                 if (arrangement.grid_layout) {
                     // DB에 저장된 grid_layout 사용
-                    layout = arrangement.grid_layout as unknown as GridLayout;
+                    const savedLayout = arrangement.grid_layout as unknown as GridLayout;
+                    // 기존에 저장된 배치표는 이미 AI 추천을 거친 것으로 간주
+                    // (저장된 isAIRecommended 값 유지, 없으면 true로 설정)
+                    layout = {
+                        ...savedLayout,
+                        isAIRecommended: savedLayout.isAIRecommended ?? true,
+                    };
                 } else if (arrangement.seats && arrangement.seats.length > 0) {
                     // grid_layout이 null이면 좌석 데이터에서 계산
-                    // (과거 배치표 호환용)
-                    layout = calculateGridLayoutFromSeats(arrangement.seats);
+                    // (과거 배치표 호환용 - 좌석이 있으므로 이미 배치가 완료된 상태)
+                    const calculatedLayout = calculateGridLayoutFromSeats(arrangement.seats);
+                    layout = {
+                        ...calculatedLayout,
+                        isAIRecommended: true, // 좌석이 있으면 이미 배치 완료된 것으로 간주
+                    };
                     logger.debug('Calculated grid layout from seats', {
                         rows: layout.rows,
                         rowCapacities: layout.rowCapacities,
                         seatCount: arrangement.seats.length,
                     });
                 } else {
-                    // 좌석도 없으면 기본값
+                    // 좌석도 없으면 기본값 (새 배치표)
+                    // isAIRecommended는 설정하지 않음 (undefined) → 1단계 미완료
                     layout = DEFAULT_GRID_LAYOUT;
                 }
 
@@ -237,6 +248,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                                     rows: recommendation.rows,
                                     rowCapacities: recommendation.rowCapacities,
                                     zigzagPattern: gridLayout?.zigzagPattern ?? 'even',
+                                    isAIRecommended: true, // AI 추천 분배로 설정됨 (워크플로우 1단계 완료 조건)
                                 });
                             }}
                             className="w-full gap-2"
@@ -248,12 +260,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                     </div>
                 );
             case 2:
-                // 좌석 그리드 수동 조정
+                // 좌석 그리드 수동 조정 (2단계에서는 줄 수/줄별 인원만 표시)
                 return (
                     <GridSettingsPanel
                         gridLayout={gridLayout}
                         onChange={setGridLayout}
                         totalMembers={totalMembers}
+                        workflowStep={2}
                     />
                 );
             case 3:

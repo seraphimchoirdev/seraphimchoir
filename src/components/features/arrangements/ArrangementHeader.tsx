@@ -25,6 +25,7 @@ import { ServiceScheduleBadge } from '@/components/features/service-schedules';
 import type { Database, Json, ArrangementStatus } from '@/types/database.types';
 import type { RecommendationResponse } from '@/hooks/useRecommendSeats';
 import type { ApplyPastResponse } from '@/hooks/usePastArrangement';
+import { WORKFLOW_STEPS } from '@/store/arrangement-store';
 
 const logger = createLogger({ prefix: 'ArrangementHeader' });
 
@@ -45,6 +46,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         assignments,
         gridLayout,
         clearArrangement,
+        clearCurrentStepOnly,
         setAssignments,
         setGridLayout,
         rowLeaderMode,
@@ -55,6 +57,8 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         redo,
         canUndo,
         canRedo,
+        workflow,
+        resetWorkflow,
     } = useArrangementStore();
 
     // 상태 관련 로직
@@ -233,11 +237,31 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         }
     }, [arrangement.id, title, conductor, gridLayout, assignments, updateArrangement, updateSeats]);
 
-    const handleReset = () => {
-        if (confirm('모든 자리 배치를 초기화하시겠습니까? 저장하지 않은 변경사항은 복구할 수 없습니다.')) {
-            clearArrangement();
+    // 현재 단계만 초기화
+    const handleResetCurrentStep = useCallback(() => {
+        const currentStep = workflow.currentStep;
+        const stepMeta = WORKFLOW_STEPS[currentStep];
+
+        // 7단계(공유)는 초기화 불필요
+        if (currentStep === 7) {
+            alert('공유 단계에서는 초기화할 내용이 없습니다.');
+            return;
         }
-    };
+
+        if (confirm(`"${stepMeta.title}" 단계의 작업만 초기화하시겠습니까?\n이전 단계의 설정은 유지됩니다.`)) {
+            clearCurrentStepOnly(currentStep);
+            logger.debug(`단계 ${currentStep} (${stepMeta.title}) 초기화 완료`);
+        }
+    }, [workflow.currentStep, clearCurrentStepOnly]);
+
+    // 전체 초기화 (처음부터 다시)
+    const handleResetAll = useCallback(() => {
+        if (confirm('모든 자리 배치와 그리드 설정을 초기화하시겠습니까?\n1단계부터 다시 시작합니다.\n저장하지 않은 변경사항은 복구할 수 없습니다.')) {
+            clearArrangement();
+            resetWorkflow();
+            logger.debug('전체 초기화 완료');
+        }
+    }, [clearArrangement, resetWorkflow]);
 
     // 공유하기 (DRAFT → SHARED)
     const handleShare = useCallback(async () => {
@@ -368,11 +392,12 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         }
     }, [arrangement.id, updateArrangement, router]);
 
-    const handleApplyRecommendation = (recommendation: RecommendationResponse) => {
+    const handleApplyRecommendation = (recommendation: RecommendationResponse, preserveGrid: boolean) => {
         // 디버깅: API 응답 확인
         logger.debug('=== AI 추천 결과 디버깅 ===');
         logger.debug('seats.length:', recommendation.seats.length);
         logger.debug('gridLayout:', recommendation.gridLayout);
+        logger.debug('preserveGrid:', preserveGrid);
         if (recommendation.gridLayout) {
             const totalCapacity = recommendation.gridLayout.rowCapacities.reduce((a: number, b: number) => a + b, 0);
             logger.debug('rowCapacities 합계:', totalCapacity);
@@ -388,18 +413,31 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
             col: seat.col,
         }));
 
-        // AI 추천 gridLayout 적용 (빈좌석 방지)
-        if (recommendation.gridLayout) {
+        // 그리드 레이아웃 적용 (preserveGrid 옵션에 따라)
+        if (!preserveGrid && recommendation.suggestedGridLayout) {
+            // AI 추천 그리드로 변경
+            logger.debug('AI 추천 그리드 적용:', recommendation.suggestedGridLayout.rowCapacities);
+            setGridLayout({
+                rows: recommendation.suggestedGridLayout.rows,
+                rowCapacities: recommendation.suggestedGridLayout.rowCapacities,
+                zigzagPattern: recommendation.suggestedGridLayout.zigzagPattern,
+                isAIRecommended: true, // AI 추천 분배로 설정됨 (워크플로우 1단계 완료 조건)
+            });
+        } else if (!preserveGrid && recommendation.gridLayout) {
+            // suggestedGridLayout이 없으면 gridLayout 사용 (하위 호환성)
             setGridLayout({
                 rows: recommendation.gridLayout.rows,
                 rowCapacities: recommendation.gridLayout.rowCapacities,
                 zigzagPattern: recommendation.gridLayout.zigzagPattern,
+                isAIRecommended: true, // AI 추천 분배로 설정됨 (워크플로우 1단계 완료 조건)
             });
         }
+        // preserveGrid가 true면 현재 그리드 유지 (아무것도 하지 않음)
 
         setAssignments(formattedSeats);
         const qualityScore = recommendation.qualityScore ?? 0;
-        alert(`AI 추천이 적용되었습니다! (품질 점수: ${(qualityScore * 100).toFixed(0)}%)`);
+        const gridMessage = preserveGrid ? ' (그리드 설정 유지됨)' : '';
+        alert(`AI 추천이 적용되었습니다! (품질 점수: ${(qualityScore * 100).toFixed(0)}%)${gridMessage}`);
     };
 
     const handleApplyPastArrangement = (result: ApplyPastResponse) => {
@@ -556,15 +594,39 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                     </div>
                 )}
                 {!isReadOnly && (
-                    <Button
-                        variant="outline"
-                        onClick={handleReset}
-                        disabled={isSaving || Object.keys(assignments).length === 0}
-                        className="gap-2 h-11 sm:h-10 text-sm"
-                    >
-                        <RotateCcw className="h-4 w-4" />
-                        <span className="hidden sm:inline">초기화</span>
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="outline"
+                                disabled={isSaving}
+                                className="gap-2 h-11 sm:h-10 text-sm"
+                            >
+                                <RotateCcw className="h-4 w-4" />
+                                <span className="hidden sm:inline">초기화</span>
+                                <ChevronDown className="h-3 w-3 hidden sm:inline" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="min-w-[200px]">
+                            <DropdownMenuItem
+                                onClick={workflow.currentStep === 7 ? undefined : handleResetCurrentStep}
+                                className={`whitespace-nowrap ${workflow.currentStep === 7 ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                            >
+                                <RotateCcw className="mr-2 h-4 w-4 flex-shrink-0" />
+                                <span>현재 단계만</span>
+                                <span className="ml-1 text-xs text-muted-foreground">
+                                    ({WORKFLOW_STEPS[workflow.currentStep].shortTitle})
+                                </span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                onClick={handleResetAll}
+                                className="cursor-pointer text-red-600 focus:text-red-600 whitespace-nowrap"
+                            >
+                                <Trash2 className="mr-2 h-4 w-4 flex-shrink-0" />
+                                전체 초기화
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 )}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

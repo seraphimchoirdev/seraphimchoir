@@ -12,6 +12,13 @@
 export type ZigzagPattern = 'even' | 'odd' | 'none';
 
 /**
+ * 행별 오프셋 값 타입
+ * - null: 기본 패턴(zigzagPattern) 따름
+ * - 0, 0.25, 0.5, 0.75: 직접 지정된 오프셋 값
+ */
+export type RowOffsetValue = 0 | 0.25 | 0.5 | 0.75 | null;
+
+/**
  * 그리드 레이아웃 설정
  */
 export interface GridLayout {
@@ -21,6 +28,12 @@ export interface GridLayout {
   rowCapacities: number[];
   /** 지그재그 패턴 */
   zigzagPattern: ZigzagPattern;
+  /** 행별 개별 오프셋 설정 (선택적) - null은 기본 패턴 따름 */
+  rowOffsets?: Record<number, RowOffsetValue>;
+  /** 수동으로 설정된 그리드인지 여부 (AI 자동배치 시 참조) */
+  isManuallyConfigured?: boolean;
+  /** AI 추천 분배로 설정된 그리드인지 여부 (워크플로우 1단계 완료 조건) */
+  isAIRecommended?: boolean;
 }
 
 /**
