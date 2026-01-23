@@ -217,6 +217,7 @@ interface ArrangementState {
     removeMember: (row: number, col: number) => void;
     moveMember: (fromRow: number, fromCol: number, toRow: number, toCol: number) => void;
     clearArrangement: () => void;
+    clearCurrentStepOnly: (step: WorkflowStep) => void;
 
     // Selection actions for click-click interaction
     selectMemberFromSidebar: (memberId: string, memberName: string, part: Part) => void;
@@ -544,6 +545,89 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
             assignments: {},
             gridLayout: null,
         })),
+
+    /**
+     * 현재 워크플로우 단계만 초기화
+     * 각 단계별로 해당 단계에서 작업한 내용만 되돌립니다.
+     *
+     * | 단계 | 단계명 | 초기화 동작 |
+     * |------|--------|------------|
+     * | 1 | AI 분배 | gridLayout을 null로 초기화 |
+     * | 2 | 그리드 조정 | rowCapacities를 기본값(각 행 12명)으로 복원 |
+     * | 3 | AI 자동배치 | assignments 초기화 (gridLayout 유지) |
+     * | 4 | 수동 배치 조정 | assignments 초기화 (gridLayout 유지) |
+     * | 5 | Offset 조정 | rowOffsets 제거 |
+     * | 6 | 줄반장 지정 | 모든 isRowLeader를 false로 |
+     * | 7 | 공유 | 초기화 불필요 |
+     */
+    clearCurrentStepOnly: (step: WorkflowStep) =>
+        set((state) => {
+            logger.debug(`단계 ${step}만 초기화`);
+
+            switch (step) {
+                case 1:
+                    // AI 분배 단계: gridLayout만 초기화
+                    return {
+                        _history: saveToHistory(state),
+                        gridLayout: null,
+                        assignments: {},
+                    };
+
+                case 2:
+                    // 그리드 조정 단계: rowCapacities를 기본값으로 복원 (rows 유지)
+                    if (!state.gridLayout) return state;
+                    const defaultCapacity = 12;
+                    return {
+                        _history: saveToHistory(state),
+                        gridLayout: {
+                            ...state.gridLayout,
+                            rowCapacities: Array(state.gridLayout.rows).fill(defaultCapacity),
+                            isManuallyConfigured: false,
+                        },
+                    };
+
+                case 3:
+                case 4:
+                    // AI 자동배치 / 수동 배치 조정: assignments만 초기화 (gridLayout 유지)
+                    return {
+                        _history: saveToHistory(state),
+                        assignments: {},
+                    };
+
+                case 5:
+                    // Offset 조정 단계: rowOffsets만 제거
+                    if (!state.gridLayout) return state;
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { rowOffsets: _, ...restGridLayout } = state.gridLayout;
+                    return {
+                        _history: saveToHistory(state),
+                        gridLayout: {
+                            ...restGridLayout,
+                            rowOffsets: undefined,
+                        },
+                    };
+
+                case 6:
+                    // 줄반장 지정 단계: 모든 isRowLeader를 false로
+                    const newAssignments = { ...state.assignments };
+                    Object.keys(newAssignments).forEach((key) => {
+                        if (newAssignments[key].isRowLeader) {
+                            newAssignments[key] = { ...newAssignments[key], isRowLeader: false };
+                        }
+                    });
+                    return {
+                        _history: saveToHistory(state),
+                        assignments: newAssignments,
+                    };
+
+                case 7:
+                    // 공유 단계: 초기화 불필요
+                    return state;
+
+                default:
+                    return state;
+            }
+        }),
 
     // Click-click interaction methods
     selectMemberFromSidebar: (memberId, memberName, part) =>
