@@ -74,8 +74,9 @@ export function useImageGeneration(
                 style: {
                     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Malgun Gothic", "맑은 고딕", sans-serif',
                 },
-                // 폰트 로딩 대기
-                skipFonts: false,
+                // 외부 폰트 로딩 건너뛰기 (CSP 정책으로 인해 cdn.jsdelivr.net 등 외부 폰트 로딩 차단됨)
+                // 시스템 폰트를 사용하여 렌더링
+                skipFonts: true,
                 // data-capture-ignore 속성을 가진 요소 제외 (인라인 컨트롤 등)
                 filter: (node) => {
                     if (node instanceof HTMLElement && node.dataset.captureIgnore !== undefined) {
@@ -85,9 +86,15 @@ export function useImageGeneration(
                 },
             });
 
-            // Data URL을 Blob으로 변환
-            const response = await fetch(dataUrl);
-            const blob = await response.blob();
+            // Data URL을 Blob으로 변환 (fetch 사용 시 CSP connect-src 위반 가능)
+            // Base64 직접 디코딩 방식으로 CSP 우회
+            const base64Data = dataUrl.split(',')[1];
+            const binaryString = atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            const blob = new Blob([bytes], { type: 'image/png' });
 
             if (!blob) {
                 throw new Error('이미지 생성에 실패했습니다');
