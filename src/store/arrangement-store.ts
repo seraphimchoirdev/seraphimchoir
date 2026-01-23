@@ -1507,11 +1507,46 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
             logger.debug(`단계 ${step} 완료 표시`);
 
+            // 마지막 단계(7)가 아니면 다음 단계로 이동
+            const nextStep = step < 7 ? ((step + 1) as WorkflowStep) : step;
+            const newExpanded = new Set(state.workflow.expandedSections);
+
+            if (step < 7 && state.workflow.isWizardMode) {
+                // 위자드 모드: 현재 단계 접고 다음 단계 펼침
+                newExpanded.clear();
+                newExpanded.add(nextStep);
+            }
+
+            // 5단계 완료 → 6단계 진입 시 줄반장 자동 지정
+            let newAssignments = state.assignments;
+            if (step === 5 && state.gridLayout) {
+                // 1. 기존 줄반장 전체 해제
+                newAssignments = { ...state.assignments };
+                Object.keys(newAssignments).forEach((key) => {
+                    if (newAssignments[key].isRowLeader) {
+                        newAssignments[key] = { ...newAssignments[key], isRowLeader: false };
+                    }
+                });
+
+                // 2. 자동으로 줄반장 지정
+                const candidates = selectRowLeaders(newAssignments, state.gridLayout);
+                candidates.forEach(({ row, col }) => {
+                    const key = `${row}-${col}`;
+                    if (newAssignments[key]) {
+                        newAssignments[key] = { ...newAssignments[key], isRowLeader: true };
+                    }
+                });
+                logger.debug(`6단계 진입: 줄반장 ${candidates.length}명 자동 지정`);
+            }
+
             return {
                 workflow: {
                     ...state.workflow,
                     completedSteps: newCompleted,
+                    currentStep: nextStep,
+                    expandedSections: newExpanded,
                 },
+                assignments: newAssignments,
             };
         }),
 
