@@ -503,7 +503,8 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-{!isReadOnly && (
+{/* 과거 배치 / AI 추천 버튼: Step 3-4 (배치 관련 단계)에서만 표시 */}
+                {!isReadOnly && (workflow.currentStep === 3 || workflow.currentStep === 4) && (
                     <PastArrangementButton
                         arrangementId={arrangement.id}
                         date={arrangement.date}
@@ -511,7 +512,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                         disabled={isSaving}
                     />
                 )}
-                {!isReadOnly && gridLayout && (
+                {!isReadOnly && gridLayout && (workflow.currentStep === 3 || workflow.currentStep === 4) && (
                     <RecommendButton
                         arrangementId={arrangement.id}
                         gridLayout={gridLayout}
@@ -519,7 +520,8 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                         disabled={isSaving}
                     />
                 )}
-{!isReadOnly && (
+{/* 줄반장 메뉴: Step 4, 6 (수동 조정, 줄반장 지정)에서만 표시 */}
+                {!isReadOnly && (workflow.currentStep === 4 || workflow.currentStep === 6) && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
@@ -569,7 +571,8 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                         </DropdownMenuContent>
                     </DropdownMenu>
                 )}
-                {!isReadOnly && (
+                {/* Undo/Redo: Step 2-6 (실제 편집이 일어나는 단계)에서만 표시 */}
+                {!isReadOnly && workflow.currentStep >= 2 && workflow.currentStep <= 6 && (
                     <div className="flex items-center gap-1">
                         <Button
                             variant="outline"
@@ -593,7 +596,8 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                         </Button>
                     </div>
                 )}
-                {!isReadOnly && (
+                {/* 초기화 메뉴: Step 1-6에서만 표시 (Step 7은 공유 단계이므로 제외) */}
+                {!isReadOnly && workflow.currentStep >= 1 && workflow.currentStep <= 6 && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
@@ -608,8 +612,8 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="min-w-[200px]">
                             <DropdownMenuItem
-                                onClick={workflow.currentStep === 7 ? undefined : handleResetCurrentStep}
-                                className={`whitespace-nowrap ${workflow.currentStep === 7 ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                                onClick={handleResetCurrentStep}
+                                className="cursor-pointer whitespace-nowrap"
                             >
                                 <RotateCcw className="mr-2 h-4 w-4 flex-shrink-0" />
                                 <span>현재 단계만</span>
@@ -628,51 +632,54 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                         </DropdownMenuContent>
                     </DropdownMenu>
                 )}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="outline"
-                            disabled={isSaving || isGenerating || Object.keys(assignments).length === 0}
-                            className="gap-2 h-11 sm:h-10 text-sm"
-                        >
-                            {isGenerating ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                                <Download className="h-4 w-4" />
+                {/* 이미지 메뉴: Step 4 이후 (배치 완료 후 내보내기 가능) */}
+                {workflow.currentStep >= 4 && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="outline"
+                                disabled={isSaving || isGenerating || Object.keys(assignments).length === 0}
+                                className="gap-2 h-11 sm:h-10 text-sm"
+                            >
+                                {isGenerating ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Download className="h-4 w-4" />
+                                )}
+                                <span className="hidden sm:inline">이미지</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {/* 모바일에서 Web Share API 지원 시 공유하기 옵션 우선 표시 */}
+                            {canShare && (
+                                <DropdownMenuItem
+                                    onClick={isGenerating ? undefined : handleShareImage}
+                                    className={isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                                >
+                                    <Share2 className="mr-2 h-4 w-4" />
+                                    공유하기
+                                </DropdownMenuItem>
                             )}
-                            <span className="hidden sm:inline">이미지</span>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {/* 모바일에서 Web Share API 지원 시 공유하기 옵션 우선 표시 */}
-                        {canShare && (
                             <DropdownMenuItem
-                                onClick={isGenerating ? undefined : handleShareImage}
+                                onClick={isGenerating ? undefined : handleDownloadImage}
                                 className={isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                             >
-                                <Share2 className="mr-2 h-4 w-4" />
-                                공유하기
+                                <Download className="mr-2 h-4 w-4" />
+                                {isMobile ? '이미지 저장' : 'PNG 다운로드'}
                             </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem
-                            onClick={isGenerating ? undefined : handleDownloadImage}
-                            className={isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                        >
-                            <Download className="mr-2 h-4 w-4" />
-                            {isMobile ? '이미지 저장' : 'PNG 다운로드'}
-                        </DropdownMenuItem>
-                        {/* 데스크톱에서만 클립보드 복사 표시 (모바일에서는 제한적) */}
-                        {!isMobile && (
-                            <DropdownMenuItem
-                                onClick={isGenerating ? undefined : handleCopyToClipboard}
-                                className={isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                            >
-                                <Copy className="mr-2 h-4 w-4" />
-                                클립보드 복사
-                            </DropdownMenuItem>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                            {/* 데스크톱에서만 클립보드 복사 표시 (모바일에서는 제한적) */}
+                            {!isMobile && (
+                                <DropdownMenuItem
+                                    onClick={isGenerating ? undefined : handleCopyToClipboard}
+                                    className={isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                                >
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    클립보드 복사
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
 {/* 상태별 버튼 렌더링 */}
                 {currentStatus === 'CONFIRMED' ? (
                     <Button disabled className="gap-2 h-11 sm:h-10 text-sm bg-[var(--color-text-tertiary)]">
