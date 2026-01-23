@@ -264,6 +264,13 @@ interface ArrangementState {
     collapseAllSections: () => void;
     /** 워크플로우 상태 초기화 */
     resetWorkflow: () => void;
+    /** 워크플로우 상태 복원 (Draft에서 복원 시 사용) */
+    restoreWorkflowState: (state: {
+        currentStep: WorkflowStep;
+        completedSteps: Set<WorkflowStep>;
+        isWizardMode: boolean;
+        expandedSections: Set<WorkflowStep>;
+    }) => void;
     /** 특정 단계가 완료되었는지 확인 */
     isStepCompleted: (step: WorkflowStep) => boolean;
     /** 특정 단계에 접근 가능한지 확인 (이전 단계가 완료되어야 함) */
@@ -1415,9 +1422,18 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
     /**
      * 특정 단계로 이동
+     * 완료된 단계로 돌아가면 해당 단계를 '진행 중' 상태로 변경
      */
     goToStep: (step) =>
         set((state) => {
+            const newCompleted = new Set(state.workflow.completedSteps);
+
+            // 완료된 단계로 돌아가면 해당 단계를 미완료로 변경
+            if (newCompleted.has(step)) {
+                newCompleted.delete(step);
+                logger.debug(`단계 ${step}로 돌아감 - 완료 상태 해제`);
+            }
+
             const newExpanded = new Set(state.workflow.expandedSections);
             // 위자드 모드에서는 현재 단계만 펼침
             if (state.workflow.isWizardMode) {
@@ -1434,6 +1450,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
                 workflow: {
                     ...state.workflow,
                     currentStep: step,
+                    completedSteps: newCompleted,
                     expandedSections: newExpanded,
                 },
             };
@@ -1643,6 +1660,21 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         set(() => ({
             workflow: createInitialWorkflowState(),
         })),
+
+    /**
+     * 워크플로우 상태 복원 (Draft에서 복원 시 사용)
+     */
+    restoreWorkflowState: (state) => {
+        logger.debug(`워크플로우 상태 복원: step=${state.currentStep}, completed=${Array.from(state.completedSteps).join(',')}`);
+        set({
+            workflow: {
+                currentStep: state.currentStep,
+                completedSteps: state.completedSteps,
+                isWizardMode: state.isWizardMode,
+                expandedSections: state.expandedSections,
+            },
+        });
+    },
 
     /**
      * 특정 단계가 완료되었는지 확인
