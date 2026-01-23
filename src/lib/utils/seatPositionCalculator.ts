@@ -3,26 +3,38 @@
  * 좌석 위치 계산 유틸리티
  */
 
-import { GridLayout, SeatPosition, ZigzagPattern, RowSeatPositions } from '@/types/grid';
+import { GridLayout, SeatPosition, ZigzagPattern, RowSeatPositions, RowOffsetValue } from '@/types/grid';
 
 /**
  * 행 인덱스에 따른 수평 오프셋 계산
  *
  * @param rowIndex 0-based 행 인덱스
  * @param pattern 지그재그 패턴
- * @returns 0 (오프셋 없음) 또는 0.5 (반 칸 오프셋)
+ * @param capacity 해당 행의 좌석 수
+ * @param rowOffsets 행별 개별 오프셋 설정 (선택적)
+ * @returns 오프셋 값 (0, 0.25, 0.5, 0.75 등)
  *
  * @example
- * getZigzagOffset(0, 'even') // → 0 (1번째 줄)
- * getZigzagOffset(1, 'even') // → 0.5 (2번째 줄, 짝수)
- * getZigzagOffset(2, 'even') // → 0 (3번째 줄)
- * getZigzagOffset(3, 'even') // → 0.5 (4번째 줄, 짝수)
+ * getZigzagOffset(0, 'even', 16) // → 0 (1번째 줄)
+ * getZigzagOffset(1, 'even', 16) // → 0.5 (2번째 줄, 짝수)
+ * getZigzagOffset(2, 'even', 16, { 2: 0.25 }) // → 0.25 (3번째 줄, 개별 설정)
  */
 export function getZigzagOffset(
   rowIndex: number,
   pattern: ZigzagPattern,
-  capacity: number
+  capacity: number,
+  rowOffsets?: Record<number, RowOffsetValue>
 ): number {
+  // 행별 개별 오프셋이 설정되어 있고 null이 아니면 해당 값 사용
+  if (rowOffsets && rowIndex in rowOffsets) {
+    const customOffset = rowOffsets[rowIndex];
+    if (customOffset !== null && customOffset !== undefined) {
+      return customOffset;
+    }
+    // null이면 기본 패턴 따름 (아래 로직 진행)
+  }
+
+  // 기본 패턴 로직
   if (pattern === 'none') return 0;
 
   // even 패턴: 짝수 행(0, 2...)이 Grid A(중앙 좌석), 홀수 행(1, 3...)이 Grid B(중앙 공백)
@@ -62,7 +74,12 @@ export function calculateAllSeatPositions(
   const positions: SeatPosition[] = [];
 
   gridLayout.rowCapacities.forEach((capacity, rowIndex) => {
-    const offset = getZigzagOffset(rowIndex, gridLayout.zigzagPattern, capacity);
+    const offset = getZigzagOffset(
+      rowIndex,
+      gridLayout.zigzagPattern,
+      capacity,
+      gridLayout.rowOffsets
+    );
 
     for (let colIndex = 0; colIndex < capacity; colIndex++) {
       positions.push({
@@ -102,7 +119,12 @@ export function calculateSeatPosition(
     return null;
   }
 
-  const offset = getZigzagOffset(rowIndex, gridLayout.zigzagPattern, gridLayout.rowCapacities[rowIndex]);
+  const offset = getZigzagOffset(
+    rowIndex,
+    gridLayout.zigzagPattern,
+    gridLayout.rowCapacities[rowIndex],
+    gridLayout.rowOffsets
+  );
 
   return {
     row,       // Keep 1-based
@@ -127,7 +149,12 @@ export function calculateSeatsByRow(
   }
 
   gridLayout.rowCapacities.forEach((capacity, rowIndex) => {
-    const offset = getZigzagOffset(rowIndex, gridLayout.zigzagPattern, capacity);
+    const offset = getZigzagOffset(
+      rowIndex,
+      gridLayout.zigzagPattern,
+      capacity,
+      gridLayout.rowOffsets
+    );
     const seats: SeatPosition[] = [];
 
     for (let colIndex = 0; colIndex < capacity; colIndex++) {

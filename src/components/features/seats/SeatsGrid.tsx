@@ -78,9 +78,10 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                                     key={rowData.rowIndex}
                                     className="flex gap-1.5 sm:gap-2"
                                     style={{
-                                        // Zigzag: 행 전체를 오른쪽으로 이동
-                                        paddingLeft: rowData.offset === 0.5
-                                            ? 'var(--zigzag-offset)'
+                                        // Zigzag: 행 전체를 오른쪽으로 이동 (오프셋 값에 비례)
+                                        // --zigzag-offset은 0.5칸 기준이므로, offset * 2 배율 적용
+                                        paddingLeft: rowData.offset > 0
+                                            ? `calc(var(--zigzag-offset) * ${rowData.offset * 2})`
                                             : '0',
                                     }}
                                 >
