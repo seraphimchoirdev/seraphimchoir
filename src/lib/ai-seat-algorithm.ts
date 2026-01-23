@@ -1446,6 +1446,10 @@ export interface ArrangementOptions {
   seatHistories?: SeatHistory[];
   /** 미리 계산된 선호 좌석 정보 */
   preferredSeats?: Map<string, PreferredSeat>;
+  /** 기존 그리드 레이아웃 보존 여부 (true면 그리드 압축 스킵) */
+  preserveGridLayout?: boolean;
+  /** 기존 그리드 레이아웃 (preserveGridLayout이 true일 때 사용) */
+  existingGridLayout?: GridLayout;
 }
 
 /**
@@ -1479,10 +1483,22 @@ export function generateAISeatingArrangement(
     partCounts[member.part]++;
   });
 
-  // 2. ML 학습 데이터 기반 행 구성 추천 (ALTO 용량 조정 포함)
-  const recommendation = recommendRowDistribution(totalMembers, partCounts);
-  const rowCapacities = recommendation.rowCapacities;
-  const numRows = recommendation.rows;
+  // 2. 행 구성 결정: 사용자 그리드 우선, 없으면 ML 추천 사용
+  let rowCapacities: number[];
+  let numRows: number;
+
+  if (options?.preserveGridLayout && options?.existingGridLayout) {
+    // 사용자가 설정한 그리드 사용 (워크플로우 1-2단계에서 설정한 값)
+    rowCapacities = options.existingGridLayout.row_capacities;
+    numRows = options.existingGridLayout.rows;
+    logger.debug('사용자 그리드 사용:', { rows: numRows, rowCapacities });
+  } else {
+    // AI 추천 그리드 사용 (ML 학습 데이터 기반, ALTO 용량 조정 포함)
+    const recommendation = recommendRowDistribution(totalMembers, partCounts);
+    rowCapacities = recommendation.rowCapacities;
+    numRows = recommendation.rows;
+    logger.debug('AI 추천 그리드 사용:', { rows: numRows, rowCapacities });
+  }
 
   // 3. 파트별 행 분배 계산 (좌우/상하 분할)
   //    - 1-3행: SOPRANO/ALTO 우선 (overflow 시 SOPRANO→4~5행 가장자리, ALTO→4행)
@@ -1538,30 +1554,40 @@ export function generateAISeatingArrangement(
   }
   logger.debug('=== 배치 현황 끝 ===');
 
-  // 7. 그리드 압축 - 빈좌석 제거
-  // 각 행에서 실제로 사용된 최대 열 번호를 찾아 rowCapacities 조정
-  const adjustedRowCapacities: number[] = [];
-  for (let row = 1; row <= numRows; row++) {
-    const seatsInRow = seats.filter(s => s.row === row);
-    if (seatsInRow.length > 0) {
-      // 해당 행에서 가장 오른쪽에 배치된 열 번호
-      const maxCol = Math.max(...seatsInRow.map(s => s.col));
-      adjustedRowCapacities.push(maxCol);
-    } else {
-      // 해당 행에 배치된 대원이 없으면 0
-      adjustedRowCapacities.push(0);
-    }
-  }
+  // 7. 그리드 압축 - 빈좌석 제거 (preserveGridLayout 옵션이 false일 때만)
+  let finalRowCapacities: number[];
 
-  const totalSeatsBeforeAdjust = rowCapacities.reduce((a, b) => a + b, 0);
-  const totalSeatsAfterAdjust = adjustedRowCapacities.reduce((a, b) => a + b, 0);
-  logger.debug(`그리드 압축: ${totalSeatsBeforeAdjust}석 → ${totalSeatsAfterAdjust}석 (${totalSeatsBeforeAdjust - totalSeatsAfterAdjust}석 감소)`);
+  if (options?.preserveGridLayout && options?.existingGridLayout) {
+    // 기존 그리드 레이아웃 보존 - 이미 사용자 그리드로 배치했으므로 그대로 유지
+    finalRowCapacities = rowCapacities;  // 이미 사용자 그리드 값 (라인 1493-1495에서 할당됨)
+    logger.debug('그리드 보존: preserveGridLayout=true, 사용자 그리드 유지');
+  } else {
+    // 각 행에서 실제로 사용된 최대 열 번호를 찾아 rowCapacities 조정
+    const adjustedRowCapacities: number[] = [];
+    for (let row = 1; row <= numRows; row++) {
+      const seatsInRow = seats.filter(s => s.row === row);
+      if (seatsInRow.length > 0) {
+        // 해당 행에서 가장 오른쪽에 배치된 열 번호
+        const maxCol = Math.max(...seatsInRow.map(s => s.col));
+        adjustedRowCapacities.push(maxCol);
+      } else {
+        // 해당 행에 배치된 대원이 없으면 0
+        adjustedRowCapacities.push(0);
+      }
+    }
+
+    const totalSeatsBeforeAdjust = rowCapacities.reduce((a, b) => a + b, 0);
+    const totalSeatsAfterAdjust = adjustedRowCapacities.reduce((a, b) => a + b, 0);
+    logger.debug(`그리드 압축: ${totalSeatsBeforeAdjust}석 → ${totalSeatsAfterAdjust}석 (${totalSeatsBeforeAdjust - totalSeatsAfterAdjust}석 감소)`);
+
+    finalRowCapacities = adjustedRowCapacities;
+  }
 
   // 8. 결과 반환
   return {
     grid_layout: {
       rows: numRows,
-      row_capacities: adjustedRowCapacities,  // 압축된 용량
+      row_capacities: finalRowCapacities,  // 압축된 용량 또는 기존 용량 (preserveGridLayout에 따라)
       zigzag_pattern: 'even',
     },
     seats,

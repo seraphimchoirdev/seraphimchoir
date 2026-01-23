@@ -3,14 +3,16 @@
  */
 'use client';
 
-import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, XCircle, AlertCircle, Info } from 'lucide-react';
 import { RecommendationResponse } from '@/hooks/useRecommendSeats';
 import { GridLayout } from '@/types/grid';
 
 interface RecommendPreviewModalProps {
   recommendation: RecommendationResponse;
   gridLayout: GridLayout;
-  onApply: () => void;
+  /** 그리드 보존 여부와 함께 적용 */
+  onApply: (preserveGridLayout: boolean) => void;
   onCancel: () => void;
 }
 
@@ -23,6 +25,8 @@ export default function RecommendPreviewModal({
   const {
     seats,
     gridLayout: recommendedGridLayout,
+    suggestedGridLayout,
+    gridPreserved,
     qualityScore = 0.8,
     metrics = {
       placementRate: 1.0,
@@ -32,8 +36,15 @@ export default function RecommendPreviewModal({
     unassignedMembers = []
   } = recommendation || {};
 
+  // 그리드 설정 유지 체크박스 상태 (기본값: true - 수동 설정 보존)
+  const [preserveGridLayout, setPreserveGridLayout] = useState(true);
+
   // gridLayout은 추천 결과의 gridLayout을 우선 사용, 없으면 prop으로 받은 gridLayout 사용
   const effectiveGridLayout = recommendedGridLayout || gridLayout;
+
+  // AI 추천 그리드와 현재 그리드 비교
+  const hasGridDifference = suggestedGridLayout &&
+    JSON.stringify(suggestedGridLayout.rowCapacities) !== JSON.stringify(gridLayout.rowCapacities);
 
   // 품질 점수에 따른 색상 및 메시지
   const getQualityInfo = (score: number) => {
@@ -160,6 +171,38 @@ export default function RecommendPreviewModal({
             </div>
           </div>
 
+          {/* 그리드 설정 유지 옵션 */}
+          {hasGridDifference && (
+            <div className="bg-[var(--color-background-secondary)] border border-[var(--color-border)] rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <label className="flex items-center gap-2 cursor-pointer flex-1">
+                  <input
+                    type="checkbox"
+                    checked={preserveGridLayout}
+                    onChange={(e) => setPreserveGridLayout(e.target.checked)}
+                    className="w-5 h-5 rounded border-[var(--color-border)] text-[var(--color-primary-500)] focus:ring-[var(--color-primary-500)]"
+                  />
+                  <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                    현재 그리드 설정 유지
+                  </span>
+                </label>
+                <Info className="w-4 h-4 text-[var(--color-text-tertiary)] flex-shrink-0 mt-0.5" />
+              </div>
+              <p className="text-xs text-[var(--color-text-secondary)] mt-2 ml-7">
+                {preserveGridLayout
+                  ? `수동 설정한 그리드(${gridLayout.rowCapacities.join(', ')})를 유지합니다.`
+                  : `AI 추천 그리드(${suggestedGridLayout?.rowCapacities.join(', ')})로 변경됩니다.`
+                }
+              </p>
+              {!preserveGridLayout && (
+                <div className="mt-2 ml-7 text-xs text-[var(--color-warning-600)] flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  체크 해제 시 수동으로 설정한 행별 좌석 수가 변경됩니다.
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 안내 메시지 */}
           <div className="bg-[var(--color-primary-50)] border border-[var(--color-primary-200)] rounded-lg p-4">
             <p className="text-sm text-[var(--color-text-secondary)]">
@@ -179,7 +222,7 @@ export default function RecommendPreviewModal({
             취소
           </button>
           <button
-            onClick={onApply}
+            onClick={() => onApply(preserveGridLayout)}
             className="px-4 py-2 bg-[var(--color-primary-500)] text-white rounded-lg font-medium hover:bg-[var(--color-primary-600)] transition-colors"
           >
             적용하기

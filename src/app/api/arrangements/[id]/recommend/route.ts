@@ -44,6 +44,8 @@ const gridLayoutSchema = z.object({
 /** 추천 요청 본문 스키마 */
 const recommendRequestSchema = z.object({
   gridLayout: gridLayoutSchema,
+  /** 기존 그리드 설정 유지 여부 (true면 AI가 추천하는 그리드 대신 기존 그리드 사용) */
+  preserveGridLayout: z.boolean().optional().default(true),
 });
 import {
   isMLServiceEnabled,
@@ -139,8 +141,8 @@ export async function POST(
       }
       body = bodyValidation.data;
     } catch {
-      // JSON 파싱 실패 시 빈 객체로 처리 (gridLayout은 optional)
-      body = {};
+      // JSON 파싱 실패 시 기본값으로 처리
+      body = { preserveGridLayout: true };
     }
 
     // Supabase 클라이언트 생성
@@ -356,8 +358,21 @@ export async function POST(
     logger.debug('Using TypeScript rule-based algorithm');
     const { preferences, source: dataSource } = await getPreferencesFromDB(supabase);
 
+    // preserveGridLayout 옵션에 따라 기존 그리드 보존 여부 결정
+    const preserveGridLayout = body.preserveGridLayout ?? true; // 기본값: 기존 그리드 유지
+    // AI 알고리즘은 snake_case 형식의 GridLayout을 사용하므로 변환
+    const existingGridLayout = body.gridLayout ? {
+      rows: body.gridLayout.rows,
+      row_capacities: body.gridLayout.rowCapacities,
+      zigzag_pattern: body.gridLayout.zigzagPattern as 'even' | 'odd',
+    } : undefined;
+
+    logger.debug('preserveGridLayout:', preserveGridLayout, 'existingGridLayout:', existingGridLayout?.rows);
+
     const recommendation = generateAISeatingArrangement(availableMembers, {
       preferredSeats: preferences,
+      preserveGridLayout,
+      existingGridLayout,
     });
 
     logger.debug('AI recommendation generated:', {
@@ -400,6 +415,15 @@ export async function POST(
     // 8. 응답 포맷팅 (camelCase로 변환)
     // AI 알고리즘은 1-based row/col을 반환
     // 프론트엔드(SeatSlot, Grid Calculator)도 1-based를 사용하므로 변환 불필요
+
+    // AI가 제안하는 그리드 (압축 없이) - 압축하지 않았다면 recommendation에서 가져옴
+    // preserveGridLayout이 true면 기존 그리드를 반환, false면 AI 추천 그리드 반환
+    const suggestedGridLayout = {
+      rows: recommendation.grid_layout.rows,
+      rowCapacities: recommendation.grid_layout.row_capacities,
+      zigzagPattern: recommendation.grid_layout.zigzag_pattern,
+    };
+
     const formattedResponse = {
       seats: recommendation.seats.map(seat => ({
         memberId: seat.member_id,
@@ -408,11 +432,16 @@ export async function POST(
         col: seat.col,
         part: seat.part
       })),
+      // 실제 사용할 그리드 (preserveGridLayout에 따라 기존 또는 AI 추천)
       gridLayout: {
         rows: recommendation.grid_layout.rows,
         rowCapacities: recommendation.grid_layout.row_capacities,
         zigzagPattern: recommendation.grid_layout.zigzag_pattern
       },
+      // AI가 제안하는 그리드 (사용자가 선택적으로 적용 가능)
+      suggestedGridLayout,
+      // 기존 그리드 보존 여부 플래그
+      gridPreserved: preserveGridLayout,
       metadata: {
         totalMembers: recommendation.metadata.total_members,
         breakdown: recommendation.metadata.breakdown,

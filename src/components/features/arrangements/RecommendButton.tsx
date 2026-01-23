@@ -15,7 +15,8 @@ const logger = createLogger({ prefix: 'RecommendButton' });
 interface RecommendButtonProps {
   arrangementId: string;
   gridLayout: GridLayout;
-  onApply: (recommendation: RecommendationResponse) => void;
+  /** 추천 결과와 그리드 보존 여부를 함께 전달 */
+  onApply: (recommendation: RecommendationResponse, preserveGridLayout: boolean) => void;
   disabled?: boolean;
 }
 
@@ -46,9 +47,9 @@ export default function RecommendButton({
     }
   };
 
-  const handleApply = () => {
+  const handleApply = (preserveGridLayout: boolean) => {
     if (recommendation) {
-      onApply(recommendation);
+      onApply(recommendation, preserveGridLayout);
       setShowPreview(false);
       setRecommendation(null);
     }
