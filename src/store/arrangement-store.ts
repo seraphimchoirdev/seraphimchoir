@@ -608,16 +608,30 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
                     };
 
                 case 6:
-                    // 줄반장 지정 단계: 모든 isRowLeader를 false로
-                    const newAssignments = { ...state.assignments };
-                    Object.keys(newAssignments).forEach((key) => {
-                        if (newAssignments[key].isRowLeader) {
-                            newAssignments[key] = { ...newAssignments[key], isRowLeader: false };
+                    // 줄반장 지정 단계: 자동 지정 후 수동 조정
+                    // 1. 먼저 기존 줄반장 전체 해제
+                    const assignmentsForStep6 = { ...state.assignments };
+                    Object.keys(assignmentsForStep6).forEach((key) => {
+                        if (assignmentsForStep6[key].isRowLeader) {
+                            assignmentsForStep6[key] = { ...assignmentsForStep6[key], isRowLeader: false };
                         }
                     });
+
+                    // 2. gridLayout이 있으면 자동으로 줄반장 지정
+                    if (state.gridLayout) {
+                        const candidates = selectRowLeaders(assignmentsForStep6, state.gridLayout);
+                        candidates.forEach(({ row, col }) => {
+                            const key = `${row}-${col}`;
+                            if (assignmentsForStep6[key]) {
+                                assignmentsForStep6[key] = { ...assignmentsForStep6[key], isRowLeader: true };
+                            }
+                        });
+                        logger.debug(`6단계 진입: 줄반장 ${candidates.length}명 자동 지정`);
+                    }
+
                     return {
                         _history: saveToHistory(state),
-                        assignments: newAssignments,
+                        assignments: assignmentsForStep6,
                     };
 
                 case 7:

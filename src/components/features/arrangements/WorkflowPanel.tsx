@@ -169,6 +169,7 @@ export default function WorkflowPanel({
                 step={stepMeta.step}
                 canComplete={config.canComplete}
                 cannotCompleteMessage={config.message}
+                hideCompleteButton={stepMeta.step === 1}
               >
                 {renderStepContent(stepMeta.step)}
               </WorkflowSection>

@@ -22,6 +22,8 @@ interface WorkflowSectionProps {
   canComplete?: boolean;
   /** 완료 불가 시 안내 메시지 */
   cannotCompleteMessage?: string;
+  /** "이 단계 완료" 버튼 숨김 여부 (자동 진행되는 단계에서 사용) */
+  hideCompleteButton?: boolean;
 }
 
 /**
@@ -43,6 +45,7 @@ export default function WorkflowSection({
   isCompleted: externalCompleted,
   canComplete,
   cannotCompleteMessage,
+  hideCompleteButton,
 }: WorkflowSectionProps) {
   const { workflow, toggleSection, goToStep, canAccessStep, completeStep } = useArrangementStore();
   const { currentStep, completedSteps, expandedSections, isWizardMode } = workflow;
@@ -204,8 +207,8 @@ export default function WorkflowSection({
         >
           {children}
 
-          {/* 단계 완료/다음 버튼 (위자드 모드일 때) */}
-          {isWizardMode && isCurrent && !isCompleted && (
+          {/* 단계 완료/다음 버튼 (위자드 모드일 때, hideCompleteButton이 아닐 때) */}
+          {isWizardMode && isCurrent && !isCompleted && !hideCompleteButton && (
             <div className="mt-4 pt-4 border-t border-[var(--color-border-subtle)] flex flex-col items-end gap-2">
               {canComplete === false && cannotCompleteMessage && (
                 <p className="text-xs text-[var(--color-text-tertiary)]">
