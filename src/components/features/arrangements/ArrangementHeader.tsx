@@ -19,6 +19,7 @@ import { useUpdateArrangement } from '@/hooks/useArrangements';
 import { useUpdateSeats } from '@/hooks/useSeats';
 import { useImageGeneration } from '@/hooks/useImageGeneration';
 import { useArrangementStore } from '@/store/arrangement-store';
+import { useArrangementDraftStore } from '@/store/arrangement-draft-store';
 import RecommendButton from './RecommendButton';
 import PastArrangementButton from './PastArrangementButton';
 import { ServiceScheduleBadge } from '@/components/features/service-schedules';
@@ -60,6 +61,9 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         workflow,
         resetWorkflow,
     } = useArrangementStore();
+
+    // Draft store - 저장 성공 시 draft 삭제용
+    const { deleteDraft } = useArrangementDraftStore();
 
     // 상태 관련 로직
     const currentStatus = (arrangement.status as ArrangementStatus) || 'DRAFT';
@@ -197,13 +201,22 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
     const handleSave = useCallback(async () => {
         setIsSaving(true);
         try {
-            // 1. Update Metadata and Grid Layout
+            // 1. Update Metadata and Grid Layout (워크플로우 상태 포함)
+            const gridLayoutWithWorkflow = gridLayout ? {
+                ...gridLayout,
+                workflowState: {
+                    currentStep: workflow.currentStep,
+                    completedSteps: Array.from(workflow.completedSteps),
+                    isWizardMode: workflow.isWizardMode,
+                },
+            } : null;
+
             await updateArrangement.mutateAsync({
                 id: arrangement.id,
                 data: {
                     title,
                     conductor: conductor || null,
-                    grid_layout: gridLayout as Json,
+                    grid_layout: gridLayoutWithWorkflow as Json,
                     grid_rows: gridLayout?.rows || 6,
                 },
             });
@@ -222,6 +235,10 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 seats: seatsData,
             });
 
+            // 3. 저장 성공 시 draft 삭제
+            deleteDraft(arrangement.id);
+            logger.debug('Draft deleted after successful save');
+
             if (isMountedRef.current) {
                 alert('저장되었습니다.');
             }
@@ -235,7 +252,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 setIsSaving(false);
             }
         }
-    }, [arrangement.id, title, conductor, gridLayout, assignments, updateArrangement, updateSeats]);
+    }, [arrangement.id, title, conductor, gridLayout, assignments, updateArrangement, updateSeats, deleteDraft, workflow]);
 
     // 현재 단계만 초기화
     const handleResetCurrentStep = useCallback(() => {
@@ -271,13 +288,22 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
 
         setIsSaving(true);
         try {
-            // 먼저 현재 변경사항 저장
+            // 먼저 현재 변경사항 저장 (워크플로우 상태 포함)
+            const gridLayoutWithWorkflow = gridLayout ? {
+                ...gridLayout,
+                workflowState: {
+                    currentStep: workflow.currentStep,
+                    completedSteps: Array.from(workflow.completedSteps),
+                    isWizardMode: workflow.isWizardMode,
+                },
+            } : null;
+
             await updateArrangement.mutateAsync({
                 id: arrangement.id,
                 data: {
                     title,
                     conductor: conductor || null,
-                    grid_layout: gridLayout as Json,
+                    grid_layout: gridLayoutWithWorkflow as Json,
                     grid_rows: gridLayout?.rows || 6,
                     status: 'SHARED',
                 },
@@ -296,6 +322,9 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 seats: seatsData,
             });
 
+            // 공유 성공 시 draft 삭제
+            deleteDraft(arrangement.id);
+
             if (isMountedRef.current) {
                 alert('자리배치표가 공유되었습니다.\n긴급 수정이 필요하면 언제든 수정할 수 있습니다.');
                 router.refresh();
@@ -310,7 +339,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 setIsSaving(false);
             }
         }
-    }, [arrangement.id, title, conductor, gridLayout, assignments, updateArrangement, updateSeats, router]);
+    }, [arrangement.id, title, conductor, gridLayout, assignments, updateArrangement, updateSeats, router, deleteDraft, workflow]);
 
     // 확정하기 (SHARED → CONFIRMED)
     const handleConfirm = useCallback(async () => {
@@ -320,12 +349,22 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
 
         setIsSaving(true);
         try {
+            // 워크플로우 상태 포함
+            const gridLayoutWithWorkflow = gridLayout ? {
+                ...gridLayout,
+                workflowState: {
+                    currentStep: workflow.currentStep,
+                    completedSteps: Array.from(workflow.completedSteps),
+                    isWizardMode: workflow.isWizardMode,
+                },
+            } : null;
+
             await updateArrangement.mutateAsync({
                 id: arrangement.id,
                 data: {
                     title,
                     conductor: conductor || null,
-                    grid_layout: gridLayout as Json,
+                    grid_layout: gridLayoutWithWorkflow as Json,
                     grid_rows: gridLayout?.rows || 6,
                     status: 'CONFIRMED',
                     is_published: true, // 레거시 호환성
@@ -345,6 +384,9 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 seats: seatsData,
             });
 
+            // 확정 성공 시 draft 삭제
+            deleteDraft(arrangement.id);
+
             if (isMountedRef.current) {
                 alert('자리배치표가 확정되었습니다.');
                 router.refresh();
@@ -359,7 +401,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 setIsSaving(false);
             }
         }
-    }, [arrangement.id, title, conductor, gridLayout, assignments, updateArrangement, updateSeats, router]);
+    }, [arrangement.id, title, conductor, gridLayout, assignments, updateArrangement, updateSeats, router, deleteDraft, workflow]);
 
     // 롤백 (SHARED → DRAFT)
     const handleRevertToDraft = useCallback(async () => {

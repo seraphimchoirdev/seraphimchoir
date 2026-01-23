@@ -8,14 +8,16 @@ import { Settings, ChevronUp, ChevronDown, CheckCircle2, ArrowRight, Sparkles, Z
 import { Button } from '@/components/ui/button';
 import ArrangementHeader from '@/components/features/arrangements/ArrangementHeader';
 import GridSettingsPanel from '@/components/features/arrangements/GridSettingsPanel';
-import { WorkflowPanel, WorkflowStep } from '@/components/features/arrangements/workflow';
+import { WorkflowPanel } from '@/components/features/arrangements/workflow';
 import { useArrangement } from '@/hooks/useArrangements';
-import { useArrangementStore, WORKFLOW_STEPS } from '@/store/arrangement-store';
+import { useArrangementStore, WORKFLOW_STEPS, WorkflowStep } from '@/store/arrangement-store';
 import { useUndoRedoShortcuts } from '@/hooks/useUndoRedoShortcuts';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
 import { useEmergencyUnavailable } from '@/hooks/useEmergencyUnavailable';
 import { useWorkflowAutoAdvance, useCompleteCurrentStep } from '@/hooks/useWorkflowAutoAdvance';
+import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
+import { useRestoreDraft } from '@/hooks/useRestoreDraft';
 import { DEFAULT_GRID_LAYOUT, GridLayout } from '@/types/grid';
 import { calculateGridLayoutFromSeats } from '@/lib/utils/gridUtils';
 import { recommendRowDistribution } from '@/lib/row-distribution-recommender';
@@ -25,6 +27,7 @@ const logger = createLogger({ prefix: 'ArrangementEditorPage' });
 
 import MemberSidebar from '@/components/features/seats/MemberSidebar';
 import SeatsGrid from '@/components/features/seats/SeatsGrid';
+import RestoreDialog from '@/components/features/arrangements/RestoreDialog';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ArrangementEditorPage({ params }: { params: Promise<{ id: string }> }) {
@@ -36,7 +39,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     const canEmergencyEdit = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
     const { id } = use(params);
     const { data: arrangement, isLoading, error } = useArrangement(id);
-    const { setAssignments, setGridLayout, gridLayout, clearHistory, compactAllRows, resetWorkflow, workflow } = useArrangementStore();
+    const { setAssignments, setGridLayout, gridLayout, clearHistory, compactAllRows, resetWorkflow, restoreWorkflowState, workflow } = useArrangementStore();
 
     // 키보드 단축키 훅 초기화 (Ctrl+Z/Y for Undo/Redo)
     useUndoRedoShortcuts();
@@ -128,17 +131,71 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         crossRowThreshold: 2,
     });
 
+    // DB에 저장된 데이터가 있는지 확인
+    const dbHasData = useMemo(() => {
+        return !!(arrangement?.seats && arrangement.seats.length > 0);
+    }, [arrangement]);
+
+    // 페이지 로드 완료 여부 (arrangement와 attendances 모두 로드됨)
+    const isPageLoaded = !!(arrangement && attendances !== undefined);
+
+    // Draft 복원 훅
+    const {
+        showRestoreDialog,
+        draftInfo,
+        hasDbData,
+        handleRestoreChoice,
+        closeDialog,
+        skipInitialization,
+    } = useRestoreDraft(id, {
+        dbHasData,
+        isPageLoaded,
+    });
+
+    // 자동 저장 훅 (Draft 복원 다이얼로그가 닫힌 후에만 활성화)
+    useAutoSaveDraft(id, {
+        enabled: !showRestoreDialog && isPageLoaded,
+        isReadOnly,
+    });
+
     // Initialize store with fetched seats and grid layout
     // attendances가 로드된 후에만 좌석을 설정하여 등단 불가능 멤버 필터링
     // ⭐ 초기 로드 시에만 실행 (긴급 등단 불가 처리 후 재실행 방지)
+    // ⭐ Draft 복원 시에는 건너뜀 (skipInitialization)
     useEffect(() => {
+        // Draft 복원 다이얼로그가 표시 중이면 대기
+        if (showRestoreDialog) return;
+
+        // Draft에서 복원한 경우 건너뜀
+        if (skipInitialization && initialLoadDoneRef.current === false) {
+            initialLoadDoneRef.current = true;
+            logger.debug('Skipping initialization - restored from draft');
+            return;
+        }
+
         if (arrangement && attendances !== undefined && !initialLoadDoneRef.current) {
             // 초기 로드 완료 마킹
             initialLoadDoneRef.current = true;
 
-            // 새 배치표 로드 시 히스토리 및 워크플로우 초기화
+            // 새 배치표 로드 시 히스토리 초기화
             clearHistory();
-            resetWorkflow();
+
+            // DB에 저장된 워크플로우 상태가 있으면 복원
+            const savedLayout = arrangement.grid_layout as unknown as GridLayout;
+            if (savedLayout?.workflowState && !skipInitialization) {
+                // DB에서 워크플로우 상태 복원
+                const { currentStep, completedSteps, isWizardMode } = savedLayout.workflowState;
+                logger.debug('DB에서 워크플로우 상태 복원:', { currentStep, completedSteps, isWizardMode });
+                restoreWorkflowState({
+                    currentStep: currentStep as WorkflowStep,
+                    completedSteps: new Set(completedSteps as WorkflowStep[]),
+                    isWizardMode,
+                    expandedSections: new Set([currentStep as WorkflowStep]),
+                });
+            } else if (!skipInitialization) {
+                // 워크플로우 상태가 없으면 (새 배치표 또는 레거시) 초기화
+                resetWorkflow();
+            }
 
             // Load seats (등단 불가능한 멤버 필터링)
             if (arrangement.seats && arrangement.seats.length > 0) {
@@ -206,7 +263,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 clearHistory(); // 컴팩션 후 히스토리 클리어
             }, 0);
         }
-    }, [arrangement, attendances, isServiceAvailable, setAssignments, setGridLayout, clearHistory, compactAllRows, gridLayout, resetWorkflow]);
+    }, [arrangement, attendances, isServiceAvailable, setAssignments, setGridLayout, clearHistory, compactAllRows, gridLayout, resetWorkflow, restoreWorkflowState, showRestoreDialog, skipInitialization]);
 
     if (isLoading || authLoading) {
         return (
@@ -341,6 +398,15 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
     return (
         <div className="flex flex-col h-screen bg-[var(--color-background-primary)]">
+            {/* Draft 복원 다이얼로그 */}
+            <RestoreDialog
+                open={showRestoreDialog}
+                draftInfo={draftInfo}
+                hasDbData={hasDbData}
+                onChoice={handleRestoreChoice}
+                onClose={closeDialog}
+            />
+
             <ArrangementHeader
                 arrangement={arrangement}
                 desktopCaptureRef={desktopCaptureRef}

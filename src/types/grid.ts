@@ -19,6 +19,19 @@ export type ZigzagPattern = 'even' | 'odd' | 'none';
 export type RowOffsetValue = 0 | 0.25 | 0.5 | 0.75 | null;
 
 /**
+ * 워크플로우 상태 (DB 저장용 직렬화 가능한 형태)
+ * - Set을 배열로 변환하여 JSON 저장 가능
+ */
+export interface SerializableWorkflowState {
+  /** 현재 활성화된 단계 (1~7) */
+  currentStep: number;
+  /** 완료된 단계 목록 (배열) */
+  completedSteps: number[];
+  /** 위자드 모드 (가이드 모드) 활성화 여부 */
+  isWizardMode: boolean;
+}
+
+/**
  * 그리드 레이아웃 설정
  */
 export interface GridLayout {
@@ -34,6 +47,8 @@ export interface GridLayout {
   isManuallyConfigured?: boolean;
   /** AI 추천 분배로 설정된 그리드인지 여부 (워크플로우 1단계 완료 조건) */
   isAIRecommended?: boolean;
+  /** 워크플로우 상태 (DB 저장용) */
+  workflowState?: SerializableWorkflowState;
 }
 
 /**
