@@ -81,7 +81,6 @@ export default function Navigation() {
 
     // 출석 관리 (ADMIN, CONDUCTOR, MANAGER, PART_LEADER)
     { href: '/attendances', label: '출석 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
-    { href: '/statistics', label: '출석 통계', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
 
     // 찬양대 일정 (모든 역할 조회 가능)
     { href: '/service-schedules', label: '찬양대 일정', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']) },
@@ -89,8 +88,8 @@ export default function Navigation() {
     // 자리배치 (조회는 모든 역할, 편집은 페이지에서 제한)
     { href: '/arrangements', label: '자리배치', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']) },
 
-    // 문서 아카이브 (ADMIN, CONDUCTOR, MANAGER, STAFF - 조회 권한)
-    { href: '/documents', label: '문서 아카이브', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF']) },
+    // 임원 포털 (ADMIN, CONDUCTOR, MANAGER, STAFF)
+    { href: '/management', label: '임원 포털', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF']) },
 
     // 대원 연결된 사용자용 메뉴 (역할 무관, 대원 연결됨)
     { href: '/my-attendance', label: '내 출석', show: isMemberLinked() },

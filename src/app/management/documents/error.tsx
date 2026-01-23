@@ -6,7 +6,7 @@ import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
 import { createLogger } from '@/lib/logger';
 import Link from 'next/link';
 
-const logger = createLogger({ prefix: 'StatisticsError' });
+const logger = createLogger({ prefix: 'ManagementDocumentsError' });
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -14,11 +14,11 @@ interface ErrorProps {
 }
 
 /**
- * 통계 라우트 에러 핸들러
+ * 임원 포털 문서 아카이브 라우트 에러 핸들러
  */
-export default function StatisticsError({ error, reset }: ErrorProps) {
+export default function ManagementDocumentsError({ error, reset }: ErrorProps) {
   useEffect(() => {
-    logger.error('Statistics error:', {
+    logger.error('Management Documents error:', {
       message: error.message,
       digest: error.digest,
     });
@@ -34,11 +34,11 @@ export default function StatisticsError({ error, reset }: ErrorProps) {
         </div>
 
         <h1 className="mb-2 text-2xl font-bold text-gray-900">
-          통계 오류
+          문서 아카이브 오류
         </h1>
 
         <p className="mb-6 text-gray-600">
-          통계 정보를 불러오는 중 문제가 발생했습니다.
+          문서를 불러오는 중 문제가 발생했습니다.
         </p>
 
         {process.env.NODE_ENV === 'development' && (
@@ -59,10 +59,10 @@ export default function StatisticsError({ error, reset }: ErrorProps) {
             다시 시도
           </Button>
 
-          <Link href="/dashboard">
+          <Link href="/management">
             <Button className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
-              대시보드로 이동
+              임원 포털로 이동
             </Button>
           </Link>
         </div>

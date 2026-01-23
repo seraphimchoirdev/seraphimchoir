@@ -73,7 +73,7 @@ export default function AdminLayout({
                     href={item.href}
                     className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                       isActive
-                        ? 'bg-[var(--color-primary)] text-white'
+                        ? 'bg-[var(--color-primary-600)] text-white'
                         : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-background-secondary)]'
                     }`}
                   >
