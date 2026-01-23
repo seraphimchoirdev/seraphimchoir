@@ -22,13 +22,13 @@ interface StepCompletionResult {
  * 위자드 모드에서는 다음 단계로 자동 이동도 수행합니다.
  *
  * 완료 조건:
- * - 1단계 (AI 추천 분배): gridLayout이 설정되고 수동 설정이 아닐 때
- * - 2단계 (그리드 조정): gridLayout이 수동으로 설정되었을 때
- * - 3단계 (AI 자동배치): assignments에 멤버가 배치되었을 때
- * - 4단계 (수동 배치 조정): 미배치 멤버가 0일 때
- * - 5단계 (Offset 조정): rowOffsets가 설정되었을 때 (선택사항이므로 즉시 완료 가능)
- * - 6단계 (줄반장 지정): 줄반장이 1명 이상 지정되었을 때
- * - 7단계 (공유): 배치표가 SHARED 상태일 때
+ * - 1단계 (AI 추천 분배): AI가 추천하면 자동 완료
+ * - 2단계 (그리드 조정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
+ * - 3단계 (AI 자동배치): 멤버가 배치되면 자동 완료
+ * - 4단계 (수동 배치 조정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
+ * - 5단계 (Offset 조정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
+ * - 6단계 (줄반장 지정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
+ * - 7단계 (공유): 공유/확정 시 자동 완료
  *
  * @param totalMembers - 총 멤버 수 (미배치 계산용)
  * @param arrangementStatus - 현재 배치표 상태
@@ -101,11 +101,12 @@ export function useWorkflowAutoAdvance(
         reason: 'AI 추천으로 그리드 설정됨',
       });
 
-      // 2단계: 그리드 수동 조정 (gridLayout이 수동 설정됨)
+      // 2단계: 그리드 수동 조정 (수동 완료 전용 - 자동 완료 비활성화)
+      // 사용자가 "이 단계 완료" 버튼을 눌러야만 완료됨
       results.push({
         step: 2,
-        isCompleted: !!gridLayout?.isManuallyConfigured,
-        reason: '그리드가 수동으로 설정됨',
+        isCompleted: false,
+        reason: '수동 완료 필요',
       });
 
       // 3단계: AI 자동배치 (멤버가 배치됨)
@@ -115,27 +116,28 @@ export function useWorkflowAutoAdvance(
         reason: `${assignmentsCount}명 배치됨`,
       });
 
-      // 4단계: 수동 배치 조정 (미배치 멤버 = 0)
-      const unassignedCount = Math.max(0, totalMembers - assignmentsCount);
+      // 4단계: 수동 배치 조정 (수동 완료 전용 - 자동 완료 비활성화)
+      // 사용자가 "이 단계 완료" 버튼을 눌러야만 완료됨
       results.push({
         step: 4,
-        isCompleted: totalMembers > 0 && unassignedCount === 0,
-        reason: unassignedCount === 0 ? '모든 멤버 배치 완료' : `${unassignedCount}명 미배치`,
+        isCompleted: false,
+        reason: '수동 완료 필요',
       });
 
-      // 5단계: Offset 조정 (선택사항 - 항상 완료 가능)
-      // rowOffsets가 설정되었거나, 사용자가 건너뛰기 선택
+      // 5단계: Offset 조정 (수동 완료 전용 - 자동 완료 비활성화)
+      // 사용자가 "이 단계 완료" 버튼을 눌러야만 완료됨
       results.push({
         step: 5,
-        isCompleted: rowOffsetsCount > 0 || isStepCompleted(5),
-        reason: rowOffsetsCount > 0 ? `${rowOffsetsCount}개 행 오프셋 설정` : '건너뛰기 가능',
+        isCompleted: false,
+        reason: '수동 완료 필요',
       });
 
-      // 6단계: 줄반장 지정 (1명 이상 지정)
+      // 6단계: 줄반장 지정 (수동 완료 전용 - 자동 완료 비활성화)
+      // 사용자가 "이 단계 완료" 버튼을 눌러야만 완료됨
       results.push({
         step: 6,
-        isCompleted: rowLeaderCount > 0,
-        reason: `${rowLeaderCount}명 줄반장 지정됨`,
+        isCompleted: false,
+        reason: '수동 완료 필요',
       });
 
       // 7단계: 공유 (SHARED 또는 CONFIRMED 상태)
