@@ -126,26 +126,28 @@ function ArrangementsContent() {
         <AppShell>
             <div className="min-h-screen bg-[var(--color-background-tertiary)] py-8 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-7xl mx-auto space-y-6">
-                    {/* 헤더 */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                            <h1 className="heading-2 text-[var(--color-text-primary)]">자리배치 관리</h1>
-                            <p className="text-[var(--color-text-secondary)] mt-1">
-                                예배별 자리배치표를 생성하고 관리합니다.
-                                {meta.total > 0 && (
-                                    <span className="ml-2 text-[var(--color-text-tertiary)]">
-                                        (총 {meta.total}개)
-                                    </span>
-                                )}
-                            </p>
-                        </div>
-                        {canCreateArrangement && (
+                    {/* 헤더 - 타이틀 영역 */}
+                    <div>
+                        <h1 className="heading-2 text-[var(--color-text-primary)]">자리배치 관리</h1>
+                        <p className="text-[var(--color-text-secondary)] mt-1">
+                            예배별 자리배치표를 생성하고 관리합니다.
+                            {meta.total > 0 && (
+                                <span className="ml-2 text-[var(--color-text-tertiary)]">
+                                    (총 {meta.total}개)
+                                </span>
+                            )}
+                        </p>
+                    </div>
+
+                    {/* 컨트롤 영역 */}
+                    {canCreateArrangement && (
+                        <div className="flex justify-end">
                             <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
                                 <Plus className="h-4 w-4" />
                                 새 배치표 만들기
                             </Button>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
                     {/* 필터 UI */}
                     <ArrangementFilters

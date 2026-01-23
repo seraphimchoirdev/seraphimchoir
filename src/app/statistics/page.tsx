@@ -51,16 +51,17 @@ export default function StatisticsPage() {
       <div className="py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* 헤더 */}
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h2 className="heading-2 text-[var(--color-text-primary)]">출석 통계</h2>
-                <p className="mt-1 body-base text-[var(--color-text-secondary)]">
-                  파트별, 대원별 출석 현황을 분석합니다.
-                </p>
-              </div>
+          <div className="bg-white p-6 rounded-xl shadow-sm space-y-4">
+            {/* 타이틀 영역 */}
+            <div>
+              <h2 className="heading-2 text-[var(--color-text-primary)]">출석 통계</h2>
+              <p className="mt-1 body-base text-[var(--color-text-secondary)]">
+                파트별, 대원별 출석 현황을 분석합니다.
+              </p>
+            </div>
 
-              {/* 탭 선택 */}
+            {/* 탭 선택 */}
+            <div className="pt-4 border-t border-[var(--color-border-subtle)]">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
                   <TabsTrigger value="part-stats">
