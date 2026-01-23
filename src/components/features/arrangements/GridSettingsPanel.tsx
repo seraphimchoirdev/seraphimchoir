@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { GridLayout, GRID_CONSTRAINTS } from '@/types/grid';
+import { GridLayout, GRID_CONSTRAINTS, RowOffsetValue } from '@/types/grid';
 import { calculateTotalSeats } from '@/lib/utils/gridUtils';
 import { recommendRowDistribution } from '@/lib/row-distribution-recommender';
-import { Zap } from 'lucide-react';
+import { Zap, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import RowOffsetAdjuster from './RowOffsetAdjuster';
 
 interface GridSettingsPanelProps {
   gridLayout: GridLayout | null;
@@ -20,10 +22,14 @@ export default function GridSettingsPanel({
   onChange,
   totalMembers,
 }: GridSettingsPanelProps) {
+  // 행별 오프셋 조정 섹션 펼침 상태
+  const [isRowOffsetsExpanded, setIsRowOffsetsExpanded] = useState(false);
+
   // gridLayout에서 직접 값을 읽고, 없으면 기본값 사용
   const currentRows = gridLayout?.rows ?? GRID_CONSTRAINTS.DEFAULT_ROWS;
   const currentCapacities = gridLayout?.rowCapacities ?? Array(GRID_CONSTRAINTS.DEFAULT_ROWS).fill(8);
   const currentZigzag = gridLayout?.zigzagPattern ?? 'even';
+  const currentRowOffsets = gridLayout?.rowOffsets ?? {};
 
   // 행 수 변경
   const handleRowsChange = (newRows: number) => {
@@ -36,10 +42,20 @@ export default function GridSettingsPanel({
       .fill(0)
       .map((_, idx) => currentCapacities[idx] || 8);
 
+    // 행 수가 줄어들면 해당 행의 오프셋 제거
+    const newRowOffsets = { ...currentRowOffsets };
+    Object.keys(newRowOffsets).forEach(key => {
+      if (parseInt(key) >= newRows) {
+        delete newRowOffsets[parseInt(key)];
+      }
+    });
+
     onChange({
       rows: newRows,
       rowCapacities: newCapacities,
       zigzagPattern: currentZigzag,
+      rowOffsets: Object.keys(newRowOffsets).length > 0 ? newRowOffsets : undefined,
+      isManuallyConfigured: true,
     });
   };
 
@@ -57,6 +73,8 @@ export default function GridSettingsPanel({
       rows: currentRows,
       rowCapacities: newCapacities,
       zigzagPattern: currentZigzag,
+      rowOffsets: currentRowOffsets,
+      isManuallyConfigured: true,
     });
   };
 
@@ -149,6 +167,8 @@ export default function GridSettingsPanel({
                 rows: currentRows,
                 rowCapacities: currentCapacities,
                 zigzagPattern: 'even',
+                rowOffsets: currentRowOffsets,
+                isManuallyConfigured: gridLayout?.isManuallyConfigured,
               })}
               className="flex-1"
             >
@@ -161,6 +181,8 @@ export default function GridSettingsPanel({
                 rows: currentRows,
                 rowCapacities: currentCapacities,
                 zigzagPattern: 'odd',
+                rowOffsets: currentRowOffsets,
+                isManuallyConfigured: gridLayout?.isManuallyConfigured,
               })}
               className="flex-1"
             >
@@ -173,12 +195,90 @@ export default function GridSettingsPanel({
                 rows: currentRows,
                 rowCapacities: currentCapacities,
                 zigzagPattern: 'none',
+                rowOffsets: currentRowOffsets,
+                isManuallyConfigured: gridLayout?.isManuallyConfigured,
               })}
               className="flex-1"
             >
               없음
             </Button>
           </div>
+        </div>
+
+        {/* 행별 지그재그 세부 조정 */}
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => setIsRowOffsetsExpanded(!isRowOffsetsExpanded)}
+            className="flex items-center justify-between w-full text-sm sm:text-base font-medium text-[var(--color-text-primary)] hover:text-[var(--color-primary-600)] transition-colors"
+          >
+            <span>행별 세부 조정</span>
+            <span className="flex items-center gap-1">
+              {Object.keys(currentRowOffsets).length > 0 && (
+                <span className="text-xs text-[var(--color-primary-600)] bg-[var(--color-primary-50)] px-1.5 py-0.5 rounded">
+                  {Object.keys(currentRowOffsets).length}개 설정
+                </span>
+              )}
+              {isRowOffsetsExpanded ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </span>
+          </button>
+
+          {isRowOffsetsExpanded && (
+            <div className="space-y-3 pt-2 border-t border-[var(--color-border)]">
+              <p className="text-xs text-[var(--color-text-tertiary)]">
+                화살표 버튼으로 각 행의 오프셋을 조정합니다. 0.25칸 단위로 조정됩니다.
+              </p>
+
+              {Array.from({ length: currentRows }).map((_, idx) => (
+                <RowOffsetAdjuster
+                  key={idx}
+                  rowNumber={idx + 1}
+                  currentOffset={currentRowOffsets[idx]}
+                  onChange={(newOffset) => {
+                    const newOffsets = { ...currentRowOffsets };
+
+                    if (newOffset === null) {
+                      delete newOffsets[idx];
+                    } else {
+                      newOffsets[idx] = newOffset;
+                    }
+
+                    onChange({
+                      rows: currentRows,
+                      rowCapacities: currentCapacities,
+                      zigzagPattern: currentZigzag,
+                      rowOffsets: Object.keys(newOffsets).length > 0 ? newOffsets : undefined,
+                      isManuallyConfigured: true,
+                    });
+                  }}
+                />
+              ))}
+
+              {Object.keys(currentRowOffsets).length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    onChange({
+                      rows: currentRows,
+                      rowCapacities: currentCapacities,
+                      zigzagPattern: currentZigzag,
+                      rowOffsets: undefined,
+                      isManuallyConfigured: gridLayout?.isManuallyConfigured,
+                    });
+                  }}
+                  className="w-full gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-error-600)]"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  모두 기본값으로 초기화
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 총 좌석 수 */}

@@ -14,6 +14,7 @@ import { useUndoRedoShortcuts } from '@/hooks/useUndoRedoShortcuts';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
 import { useEmergencyUnavailable } from '@/hooks/useEmergencyUnavailable';
+import { useWorkflowAutoAdvance } from '@/hooks/useWorkflowAutoAdvance';
 import { DEFAULT_GRID_LAYOUT, GridLayout } from '@/types/grid';
 import { calculateGridLayoutFromSeats } from '@/lib/utils/gridUtils';
 import { createLogger } from '@/lib/logger';
@@ -34,7 +35,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     const canEmergencyEdit = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
     const { id } = use(params);
     const { data: arrangement, isLoading, error } = useArrangement(id);
-    const { setAssignments, setGridLayout, gridLayout, clearHistory, compactAllRows } = useArrangementStore();
+    const { setAssignments, setGridLayout, gridLayout, clearHistory, compactAllRows, resetWorkflow } = useArrangementStore();
 
     // 키보드 단축키 훅 초기화 (Ctrl+Z/Y for Undo/Redo)
     useUndoRedoShortcuts();
@@ -99,6 +100,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         }).length;
     }, [membersData, attendanceMap]);
 
+    // 워크플로우 자동 진행 훅 (위자드 모드에서 단계 완료 조건 자동 감지)
+    useWorkflowAutoAdvance(totalMembers, arrangement?.status ?? undefined);
+
     // 배치표 상태 및 권한에 따른 읽기 전용 모드
     // - CONFIRMED 상태: 모두 읽기 전용
     // - SHARED 상태: canEmergencyEdit 권한이 없으면 읽기 전용
@@ -128,8 +132,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             // 초기 로드 완료 마킹
             initialLoadDoneRef.current = true;
 
-            // 새 배치표 로드 시 히스토리 초기화
+            // 새 배치표 로드 시 히스토리 및 워크플로우 초기화
             clearHistory();
+            resetWorkflow();
 
             // Load seats (등단 불가능한 멤버 필터링)
             if (arrangement.seats && arrangement.seats.length > 0) {
@@ -186,7 +191,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 clearHistory(); // 컴팩션 후 히스토리 클리어
             }, 0);
         }
-    }, [arrangement, attendances, isServiceAvailable, setAssignments, setGridLayout, clearHistory, compactAllRows, gridLayout]);
+    }, [arrangement, attendances, isServiceAvailable, setAssignments, setGridLayout, clearHistory, compactAllRows, gridLayout, resetWorkflow]);
 
     if (isLoading || authLoading) {
         return (

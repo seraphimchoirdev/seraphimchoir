@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import type { Database } from '@/types/database.types';
-import type { GridLayout } from '@/types/grid';
+import type { GridLayout, RowOffsetValue } from '@/types/grid';
 import {
     minimalReassignment,
     type MinimalReassignmentResult,
@@ -16,6 +16,94 @@ import { selectRowLeaders, type RowLeaderCandidate } from '@/lib/row-leader-util
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'ArrangementStore' });
+
+// ============================================
+// Workflow State Types (Progressive Disclosure)
+// ============================================
+
+/**
+ * 워크플로우 단계 (1~7)
+ * 1: AI 추천 분배
+ * 2: 좌석 그리드 수동 조정
+ * 3: AI 자동배치
+ * 4: 수동 배치 조정
+ * 5: 행별 Offset 조정
+ * 6: 줄반장 지정
+ * 7: 자리배치표 공유
+ */
+export type WorkflowStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+/**
+ * 워크플로우 단계 메타데이터
+ */
+export interface WorkflowStepMeta {
+  step: WorkflowStep;
+  title: string;
+  shortTitle: string;
+  description: string;
+}
+
+/**
+ * 워크플로우 단계 정의
+ */
+export const WORKFLOW_STEPS: Record<WorkflowStep, WorkflowStepMeta> = {
+  1: {
+    step: 1,
+    title: 'AI 추천 분배',
+    shortTitle: 'AI 분배',
+    description: '출석 인원을 기반으로 줄별 인원을 자동 추천합니다.',
+  },
+  2: {
+    step: 2,
+    title: '좌석 그리드 조정',
+    shortTitle: '그리드',
+    description: '줄 수와 줄별 인원을 수동으로 조정합니다.',
+  },
+  3: {
+    step: 3,
+    title: 'AI 자동배치',
+    shortTitle: 'AI 배치',
+    description: '파트, 키, 경력을 고려하여 좌석을 자동 배치합니다.',
+  },
+  4: {
+    step: 4,
+    title: '수동 배치 조정',
+    shortTitle: '수동 조정',
+    description: '클릭-클릭 방식으로 좌석을 미세 조정합니다.',
+  },
+  5: {
+    step: 5,
+    title: '행별 Offset 조정',
+    shortTitle: 'Offset',
+    description: '지휘자 시야 확보를 위해 줄 위치를 조정합니다.',
+  },
+  6: {
+    step: 6,
+    title: '줄반장 지정',
+    shortTitle: '줄반장',
+    description: '각 줄의 대표를 지정합니다.',
+  },
+  7: {
+    step: 7,
+    title: '배치표 공유',
+    shortTitle: '공유',
+    description: '배치표를 저장하고 공유합니다.',
+  },
+};
+
+/**
+ * 워크플로우 상태
+ */
+export interface WorkflowState {
+  /** 현재 활성화된 단계 */
+  currentStep: WorkflowStep;
+  /** 완료된 단계 목록 */
+  completedSteps: Set<WorkflowStep>;
+  /** 위자드 모드 (가이드 모드) 활성화 여부 */
+  isWizardMode: boolean;
+  /** 각 단계 섹션의 펼침/접힘 상태 */
+  expandedSections: Set<WorkflowStep>;
+}
 
 type Part = Database['public']['Enums']['part'];
 
@@ -107,10 +195,24 @@ interface ArrangementState {
     // History state for undo/redo
     _history: HistoryManager;
 
+    // ============================================
+    // Workflow State (Progressive Disclosure)
+    // ============================================
+    workflow: WorkflowState;
+
     // Actions
     setAssignments: (assignments: SeatAssignment[]) => void;
     setGridLayout: (layout: GridLayout | null) => void;
     setGridLayoutAndCompact: (layout: GridLayout) => void;
+
+    // 그리드 설정 유지 옵션이 있는 레이아웃 설정
+    setGridLayoutPreserveManual: (layout: GridLayout, preserveManual: boolean) => void;
+    // 행별 오프셋 설정
+    setRowOffset: (row: number, offset: RowOffsetValue) => void;
+    // 그리드를 수동 설정으로 마킹
+    markGridAsManual: () => void;
+    // 모든 행별 오프셋 초기화
+    clearRowOffsets: () => void;
     placeMember: (member: Omit<SeatAssignment, 'row' | 'col'>, row: number, col: number) => void;
     removeMember: (row: number, col: number) => void;
     moveMember: (fromRow: number, fromCol: number, toRow: number, toCol: number) => void;
@@ -136,6 +238,35 @@ interface ArrangementState {
     canUndo: () => boolean;
     canRedo: () => boolean;
     clearHistory: () => void;
+
+    // ============================================
+    // Workflow Actions (Progressive Disclosure)
+    // ============================================
+
+    /** 특정 단계로 이동 */
+    goToStep: (step: WorkflowStep) => void;
+    /** 다음 단계로 이동 */
+    nextStep: () => void;
+    /** 이전 단계로 이동 */
+    prevStep: () => void;
+    /** 특정 단계를 완료로 표시 */
+    completeStep: (step: WorkflowStep) => void;
+    /** 특정 단계를 미완료로 표시 */
+    uncompleteStep: (step: WorkflowStep) => void;
+    /** 위자드 모드 토글 */
+    toggleWizardMode: () => void;
+    /** 섹션 펼침/접힘 토글 */
+    toggleSection: (step: WorkflowStep) => void;
+    /** 모든 섹션 펼치기 */
+    expandAllSections: () => void;
+    /** 모든 섹션 접기 */
+    collapseAllSections: () => void;
+    /** 워크플로우 상태 초기화 */
+    resetWorkflow: () => void;
+    /** 특정 단계가 완료되었는지 확인 */
+    isStepCompleted: (step: WorkflowStep) => boolean;
+    /** 특정 단계에 접근 가능한지 확인 (이전 단계가 완료되어야 함) */
+    canAccessStep: (step: WorkflowStep) => boolean;
 
     // Minimal reassignment action
     applyMinimalReassignment: (
@@ -207,6 +338,14 @@ interface ArrangementState {
     compactAllRows: () => void;
 }
 
+// 워크플로우 초기 상태 생성 헬퍼
+const createInitialWorkflowState = (): WorkflowState => ({
+    currentStep: 1,
+    completedSteps: new Set<WorkflowStep>(),
+    isWizardMode: true, // 기본적으로 위자드 모드 활성화
+    expandedSections: new Set<WorkflowStep>([1]), // 첫 번째 섹션만 펼침
+});
+
 export const useArrangementStore = create<ArrangementState>((set, get) => ({
     assignments: {},
     gridLayout: null,
@@ -217,6 +356,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
     selectedPosition: null,
     rowLeaderMode: false,
     _history: { past: [], future: [] },
+    workflow: createInitialWorkflowState(),
 
     setAssignments: (assignmentsList) => {
         const newAssignments: Record<string, SeatAssignment> = {};
@@ -230,6 +370,90 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
     },
 
     setGridLayout: (layout) => set({ gridLayout: layout }),
+
+    /**
+     * 그리드 레이아웃 설정 (수동 설정 보존 옵션)
+     * @param layout 새 그리드 레이아웃
+     * @param preserveManual true면 현재 그리드의 rowCapacities 유지, false면 새 레이아웃 적용
+     */
+    setGridLayoutPreserveManual: (layout, preserveManual) =>
+        set((state) => {
+            if (preserveManual && state.gridLayout) {
+                // 수동 설정 보존: 현재 rowCapacities 유지, 다른 속성만 업데이트
+                return {
+                    gridLayout: {
+                        ...layout,
+                        rows: state.gridLayout.rows,
+                        rowCapacities: state.gridLayout.rowCapacities,
+                        rowOffsets: state.gridLayout.rowOffsets,
+                        isManuallyConfigured: true,
+                    },
+                };
+            }
+            // 새 레이아웃 적용
+            return { gridLayout: layout };
+        }),
+
+    /**
+     * 행별 오프셋 설정
+     * @param row 행 번호 (1-based)
+     * @param offset 오프셋 값 (null = 기본 패턴 따름)
+     */
+    setRowOffset: (row, offset) =>
+        set((state) => {
+            if (!state.gridLayout) return state;
+
+            const rowIndex = row - 1; // 0-based index for storage key
+            const currentOffsets = state.gridLayout.rowOffsets || {};
+
+            // null이면 해당 키 삭제, 아니면 설정
+            let newOffsets: Record<number, RowOffsetValue>;
+            if (offset === null) {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { [rowIndex]: _, ...rest } = currentOffsets;
+                newOffsets = rest;
+            } else {
+                newOffsets = { ...currentOffsets, [rowIndex]: offset };
+            }
+
+            return {
+                gridLayout: {
+                    ...state.gridLayout,
+                    rowOffsets: Object.keys(newOffsets).length > 0 ? newOffsets : undefined,
+                    isManuallyConfigured: true,
+                },
+            };
+        }),
+
+    /**
+     * 그리드를 수동 설정으로 마킹
+     */
+    markGridAsManual: () =>
+        set((state) => {
+            if (!state.gridLayout) return state;
+            return {
+                gridLayout: {
+                    ...state.gridLayout,
+                    isManuallyConfigured: true,
+                },
+            };
+        }),
+
+    /**
+     * 모든 행별 오프셋 초기화
+     */
+    clearRowOffsets: () =>
+        set((state) => {
+            if (!state.gridLayout) return state;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { rowOffsets: _, ...rest } = state.gridLayout;
+            return {
+                gridLayout: {
+                    ...rest,
+                    rowOffsets: undefined,
+                },
+            };
+        }),
 
     /**
      * 그리드 레이아웃 변경 (자동 재배치 없음)
@@ -1086,4 +1310,229 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
             return { assignments: newAssignments };
         }),
+
+    // ============================================
+    // Workflow Actions (Progressive Disclosure)
+    // ============================================
+
+    /**
+     * 특정 단계로 이동
+     */
+    goToStep: (step) =>
+        set((state) => {
+            const newExpanded = new Set(state.workflow.expandedSections);
+            // 위자드 모드에서는 현재 단계만 펼침
+            if (state.workflow.isWizardMode) {
+                newExpanded.clear();
+                newExpanded.add(step);
+            } else {
+                // 자유 모드에서는 추가로 펼침
+                newExpanded.add(step);
+            }
+
+            logger.debug(`워크플로우 단계 이동: ${state.workflow.currentStep} → ${step}`);
+
+            return {
+                workflow: {
+                    ...state.workflow,
+                    currentStep: step,
+                    expandedSections: newExpanded,
+                },
+            };
+        }),
+
+    /**
+     * 다음 단계로 이동
+     */
+    nextStep: () =>
+        set((state) => {
+            const { currentStep } = state.workflow;
+            if (currentStep >= 7) return state;
+
+            const nextStep = (currentStep + 1) as WorkflowStep;
+            const newExpanded = new Set(state.workflow.expandedSections);
+
+            if (state.workflow.isWizardMode) {
+                newExpanded.clear();
+                newExpanded.add(nextStep);
+            } else {
+                newExpanded.add(nextStep);
+            }
+
+            logger.debug(`워크플로우 다음 단계: ${currentStep} → ${nextStep}`);
+
+            return {
+                workflow: {
+                    ...state.workflow,
+                    currentStep: nextStep,
+                    expandedSections: newExpanded,
+                },
+            };
+        }),
+
+    /**
+     * 이전 단계로 이동
+     */
+    prevStep: () =>
+        set((state) => {
+            const { currentStep } = state.workflow;
+            if (currentStep <= 1) return state;
+
+            const prevStep = (currentStep - 1) as WorkflowStep;
+            const newExpanded = new Set(state.workflow.expandedSections);
+
+            if (state.workflow.isWizardMode) {
+                newExpanded.clear();
+                newExpanded.add(prevStep);
+            } else {
+                newExpanded.add(prevStep);
+            }
+
+            logger.debug(`워크플로우 이전 단계: ${currentStep} → ${prevStep}`);
+
+            return {
+                workflow: {
+                    ...state.workflow,
+                    currentStep: prevStep,
+                    expandedSections: newExpanded,
+                },
+            };
+        }),
+
+    /**
+     * 특정 단계를 완료로 표시
+     */
+    completeStep: (step) =>
+        set((state) => {
+            const newCompleted = new Set(state.workflow.completedSteps);
+            newCompleted.add(step);
+
+            logger.debug(`단계 ${step} 완료 표시`);
+
+            return {
+                workflow: {
+                    ...state.workflow,
+                    completedSteps: newCompleted,
+                },
+            };
+        }),
+
+    /**
+     * 특정 단계를 미완료로 표시
+     */
+    uncompleteStep: (step) =>
+        set((state) => {
+            const newCompleted = new Set(state.workflow.completedSteps);
+            newCompleted.delete(step);
+
+            return {
+                workflow: {
+                    ...state.workflow,
+                    completedSteps: newCompleted,
+                },
+            };
+        }),
+
+    /**
+     * 위자드 모드 토글
+     */
+    toggleWizardMode: () =>
+        set((state) => {
+            const newIsWizardMode = !state.workflow.isWizardMode;
+            let newExpanded = state.workflow.expandedSections;
+
+            if (newIsWizardMode) {
+                // 위자드 모드 활성화: 현재 단계만 펼침
+                newExpanded = new Set<WorkflowStep>([state.workflow.currentStep]);
+            } else {
+                // 자유 모드 활성화: 모든 섹션 펼침
+                newExpanded = new Set<WorkflowStep>([1, 2, 3, 4, 5, 6, 7]);
+            }
+
+            logger.debug(`위자드 모드: ${newIsWizardMode ? '활성화' : '비활성화'}`);
+
+            return {
+                workflow: {
+                    ...state.workflow,
+                    isWizardMode: newIsWizardMode,
+                    expandedSections: newExpanded,
+                },
+            };
+        }),
+
+    /**
+     * 섹션 펼침/접힘 토글
+     */
+    toggleSection: (step) =>
+        set((state) => {
+            const newExpanded = new Set(state.workflow.expandedSections);
+
+            if (newExpanded.has(step)) {
+                newExpanded.delete(step);
+            } else {
+                newExpanded.add(step);
+            }
+
+            return {
+                workflow: {
+                    ...state.workflow,
+                    expandedSections: newExpanded,
+                },
+            };
+        }),
+
+    /**
+     * 모든 섹션 펼치기
+     */
+    expandAllSections: () =>
+        set((state) => ({
+            workflow: {
+                ...state.workflow,
+                expandedSections: new Set<WorkflowStep>([1, 2, 3, 4, 5, 6, 7]),
+            },
+        })),
+
+    /**
+     * 모든 섹션 접기
+     */
+    collapseAllSections: () =>
+        set((state) => ({
+            workflow: {
+                ...state.workflow,
+                expandedSections: new Set<WorkflowStep>(),
+            },
+        })),
+
+    /**
+     * 워크플로우 상태 초기화
+     */
+    resetWorkflow: () =>
+        set(() => ({
+            workflow: createInitialWorkflowState(),
+        })),
+
+    /**
+     * 특정 단계가 완료되었는지 확인
+     */
+    isStepCompleted: (step) => {
+        return get().workflow.completedSteps.has(step);
+    },
+
+    /**
+     * 특정 단계에 접근 가능한지 확인
+     * (위자드 모드에서는 이전 단계가 완료되어야 접근 가능)
+     */
+    canAccessStep: (step) => {
+        const { workflow } = get();
+
+        // 자유 모드에서는 모든 단계 접근 가능
+        if (!workflow.isWizardMode) return true;
+
+        // 첫 번째 단계는 항상 접근 가능
+        if (step === 1) return true;
+
+        // 이전 단계가 완료되었거나 현재 단계인 경우 접근 가능
+        const prevStep = (step - 1) as WorkflowStep;
+        return workflow.completedSteps.has(prevStep) || workflow.currentStep >= step;
+    },
 }));
