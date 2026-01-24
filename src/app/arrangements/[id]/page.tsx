@@ -73,6 +73,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     // 초기 로드 완료 추적 (compactAllRows 중복 실행 방지)
     const initialLoadDoneRef = useRef(false);
 
+    // Step 4 자동 최소화를 위한 이전 Step 추적
+    const prevStepRef = useRef<number>(workflow.currentStep);
+
     // 모든 정대원 조회 (AI 추천 분배 인원수 계산용 - 등단자만)
     const { data: membersData } = useMembers({
         member_status: 'REGULAR',
@@ -238,6 +241,22 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         enabled: !showRestoreDialog && isPageLoaded,
         isReadOnly,
     });
+
+    // Step 4 (수동 배치 조정) 진입 시 워크플로우 패널 자동 최소화
+    // 태블릿/폴더블 기기(640px-1023px)에서 MemberSidebar + SeatsGrid 공간 확보
+    // ⭐ useRef로 이전 Step을 추적하여 Step 4 "진입" 시에만 실행 (재펼침 가능)
+    useEffect(() => {
+        const prevStep = prevStepRef.current;
+        prevStepRef.current = workflow.currentStep;
+
+        // Step 4로 "진입"하는 순간에만 실행 (이미 4에 있으면 무시)
+        if (workflow.currentStep === 4 && prevStep !== 4) {
+            const isTabletRange = window.innerWidth >= 640 && window.innerWidth < 1024;
+            if (isTabletRange) {
+                setShowGridSettings(false);
+            }
+        }
+    }, [workflow.currentStep]);
 
     // Initialize store with fetched seats and grid layout
     // attendances가 로드된 후에만 좌석을 설정하여 등단 불가능 멤버 필터링
