@@ -349,7 +349,7 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
                     </div>
                 )}
 
-                {members.length > 0 && Object.keys(groupedMembers).length === 0 && (
+                {members.length > 0 && Object.keys(groupedMembers).length === 0 && outOfBoundsMembers.length === 0 && (
                     <div className="text-center text-sm text-[var(--color-text-secondary)] mt-8">
                         모든 대원이 배치되었습니다.
                     </div>
