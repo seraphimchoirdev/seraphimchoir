@@ -59,7 +59,8 @@ export interface Seat {
 export interface GridLayout {
   rows: number;
   row_capacities: number[];  // 1줄부터 n줄까지 순서
-  zigzag_pattern: 'even' | 'odd';
+  zigzag_pattern: 'even' | 'odd' | 'none';  // 'none' 추가 (rowOffsets 사용 시)
+  row_offsets?: Record<number, number>;      // 행별 오프셋 (0-based index)
 }
 
 export interface ArrangementResult {
@@ -1584,11 +1585,15 @@ export function generateAISeatingArrangement(
   }
 
   // 8. 결과 반환
+  // AI 추천 분배 시 왼쪽 정렬 (오프셋 없음)
+  // 사용자가 원하면 5단계에서 프리셋으로 패턴 적용 가능
+
   return {
     grid_layout: {
       rows: numRows,
       row_capacities: finalRowCapacities,  // 압축된 용량 또는 기존 용량 (preserveGridLayout에 따라)
-      zigzag_pattern: 'even',
+      zigzag_pattern: 'none',  // 왼쪽 정렬
+      // row_offsets 생략 = 모든 행 동일 시작점 (왼쪽 정렬)
     },
     seats,
     metadata: {

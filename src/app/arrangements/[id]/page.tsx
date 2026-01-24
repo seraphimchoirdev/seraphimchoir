@@ -432,14 +432,14 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                     </div>
                 );
             case 5:
-                // 행별 Offset 조정
+                // 행별 Offset 조정 - 인라인 화살표 컨트롤로 조정
                 return (
                     <div className="space-y-3">
                         <p className="text-sm text-[var(--color-text-secondary)]">
-                            지휘자 시야 확보를 위해 줄 위치를 조정합니다.
+                            좌석 그리드 왼쪽의 화살표 버튼으로 각 행의 시작 위치를 조정합니다.
                         </p>
                         <p className="text-xs text-[var(--color-text-tertiary)]">
-                            각 행 양쪽의 화살표 버튼으로 위치를 조정하세요.
+                            1행을 기준으로 다른 행들을 왼쪽/오른쪽으로 이동할 수 있습니다.
                         </p>
                     </div>
                 );

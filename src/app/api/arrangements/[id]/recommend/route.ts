@@ -364,7 +364,7 @@ export async function POST(
     const existingGridLayout = body.gridLayout ? {
       rows: body.gridLayout.rows,
       row_capacities: body.gridLayout.rowCapacities,
-      zigzag_pattern: body.gridLayout.zigzagPattern as 'even' | 'odd',
+      zigzag_pattern: body.gridLayout.zigzagPattern as 'even' | 'odd' | 'none',
     } : undefined;
 
     logger.debug('preserveGridLayout:', preserveGridLayout, 'existingGridLayout:', existingGridLayout?.rows);
@@ -422,6 +422,7 @@ export async function POST(
       rows: recommendation.grid_layout.rows,
       rowCapacities: recommendation.grid_layout.row_capacities,
       zigzagPattern: recommendation.grid_layout.zigzag_pattern,
+      rowOffsets: recommendation.grid_layout.row_offsets,  // AI 기본 산 모양 패턴
     };
 
     const formattedResponse = {
@@ -436,7 +437,8 @@ export async function POST(
       gridLayout: {
         rows: recommendation.grid_layout.rows,
         rowCapacities: recommendation.grid_layout.row_capacities,
-        zigzagPattern: recommendation.grid_layout.zigzag_pattern
+        zigzagPattern: recommendation.grid_layout.zigzag_pattern,
+        rowOffsets: recommendation.grid_layout.row_offsets,  // AI 기본 산 모양 패턴
       },
       // AI가 제안하는 그리드 (사용자가 선택적으로 적용 가능)
       suggestedGridLayout,

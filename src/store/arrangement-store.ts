@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import type { Database } from '@/types/database.types';
 import type { GridLayout, RowOffsetValue } from '@/types/grid';
+import { OFFSET_PRESETS } from '@/types/grid';
 import {
     minimalReassignment,
     type MinimalReassignmentResult,
@@ -213,6 +214,10 @@ interface ArrangementState {
     markGridAsManual: () => void;
     // 모든 행별 오프셋 초기화
     clearRowOffsets: () => void;
+    // 지그재그 토글 (none ↔ even)
+    applyZigzagToggle: () => void;
+    // 오프셋 프리셋 적용
+    applyOffsetPreset: (presetId: string) => void;
     placeMember: (member: Omit<SeatAssignment, 'row' | 'col'>, row: number, col: number) => void;
     removeMember: (row: number, col: number) => void;
     moveMember: (fromRow: number, fromCol: number, toRow: number, toCol: number) => void;
@@ -459,6 +464,56 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
                 gridLayout: {
                     ...rest,
                     rowOffsets: undefined,
+                },
+            };
+        }),
+
+    /**
+     * 지그재그 패턴 토글 (none ↔ even)
+     * - 지그재그 적용 시 개별 rowOffsets는 초기화됨
+     * - 지휘자 시야 확보가 필요한 경우에만 활성화
+     */
+    applyZigzagToggle: () =>
+        set((state) => {
+            if (!state.gridLayout) return state;
+
+            const currentPattern = state.gridLayout.zigzagPattern;
+            const newPattern = currentPattern === 'none' ? 'even' : 'none';
+
+            logger.debug(`지그재그 토글: ${currentPattern} → ${newPattern}`);
+
+            return {
+                gridLayout: {
+                    ...state.gridLayout,
+                    zigzagPattern: newPattern,
+                    // 토글 시 개별 rowOffsets 초기화 (패턴과 충돌 방지)
+                    rowOffsets: undefined,
+                },
+            };
+        }),
+
+    /**
+     * 오프셋 프리셋 적용
+     * @param presetId 프리셋 ID (straight, mountain, zigzag)
+     */
+    applyOffsetPreset: (presetId: string) =>
+        set((state) => {
+            if (!state.gridLayout) return state;
+
+            const preset = OFFSET_PRESETS.find((p) => p.id === presetId);
+            if (!preset) {
+                logger.warn(`프리셋을 찾을 수 없음: ${presetId}`);
+                return state;
+            }
+
+            const offsets = preset.getOffsets(state.gridLayout.rows);
+            logger.debug(`프리셋 적용: ${preset.name}`, offsets);
+
+            return {
+                gridLayout: {
+                    ...state.gridLayout,
+                    zigzagPattern: 'none', // 프리셋 사용 시 zigzagPattern 비활성화
+                    rowOffsets: Object.keys(offsets).length > 0 ? offsets : undefined,
                 },
             };
         }),
