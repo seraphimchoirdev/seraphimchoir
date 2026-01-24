@@ -56,8 +56,8 @@ export const WORKFLOW_STEPS: Record<WorkflowStep, WorkflowStepMeta> = {
   },
   2: {
     step: 2,
-    title: '좌석 그리드 조정',
-    shortTitle: '그리드',
+    title: '줄 구성 설정',
+    shortTitle: '줄 구성',
     description: '줄 수와 줄별 인원을 수동으로 조정합니다.',
   },
   3: {
