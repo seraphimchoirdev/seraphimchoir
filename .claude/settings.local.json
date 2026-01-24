@@ -84,7 +84,12 @@
       "Bash(npm run lint:*)",
       "mcp__supabase__execute_sql",
       "Bash(grep:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(배치되었습니다\" 메시지가 동시에 표시되는 버그 수정\n\n- 완료 메시지 조건에 outOfBoundsMembers.length === 0 추가\n- 경계 밖 멤버 존재 시 완료 메시지 숨김\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(find:*)",
+      "mcp__plugin_playwright_playwright__browser_handle_dialog",
+      "Bash(brew list:*)",
+      "Bash(brew install:*)"
     ],
     "deny": [],
     "ask": []

@@ -14,7 +14,6 @@ import { useArrangementStore, WORKFLOW_STEPS, WorkflowStep } from '@/store/arran
 import { useUndoRedoShortcuts } from '@/hooks/useUndoRedoShortcuts';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
-import { useEmergencyUnavailable } from '@/hooks/useEmergencyUnavailable';
 import { useWorkflowAutoAdvance, useCompleteCurrentStep } from '@/hooks/useWorkflowAutoAdvance';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useRestoreDraft } from '@/hooks/useRestoreDraft';
@@ -29,8 +28,13 @@ import MemberSidebar from '@/components/features/seats/MemberSidebar';
 import SeatsGrid from '@/components/features/seats/SeatsGrid';
 import RestoreDialog from '@/components/features/arrangements/RestoreDialog';
 import RecommendButton from '@/components/features/arrangements/RecommendButton';
+import EmergencyUnavailableDialog from '@/components/features/seats/EmergencyUnavailableDialog';
+import EmergencyChangesBanner from '@/components/features/arrangements/EmergencyChangesBanner';
 import type { RecommendationResponse } from '@/hooks/useRecommendSeats';
+import type { Database } from '@/types/database.types';
 import { useAuth } from '@/hooks/useAuth';
+
+type Part = Database['public']['Enums']['part'];
 
 export default function ArrangementEditorPage({ params }: { params: Promise<{ id: string }> }) {
     const { hasRole, isLoading: authLoading } = useAuth();
@@ -63,6 +67,16 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     const [showSettingsSheet, setShowSettingsSheet] = useState(false);
     const [showGridSettings, setShowGridSettings] = useState(true); // 데스크톱 그리드 설정 패널 토글
     const [showMobileSidebar, setShowMobileSidebar] = useState(true);
+
+    // 긴급 등단 불가 다이얼로그 상태
+    const [emergencyDialogOpen, setEmergencyDialogOpen] = useState(false);
+    const [emergencyTargetMember, setEmergencyTargetMember] = useState<{
+        memberId: string;
+        memberName: string;
+        part: Part;
+        row: number;
+        col: number;
+    } | null>(null);
 
     // 이미지 캡처를 위한 ref (데스크톱/모바일 각각)
     const desktopCaptureRef = useRef<HTMLDivElement>(null);
@@ -176,18 +190,19 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         alert(`AI 추천이 적용되었습니다! (품질 점수: ${(qualityScore * 100).toFixed(0)}%)${gridMessage}`);
     }, [setGridLayout, setAssignments]);
 
-    // 긴급 등단 불가 처리 훅 (단순화된 버전)
-    // - 파트 영역 고려: 같은 파트만 당기기
-    // - 크로스-행 이동: 행 간 불균형 시 뒷줄에서 앞줄로 이동
-    // - ⭐ 자동 저장: gridLayout과 seats를 DB에 즉시 저장
-    const { handleEmergencyUnavailable } = useEmergencyUnavailable({
-        arrangementId: id,
-        date: arrangement?.date || '',
-        onSuccess: (message) => alert(message),
-        onError: (message) => alert(`오류: ${message}`),
-        enableCrossRowMove: true,
-        crossRowThreshold: 2,
-    });
+    // 긴급 등단 불가 처리 핸들러 (다이얼로그 열기)
+    // - 컨텍스트 메뉴에서 클릭 시 다이얼로그를 열어 처리 방식 선택
+    // - 빈 자리 유지 / 자동 당기기 / 수동 처리 중 선택 가능
+    const handleEmergencyUnavailable = useCallback((params: {
+        memberId: string;
+        memberName: string;
+        part: Part;
+        row: number;
+        col: number;
+    }) => {
+        setEmergencyTargetMember(params);
+        setEmergencyDialogOpen(true);
+    }, []);
 
     // DB에 저장된 데이터가 있는지 확인
     const dbHasData = useMemo(() => {
@@ -521,11 +536,28 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 onClose={closeDialog}
             />
 
+            {/* 긴급 등단 불가 확인 다이얼로그 */}
+            <EmergencyUnavailableDialog
+                open={emergencyDialogOpen}
+                onOpenChange={setEmergencyDialogOpen}
+                targetMember={emergencyTargetMember}
+                arrangementId={id}
+                date={arrangement?.date || ''}
+                onComplete={(message) => {
+                    alert(message);
+                    setEmergencyTargetMember(null);
+                }}
+                onError={(message) => alert(`오류: ${message}`)}
+            />
+
             <ArrangementHeader
                 arrangement={arrangement}
                 desktopCaptureRef={desktopCaptureRef}
                 mobileCaptureRef={mobileCaptureRef}
             />
+
+            {/* 긴급 변동 요약 배너 (SHARED 상태에서 변동 있을 때만 표시) */}
+            {isEmergencyMode && <EmergencyChangesBanner />}
 
             {/* 데스크톱: 3패널 가로 배치 (640px 이상 - Z Fold 펼침 대응) */}
             <div className="hidden sm:flex flex-1 overflow-hidden gap-4 p-4">
@@ -568,7 +600,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
                 {/* Member Sidebar - 수동 배치 조정 단계(4단계)에서만 표시 */}
                 {showMemberSidebar && (
-                    <MemberSidebar date={arrangement.date} hidePlaced={true} isEmergencyMode={isEmergencyMode} />
+                    <MemberSidebar date={arrangement.date} hidePlaced={true} isEmergencyMode={isEmergencyMode} arrangementId={id} />
                 )}
 
                 {/* Seats Grid */}
@@ -644,6 +676,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                                 hidePlaced={true}
                                 compact={true}
                                 isEmergencyMode={isEmergencyMode}
+                                arrangementId={id}
                             />
                         </div>
                     </div>

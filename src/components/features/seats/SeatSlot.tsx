@@ -3,9 +3,10 @@
 'use memo';
 
 import { memo, useCallback } from 'react';
-import { Crown } from 'lucide-react';
+import { Crown, UserPlus, ArrowRight } from 'lucide-react';
 import { useArrangementStore } from '@/store/arrangement-store';
 import type { Database } from '@/types/database.types';
+import type { ChangeHighlight } from '@/types/emergency-changes';
 import { cn } from '@/lib/utils';
 import { useShallow } from 'zustand/react/shallow';
 import SeatContextMenu from './SeatContextMenu';
@@ -41,6 +42,12 @@ const SeatSlot = memo(function SeatSlot({
     const assignment = useArrangementStore((state) => state.assignments[seatKey]);
     const selectedMemberId = useArrangementStore((state) => state.selectedMemberId);
     const rowLeaderMode = useArrangementStore((state) => state.rowLeaderMode);
+
+    // 긴급 변동 하이라이트 (해당 멤버에 대한 하이라이트 여부)
+    const changeHighlight = useArrangementStore((state) => {
+        if (!assignment) return null;
+        return state.emergencyChanges.highlights.get(assignment.memberId) || null;
+    });
 
     // 선택된 위치가 이 좌석인지 확인 (shallow 비교)
     const isSelectedSeat = useArrangementStore(
@@ -148,6 +155,7 @@ const SeatSlot = memo(function SeatSlot({
                     col={col}
                     isRowLeader={assignment.isRowLeader}
                     rowLeaderMode={rowLeaderMode}
+                    changeHighlight={changeHighlight}
                 />
             ) : (
                 <div className="text-[10px] sm:text-xs text-[var(--color-text-disabled)] pointer-events-none">빈 좌석</div>
@@ -167,6 +175,7 @@ const GridClickableMember = memo(function GridClickableMember({
     col,
     isRowLeader,
     rowLeaderMode,
+    changeHighlight,
 }: {
     name: string;
     part: Part;
@@ -174,6 +183,7 @@ const GridClickableMember = memo(function GridClickableMember({
     col: number;
     isRowLeader?: boolean;
     rowLeaderMode?: boolean;
+    changeHighlight?: ChangeHighlight;
 }) {
     // Part color mapping - 악보 스티커 색상 기준 (CSS 변수 사용)
     const getPartColor = (p: Part) => {
@@ -191,6 +201,18 @@ const GridClickableMember = memo(function GridClickableMember({
         }
     };
 
+    // 변동 하이라이트 스타일
+    const getHighlightStyle = () => {
+        switch (changeHighlight) {
+            case 'ADDED':
+                return 'ring-2 ring-emerald-400 ring-offset-1 ring-offset-emerald-100 shadow-[0_0_8px_2px_rgba(16,185,129,0.4)]';
+            case 'MOVED':
+                return 'ring-2 ring-amber-400 ring-offset-1 ring-offset-amber-100 shadow-[0_0_8px_2px_rgba(245,158,11,0.4)]';
+            default:
+                return '';
+        }
+    };
+
     return (
         <div
             className={cn(
@@ -198,6 +220,8 @@ const GridClickableMember = memo(function GridClickableMember({
                 'pointer-events-none', // Parent button handles all clicks
                 'touch-manipulation transition-all duration-200',
                 getPartColor(part),
+                // 긴급 변동 하이라이트 (줄반장보다 우선)
+                !isRowLeader && changeHighlight && getHighlightStyle(),
                 // 줄반장 표시: 보라 글로우 + 흰색 링 (모든 파트와 대비)
                 isRowLeader && 'ring-[3px] ring-white ring-offset-2 ring-offset-violet-500 shadow-[0_0_10px_3px_rgba(139,92,246,0.5)]',
                 // 줄반장 지정 모드일 때 호버 효과
@@ -205,7 +229,7 @@ const GridClickableMember = memo(function GridClickableMember({
             )}
             title={isRowLeader ? "줄반장 (클릭하여 해제)" : (rowLeaderMode ? "클릭하여 줄반장 지정" : "더블 클릭하여 제거")}
             role="presentation"
-            aria-label={`${name} - ${part} 파트, ${row}행 ${col}열 배치됨${isRowLeader ? ' (줄반장)' : ''}`}
+            aria-label={`${name} - ${part} 파트, ${row}행 ${col}열 배치됨${isRowLeader ? ' (줄반장)' : ''}${changeHighlight ? ` (${changeHighlight === 'ADDED' ? '새로 추가됨' : '이동됨'})` : ''}`}
         >
             <span className="font-bold text-xs sm:text-sm lg:text-base text-center leading-tight px-0.5 truncate max-w-full drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
                 {name}
@@ -214,6 +238,17 @@ const GridClickableMember = memo(function GridClickableMember({
             {isRowLeader && (
                 <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-violet-400">
                     <Crown className="w-3.5 h-3.5 text-violet-600 fill-violet-300" />
+                </div>
+            )}
+            {/* 긴급 변동 아이콘 표시 (줄반장 아닌 경우) */}
+            {!isRowLeader && changeHighlight === 'ADDED' && (
+                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-emerald-500 rounded-full shadow-md flex items-center justify-center">
+                    <UserPlus className="w-2.5 h-2.5 text-white" />
+                </div>
+            )}
+            {!isRowLeader && changeHighlight === 'MOVED' && (
+                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-500 rounded-full shadow-md flex items-center justify-center">
+                    <ArrowRight className="w-2.5 h-2.5 text-white" />
                 </div>
             )}
         </div>

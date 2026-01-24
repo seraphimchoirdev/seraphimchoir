@@ -15,6 +15,14 @@ import {
 } from '@/lib/part-zone-analyzer';
 import { selectRowLeaders, type RowLeaderCandidate } from '@/lib/row-leader-utils';
 import { createLogger } from '@/lib/logger';
+import type {
+    EmergencyChangesState,
+    EmergencyChange,
+    SharedSnapshot,
+    ChangeHighlight,
+    CascadeChangeStep,
+    SimulationResult,
+} from '@/types/emergency-changes';
 
 const logger = createLogger({ prefix: 'ArrangementStore' });
 
@@ -349,6 +357,73 @@ interface ArrangementState {
      * - 오른쪽 파트(ALTO/BASS): 왼쪽으로 당김 (오른쪽 끝에서 빈 자리 생김)
      */
     compactAllRows: () => void;
+
+    // ============================================
+    // 긴급 변동 추적 시스템 (Emergency Changes Tracking)
+    // ============================================
+
+    /** 긴급 변동 상태 */
+    emergencyChanges: EmergencyChangesState;
+
+    /**
+     * 공유 시점 스냅샷 저장 (SHARED 상태 진입 시 호출)
+     */
+    saveSharedSnapshot: () => void;
+
+    /**
+     * 공유 시점 스냅샷 초기화 (DRAFT로 돌아갈 때)
+     */
+    clearSharedSnapshot: () => void;
+
+    /**
+     * 긴급 변동 이력 추가
+     */
+    addEmergencyChange: (change: EmergencyChange) => void;
+
+    /**
+     * 긴급 변동 이력 초기화
+     */
+    clearEmergencyChanges: () => void;
+
+    /**
+     * 하이라이트 상태 업데이트
+     */
+    setHighlights: (highlights: Map<string, ChangeHighlight>) => void;
+
+    /**
+     * 하이라이트 초기화
+     */
+    clearHighlights: () => void;
+
+    // ============================================
+    // 시뮬레이션 함수 (미리보기용 - 실제 상태 변경 없음)
+    // ============================================
+
+    /**
+     * 등단 불가 처리 시뮬레이션 (빈 자리 유지 모드)
+     * @param row 대상 행
+     * @param col 대상 열
+     * @returns 시뮬레이션 결과
+     */
+    simulateLeaveEmpty: (row: number, col: number) => SimulationResult;
+
+    /**
+     * 등단 불가 처리 시뮬레이션 (자동 당기기 모드)
+     * @param row 대상 행
+     * @param col 대상 열
+     * @param part 대상 파트
+     * @returns 시뮬레이션 결과
+     */
+    simulateAutoPull: (row: number, col: number, part: Part) => SimulationResult;
+
+    /**
+     * 등단 가능 처리 시뮬레이션 (자동 배치 모드)
+     * @param memberId 멤버 ID
+     * @param memberName 멤버 이름
+     * @param part 파트
+     * @returns 시뮬레이션 결과 또는 null (배치 불가 시)
+     */
+    simulateAutoPlace: (memberId: string, memberName: string, part: Part) => SimulationResult | null;
 }
 
 // 워크플로우 초기 상태 생성 헬퍼
@@ -357,6 +432,13 @@ const createInitialWorkflowState = (): WorkflowState => ({
     completedSteps: new Set<WorkflowStep>(),
     isWizardMode: true, // 기본적으로 위자드 모드 활성화
     expandedSections: new Set<WorkflowStep>([1]), // 첫 번째 섹션만 펼침
+});
+
+// 긴급 변동 상태 초기값 생성 헬퍼
+const createInitialEmergencyChangesState = (): EmergencyChangesState => ({
+    sharedSnapshot: null,
+    changes: [],
+    highlights: new Map(),
 });
 
 export const useArrangementStore = create<ArrangementState>((set, get) => ({
@@ -370,6 +452,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
     rowLeaderMode: false,
     _history: { past: [], future: [] },
     workflow: createInitialWorkflowState(),
+    emergencyChanges: createInitialEmergencyChangesState(),
 
     setAssignments: (assignmentsList) => {
         const newAssignments: Record<string, SeatAssignment> = {};
@@ -1772,5 +1855,413 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         // 이전 단계가 완료되었거나 현재 단계인 경우 접근 가능
         const prevStep = (step - 1) as WorkflowStep;
         return workflow.completedSteps.has(prevStep) || workflow.currentStep >= step;
+    },
+
+    // ============================================
+    // 긴급 변동 추적 시스템 (Emergency Changes Tracking)
+    // ============================================
+
+    /**
+     * 공유 시점 스냅샷 저장 (SHARED 상태 진입 시 호출)
+     */
+    saveSharedSnapshot: () =>
+        set((state) => {
+            if (!state.gridLayout) return state;
+
+            const snapshot: SharedSnapshot = {
+                assignments: { ...state.assignments },
+                gridLayout: { ...state.gridLayout },
+                timestamp: new Date().toISOString(),
+            };
+
+            logger.debug('공유 시점 스냅샷 저장');
+
+            return {
+                emergencyChanges: {
+                    ...state.emergencyChanges,
+                    sharedSnapshot: snapshot,
+                    changes: [],
+                    highlights: new Map(),
+                },
+            };
+        }),
+
+    /**
+     * 공유 시점 스냅샷 초기화 (DRAFT로 돌아갈 때)
+     */
+    clearSharedSnapshot: () =>
+        set((state) => ({
+            emergencyChanges: {
+                ...state.emergencyChanges,
+                sharedSnapshot: null,
+                changes: [],
+                highlights: new Map(),
+            },
+        })),
+
+    /**
+     * 긴급 변동 이력 추가
+     */
+    addEmergencyChange: (change) =>
+        set((state) => {
+            logger.debug(`긴급 변동 기록: ${change.type} - ${change.memberName}`);
+
+            // 하이라이트 업데이트
+            const newHighlights = new Map(state.emergencyChanges.highlights);
+
+            // 변동 유형에 따라 하이라이트 설정
+            if (change.type === 'AVAILABLE' && change.addedTo) {
+                newHighlights.set(change.memberId, 'ADDED');
+            }
+
+            // 연쇄 이동된 멤버들에 MOVED 하이라이트
+            change.cascadeChanges.forEach((cascade) => {
+                if (cascade.type === 'MOVE' && cascade.memberId) {
+                    newHighlights.set(cascade.memberId, 'MOVED');
+                }
+            });
+
+            return {
+                emergencyChanges: {
+                    ...state.emergencyChanges,
+                    changes: [...state.emergencyChanges.changes, change],
+                    highlights: newHighlights,
+                },
+            };
+        }),
+
+    /**
+     * 긴급 변동 이력 초기화
+     */
+    clearEmergencyChanges: () =>
+        set((state) => ({
+            emergencyChanges: {
+                ...state.emergencyChanges,
+                changes: [],
+                highlights: new Map(),
+            },
+        })),
+
+    /**
+     * 하이라이트 상태 업데이트
+     */
+    setHighlights: (highlights) =>
+        set((state) => ({
+            emergencyChanges: {
+                ...state.emergencyChanges,
+                highlights,
+            },
+        })),
+
+    /**
+     * 하이라이트 초기화
+     */
+    clearHighlights: () =>
+        set((state) => ({
+            emergencyChanges: {
+                ...state.emergencyChanges,
+                highlights: new Map(),
+            },
+        })),
+
+    // ============================================
+    // 시뮬레이션 함수 (미리보기용 - 실제 상태 변경 없음)
+    // ============================================
+
+    /**
+     * 등단 불가 처리 시뮬레이션 (빈 자리 유지 모드)
+     *
+     * 동작:
+     * 1. 대상 멤버 제거
+     * 2. 당기기/축소 없음 → 이동 0명
+     */
+    simulateLeaveEmpty: (row, col) => {
+        const state = get();
+        const { gridLayout, assignments } = state;
+
+        if (!gridLayout) {
+            return {
+                assignments: { ...assignments },
+                gridLayout: gridLayout!,
+                cascadeChanges: [],
+                movedMemberCount: 0,
+            };
+        }
+
+        const seatKey = `${row}-${col}`;
+        const targetMember = assignments[seatKey];
+
+        if (!targetMember) {
+            return {
+                assignments: { ...assignments },
+                gridLayout: { ...gridLayout },
+                cascadeChanges: [],
+                movedMemberCount: 0,
+            };
+        }
+
+        // 복사본 생성
+        const newAssignments = { ...assignments };
+        delete newAssignments[seatKey];
+
+        const cascadeChanges: CascadeChangeStep[] = [
+            {
+                step: 1,
+                type: 'REMOVE',
+                description: `${targetMember.memberName}(${targetMember.part.charAt(0)}) 제거 → ${row}행 ${col}열 빈 자리`,
+                memberId: targetMember.memberId,
+                memberName: targetMember.memberName,
+                part: targetMember.part,
+                from: { row, col },
+            },
+        ];
+
+        return {
+            assignments: newAssignments,
+            gridLayout: { ...gridLayout },
+            cascadeChanges,
+            movedMemberCount: 0,
+        };
+    },
+
+    /**
+     * 등단 불가 처리 시뮬레이션 (자동 당기기 모드)
+     *
+     * 동작:
+     * 1. 대상 멤버 제거
+     * 2. 같은 행에서 같은 파트 멤버만 왼쪽으로 당기기
+     * 3. 해당 행 용량 축소
+     */
+    simulateAutoPull: (row, col, part) => {
+        const state = get();
+        const { gridLayout, assignments } = state;
+
+        if (!gridLayout) {
+            return {
+                assignments: { ...assignments },
+                gridLayout: gridLayout!,
+                cascadeChanges: [],
+                movedMemberCount: 0,
+            };
+        }
+
+        const seatKey = `${row}-${col}`;
+        const targetMember = assignments[seatKey];
+
+        if (!targetMember) {
+            return {
+                assignments: { ...assignments },
+                gridLayout: { ...gridLayout },
+                cascadeChanges: [],
+                movedMemberCount: 0,
+            };
+        }
+
+        // 복사본 생성
+        const newAssignments = { ...assignments };
+        const newCapacities = [...gridLayout.rowCapacities];
+        const cascadeChanges: CascadeChangeStep[] = [];
+        let movedCount = 0;
+        let stepNum = 1;
+
+        // Step 1: 대상 멤버 제거
+        delete newAssignments[seatKey];
+        cascadeChanges.push({
+            step: stepNum++,
+            type: 'REMOVE',
+            description: `${targetMember.memberName}(${targetMember.part.charAt(0)}) 제거: ${row}행 ${col}열 → 미배치`,
+            memberId: targetMember.memberId,
+            memberName: targetMember.memberName,
+            part: targetMember.part,
+            from: { row, col },
+        });
+
+        // Step 2: 같은 파트 멤버 왼쪽으로 당기기 시뮬레이션
+        const maxCol = gridLayout.rowCapacities[row - 1] || 0;
+        let currentEmptyCol = col;
+
+        for (let c = col + 1; c <= maxCol; c++) {
+            const key = `${row}-${c}`;
+            const member = newAssignments[key];
+
+            if (!member) continue;
+
+            // 다른 파트면 당기기 중단
+            if (member.part !== part) {
+                break;
+            }
+
+            // 같은 파트면 왼쪽으로 1칸 당기기
+            const newKey = `${row}-${currentEmptyCol}`;
+            newAssignments[newKey] = { ...member, col: currentEmptyCol };
+            delete newAssignments[key];
+
+            cascadeChanges.push({
+                step: stepNum++,
+                type: 'MOVE',
+                description: `${member.memberName}(${member.part.charAt(0)}) 이동: ${row}행 ${c}열 → ${row}행 ${currentEmptyCol}열`,
+                memberId: member.memberId,
+                memberName: member.memberName,
+                part: member.part,
+                from: { row, col: c },
+                to: { row, col: currentEmptyCol },
+            });
+
+            movedCount++;
+            currentEmptyCol = c;
+        }
+
+        // Step 3: 행 용량 축소
+        const side = getPartSide(part);
+        if (newCapacities[row - 1] > 1) {
+            const beforeCapacity = newCapacities[row - 1];
+            newCapacities[row - 1]--;
+
+            cascadeChanges.push({
+                step: stepNum++,
+                type: 'SHRINK',
+                description: `${row}행 용량: ${beforeCapacity}석 → ${newCapacities[row - 1]}석 (${side === 'left' ? '왼쪽' : '오른쪽'} 파트 축소)`,
+            });
+        }
+
+        return {
+            assignments: newAssignments,
+            gridLayout: {
+                ...gridLayout,
+                rowCapacities: newCapacities,
+            },
+            cascadeChanges,
+            movedMemberCount: movedCount,
+        };
+    },
+
+    /**
+     * 등단 가능 처리 시뮬레이션 (자동 배치 모드)
+     *
+     * 동작:
+     * 1. 파트 영역 내 빈 좌석 탐색
+     * 2. 빈 좌석 없으면 해당 파트 영역 행의 용량 +1 확장
+     * 3. 확장된 열에 배치
+     */
+    simulateAutoPlace: (memberId, memberName, part) => {
+        const state = get();
+        const { gridLayout, assignments } = state;
+
+        if (!gridLayout) {
+            return null;
+        }
+
+        // 복사본 생성
+        const newAssignments = { ...assignments };
+        const newCapacities = [...gridLayout.rowCapacities];
+        const cascadeChanges: CascadeChangeStep[] = [];
+        let stepNum = 1;
+
+        // 파트 영역 및 빈 좌석 탐색
+        const zone = DEFAULT_PART_ZONES[part];
+        const emptySeats = get().findEmptySeats();
+
+        // 대상 위치 (파트 영역 중앙)
+        const targetPos = {
+            row: Math.floor((zone.allowedRows[0] + zone.allowedRows[1]) / 2),
+            col: zone.side === 'left' ? 3 : zone.side === 'right' ? gridLayout.rowCapacities[0] - 2 : Math.floor(gridLayout.rowCapacities[0] / 2),
+        };
+
+        // 확장 영역 탐색
+        const result = findNearestEmptySeatInExpandedZone(
+            targetPos,
+            emptySeats,
+            part,
+            zone,
+            gridLayout.rowCapacities,
+            false // fallback 비활성화
+        );
+
+        if (result) {
+            // 빈 좌석 발견 → 배치
+            const { row, col } = result;
+            const key = `${row}-${col}`;
+
+            newAssignments[key] = {
+                memberId,
+                memberName,
+                part,
+                row,
+                col,
+                isRowLeader: false,
+            };
+
+            cascadeChanges.push({
+                step: stepNum++,
+                type: 'ADD',
+                description: `${memberName}(${part.charAt(0)}) 배치: ${row}행 ${col}열 (빈 좌석)`,
+                memberId,
+                memberName,
+                part,
+                to: { row, col },
+            });
+
+            return {
+                assignments: newAssignments,
+                gridLayout: { ...gridLayout },
+                cascadeChanges,
+                movedMemberCount: 0,
+            };
+        }
+
+        // 빈 좌석 없음 → 행 용량 확장
+        // 파트 영역에 해당하는 행들 중 가장 여유 있는 행 선택
+        let bestRow = zone.allowedRows[0];
+        let minMembers = Infinity;
+
+        for (let r = zone.allowedRows[0]; r <= zone.allowedRows[1] && r <= gridLayout.rows; r++) {
+            const rowMemberCount = Object.values(newAssignments).filter(a => a.row === r && a.part === part).length;
+            if (rowMemberCount < minMembers) {
+                minMembers = rowMemberCount;
+                bestRow = r;
+            }
+        }
+
+        // 행 용량 +1 확장
+        const beforeCapacity = newCapacities[bestRow - 1];
+        newCapacities[bestRow - 1]++;
+        const newCol = newCapacities[bestRow - 1]; // 확장된 마지막 열
+
+        cascadeChanges.push({
+            step: stepNum++,
+            type: 'EXPAND',
+            description: `${bestRow}행 용량: ${beforeCapacity}석 → ${newCapacities[bestRow - 1]}석`,
+        });
+
+        // 확장된 열에 배치
+        const key = `${bestRow}-${newCol}`;
+        newAssignments[key] = {
+            memberId,
+            memberName,
+            part,
+            row: bestRow,
+            col: newCol,
+            isRowLeader: false,
+        };
+
+        cascadeChanges.push({
+            step: stepNum++,
+            type: 'ADD',
+            description: `${memberName}(${part.charAt(0)}) 배치: ${bestRow}행 ${newCol}열 (확장된 열)`,
+            memberId,
+            memberName,
+            part,
+            to: { row: bestRow, col: newCol },
+        });
+
+        return {
+            assignments: newAssignments,
+            gridLayout: {
+                ...gridLayout,
+                rowCapacities: newCapacities,
+            },
+            cascadeChanges,
+            movedMemberCount: 0,
+        };
     },
 }));

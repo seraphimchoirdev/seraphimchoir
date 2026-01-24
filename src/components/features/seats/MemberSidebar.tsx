@@ -1,16 +1,18 @@
 'use client';
-'use memo';
 
 import { useMemo, useState, useCallback, memo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Search, AlertTriangle } from 'lucide-react';
+import { Search, AlertTriangle, UserPlus, CheckCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
 import { useArrangementStore } from '@/store/arrangement-store';
 import ClickableMember from './ClickableMember';
+import EmergencyAvailableDialog from './EmergencyAvailableDialog';
 import type { Database } from '@/types/database.types';
 
 type Part = Database['public']['Enums']['part'];
@@ -21,6 +23,8 @@ interface MemberSidebarProps {
     compact?: boolean;
     /** 긴급 수정 모드 (SHARED 상태에서 대원 추가 배치 허용) */
     isEmergencyMode?: boolean;
+    /** 배치표 ID (긴급 추가 다이얼로그용) */
+    arrangementId?: string;
 }
 
 const PARTS: Part[] = ['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'];
@@ -39,9 +43,10 @@ interface OutOfBoundsMember {
     col: number;
 }
 
-const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, compact = false, isEmergencyMode = false }: MemberSidebarProps) {
+const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, compact = false, isEmergencyMode = false, arrangementId }: MemberSidebarProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPart, setSelectedPart] = useState<Part | 'ALL'>('ALL');
+    const [emergencyAvailableDialogOpen, setEmergencyAvailableDialogOpen] = useState(false);
 
     // 선택적 상태 구독 - 배치된 멤버 ID 배열 추적 (useShallow로 shallow 비교)
     const placedMemberIdsArray = useArrangementStore(useShallow(selectPlacedMemberIdsArray));
@@ -225,8 +230,8 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
                     <button
                         onClick={() => setSelectedPart('ALL')}
                         className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${selectedPart === 'ALL'
-                                ? 'bg-[var(--color-primary-600)] text-white'
-                                : 'bg-[var(--color-background-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-background-tertiary)]'
+                            ? 'bg-[var(--color-primary-600)] text-white'
+                            : 'bg-[var(--color-background-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-background-tertiary)]'
                             }`}
                     >
                         전체
@@ -241,8 +246,8 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
                                 key={part}
                                 onClick={() => setSelectedPart(part)}
                                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${selectedPart === part
-                                        ? 'bg-[var(--color-primary-600)] text-white'
-                                        : 'bg-[var(--color-background-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-background-tertiary)]'
+                                    ? 'bg-[var(--color-primary-600)] text-white'
+                                    : 'bg-[var(--color-background-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-background-tertiary)]'
                                     }`}
                             >
                                 {part === 'SPECIAL' ? 'Sp' : part.charAt(0)} ({count})
@@ -253,64 +258,90 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
             </div>
 
             <div className={`flex-1 overflow-y-auto ${compact ? 'p-2 space-y-2' : 'p-3 sm:p-4 space-y-3 sm:space-y-4'}`}>
+                {/* 긴급 인원 추가 패널 (SHARED 상태에서만 표시) */}
+                {isEmergencyMode && arrangementId && !compact && (
+                    <Alert variant="success" icon={UserPlus} className="mb-4">
+                        <AlertTitle>긴급 인원 추가</AlertTitle>
+                        <AlertDescription className="mt-2">
+                            <p className="mb-3">당일 등단 가능해진 인원을 배치표에 추가합니다</p>
+                            <Button
+                                size="sm"
+                                variant="success"
+                                onClick={() => setEmergencyAvailableDialogOpen(true)}
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm border-0"
+                            >
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                인원 추가하기
+                            </Button>
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {/* 긴급 등단 가능 추가 다이얼로그 */}
+                {arrangementId && (
+                    <EmergencyAvailableDialog
+                        open={emergencyAvailableDialogOpen}
+                        onOpenChange={setEmergencyAvailableDialogOpen}
+                        arrangementId={arrangementId}
+                        date={date}
+                        onComplete={(message) => alert(message)}
+                        onError={(message) => alert(`오류: ${message}`)}
+                    />
+                )}
+
                 {/* 재배치 필요 섹션 (경계 밖 멤버가 있을 때만 표시) */}
                 {outOfBoundsMembers.length > 0 && (
-                    <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
-                        <div className="flex items-center gap-2 mb-2 text-red-700 dark:text-red-400">
-                            <AlertTriangle className="h-4 w-4" />
-                            <span className="font-semibold text-sm">
-                                재배치 필요 ({outOfBoundsMembers.length}명)
-                            </span>
-                        </div>
-                        <p className="text-xs text-red-600 dark:text-red-400 mb-3">
-                            그리드 크기 변경으로 좌석을 잃은 대원입니다
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                            {outOfBoundsMembers.map((member) => {
-                                const isSelected = selectedMemberId === member.memberId && selectedSource === 'sidebar';
-                                // Part color mapping
-                                const getPartColor = (p: Part) => {
-                                    switch (p) {
-                                        case 'SOPRANO': return 'bg-[var(--color-part-soprano-600)] text-white';
-                                        case 'ALTO': return 'bg-[var(--color-part-alto-500)] text-white';
-                                        case 'TENOR': return 'bg-[var(--color-part-tenor-600)] text-white';
-                                        case 'BASS': return 'bg-[var(--color-part-bass-600)] text-white';
-                                        default: return 'bg-[var(--color-part-special-500)] text-white';
-                                    }
-                                };
+                    <Alert variant="error" icon={AlertTriangle} className="mb-4">
+                        <AlertTitle>재배치 필요 ({outOfBoundsMembers.length}명)</AlertTitle>
+                        <AlertDescription className="mt-2">
+                            <p className="mb-3">줄 구성 변경으로 좌석을 잃은 대원입니다</p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {outOfBoundsMembers.map((member) => {
+                                    const isSelected = selectedMemberId === member.memberId && selectedSource === 'sidebar';
+                                    // Part color mapping
+                                    const getPartColor = (p: Part) => {
+                                        switch (p) {
+                                            case 'SOPRANO': return 'bg-[var(--color-part-soprano-600)] text-white';
+                                            case 'ALTO': return 'bg-[var(--color-part-alto-500)] text-white';
+                                            case 'TENOR': return 'bg-[var(--color-part-tenor-600)] text-white';
+                                            case 'BASS': return 'bg-[var(--color-part-bass-600)] text-white';
+                                            default: return 'bg-[var(--color-part-special-500)] text-white';
+                                        }
+                                    };
 
-                                return (
-                                    <button
-                                        key={member.memberId}
-                                        type="button"
-                                        onClick={() => selectMemberFromSidebar(member.memberId, member.name, member.part)}
-                                        className={`
+                                    return (
+                                        <button
+                                            key={member.memberId}
+                                            type="button"
+                                            onClick={() => selectMemberFromSidebar(member.memberId, member.name, member.part)}
+                                            className={`
                                             flex items-center gap-1.5 px-2 py-1 rounded-md text-xs
                                             transition-all duration-200 touch-manipulation
                                             ${isSelected
-                                                ? 'bg-red-200 dark:bg-red-800 border-2 border-red-500 ring-2 ring-red-300'
-                                                : 'bg-white dark:bg-red-900/50 border border-red-300 dark:border-red-700 hover:border-red-400 hover:shadow-sm'
-                                            }
+                                                    ? 'bg-red-200 dark:bg-red-800 border-2 border-red-500 ring-2 ring-red-300'
+                                                    : 'bg-white dark:bg-red-900/50 border border-red-300 dark:border-red-700 hover:border-red-400 hover:shadow-sm'
+                                                }
                                         `}
-                                        title={`원래 위치: ${member.row}행 ${member.col}열`}
-                                    >
-                                        <span className="font-medium text-red-800 dark:text-red-200">
-                                            {member.name}
-                                        </span>
-                                        <Badge
-                                            variant="outline"
-                                            className={`text-[9px] px-1 py-0 ${getPartColor(member.part)} w-4 h-4 flex items-center justify-center rounded-full p-0`}
+                                            title={`원래 위치: ${member.row}행 ${member.col}열`}
                                         >
-                                            {member.part === 'SPECIAL' ? 'Sp' : member.part.charAt(0)}
-                                        </Badge>
-                                        <span className="text-[10px] text-red-500 dark:text-red-400">
-                                            ({member.row}-{member.col})
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
+                                            <span className="font-medium text-red-800 dark:text-red-200">
+                                                {member.name}
+                                            </span>
+                                            <Badge
+                                                variant="outline"
+                                                className={`text-[9px] px-1 py-0 ${getPartColor(member.part)} w-4 h-4 flex items-center justify-center rounded-full p-0`}
+                                            >
+                                                {member.part === 'SPECIAL' ? 'Sp' : member.part.charAt(0)}
+                                            </Badge>
+                                            <span className="text-[10px] text-red-500 dark:text-red-400">
+                                                ({member.row}-{member.col})
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </AlertDescription>
+                    </Alert>
                 )}
 
                 {PARTS.map((part) => {

@@ -49,6 +49,8 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         canRedo,
         workflow,
         resetWorkflow,
+        saveSharedSnapshot,
+        clearSharedSnapshot,
     } = useArrangementStore();
 
     // Draft store - 저장 성공 시 draft 삭제용
@@ -314,6 +316,9 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
             // 공유 성공 시 draft 삭제
             deleteDraft(arrangement.id);
 
+            // 공유 시점 스냅샷 저장 (긴급 변동 추적용)
+            saveSharedSnapshot();
+
             if (isMountedRef.current) {
                 alert('자리배치표가 공유되었습니다.\n긴급 수정이 필요하면 언제든 수정할 수 있습니다.');
                 router.refresh();
@@ -407,6 +412,9 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 },
             });
 
+            // 스냅샷 및 변동 이력 초기화
+            clearSharedSnapshot();
+
             if (isMountedRef.current) {
                 alert('작성중 상태로 되돌렸습니다.');
                 router.refresh();
@@ -421,7 +429,7 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                 setIsSaving(false);
             }
         }
-    }, [arrangement.id, updateArrangement, router]);
+    }, [arrangement.id, updateArrangement, router, clearSharedSnapshot]);
 
     return (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 bg-[var(--color-surface)] border-b border-[var(--color-border-default)]">

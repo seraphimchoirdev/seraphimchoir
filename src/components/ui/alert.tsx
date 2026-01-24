@@ -26,9 +26,9 @@ const alertVariants = cva(
 
 const Alert = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
->(({ className, variant, children, ...props }, ref) => {
-  const Icon = {
+  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants> & { icon?: React.ElementType }
+>(({ className, variant, icon: IconComponent, children, ...props }, ref) => {
+  const Icon = IconComponent || {
     default: Info,
     success: CheckCircle,
     warning: AlertCircle,
