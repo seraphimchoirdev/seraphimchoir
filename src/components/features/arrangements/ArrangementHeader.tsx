@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback, RefObject } from 'react';
 import { createLogger } from '@/lib/logger';
-import { Save, ArrowLeft, Loader2, RotateCcw, Crown, Download, Copy, Undo2, Redo2, Lock, Share2, CheckCircle2, AlertTriangle, Sparkles, Trash2, ChevronDown } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, RotateCcw, Download, Copy, Undo2, Redo2, Lock, Share2, CheckCircle2, AlertTriangle, Trash2, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,12 +20,7 @@ import { useUpdateSeats } from '@/hooks/useSeats';
 import { useImageGeneration } from '@/hooks/useImageGeneration';
 import { useArrangementStore } from '@/store/arrangement-store';
 import { useArrangementDraftStore } from '@/store/arrangement-draft-store';
-import RecommendButton from './RecommendButton';
-import PastArrangementButton from './PastArrangementButton';
-import { ServiceScheduleBadge } from '@/components/features/service-schedules';
 import type { Database, Json, ArrangementStatus } from '@/types/database.types';
-import type { RecommendationResponse } from '@/hooks/useRecommendSeats';
-import type { ApplyPastResponse } from '@/hooks/usePastArrangement';
 import { WORKFLOW_STEPS } from '@/store/arrangement-store';
 
 const logger = createLogger({ prefix: 'ArrangementHeader' });
@@ -48,12 +43,6 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         gridLayout,
         clearArrangement,
         clearCurrentStepOnly,
-        setAssignments,
-        setGridLayout,
-        rowLeaderMode,
-        toggleRowLeaderMode,
-        autoAssignRowLeaders,
-        clearAllRowLeaders,
         undo,
         redo,
         canUndo,
@@ -434,78 +423,6 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
         }
     }, [arrangement.id, updateArrangement, router]);
 
-    const handleApplyRecommendation = (recommendation: RecommendationResponse, preserveGrid: boolean) => {
-        // 디버깅: API 응답 확인
-        logger.debug('=== AI 추천 결과 디버깅 ===');
-        logger.debug('seats.length:', recommendation.seats.length);
-        logger.debug('gridLayout:', recommendation.gridLayout);
-        logger.debug('preserveGrid:', preserveGrid);
-        if (recommendation.gridLayout) {
-            const totalCapacity = recommendation.gridLayout.rowCapacities.reduce((a: number, b: number) => a + b, 0);
-            logger.debug('rowCapacities 합계:', totalCapacity);
-            logger.debug('빈좌석 예상:', totalCapacity - recommendation.seats.length);
-        }
-
-        // AI 추천 결과를 store에 적용
-        const formattedSeats = recommendation.seats.map(seat => ({
-            memberId: seat.memberId,
-            memberName: seat.memberName,
-            part: seat.part,
-            row: seat.row,
-            col: seat.col,
-        }));
-
-        // 그리드 레이아웃 적용 (preserveGrid 옵션에 따라)
-        if (!preserveGrid && recommendation.suggestedGridLayout) {
-            // AI 추천 그리드로 변경
-            logger.debug('AI 추천 그리드 적용:', recommendation.suggestedGridLayout.rowCapacities);
-            setGridLayout({
-                rows: recommendation.suggestedGridLayout.rows,
-                rowCapacities: recommendation.suggestedGridLayout.rowCapacities,
-                zigzagPattern: recommendation.suggestedGridLayout.zigzagPattern,
-                isAIRecommended: true, // AI 추천 분배로 설정됨 (워크플로우 1단계 완료 조건)
-            });
-        } else if (!preserveGrid && recommendation.gridLayout) {
-            // suggestedGridLayout이 없으면 gridLayout 사용 (하위 호환성)
-            setGridLayout({
-                rows: recommendation.gridLayout.rows,
-                rowCapacities: recommendation.gridLayout.rowCapacities,
-                zigzagPattern: recommendation.gridLayout.zigzagPattern,
-                isAIRecommended: true, // AI 추천 분배로 설정됨 (워크플로우 1단계 완료 조건)
-            });
-        }
-        // preserveGrid가 true면 현재 그리드 유지 (아무것도 하지 않음)
-
-        setAssignments(formattedSeats);
-        const qualityScore = recommendation.qualityScore ?? 0;
-        const gridMessage = preserveGrid ? ' (그리드 설정 유지됨)' : '';
-        alert(`AI 추천이 적용되었습니다! (품질 점수: ${(qualityScore * 100).toFixed(0)}%)${gridMessage}`);
-    };
-
-    const handleApplyPastArrangement = (result: ApplyPastResponse) => {
-        // 과거 배치 결과를 store에 적용
-        const formattedSeats = result.seats.map(seat => ({
-            memberId: seat.memberId,
-            memberName: seat.memberName,
-            part: seat.part,
-            row: seat.row,
-            col: seat.col,
-        }));
-
-        setAssignments(formattedSeats);
-
-        const matchRate = result.totalAvailable > 0
-            ? ((result.matchedCount / result.totalAvailable) * 100).toFixed(0)
-            : 0;
-        const unassignedCount = result.unassignedMembers.length;
-
-        alert(
-            `과거 배치가 적용되었습니다!\n` +
-            `매칭률: ${matchRate}% (${result.matchedCount}/${result.totalAvailable}명)\n` +
-            `미배치: ${unassignedCount}명`
-        );
-    };
-
     return (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 bg-[var(--color-surface)] border-b border-[var(--color-border-default)]">
             <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
@@ -530,89 +447,12 @@ export default function ArrangementHeader({ arrangement, desktopCaptureRef, mobi
                             </span>
                         )}
                     </div>
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-secondary)]">
-                            <span className="flex-shrink-0">
-                                {(() => {
-                                    const [year, month, day] = arrangement.date.split('-');
-                                    return `${year}년 ${month}월 ${day}일`;
-                                })()}
-                            </span>
-                        </div>
-                        <ServiceScheduleBadge date={arrangement.date} compact />
-                    </div>
+                    {/* 날짜/예배유형 배지는 SeatsGrid CaptureHeader에서 표시 */}
                 </div>
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-{/* 과거 배치 / AI 추천 버튼: Step 3-4 (배치 관련 단계)에서만 표시 */}
-                {!isReadOnly && (workflow.currentStep === 3 || workflow.currentStep === 4) && (
-                    <PastArrangementButton
-                        arrangementId={arrangement.id}
-                        date={arrangement.date}
-                        onApply={handleApplyPastArrangement}
-                        disabled={isSaving}
-                    />
-                )}
-                {!isReadOnly && gridLayout && (workflow.currentStep === 3 || workflow.currentStep === 4) && (
-                    <RecommendButton
-                        arrangementId={arrangement.id}
-                        gridLayout={gridLayout}
-                        onApply={handleApplyRecommendation}
-                        disabled={isSaving}
-                    />
-                )}
-{/* 줄반장 메뉴: Step 4, 6 (수동 조정, 줄반장 지정)에서만 표시 */}
-                {!isReadOnly && (workflow.currentStep === 4 || workflow.currentStep === 6) && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant={rowLeaderMode ? "default" : "outline"}
-                                disabled={isSaving || Object.keys(assignments).length === 0}
-                                className={`gap-2 h-11 sm:h-10 text-sm ${rowLeaderMode ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
-                            >
-                                <Crown className="h-4 w-4" />
-                                <span className="hidden sm:inline">{rowLeaderMode ? '줄반장 지정 중' : '줄반장'}</span>
-                                <ChevronDown className="h-3 w-3 hidden sm:inline" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                                onClick={toggleRowLeaderMode}
-                                className="cursor-pointer"
-                            >
-                                <Crown className={`mr-2 h-4 w-4 ${rowLeaderMode ? 'text-orange-500' : ''}`} />
-                                {rowLeaderMode ? '수동 지정 모드 끄기' : '수동 지정 모드'}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                onClick={() => {
-                                    const candidates = autoAssignRowLeaders();
-                                    if (candidates.length > 0) {
-                                        alert(`줄반장 ${candidates.length}명이 자동 지정되었습니다.`);
-                                    } else {
-                                        alert('자동 지정할 수 있는 줄반장이 없습니다.');
-                                    }
-                                }}
-                                className="cursor-pointer"
-                            >
-                                <Sparkles className="mr-2 h-4 w-4 text-yellow-500" />
-                                자동 지정
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => {
-                                    if (confirm('모든 줄반장 지정을 해제하시겠습니까?')) {
-                                        clearAllRowLeaders();
-                                    }
-                                }}
-                                className="cursor-pointer text-red-600"
-                            >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                전체 해제
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
+                {/* AI 배치/과거 배치/줄반장 버튼은 워크플로우 패널 내부로 이동됨 */}
                 {/* Undo/Redo: Step 2-6 (실제 편집이 일어나는 단계)에서만 표시 */}
                 {!isReadOnly && workflow.currentStep >= 2 && workflow.currentStep <= 6 && (
                     <div className="flex items-center gap-1">
