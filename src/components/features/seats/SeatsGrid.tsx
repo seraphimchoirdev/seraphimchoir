@@ -10,6 +10,7 @@ import type { Database } from '@/types/database.types';
 type Part = Database['public']['Enums']['part'];
 import { calculateSeatsByRow } from '@/lib/utils/seatPositionCalculator';
 import { useArrangementStore } from '@/store/arrangement-store';
+import { useZigzagOffset } from '@/hooks/useZigzagOffset';
 import CaptureHeader from './CaptureHeader';
 import CaptureFooter from './CaptureFooter';
 
@@ -55,6 +56,10 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
     // (showCaptureInfo는 헤더/푸터 표시 여부일 뿐, 편집 모드와 무관)
     const showInlineOffsetControls = workflowStep === 5;
 
+    // 브레이크포인트별 zigzag offset 값 (CSS 변수 대신 JS 계산 사용)
+    // CSS calc(var(--zigzag-offset) * N) 형태가 일부 브라우저에서 무시되는 문제 해결
+    const zigzagOffset = useZigzagOffset();
+
     // 행별로 그룹화된 좌석 데이터
     const seatsByRow = useMemo(
         () => calculateSeatsByRow(layout),
@@ -78,8 +83,11 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                         />
                     )}
 
-                    {/* 좌석 그리드 - Flexbox 중앙 정렬 (역순: 6열이 상단, 1열이 하단) */}
-                    <div className="flex flex-col-reverse gap-1.5 sm:gap-2 items-center mx-auto w-fit">
+                    {/* 좌석 그리드 - Flexbox 왼쪽 정렬 (역순: 6열이 상단, 1열이 하단) */}
+                    {/* 실제 배치표 분석 결과: 왼쪽 정렬 기반, 지그재그는 선택적 */}
+                    <div
+                        className="flex flex-col-reverse items-start gap-1.5 sm:gap-2 mx-auto w-fit"
+                    >
                         {seatsByRow
                             .filter(rowData => rowData.capacity > 0) // 빈 행 제외
                             .map((rowData) => (
@@ -88,24 +96,53 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                                     className="flex items-center gap-1"
                                 >
                                     {/* Step 5: 인라인 오프셋 컨트롤 (왼쪽) */}
+                                    {/* z-10: 음수 offset으로 좌석이 왼쪽으로 이동해도 컨트롤이 가려지지 않도록 */}
                                     {showInlineOffsetControls && (
-                                        <InlineRowOffsetControl
-                                            rowNumber={rowData.rowIndex}
-                                            currentOffset={layout.rowOffsets?.[rowData.rowIndex - 1]}
-                                            onChange={(offset) => setRowOffset(rowData.rowIndex, offset)}
-                                        />
+                                        <div className="z-10 relative">
+                                            <InlineRowOffsetControl
+                                                rowNumber={rowData.rowIndex}
+                                                currentOffset={layout.rowOffsets?.[rowData.rowIndex - 1]}
+                                                onChange={(offset) => setRowOffset(rowData.rowIndex, offset)}
+                                            />
+                                        </div>
                                     )}
 
                                     {/* 좌석 행 */}
+                                    {/*
+                                      반칸(0.5) 이동 거리 계산 (useZigzagOffset 훅 사용):
+                                      - mobile: (48px + 6px) / 2 = 27px
+                                      - sm (≥640px): (64px + 8px) / 2 = 36px
+                                      - lg (≥1024px): (72px + 8px) / 2 = 40px
+
+                                      offset 값에 따른 이동:
+                                      - offset 0.5 → 0.5칸 = 27/36/40px
+                                      - offset 1.0 → 1칸 = 54/72/80px
+
+                                      ⚠️ rowData.offset은 지그재그 패턴 포함 계산값
+                                      사용자 설정 offset은 layout.rowOffsets에서 직접 읽어야 함
+
+                                      ⚠️ CSS calc(var(--zigzag-offset) * N) 형태가 일부 브라우저에서
+                                      무시되므로 JavaScript에서 직접 px 값을 계산하여 적용
+                                    */}
                                     <div
                                         className="flex gap-1.5 sm:gap-2"
-                                        style={{
-                                            // Zigzag: 행 전체를 오른쪽으로 이동 (오프셋 값에 비례)
-                                            // --zigzag-offset은 0.5칸 기준이므로, offset * 2 배율 적용
-                                            paddingLeft: rowData.offset > 0
-                                                ? `calc(var(--zigzag-offset) * ${rowData.offset * 2})`
-                                                : '0',
-                                        }}
+                                        style={(() => {
+                                            const currentRowOffset = layout.rowOffsets?.[rowData.rowIndex - 1] ?? 0;
+                                            return {
+                                                // Step 5 인라인 컨트롤 표시 시 왼쪽 여백
+                                                // 최대 음수 offset(-2)의 이동거리만큼 = 2칸 여백 = 4 * zigzag-offset
+                                                marginLeft: showInlineOffsetControls
+                                                    ? zigzagOffset * 4
+                                                    : 0,
+                                                // Zigzag: 행 전체를 이동 (오프셋 값에 비례)
+                                                // offset * 2 * zigzag-offset
+                                                // offset 0.5 → 0.5 * 2 = 1 → 1 * zigzag-offset = 반칸
+                                                // offset 1.0 → 1.0 * 2 = 2 → 2 * zigzag-offset = 1칸
+                                                transform: currentRowOffset !== 0
+                                                    ? `translateX(${currentRowOffset * 2 * zigzagOffset}px)`
+                                                    : 'none',
+                                            };
+                                        })()}
                                     >
                                         {rowData.seats.map((seat) => (
                                             <SeatSlot
