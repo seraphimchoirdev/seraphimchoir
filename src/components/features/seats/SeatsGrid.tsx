@@ -93,12 +93,20 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                             .map((rowData) => (
                                 <div
                                     key={rowData.rowIndex}
-                                    className="flex items-center gap-1"
+                                    className="flex items-center relative"
                                 >
                                     {/* Step 5: 인라인 오프셋 컨트롤 (왼쪽) */}
-                                    {/* z-10: 음수 offset으로 좌석이 왼쪽으로 이동해도 컨트롤이 가려지지 않도록 */}
+                                    {/* absolute 배치로 좌석 행 이동과 독립적으로 고정 위치 유지 */}
                                     {showInlineOffsetControls && (
-                                        <div className="z-10 relative">
+                                        <div
+                                            className="z-10 absolute flex items-center"
+                                            style={{
+                                                // 컨트롤을 좌석 행 왼쪽에 고정 배치
+                                                // right: 100% = 행 래퍼의 왼쪽 가장자리
+                                                right: '100%',
+                                                marginRight: 4, // gap-1 대체
+                                            }}
+                                        >
                                             <InlineRowOffsetControl
                                                 rowNumber={rowData.rowIndex}
                                                 currentOffset={layout.rowOffsets?.[rowData.rowIndex - 1]}
@@ -128,19 +136,19 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                                         className="flex gap-1.5 sm:gap-2"
                                         style={(() => {
                                             const currentRowOffset = layout.rowOffsets?.[rowData.rowIndex - 1] ?? 0;
+                                            // Zigzag: 행 전체를 이동 (오프셋 값에 비례)
+                                            // offset * 2 * zigzag-offset
+                                            // offset 0.5 → 0.5 * 2 = 1 → 1 * zigzag-offset = 반칸
+                                            // offset 1.0 → 1.0 * 2 = 2 → 2 * zigzag-offset = 1칸
+                                            const offsetPx = currentRowOffset * 2 * zigzagOffset;
+                                            // Step 5에서는 기준점(baseMargin)을 설정하고 offset으로 상대 이동
+                                            // 기준점: 최대 음수 offset(-2)만큼의 공간 = 4 * zigzagOffset
+                                            // offset 0: baseMargin (중앙 기준)
+                                            // offset -0.5: baseMargin - 40px (왼쪽 이동)
+                                            // offset +0.5: baseMargin + 40px (오른쪽 이동)
+                                            const baseMargin = showInlineOffsetControls ? zigzagOffset * 4 : 0;
                                             return {
-                                                // Step 5 인라인 컨트롤 표시 시 왼쪽 여백
-                                                // 최대 음수 offset(-2)의 이동거리만큼 = 2칸 여백 = 4 * zigzag-offset
-                                                marginLeft: showInlineOffsetControls
-                                                    ? zigzagOffset * 4
-                                                    : 0,
-                                                // Zigzag: 행 전체를 이동 (오프셋 값에 비례)
-                                                // offset * 2 * zigzag-offset
-                                                // offset 0.5 → 0.5 * 2 = 1 → 1 * zigzag-offset = 반칸
-                                                // offset 1.0 → 1.0 * 2 = 2 → 2 * zigzag-offset = 1칸
-                                                transform: currentRowOffset !== 0
-                                                    ? `translateX(${currentRowOffset * 2 * zigzagOffset}px)`
-                                                    : 'none',
+                                                marginLeft: baseMargin + offsetPx,
                                             };
                                         })()}
                                     >
