@@ -163,6 +163,13 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                                             />
                                         ))}
                                     </div>
+
+                                    {/* 캡처 모드: 행별 인원수 표시 (오른쪽) */}
+                                    {showCaptureInfo && (
+                                        <div className="ml-2 sm:ml-3 text-sm sm:text-base font-medium text-gray-600 whitespace-nowrap">
+                                            {Object.values(assignments).filter(a => a.row === rowData.rowIndex).length}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                     </div>
