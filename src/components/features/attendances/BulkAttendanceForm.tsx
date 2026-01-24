@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useMembers } from '@/hooks/useMembers';
 import { useBulkCreateAttendances } from '@/hooks/useAttendances';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar, CheckCheck, RotateCcw, Send, Users } from 'lucide-react';
 import type { TablesInsert } from '@/types/database.types';
 import type { Database } from '@/types/database.types';
+import { createClient } from '@/lib/supabase/client';
 import AttendanceChipGrid from './AttendanceChipGrid';
 
 type Part = Database['public']['Enums']['part'];
@@ -28,6 +30,10 @@ const PARTS: Part[] = ['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'];
  * - 파트별 접기/펼치기 지원
  */
 export default function BulkAttendanceForm() {
+  const { profile, user } = useAuth();
+  const [userPart, setUserPart] = useState<Part | null>(null);
+  const [isPartLoading, setIsPartLoading] = useState(false);
+
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
@@ -46,11 +52,31 @@ export default function BulkAttendanceForm() {
     errors?: Array<{ chunk?: number; error?: string; message?: string }>;
   } | null>(null);
 
+  // 파트장인 경우 본인 파트 확인
+  useEffect(() => {
+    async function fetchUserPart() {
+      if (profile?.role === 'PART_LEADER' && user?.email) {
+        setIsPartLoading(true);
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('members')
+          .select('part')
+          .eq('email', user.email)
+          .single();
+        if (data) setUserPart(data.part as Part);
+        setIsPartLoading(false);
+      }
+    }
+    fetchUserPart();
+  }, [profile, user]);
+
   // 회원 목록 조회 (REGULAR 상태 등단자만, 최대 100명 - 지휘자/반주자 제외)
   const { data: membersResponse, isLoading: isMembersLoading } = useMembers({
     limit: 100,
     member_status: 'REGULAR',
     is_singer: true, // 등단자만 (지휘자/반주자 제외)
+    sortBy: 'name',   // 가나다순 정렬 (중장년층 UX 개선)
+    sortOrder: 'asc',
   });
 
   const members = membersResponse?.data || [];
@@ -58,7 +84,7 @@ export default function BulkAttendanceForm() {
   // 일괄 출석 생성 훅
   const bulkCreateMutation = useBulkCreateAttendances();
 
-  // 파트별로 그룹화
+  // 파트별로 그룹화 (파트장은 본인 파트만)
   const membersByPart = useMemo(() => {
     const groups: Record<Part, typeof members> = {
       SOPRANO: [],
@@ -69,13 +95,17 @@ export default function BulkAttendanceForm() {
     };
 
     members.forEach((member) => {
+      // 파트장인 경우 본인 파트만 표시
+      if (profile?.role === 'PART_LEADER' && userPart && member.part !== userPart) {
+        return;
+      }
       if (groups[member.part]) {
         groups[member.part].push(member);
       }
     });
 
     return groups;
-  }, [members]);
+  }, [members, profile?.role, userPart]);
 
   // 초기 상태 생성
   const initializeStates = useCallback(() => {
@@ -272,7 +302,10 @@ export default function BulkAttendanceForm() {
     return { selectedCount: selected, absentCount: absent };
   }, [attendanceStates]);
 
-  if (isMembersLoading) {
+  // 파트장인 경우 파트 정보 로딩도 대기
+  const isLoading = isMembersLoading || (profile?.role === 'PART_LEADER' && isPartLoading);
+
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary-500)]"></div>

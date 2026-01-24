@@ -82,6 +82,8 @@ export default function AttendanceList({ date }: AttendanceListProps) {
         member_status: 'REGULAR',
         is_singer: true, // 등단자만 (지휘자/반주자 제외)
         limit: 100,
+        sortBy: 'name',   // 가나다순 정렬 (중장년층 UX 개선)
+        sortOrder: 'asc',
     });
 
     const { data: attendances, isLoading: attendancesLoading } = useAttendances({
