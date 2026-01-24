@@ -4,7 +4,7 @@
 import { useEffect, use, useState, useMemo, useRef, useCallback, ReactNode } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Settings, ChevronUp, ChevronDown, CheckCircle2, ArrowRight, Sparkles, Zap } from 'lucide-react';
+import { Settings, ChevronUp, ChevronDown, CheckCircle2, ArrowRight, Sparkles, Zap, Crown, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ArrangementHeader from '@/components/features/arrangements/ArrangementHeader';
 import GridSettingsPanel from '@/components/features/arrangements/GridSettingsPanel';
@@ -28,6 +28,10 @@ const logger = createLogger({ prefix: 'ArrangementEditorPage' });
 import MemberSidebar from '@/components/features/seats/MemberSidebar';
 import SeatsGrid from '@/components/features/seats/SeatsGrid';
 import RestoreDialog from '@/components/features/arrangements/RestoreDialog';
+import RecommendButton from '@/components/features/arrangements/RecommendButton';
+import PastArrangementButton from '@/components/features/arrangements/PastArrangementButton';
+import type { RecommendationResponse } from '@/hooks/useRecommendSeats';
+import type { ApplyPastResponse } from '@/hooks/usePastArrangement';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ArrangementEditorPage({ params }: { params: Promise<{ id: string }> }) {
@@ -39,7 +43,22 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     const canEmergencyEdit = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
     const { id } = use(params);
     const { data: arrangement, isLoading, error } = useArrangement(id);
-    const { setAssignments, setGridLayout, gridLayout, clearHistory, compactAllRows, resetWorkflow, restoreWorkflowState, workflow } = useArrangementStore();
+    const {
+        setAssignments,
+        setGridLayout,
+        gridLayout,
+        clearHistory,
+        compactAllRows,
+        resetWorkflow,
+        restoreWorkflowState,
+        workflow,
+        // 줄반장 관련 (Step 6용)
+        rowLeaderMode,
+        toggleRowLeaderMode,
+        autoAssignRowLeaders,
+        clearAllRowLeaders,
+        assignments,
+    } = useArrangementStore();
 
     // 키보드 단축키 훅 초기화 (Ctrl+Z/Y for Undo/Redo)
     useUndoRedoShortcuts();
@@ -117,6 +136,68 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     const isReadOnly = arrangement?.status === 'CONFIRMED' ||
         (arrangement?.status === 'SHARED' && !canEmergencyEdit) ||
         (arrangement?.status === 'DRAFT' && !canEdit);
+
+    // AI 추천 결과 적용 핸들러 (Step 3용)
+    const handleApplyRecommendation = useCallback((recommendation: RecommendationResponse, preserveGrid: boolean) => {
+        logger.debug('=== AI 추천 결과 적용 ===');
+        logger.debug('seats.length:', recommendation.seats.length);
+        logger.debug('preserveGrid:', preserveGrid);
+
+        // AI 추천 결과를 store에 적용
+        const formattedSeats = recommendation.seats.map(seat => ({
+            memberId: seat.memberId,
+            memberName: seat.memberName,
+            part: seat.part,
+            row: seat.row,
+            col: seat.col,
+        }));
+
+        // 그리드 레이아웃 적용 (preserveGrid 옵션에 따라)
+        if (!preserveGrid && recommendation.suggestedGridLayout) {
+            setGridLayout({
+                rows: recommendation.suggestedGridLayout.rows,
+                rowCapacities: recommendation.suggestedGridLayout.rowCapacities,
+                zigzagPattern: recommendation.suggestedGridLayout.zigzagPattern,
+                isAIRecommended: true,
+            });
+        } else if (!preserveGrid && recommendation.gridLayout) {
+            setGridLayout({
+                rows: recommendation.gridLayout.rows,
+                rowCapacities: recommendation.gridLayout.rowCapacities,
+                zigzagPattern: recommendation.gridLayout.zigzagPattern,
+                isAIRecommended: true,
+            });
+        }
+
+        setAssignments(formattedSeats);
+        const qualityScore = recommendation.qualityScore ?? 0;
+        const gridMessage = preserveGrid ? ' (그리드 설정 유지됨)' : '';
+        alert(`AI 추천이 적용되었습니다! (품질 점수: ${(qualityScore * 100).toFixed(0)}%)${gridMessage}`);
+    }, [setGridLayout, setAssignments]);
+
+    // 과거 배치 적용 핸들러 (Step 3용)
+    const handleApplyPastArrangement = useCallback((result: ApplyPastResponse) => {
+        const formattedSeats = result.seats.map(seat => ({
+            memberId: seat.memberId,
+            memberName: seat.memberName,
+            part: seat.part,
+            row: seat.row,
+            col: seat.col,
+        }));
+
+        setAssignments(formattedSeats);
+
+        const matchRate = result.totalAvailable > 0
+            ? ((result.matchedCount / result.totalAvailable) * 100).toFixed(0)
+            : 0;
+        const unassignedCount = result.unassignedMembers.length;
+
+        alert(
+            `과거 배치가 적용되었습니다!\n` +
+            `매칭률: ${matchRate}% (${result.matchedCount}/${result.totalAvailable}명)\n` +
+            `미배치: ${unassignedCount}명`
+        );
+    }, [setAssignments]);
 
     // 긴급 등단 불가 처리 훅 (단순화된 버전)
     // - 파트 영역 고려: 같은 파트만 당기기
@@ -328,15 +409,26 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                     />
                 );
             case 3:
-                // AI 자동배치
+                // AI 자동배치 - 버튼을 Card 내부에 직접 배치
                 return (
                     <div className="space-y-3">
                         <p className="text-sm text-[var(--color-text-secondary)]">
                             파트, 키, 경력을 고려하여 좌석을 자동으로 배치합니다.
                         </p>
-                        <p className="text-xs text-[var(--color-text-tertiary)]">
-                            상단 헤더의 <Sparkles className="w-3 h-3 inline" /> AI 자동 배치 버튼을 클릭하세요.
-                        </p>
+                        {!isReadOnly && gridLayout && (
+                            <div className="flex flex-col gap-2">
+                                <RecommendButton
+                                    arrangementId={id}
+                                    gridLayout={gridLayout}
+                                    onApply={handleApplyRecommendation}
+                                />
+                                <PastArrangementButton
+                                    arrangementId={id}
+                                    date={arrangement.date}
+                                    onApply={handleApplyPastArrangement}
+                                />
+                            </div>
+                        )}
                     </div>
                 );
             case 4:
@@ -366,15 +458,51 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                     </div>
                 );
             case 6:
-                // 줄반장 지정
+                // 줄반장 지정 - 버튼을 Card 내부에 직접 배치
                 return (
                     <div className="space-y-3">
                         <p className="text-sm text-[var(--color-text-secondary)]">
                             각 줄의 대표를 지정합니다.
                         </p>
-                        <p className="text-xs text-[var(--color-text-tertiary)]">
-                            상단 헤더의 &quot;줄반장&quot; 메뉴에서 설정하세요.
-                        </p>
+                        {!isReadOnly && Object.keys(assignments).length > 0 && (
+                            <div className="flex flex-col gap-2">
+                                <Button
+                                    variant={rowLeaderMode ? "default" : "outline"}
+                                    onClick={toggleRowLeaderMode}
+                                    className={`w-full gap-2 ${rowLeaderMode ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                                >
+                                    <Crown className="w-4 h-4" />
+                                    {rowLeaderMode ? '수동 지정 모드 끄기' : '수동 지정 모드'}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const candidates = autoAssignRowLeaders();
+                                        if (candidates.length > 0) {
+                                            alert(`줄반장 ${candidates.length}명이 자동 지정되었습니다.`);
+                                        } else {
+                                            alert('자동 지정할 수 있는 줄반장이 없습니다.');
+                                        }
+                                    }}
+                                    className="w-full gap-2"
+                                >
+                                    <Sparkles className="w-4 h-4 text-yellow-500" />
+                                    자동 지정
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        if (confirm('모든 줄반장 지정을 해제하시겠습니까?')) {
+                                            clearAllRowLeaders();
+                                        }
+                                    }}
+                                    className="w-full gap-2 text-red-600 hover:text-red-700"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    전체 해제
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 );
             case 7:
