@@ -139,28 +139,20 @@ export default function WorkflowSection({
             </div>
 
             {/* 제목 */}
-            <div className="flex flex-col">
-              <span
-                className={cn(
-                  'text-sm font-semibold',
-                  isCurrent
-                    ? 'text-[var(--color-primary-700)]'
-                    : isCompleted
-                    ? 'text-[var(--color-success-700)]'
-                    : canAccess
-                    ? 'text-[var(--color-text-primary)]'
-                    : 'text-[var(--color-text-tertiary)]'
-                )}
-              >
-                {stepMeta.title}
-              </span>
-              {/* 설명 (현재 단계에서만 표시) */}
-              {isCurrent && (
-                <span className="text-xs text-[var(--color-text-secondary)]">
-                  {stepMeta.description}
-                </span>
+            <span
+              className={cn(
+                'text-sm font-semibold',
+                isCurrent
+                  ? 'text-[var(--color-primary-700)]'
+                  : isCompleted
+                  ? 'text-[var(--color-success-700)]'
+                  : canAccess
+                  ? 'text-[var(--color-text-primary)]'
+                  : 'text-[var(--color-text-tertiary)]'
               )}
-            </div>
+            >
+              {stepMeta.title}
+            </span>
           </div>
 
           {/* 우측: 상태 배지 + 화살표 */}

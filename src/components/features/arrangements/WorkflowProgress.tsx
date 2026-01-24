@@ -99,11 +99,6 @@ export default function WorkflowProgress() {
           })}
         </div>
       </div>
-
-      {/* 현재 단계 설명 */}
-      <p className="mt-2 text-xs text-[var(--color-text-secondary)] text-center">
-        {WORKFLOW_STEPS[currentStep].description}
-      </p>
     </div>
   );
 }
