@@ -183,14 +183,14 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
 
     if (isLoading) {
         return (
-            <div className="w-full lg:w-80 border-r border-[var(--color-border-default)] bg-[var(--color-surface)] p-4 flex justify-center items-center">
+            <div className="w-full sm:w-80 border-r border-[var(--color-border-default)] bg-[var(--color-surface)] p-4 flex justify-center items-center">
                 <Spinner />
             </div>
         );
     }
 
     return (
-        <div className="w-full lg:w-80 border-r lg:border-r-0 border-[var(--color-border-default)] bg-[var(--color-surface)] flex flex-col h-full">
+        <div className="w-full sm:w-80 border-r sm:border-r-0 border-[var(--color-border-default)] bg-[var(--color-surface)] flex flex-col h-full">
             <div className={`border-b border-[var(--color-border-default)] ${compact ? 'p-2' : 'p-3 sm:p-4'}`}>
                 {!compact && (
                     <div className="flex items-center justify-between mb-3 sm:mb-4">

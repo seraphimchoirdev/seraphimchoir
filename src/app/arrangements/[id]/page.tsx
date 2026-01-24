@@ -541,8 +541,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 mobileCaptureRef={mobileCaptureRef}
             />
 
-            {/* 데스크톱: 3패널 가로 배치 */}
-            <div className="hidden lg:flex flex-1 overflow-hidden gap-4 p-4">
+            {/* 데스크톱: 3패널 가로 배치 (640px 이상 - Z Fold 펼침 대응) */}
+            <div className="hidden sm:flex flex-1 overflow-hidden gap-4 p-4">
                 {/* 워크플로우 패널 - 토글 가능 */}
                 {showGridSettings ? (
                     <div className="relative animate-in slide-in-from-left duration-300 w-80 flex-shrink-0">
@@ -602,8 +602,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 />
             </div>
 
-            {/* 모바일/태블릿: 상단 그리드 + 하단 대원 목록 (Split View) */}
-            <div className="flex lg:hidden flex-col flex-1 overflow-hidden relative">
+            {/* 모바일: 상단 그리드 + 하단 대원 목록 (Split View, 640px 미만) */}
+            <div className="flex sm:hidden flex-col flex-1 overflow-hidden relative">
                 {/* 상단: 좌석 그리드 (Scrollable) */}
                 <div className="flex-1 overflow-auto relative">
                     <SeatsGrid
@@ -674,11 +674,12 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                                 animation: 'fadeIn 0.3s ease-out',
                             }}
                         />
-                        {/* Bottom Sheet - max-h-full로 컨테이너 내에서만 표시 */}
+                        {/* Bottom Sheet - 60% 높이로 그리드 가시성 확보 */}
                         <div
                             className="absolute left-0 right-0 bottom-0 z-40 flex flex-col bg-[var(--color-background-primary)] rounded-t-2xl shadow-2xl max-h-full"
                             style={{
-                                height: '90%',
+                                height: '60%',
+                                maxHeight: '500px',
                                 animation: 'slideUp 0.3s ease-out',
                             }}
                         >
