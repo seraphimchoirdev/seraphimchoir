@@ -29,9 +29,7 @@ import MemberSidebar from '@/components/features/seats/MemberSidebar';
 import SeatsGrid from '@/components/features/seats/SeatsGrid';
 import RestoreDialog from '@/components/features/arrangements/RestoreDialog';
 import RecommendButton from '@/components/features/arrangements/RecommendButton';
-import PastArrangementButton from '@/components/features/arrangements/PastArrangementButton';
 import type { RecommendationResponse } from '@/hooks/useRecommendSeats';
-import type { ApplyPastResponse } from '@/hooks/usePastArrangement';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ArrangementEditorPage({ params }: { params: Promise<{ id: string }> }) {
@@ -177,30 +175,6 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         const gridMessage = preserveGrid ? ' (그리드 설정 유지됨)' : '';
         alert(`AI 추천이 적용되었습니다! (품질 점수: ${(qualityScore * 100).toFixed(0)}%)${gridMessage}`);
     }, [setGridLayout, setAssignments]);
-
-    // 과거 배치 적용 핸들러 (Step 3용)
-    const handleApplyPastArrangement = useCallback((result: ApplyPastResponse) => {
-        const formattedSeats = result.seats.map(seat => ({
-            memberId: seat.memberId,
-            memberName: seat.memberName,
-            part: seat.part,
-            row: seat.row,
-            col: seat.col,
-        }));
-
-        setAssignments(formattedSeats);
-
-        const matchRate = result.totalAvailable > 0
-            ? ((result.matchedCount / result.totalAvailable) * 100).toFixed(0)
-            : 0;
-        const unassignedCount = result.unassignedMembers.length;
-
-        alert(
-            `과거 배치가 적용되었습니다!\n` +
-            `매칭률: ${matchRate}% (${result.matchedCount}/${result.totalAvailable}명)\n` +
-            `미배치: ${unassignedCount}명`
-        );
-    }, [setAssignments]);
 
     // 긴급 등단 불가 처리 훅 (단순화된 버전)
     // - 파트 영역 고려: 같은 파트만 당기기
@@ -435,18 +409,11 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                             파트, 키, 경력을 고려하여 좌석을 자동으로 배치합니다.
                         </p>
                         {!isReadOnly && gridLayout && (
-                            <div className="flex flex-col gap-2">
-                                <RecommendButton
-                                    arrangementId={id}
-                                    gridLayout={gridLayout}
-                                    onApply={handleApplyRecommendation}
-                                />
-                                <PastArrangementButton
-                                    arrangementId={id}
-                                    date={arrangement.date}
-                                    onApply={handleApplyPastArrangement}
-                                />
-                            </div>
+                            <RecommendButton
+                                arrangementId={id}
+                                gridLayout={gridLayout}
+                                onApply={handleApplyRecommendation}
+                            />
                         )}
                     </div>
                 );
