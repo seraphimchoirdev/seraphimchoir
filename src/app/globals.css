@@ -206,21 +206,21 @@
     --color-part-alto-600: #D97706;
     --color-part-alto-700: #B45309;
 
-    /* TENOR - Sky */
-    --color-part-tenor-50: #F0F9FF;
-    --color-part-tenor-100: #E0F2FE;
-    --color-part-tenor-200: #BAE6FD;
-    --color-part-tenor-500: #0EA5E9;
-    --color-part-tenor-600: #0284C7;
-    --color-part-tenor-700: #0369A1;
+    /* TENOR - Green */
+    --color-part-tenor-50: #F0FDF4;
+    --color-part-tenor-100: #DCFCE7;
+    --color-part-tenor-200: #BBF7D0;
+    --color-part-tenor-500: #22C55E;
+    --color-part-tenor-600: #16A34A;
+    --color-part-tenor-700: #15803D;
 
-    /* BASS - Green */
-    --color-part-bass-50: #F0FDF4;
-    --color-part-bass-100: #DCFCE7;
-    --color-part-bass-200: #BBF7D0;
-    --color-part-bass-500: #22C55E;
-    --color-part-bass-600: #16A34A;
-    --color-part-bass-700: #15803D;
+    /* BASS - Sky */
+    --color-part-bass-50: #F0F9FF;
+    --color-part-bass-100: #E0F2FE;
+    --color-part-bass-200: #BAE6FD;
+    --color-part-bass-500: #0EA5E9;
+    --color-part-bass-600: #0284C7;
+    --color-part-bass-700: #0369A1;
 
     /* SPECIAL - Gray */
     --color-part-special-50: #F9FAFB;
