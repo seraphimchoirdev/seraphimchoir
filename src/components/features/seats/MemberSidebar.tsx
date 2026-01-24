@@ -3,9 +3,10 @@
 
 import { useMemo, useState, useCallback, memo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Search } from 'lucide-react';
+import { Search, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { Badge } from '@/components/ui/badge';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
 import { useArrangementStore } from '@/store/arrangement-store';
@@ -29,6 +30,15 @@ const selectPlacedMemberIdsArray = (state: { assignments: Record<string, { membe
     return Object.values(state.assignments).map(a => a.memberId);
 };
 
+// 경계 밖 멤버 정보를 위한 타입
+interface OutOfBoundsMember {
+    memberId: string;
+    name: string;
+    part: Part;
+    row: number;
+    col: number;
+}
+
 const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, compact = false, isEmergencyMode = false }: MemberSidebarProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPart, setSelectedPart] = useState<Part | 'ALL'>('ALL');
@@ -36,11 +46,50 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
     // 선택적 상태 구독 - 배치된 멤버 ID 배열 추적 (useShallow로 shallow 비교)
     const placedMemberIdsArray = useArrangementStore(useShallow(selectPlacedMemberIdsArray));
 
+    // 그리드 레이아웃과 assignments 구독 (경계 밖 멤버 계산용)
+    const gridLayout = useArrangementStore(state => state.gridLayout);
+    const assignments = useArrangementStore(state => state.assignments);
+    const selectMemberFromSidebar = useArrangementStore(state => state.selectMemberFromSidebar);
+    const selectedMemberId = useArrangementStore(state => state.selectedMemberId);
+    const selectedSource = useArrangementStore(state => state.selectedSource);
+
     // 배열을 Set으로 변환 (O(1) 조회를 위해)
     const placedMemberIds = useMemo(
         () => new Set(placedMemberIdsArray),
         [placedMemberIdsArray]
     );
+
+    // 경계 밖 멤버 계산 (그리드 크기 변경으로 좌석을 잃은 대원)
+    const outOfBoundsMembers = useMemo((): OutOfBoundsMember[] => {
+        if (!gridLayout) return [];
+
+        const { rowCapacities } = gridLayout;
+        const outOfBounds: OutOfBoundsMember[] = [];
+
+        Object.values(assignments).forEach((assignment) => {
+            const { memberId, memberName, part, row, col } = assignment;
+            const rowIndex = row - 1; // 0-based index
+
+            // 경계 밖 판정:
+            // 1. 행 인덱스가 음수이거나 rowCapacities 범위 밖
+            // 2. 열이 해당 행의 최대 열을 초과
+            const isRowOutOfBounds = rowIndex < 0 || rowIndex >= rowCapacities.length;
+            const maxColInRow = isRowOutOfBounds ? 0 : rowCapacities[rowIndex];
+            const isColOutOfBounds = col > maxColInRow;
+
+            if (isRowOutOfBounds || isColOutOfBounds) {
+                outOfBounds.push({
+                    memberId,
+                    name: memberName,
+                    part,
+                    row,
+                    col,
+                });
+            }
+        });
+
+        return outOfBounds;
+    }, [gridLayout, assignments]);
 
     // 모든 정대원 조회 (등단자만 - 지휘자/반주자 제외, API limit 최대값: 100)
     const { data: membersData, isLoading: membersLoading } = useMembers({
@@ -112,10 +161,12 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
         return groups;
     }, [members, isServiceAvailable, searchTerm, hidePlaced, isMemberPlaced, date]);
 
-    // Calculate unplaced members count
+    // Calculate unplaced members count (기존 미배치 + 경계 밖 멤버)
     const unplacedCount = useMemo(() => {
-        if (!members.length) return 0;
-        return members.filter((member) => {
+        if (!members.length) return outOfBoundsMembers.length;
+
+        // 기존 미배치 멤버 수 계산
+        const baseUnplaced = members.filter((member) => {
             // 정대원 임명일 기준 필터링
             if (member.joined_date && member.joined_date > date) return false;
             // 등단 불가능한 멤버 제외
@@ -124,7 +175,11 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
             if (searchTerm && !member.name.includes(searchTerm)) return false;
             return !isMemberPlaced(member.id);
         }).length;
-    }, [members, isServiceAvailable, searchTerm, isMemberPlaced, date]);
+
+        // 경계 밖 멤버는 assignments에 아직 있으므로 isMemberPlaced가 true
+        // 따라서 별도로 경계 밖 멤버 수를 더해줌
+        return baseUnplaced + outOfBoundsMembers.length;
+    }, [members, isServiceAvailable, searchTerm, isMemberPlaced, date, outOfBoundsMembers.length]);
 
     if (isLoading) {
         return (
@@ -198,6 +253,66 @@ const MemberSidebar = memo(function MemberSidebar({ date, hidePlaced = false, co
             </div>
 
             <div className={`flex-1 overflow-y-auto ${compact ? 'p-2 space-y-2' : 'p-3 sm:p-4 space-y-3 sm:space-y-4'}`}>
+                {/* 재배치 필요 섹션 (경계 밖 멤버가 있을 때만 표시) */}
+                {outOfBoundsMembers.length > 0 && (
+                    <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
+                        <div className="flex items-center gap-2 mb-2 text-red-700 dark:text-red-400">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span className="font-semibold text-sm">
+                                재배치 필요 ({outOfBoundsMembers.length}명)
+                            </span>
+                        </div>
+                        <p className="text-xs text-red-600 dark:text-red-400 mb-3">
+                            그리드 크기 변경으로 좌석을 잃은 대원입니다
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {outOfBoundsMembers.map((member) => {
+                                const isSelected = selectedMemberId === member.memberId && selectedSource === 'sidebar';
+                                // Part color mapping
+                                const getPartColor = (p: Part) => {
+                                    switch (p) {
+                                        case 'SOPRANO': return 'bg-[var(--color-part-soprano-600)] text-white';
+                                        case 'ALTO': return 'bg-[var(--color-part-alto-500)] text-white';
+                                        case 'TENOR': return 'bg-[var(--color-part-tenor-600)] text-white';
+                                        case 'BASS': return 'bg-[var(--color-part-bass-600)] text-white';
+                                        default: return 'bg-[var(--color-part-special-500)] text-white';
+                                    }
+                                };
+
+                                return (
+                                    <button
+                                        key={member.memberId}
+                                        type="button"
+                                        onClick={() => selectMemberFromSidebar(member.memberId, member.name, member.part)}
+                                        className={`
+                                            flex items-center gap-1.5 px-2 py-1 rounded-md text-xs
+                                            transition-all duration-200 touch-manipulation
+                                            ${isSelected
+                                                ? 'bg-red-200 dark:bg-red-800 border-2 border-red-500 ring-2 ring-red-300'
+                                                : 'bg-white dark:bg-red-900/50 border border-red-300 dark:border-red-700 hover:border-red-400 hover:shadow-sm'
+                                            }
+                                        `}
+                                        title={`원래 위치: ${member.row}행 ${member.col}열`}
+                                    >
+                                        <span className="font-medium text-red-800 dark:text-red-200">
+                                            {member.name}
+                                        </span>
+                                        <Badge
+                                            variant="outline"
+                                            className={`text-[9px] px-1 py-0 ${getPartColor(member.part)} w-4 h-4 flex items-center justify-center rounded-full p-0`}
+                                        >
+                                            {member.part === 'SPECIAL' ? 'Sp' : member.part.charAt(0)}
+                                        </Badge>
+                                        <span className="text-[10px] text-red-500 dark:text-red-400">
+                                            ({member.row}-{member.col})
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
                 {PARTS.map((part) => {
                     // Filter by selected part
                     if (selectedPart !== 'ALL' && part !== selectedPart) return null;

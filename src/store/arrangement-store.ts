@@ -732,6 +732,25 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
         // Case 2: Member selected from sidebar
         if (state.selectedSource === 'sidebar') {
+            // 기존 위치 찾기 (경계 밖 멤버 재배치 시 중요)
+            // "재배치 필요" 섹션의 멤버는 이미 assignments에 존재하므로,
+            // 새 위치에 배치하기 전에 기존 위치를 삭제해야 중복이 발생하지 않음
+            let oldKey: string | null = null;
+            for (const [key, assignment] of Object.entries(state.assignments)) {
+                if (assignment.memberId === state.selectedMemberId) {
+                    oldKey = key;
+                    break;
+                }
+            }
+
+            // 기존 위치가 있고 대상 좌석과 다르면 먼저 삭제
+            if (oldKey && oldKey !== seatKey) {
+                set((s) => {
+                    const { [oldKey!]: _, ...rest } = s.assignments;
+                    return { assignments: rest };
+                });
+            }
+
             if (!existingAssignment) {
                 // Empty seat → place member
                 state.placeMember(
@@ -745,8 +764,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
                 );
                 state.clearSelection();
             } else {
-                // Occupied seat → swap (sidebar member doesn't have a position yet, so just place)
-                // Actually, for sidebar → grid, we should just overwrite
+                // Occupied seat → overwrite
                 state.placeMember(
                     {
                         memberId: state.selectedMemberId,
