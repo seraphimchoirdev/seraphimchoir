@@ -20,6 +20,10 @@ export interface UserProfile {
   // 대원 연결 정보
   linked_member_id: string | null;
   link_status: 'pending' | 'approved' | 'rejected' | null;
+  // 연결된 대원 정보
+  linked_member?: {
+    name: string;
+  } | null;
 }
 
 export interface UseAuthReturn {

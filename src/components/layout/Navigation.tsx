@@ -69,6 +69,9 @@ export default function Navigation() {
     return profile?.linked_member_id && profile?.link_status === 'approved';
   };
 
+  // 연결된 대원 이름을 우선 표시, 없으면 profile.name (카카오 닉네임)
+  const displayName = profile?.linked_member?.name || profile?.name || '사용자';
+
   const navLinks = [
     // 모든 로그인 사용자
     { href: '/dashboard', label: '대시보드', show: true },
@@ -76,8 +79,8 @@ export default function Navigation() {
     // 관리자 페이지 (ADMIN만)
     { href: '/admin', label: '관리자', show: hasRole(['ADMIN']) },
 
-    // 찬양대원 관리 (ADMIN, CONDUCTOR, MANAGER, PART_LEADER)
-    { href: '/members', label: '찬양대원 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
+    // 찬양대원 관리 (ADMIN, CONDUCTOR, MANAGER, STAFF, PART_LEADER)
+    { href: '/management/members', label: '찬양대원 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER']) },
 
     // 출석 관리 (ADMIN, CONDUCTOR, MANAGER, PART_LEADER)
     { href: '/attendances', label: '출석 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
@@ -88,8 +91,8 @@ export default function Navigation() {
     // 자리배치 (조회는 모든 역할, 편집은 페이지에서 제한)
     { href: '/arrangements', label: '자리배치', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']) },
 
-    // 임원 포털 (ADMIN, CONDUCTOR, MANAGER, STAFF)
-    { href: '/management', label: '임원 포털', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF']) },
+    // 임원 포털 (ADMIN, CONDUCTOR, MANAGER, STAFF, PART_LEADER)
+    { href: '/management', label: '임원 포털', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER']) },
 
     // 대원 연결된 사용자용 메뉴 (역할 무관, 대원 연결됨)
     { href: '/my-attendance', label: '내 출석', show: isMemberLinked() },
@@ -146,7 +149,7 @@ export default function Navigation() {
                         <User className="h-4 w-4 text-[var(--color-primary-600)]" />
                       </div>
                       <div className="text-left">
-                        <p className="text-sm font-medium">{profile?.name || '사용자'}</p>
+                        <p className="text-sm font-medium">{displayName}</p>
                         <p className="text-xs text-[var(--color-text-tertiary)]">
                           {profile?.role ? RoleLabels[profile.role as UserRole] : '권한 없음'}
                         </p>
@@ -157,7 +160,7 @@ export default function Navigation() {
                   <DropdownMenuContent align="end" className="w-72">
                     {/* Profile Header */}
                     <div className="px-3 py-3 border-b border-[var(--color-border-default)]">
-                      <p className="font-semibold">{profile?.name || '사용자'}</p>
+                      <p className="font-semibold">{displayName}</p>
                       <p className="text-sm text-[var(--color-text-secondary)] flex items-center gap-1.5 mt-1">
                         <Mail className="h-3.5 w-3.5" />
                         {user.email}
@@ -226,7 +229,7 @@ export default function Navigation() {
                   <DropdownMenuContent align="end" className="w-64">
                     {/* Profile Header */}
                     <div className="px-3 py-3 border-b border-[var(--color-border-default)]">
-                      <p className="font-semibold">{profile?.name || '사용자'}</p>
+                      <p className="font-semibold">{displayName}</p>
                       <p className="text-xs text-[var(--color-text-secondary)] truncate mt-0.5">
                         {user.email}
                       </p>

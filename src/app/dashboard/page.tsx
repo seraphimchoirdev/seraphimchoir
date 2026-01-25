@@ -8,6 +8,9 @@ import { useAuth } from '@/hooks/useAuth';
 export default function DashboardPage() {
     const { profile } = useAuth();
 
+    // 연결된 대원 이름을 우선 표시, 없으면 profile.name (카카오 닉네임)
+    const displayName = profile?.linked_member?.name || profile?.name || '사용자';
+
     return (
         <AppShell>
             <div className="min-h-screen bg-[var(--color-background-tertiary)] py-8 px-4 sm:px-6 lg:px-8">
@@ -15,7 +18,7 @@ export default function DashboardPage() {
                     {/* 환영 메시지 */}
                     <div>
                         <h2 className="heading-2 text-[var(--color-text-primary)]">
-                            안녕하세요, {profile?.name || '지휘자'}님!
+                            안녕하세요, {displayName}님!
                         </h2>
                         <p className="mt-2 body-base text-[var(--color-text-secondary)]">
                             오늘도 찬양대와 함께 은혜로운 시간 되세요.

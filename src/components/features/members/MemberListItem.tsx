@@ -246,7 +246,7 @@ function MemberListItem({ member, onDelete }: MemberListItemProps) {
     return (
         <>
             <div className="bg-[var(--color-background-primary)] border border-[var(--color-border-default)] rounded-lg p-3 flex items-center justify-between hover:bg-[var(--color-background-secondary)] transition-colors">
-                <Link href={`/members/${member.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                <Link href={`/management/members/${member.id}`} className="flex items-center gap-3 flex-1 min-w-0">
                     <MemberAvatar name={member.name} part={member.part} size="sm" />
 
                     <div className="flex flex-col min-w-0">
@@ -337,13 +337,13 @@ function MemberListItem({ member, onDelete }: MemberListItemProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                            <Link href={`/members/${member.id}`} className="flex items-center gap-2 cursor-pointer">
+                            <Link href={`/management/members/${member.id}`} className="flex items-center gap-2 cursor-pointer">
                                 <Eye className="h-4 w-4" />
                                 <span>상세보기</span>
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                            <Link href={`/members/${member.id}/edit`} className="flex items-center gap-2 cursor-pointer">
+                            <Link href={`/management/members/${member.id}/edit`} className="flex items-center gap-2 cursor-pointer">
                                 <Edit2 className="h-4 w-4" />
                                 <span>수정</span>
                             </Link>

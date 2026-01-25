@@ -229,13 +229,13 @@ function MemberCard({ member, onDelete }: MemberCardProps) {
       {/* 액션 버튼 */}
       <div className="flex gap-2 pt-3 border-t border-[var(--color-border-light)]">
         <Link
-          href={`/members/${member.id}`}
+          href={`/management/members/${member.id}`}
           className="flex-1 px-3 py-2 text-sm font-medium text-center text-[var(--color-primary-600)] bg-[var(--color-primary-50)] rounded-md hover:bg-[var(--color-primary-100)] transition-colors"
         >
           상세보기
         </Link>
         <Link
-          href={`/members/${member.id}/edit`}
+          href={`/management/members/${member.id}/edit`}
           className="flex-1 px-3 py-2 text-sm font-medium text-center text-[var(--color-text-secondary)] bg-[var(--color-background-tertiary)] rounded-md hover:bg-[var(--color-background-secondary)] transition-colors"
         >
           수정

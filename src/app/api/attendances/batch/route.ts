@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
           .eq('id', user.id)
           .single();
 
-        const linkedMember = profileWithMember?.members as { part: string } | null;
+        const linkedMember = profileWithMember?.members as unknown as { part: string } | null;
         if (!profileWithMember?.linked_member_id || !linkedMember) {
           return NextResponse.json(
             { error: '파트장 정보를 찾을 수 없습니다. (대원 연결 필요)' },

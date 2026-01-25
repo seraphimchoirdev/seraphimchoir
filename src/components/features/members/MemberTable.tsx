@@ -329,7 +329,7 @@ const MemberRow = memo(function MemberRow({
       <td className="px-4 py-4 whitespace-nowrap text-right text-sm">
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Link
-            href={`/members/${member.id}`}
+            href={`/management/members/${member.id}`}
             className="inline-flex items-center justify-center p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
             aria-label="상세보기"
             title="상세보기"
@@ -337,7 +337,7 @@ const MemberRow = memo(function MemberRow({
             <Eye className="w-4 h-4" />
           </Link>
           <Link
-            href={`/members/${member.id}/edit`}
+            href={`/management/members/${member.id}/edit`}
             className="inline-flex items-center justify-center p-2 text-neutral-600 hover:bg-neutral-100 rounded-md transition-colors"
             aria-label="수정"
             title="수정"

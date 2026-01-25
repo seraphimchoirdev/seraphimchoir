@@ -57,7 +57,7 @@ export default function MembersError({ error, reset }: ErrorProps) {
             다시 시도
           </Button>
 
-          <Link href="/members">
+          <Link href="/management/members">
             <Button className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
               목록으로 돌아가기

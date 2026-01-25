@@ -54,6 +54,10 @@ export interface UserProfile {
   // 대원 연결 정보
   linked_member_id: string | null;
   link_status: 'pending' | 'approved' | 'rejected' | null;
+  // 연결된 대원 정보
+  linked_member?: {
+    name: string;
+  } | null;
 }
 
 // Auth Store 상태 인터페이스
@@ -283,14 +287,21 @@ export const useAuthStore = create<AuthStore>()(
               return;
             }
 
-            // 프로필 정보 가져오기 (대원 연결 정보 포함)
+            // 프로필 정보 가져오기 (대원 연결 정보 + 연결된 대원 이름 포함)
             logger.debug('[fetchUser] 프로필 조회 시작:', session.user.id);
-            const { data: profile, error: profileError } = await supabase
+            const { data: profileData, error: profileError } = await supabase
               .from('user_profiles')
-              .select('id, email, name, role, linked_member_id, link_status')
+              .select('id, email, name, role, linked_member_id, link_status, members:linked_member_id(name)')
               .eq('id', session.user.id)
               .single();
-            logger.debug('[fetchUser] 프로필 조회 완료:', { profile, profileError });
+            logger.debug('[fetchUser] 프로필 조회 완료:', { profileData, profileError });
+
+            // members JOIN 결과를 linked_member로 매핑
+            // Supabase FK 관계 쿼리 결과는 단일 객체 또는 배열일 수 있음
+            const profile = profileData ? {
+              ...profileData,
+              linked_member: profileData.members as unknown as { name: string } | null,
+            } : null;
 
             if (profileError) {
               logger.error('[fetchUser] 프로필 로드 에러:', profileError);

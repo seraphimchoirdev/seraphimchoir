@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation';
 
 const managementMenuItems = [
   { href: '/management', label: '대시보드', exact: true },
+  { href: '/management/members', label: '대원 관리' },
   { href: '/management/statistics', label: '출석 통계' },
   { href: '/management/documents', label: '문서 아카이브' },
 ];
@@ -31,8 +32,8 @@ export default function ManagementLayout({
     );
   }
 
-  // STAFF 이상 권한만 접근 가능 (ADMIN, CONDUCTOR, MANAGER, STAFF)
-  if (!hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF'])) {
+  // 임원 권한만 접근 가능 (ADMIN, CONDUCTOR, MANAGER, STAFF, PART_LEADER)
+  if (!hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER'])) {
     return (
       <AppShell>
         <div className="min-h-screen bg-[var(--color-background-tertiary)]">
@@ -40,7 +41,7 @@ export default function ManagementLayout({
             <Alert variant="error">
               <AlertDescription className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5" />
-                임원 포털에 접근할 권한이 없습니다. 임원(STAFF 이상) 권한이 필요합니다.
+                임원 포털에 접근할 권한이 없습니다. 임원 또는 파트장 권한이 필요합니다.
               </AlertDescription>
             </Alert>
           </div>

@@ -269,7 +269,7 @@ export const RoleLabels: Record<UserRole, string> = {
   ADMIN: '관리자',
   CONDUCTOR: '지휘자',
   MANAGER: '총무',
-  STAFF: '간사',
+  STAFF: '임원',
   PART_LEADER: '파트장',
   MEMBER: '대원',
 };

@@ -128,8 +128,8 @@ export default function MemberList() {
     if (absentDaysPractice) params.set('absentDaysPractice', absentDaysPractice.toString());
 
     const newUrl = params.toString()
-      ? `/members?${params.toString()}`
-      : '/members';
+      ? `/management/members?${params.toString()}`
+      : '/management/members';
     router.replace(newUrl, { scroll: false });
   }, [
     selectedPart,

@@ -45,7 +45,7 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(memberId);
-      router.push('/members');
+      router.push('/management/members');
     } catch (error) {
       logger.error('Delete error:', error);
     }
@@ -93,7 +93,7 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
           </div>
           <div className="flex gap-2">
             <Link
-              href={`/members/${member.id}/edit`}
+              href={`/management/members/${member.id}/edit`}
               className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700"
             >
               수정

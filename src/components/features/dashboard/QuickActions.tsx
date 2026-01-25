@@ -16,7 +16,7 @@ export default function QuickActions() {
     const actions = [
         {
             label: '대원 등록',
-            href: '/members/new',
+            href: '/management/members/new',
             icon: <UserPlus className="h-4 w-4" />,
             variant: 'default' as const,
         },
