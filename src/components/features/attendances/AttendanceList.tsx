@@ -74,14 +74,27 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                     return;
                 }
 
-                // 실제 계정인 경우 members 테이블에서 조회
+                // 실제 계정인 경우 user_profiles.linked_member_id를 통해 연결된 멤버의 파트 조회
                 const supabase = createClient();
-                const { data } = await supabase
-                    .from('members')
-                    .select('part')
-                    .eq('email', user.email)
+                const { data: profileData } = await supabase
+                    .from('user_profiles')
+                    .select('linked_member_id, members:linked_member_id(part)')
+                    .eq('id', user.id)
                     .single();
-                if (data) setUserPart(data.part);
+
+                // Supabase JOIN 결과는 단일 객체 또는 배열일 수 있음
+                const membersResult = profileData?.members;
+                let partValue: string | null = null;
+
+                if (Array.isArray(membersResult) && membersResult.length > 0) {
+                    partValue = (membersResult[0] as { part: string })?.part ?? null;
+                } else if (membersResult && typeof membersResult === 'object' && 'part' in membersResult) {
+                    partValue = (membersResult as { part: string }).part;
+                }
+
+                if (partValue) {
+                    setUserPart(partValue);
+                }
                 setIsPartLoading(false);
             }
         }
