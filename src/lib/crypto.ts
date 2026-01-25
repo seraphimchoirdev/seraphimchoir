@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'Crypto' });
@@ -26,7 +27,7 @@ function getEncryptionKey(): Buffer {
   if (!key) {
     throw new Error(
       'CONDUCTOR_NOTES_ENCRYPTION_KEY 환경 변수가 설정되지 않았습니다. ' +
-      '.env 파일에 64자리 16진수 키를 설정하세요.'
+        '.env 파일에 64자리 16진수 키를 설정하세요.'
     );
   }
 
@@ -36,7 +37,7 @@ function getEncryptionKey(): Buffer {
   if (keyBuffer.length !== KEY_LENGTH) {
     throw new Error(
       `암호화 키는 ${KEY_LENGTH}바이트(64자리 16진수)여야 합니다. ` +
-      `현재: ${keyBuffer.length}바이트`
+        `현재: ${keyBuffer.length}바이트`
     );
   }
 
@@ -93,11 +94,7 @@ export function encryptConductorNotes(plainText: string): {
  * @param authTag - 인증 태그
  * @returns 복호화된 평문
  */
-export function decryptConductorNotes(
-  encryptedText: string,
-  iv: string,
-  authTag: string
-): string {
+export function decryptConductorNotes(encryptedText: string, iv: string, authTag: string): string {
   if (!encryptedText || !iv || !authTag) {
     return '';
   }

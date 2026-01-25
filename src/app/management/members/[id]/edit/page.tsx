@@ -1,8 +1,10 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useMember } from '@/hooks/useMembers';
+
 import MemberForm from '@/components/features/members/MemberForm';
+
+import { useMember } from '@/hooks/useMembers';
 
 export default function EditMemberPage() {
   const params = useParams();
@@ -22,9 +24,9 @@ export default function EditMemberPage() {
 
   if (isLoading) {
     return (
-      <div className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center py-12">
+      <div className="px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl">
+          <div className="py-12 text-center">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[var(--color-primary-600)] border-r-transparent"></div>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">로딩 중...</p>
           </div>
@@ -35,9 +37,9 @@ export default function EditMemberPage() {
 
   if (error || !member) {
     return (
-      <div className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-[var(--color-error-50)] border border-[var(--color-error-200)] rounded-lg p-4">
+      <div className="px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl">
+          <div className="rounded-lg border border-[var(--color-error-200)] bg-[var(--color-error-50)] p-4">
             <p className="text-sm text-[var(--color-error-800)]">
               {error?.message || '찬양대원 정보를 불러오는데 실패했습니다.'}
             </p>
@@ -48,19 +50,14 @@ export default function EditMemberPage() {
   }
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
+    <div className="px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-2xl">
         <div className="mb-6">
           <button
             onClick={() => router.back()}
-            className="inline-flex items-center text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] mb-4"
+            className="mb-4 inline-flex items-center text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
           >
-            <svg
-              className="w-5 h-5 mr-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className="mr-1 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -70,11 +67,15 @@ export default function EditMemberPage() {
             </svg>
             뒤로 가기
           </button>
-          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">찬양대원 정보 수정</h1>
-          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{member.name} 찬양대원의 정보를 수정합니다.</p>
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">
+            찬양대원 정보 수정
+          </h1>
+          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+            {member.name} 찬양대원의 정보를 수정합니다.
+          </p>
         </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="rounded-lg bg-white p-6 shadow">
           <MemberForm member={member} onSuccess={handleSuccess} onCancel={handleCancel} />
         </div>
       </div>

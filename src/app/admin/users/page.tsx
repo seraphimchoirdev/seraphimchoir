@@ -1,20 +1,17 @@
 'use client';
 
+import { RoleLabels, UserRole } from '@/app/api/auth/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Check, Loader2, Search, UserCog, X } from 'lucide-react';
+
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Loader2,
-  Search,
-  UserCog,
-  Check,
-  X,
-  ChevronDown,
-} from 'lucide-react';
-import { UserRole, RoleLabels } from '@/app/api/auth/types';
+
+import { createClient } from '@/lib/supabase/client';
+import { showError, showSuccess } from '@/lib/toast';
 
 interface UserProfileWithMember {
   id: string;
@@ -34,9 +31,20 @@ interface UserProfileWithMember {
 const ROLES: UserRole[] = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER'];
 
 const COMMON_TITLES = [
-  '총무', '부총무', '대장', '회계', '부회계', '서기', '부서기',
-  '악보계', '후원회장', '후원회계', '소프라노 부대장', '알토 부대장',
-  '테너 부대장', '베이스 부대장',
+  '총무',
+  '부총무',
+  '대장',
+  '회계',
+  '부회계',
+  '서기',
+  '부서기',
+  '악보계',
+  '후원회장',
+  '후원회계',
+  '소프라노 부대장',
+  '알토 부대장',
+  '테너 부대장',
+  '베이스 부대장',
 ];
 
 export default function UsersPage() {
@@ -50,12 +58,17 @@ export default function UsersPage() {
   const [editTitle, setEditTitle] = useState<string>('');
 
   // 사용자 목록 조회
-  const { data: users, isLoading, error } = useQuery({
+  const {
+    data: users,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['admin', 'users', searchQuery, roleFilter],
     queryFn: async () => {
       let query = supabase
         .from('user_profiles')
-        .select(`
+        .select(
+          `
           id,
           email,
           name,
@@ -68,7 +81,8 @@ export default function UsersPage() {
             name,
             part
           )
-        `)
+        `
+        )
         .order('created_at', { ascending: false });
 
       if (searchQuery) {
@@ -137,11 +151,16 @@ export default function UsersPage() {
   };
 
   const saveChanges = async (userId: string) => {
-    await updateRoleMutation.mutateAsync({
-      userId,
-      role: editRole,
-      title: editTitle || null,
-    });
+    try {
+      await updateRoleMutation.mutateAsync({
+        userId,
+        role: editRole,
+        title: editTitle || null,
+      });
+      showSuccess('역할이 변경되었습니다.');
+    } catch (_error) {
+      showError('역할 변경에 실패했습니다.');
+    }
   };
 
   const getPartLabel = (part: string | undefined) => {
@@ -156,9 +175,9 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto max-w-6xl px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-[var(--color-text-primary)]">
           <UserCog className="h-6 w-6" />
           사용자 관리
         </h1>
@@ -169,9 +188,9 @@ export default function UsersPage() {
 
       {/* 필터 */}
       <div className="mb-6 flex flex-wrap gap-4">
-        <div className="flex-1 min-w-[200px]">
+        <div className="min-w-[200px] flex-1">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-tertiary)]" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -183,7 +202,7 @@ export default function UsersPage() {
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-3 py-2 border border-[var(--color-border)] rounded-md bg-[var(--color-surface)]"
+          className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2"
         >
           <option value="">전체 역할</option>
           {ROLES.map((role) => (
@@ -198,17 +217,13 @@ export default function UsersPage() {
       {/* 에러 표시 */}
       {error && (
         <Alert variant="error" className="mb-6">
-          <AlertDescription>
-            데이터를 불러오는 중 오류가 발생했습니다.
-          </AlertDescription>
+          <AlertDescription>데이터를 불러오는 중 오류가 발생했습니다.</AlertDescription>
         </Alert>
       )}
 
       {updateRoleMutation.error && (
         <Alert variant="error" className="mb-6">
-          <AlertDescription>
-            {updateRoleMutation.error.message}
-          </AlertDescription>
+          <AlertDescription>{updateRoleMutation.error.message}</AlertDescription>
         </Alert>
       )}
 
@@ -221,7 +236,7 @@ export default function UsersPage() {
 
       {/* 사용자 목록 */}
       {!isLoading && users && (
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg overflow-hidden">
+        <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-[var(--color-background-secondary)]">
@@ -246,7 +261,10 @@ export default function UsersPage() {
               <tbody className="divide-y divide-[var(--color-border)]">
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-[var(--color-text-secondary)]">
+                    <td
+                      colSpan={5}
+                      className="px-4 py-8 text-center text-[var(--color-text-secondary)]"
+                    >
                       검색 결과가 없습니다.
                     </td>
                   </tr>
@@ -258,17 +276,13 @@ export default function UsersPage() {
                           <p className="font-medium text-[var(--color-text-primary)]">
                             {user.name}
                           </p>
-                          <p className="text-sm text-[var(--color-text-tertiary)]">
-                            {user.email}
-                          </p>
+                          <p className="text-sm text-[var(--color-text-tertiary)]">{user.email}</p>
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         {user.member ? (
                           <div>
-                            <p className="text-[var(--color-text-primary)]">
-                              {user.member.name}
-                            </p>
+                            <p className="text-[var(--color-text-primary)]">{user.member.name}</p>
                             <p className="text-sm text-[var(--color-text-tertiary)]">
                               {getPartLabel(user.member.part)}
                             </p>
@@ -281,8 +295,8 @@ export default function UsersPage() {
                         {editingUserId === user.id ? (
                           <select
                             value={editRole || ''}
-                            onChange={(e) => setEditRole(e.target.value as UserRole || null)}
-                            className="px-2 py-1 border border-[var(--color-border)] rounded text-sm bg-[var(--color-surface)]"
+                            onChange={(e) => setEditRole((e.target.value as UserRole) || null)}
+                            className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1 text-sm"
                           >
                             <option value="">미지정</option>
                             {ROLES.map((role) => (
@@ -293,7 +307,7 @@ export default function UsersPage() {
                           </select>
                         ) : (
                           <span
-                            className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
                               user.role
                                 ? 'bg-[var(--color-primary-50)] text-[var(--color-primary)]'
                                 : 'bg-[var(--color-background-tertiary)] text-[var(--color-text-tertiary)]'
@@ -311,7 +325,7 @@ export default function UsersPage() {
                               onChange={(e) => setEditTitle(e.target.value)}
                               placeholder="직책 입력"
                               list="title-suggestions"
-                              className="text-sm h-8"
+                              className="h-8 text-sm"
                             />
                             <datalist id="title-suggestions">
                               {COMMON_TITLES.map((title) => (
@@ -349,11 +363,7 @@ export default function UsersPage() {
                             </Button>
                           </div>
                         ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => startEditing(user)}
-                          >
+                          <Button size="sm" variant="outline" onClick={() => startEditing(user)}>
                             편집
                           </Button>
                         )}

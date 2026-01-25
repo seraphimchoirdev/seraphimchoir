@@ -7,10 +7,7 @@ interface ServiceWorkerRegistrationProps {
   onSuccess?: (registration: ServiceWorkerRegistration) => void;
 }
 
-export function ServiceWorkerRegistration({
-  onUpdate,
-  onSuccess,
-}: ServiceWorkerRegistrationProps) {
+export function ServiceWorkerRegistration({ onUpdate, onSuccess }: ServiceWorkerRegistrationProps) {
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 
   useEffect(() => {
@@ -62,16 +59,10 @@ export function ServiceWorkerRegistration({
       console.log('[SW] 새 서비스 워커가 제어를 시작했습니다.');
     };
 
-    navigator.serviceWorker.addEventListener(
-      'controllerchange',
-      handleControllerChange
-    );
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
 
     return () => {
-      navigator.serviceWorker.removeEventListener(
-        'controllerchange',
-        handleControllerChange
-      );
+      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
     };
   }, [onUpdate, onSuccess]);
 
@@ -79,9 +70,7 @@ export function ServiceWorkerRegistration({
 }
 
 // 서비스 워커 업데이트 적용 함수
-export function applyServiceWorkerUpdate(
-  registration: ServiceWorkerRegistration
-) {
+export function applyServiceWorkerUpdate(registration: ServiceWorkerRegistration) {
   const waitingWorker = registration.waiting;
   if (waitingWorker) {
     waitingWorker.postMessage({ type: 'SKIP_WAITING' });

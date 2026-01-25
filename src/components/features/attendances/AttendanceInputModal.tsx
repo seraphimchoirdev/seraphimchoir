@@ -1,19 +1,24 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { createLogger } from '@/lib/logger';
-
-const logger = createLogger({ prefix: 'AttendanceInputModal' });
 import { format } from 'date-fns/format';
 import { ko } from 'date-fns/locale/ko';
-import { useMembers } from '@/hooks/useMembers';
+
+import { useEffect, useMemo, useState } from 'react';
+
 import {
   useAttendances,
   useBulkCreateAttendances,
   useBulkUpdateAttendances,
 } from '@/hooks/useAttendances';
+import { useMembers } from '@/hooks/useMembers';
+
+import { createLogger } from '@/lib/logger';
+import { showError } from '@/lib/toast';
+import { cn, getPartLabel } from '@/lib/utils';
+
 import { TablesInsert, TablesUpdate } from '@/types/database.types';
-import { getPartLabel, cn } from '@/lib/utils';
+
+const logger = createLogger({ prefix: 'AttendanceInputModal' });
 
 interface AttendanceInputModalProps {
   date: Date;
@@ -96,18 +101,14 @@ export default function AttendanceInputModal({
 
   // 전체 선택/해제
   const handleSelectAll = (isAvailable: boolean) => {
-    setAttendanceStates((prev) =>
-      prev.map((state) => ({ ...state, isAvailable }))
-    );
+    setAttendanceStates((prev) => prev.map((state) => ({ ...state, isAvailable })));
   };
 
   // 개별 출석 상태 토글
   const handleToggleAttendance = (memberId: string) => {
     setAttendanceStates((prev) =>
       prev.map((state) =>
-        state.memberId === memberId
-          ? { ...state, isAvailable: !state.isAvailable }
-          : state
+        state.memberId === memberId ? { ...state, isAvailable: !state.isAvailable } : state
       )
     );
   };
@@ -115,9 +116,7 @@ export default function AttendanceInputModal({
   // 불참 사유 업데이트
   const handleUpdateNotes = (memberId: string, notes: string) => {
     setAttendanceStates((prev) =>
-      prev.map((state) =>
-        state.memberId === memberId ? { ...state, notes } : state
-      )
+      prev.map((state) => (state.memberId === memberId ? { ...state, notes } : state))
     );
   };
 
@@ -142,9 +141,7 @@ export default function AttendanceInputModal({
             if (!state.existingAttendanceId) return false;
 
             // 기존 값과 비교하여 변경된 것만 업데이트
-            const existing = existingAttendances?.find(
-              (a) => a.id === state.existingAttendanceId
-            );
+            const existing = existingAttendances?.find((a) => a.id === state.existingAttendanceId);
             if (!existing) return false;
 
             return (
@@ -179,7 +176,7 @@ export default function AttendanceInputModal({
       onClose();
     } catch (error) {
       logger.error('출석 저장 실패:', error);
-      alert('출석 기록 저장에 실패했습니다.');
+      showError('출석 기록 저장에 실패했습니다.');
     } finally {
       setIsSaving(false);
     }
@@ -199,25 +196,23 @@ export default function AttendanceInputModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-lg bg-white shadow-xl">
         {/* 헤더 */}
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">
-                출석 입력
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <h2 className="text-xl font-semibold text-gray-900">출석 입력</h2>
+              <p className="mt-1 text-sm text-gray-600">
                 {format(date, 'yyyy년 M월 d일 (EEEE)', { locale: ko })}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+              className="rounded-md p-2 transition-colors hover:bg-gray-100"
               aria-label="닫기"
             >
               <svg
-                className="w-6 h-6 text-gray-600"
+                className="h-6 w-6 text-gray-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -252,13 +247,13 @@ export default function AttendanceInputModal({
           <div className="mt-4 flex gap-2">
             <button
               onClick={() => handleSelectAll(true)}
-              className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition-colors"
+              className="rounded-md border border-green-200 bg-green-50 px-3 py-1.5 text-sm font-medium text-green-700 transition-colors hover:bg-green-100"
             >
               전체 출석
             </button>
             <button
               onClick={() => handleSelectAll(false)}
-              className="px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
+              className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-100"
             >
               전체 불참
             </button>
@@ -268,7 +263,7 @@ export default function AttendanceInputModal({
         {/* 본문: 회원 목록 */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {isMembersLoading || isAttendancesLoading ? (
-            <div className="flex justify-center items-center py-12">
+            <div className="flex items-center justify-center py-12">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
             </div>
           ) : (
@@ -279,7 +274,7 @@ export default function AttendanceInputModal({
 
                 return (
                   <div key={part}>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-700">
                       {getPartLabel(part)} ({members.length}명)
                     </h3>
                     <div className="space-y-2">
@@ -287,10 +282,10 @@ export default function AttendanceInputModal({
                         <div
                           key={member.memberId}
                           className={cn(
-                            'flex items-start gap-4 p-3 rounded-lg border transition-colors',
+                            'flex items-start gap-4 rounded-lg border p-3 transition-colors',
                             member.isAvailable
-                              ? 'bg-white border-gray-200'
-                              : 'bg-red-50 border-red-200'
+                              ? 'border-gray-200 bg-white'
+                              : 'border-red-200 bg-red-50'
                           )}
                         >
                           {/* 체크박스 */}
@@ -299,7 +294,7 @@ export default function AttendanceInputModal({
                               type="checkbox"
                               checked={member.isAvailable}
                               onChange={() => handleToggleAttendance(member.memberId)}
-                              className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                              className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                             />
                           </div>
 
@@ -315,7 +310,7 @@ export default function AttendanceInputModal({
                                 {member.memberName}
                               </span>
                               {member.existingAttendanceId && (
-                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                                <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
                                   기록됨
                                 </span>
                               )}
@@ -326,11 +321,9 @@ export default function AttendanceInputModal({
                               <input
                                 type="text"
                                 value={member.notes}
-                                onChange={(e) =>
-                                  handleUpdateNotes(member.memberId, e.target.value)
-                                }
+                                onChange={(e) => handleUpdateNotes(member.memberId, e.target.value)}
                                 placeholder="불참 사유 (선택사항)"
-                                className="mt-2 w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="mt-2 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500"
                               />
                             )}
                           </div>
@@ -345,19 +338,19 @@ export default function AttendanceInputModal({
         </div>
 
         {/* 푸터: 액션 버튼 */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+        <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
           <div className="flex justify-end gap-3">
             <button
               onClick={onClose}
               disabled={isSaving}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               취소
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving || attendanceStates.length === 0}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSaving ? (
                 <>

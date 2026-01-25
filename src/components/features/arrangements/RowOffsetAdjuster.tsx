@@ -1,7 +1,9 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+
 import { RowOffsetValue } from '@/types/grid';
 
 /**
@@ -108,10 +110,8 @@ export default function RowOffsetAdjuster({
     <div className="flex items-center gap-2">
       {/* 행 번호 라벨 */}
       <span
-        className={`text-sm w-10 font-medium ${
-          isCustom
-            ? 'text-[var(--color-primary-600)]'
-            : 'text-[var(--color-text-secondary)]'
+        className={`w-10 text-sm font-medium ${
+          isCustom ? 'text-[var(--color-primary-600)]' : 'text-[var(--color-text-secondary)]'
         }`}
       >
         {rowNumber}줄
@@ -131,14 +131,14 @@ export default function RowOffsetAdjuster({
       </Button>
 
       {/* 시각적 슬라이더 */}
-      <div className="flex-1 flex items-center gap-1 min-w-[80px]">
-        <div className="relative flex-1 h-2 bg-[var(--color-border-subtle)] rounded-full overflow-hidden">
+      <div className="flex min-w-[80px] flex-1 items-center gap-1">
+        <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-[var(--color-border-subtle)]">
           {/* 트랙 마커 (4개 위치) */}
           <div className="absolute inset-0 flex items-center justify-between px-1">
             {OFFSET_VALUES.map((val, idx) => (
               <div
                 key={val}
-                className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                className={`h-1.5 w-1.5 rounded-full transition-colors ${
                   currentIndex === idx
                     ? 'bg-[var(--color-primary-600)] ring-2 ring-[var(--color-primary-300)] ring-offset-1'
                     : 'bg-[var(--color-text-tertiary)] opacity-40'
@@ -151,7 +151,7 @@ export default function RowOffsetAdjuster({
           {/* 기본 패턴 표시 (없음 상태) */}
           {!isCustom && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-full h-0.5 bg-[var(--color-text-tertiary)] opacity-20 rounded" />
+              <div className="h-0.5 w-full rounded bg-[var(--color-text-tertiary)] opacity-20" />
             </div>
           )}
         </div>
@@ -172,9 +172,9 @@ export default function RowOffsetAdjuster({
 
       {/* 현재 값 표시 */}
       <span
-        className={`text-xs w-8 text-right tabular-nums ${
+        className={`w-8 text-right text-xs tabular-nums ${
           isCustom
-            ? 'text-[var(--color-primary-600)] font-semibold'
+            ? 'font-semibold text-[var(--color-primary-600)]'
             : 'text-[var(--color-text-tertiary)]'
         }`}
       >
@@ -189,7 +189,7 @@ export default function RowOffsetAdjuster({
           size="icon"
           onClick={handleReset}
           disabled={disabled}
-          className="h-6 w-6 p-0 text-[var(--color-text-tertiary)] hover:text-[var(--color-error-600)] hover:bg-[var(--color-error-100)]"
+          className="h-6 w-6 p-0 text-[var(--color-text-tertiary)] hover:bg-[var(--color-error-100)] hover:text-[var(--color-error-600)]"
           aria-label={`${rowNumber}줄 기본값으로 초기화`}
           title="기본값으로"
         >

@@ -3,9 +3,9 @@
  *
  * DDoS 공격, 무차별 대입 공격, 스팸 방어를 위한 요청 제한
  */
-
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'RateLimiter' });
@@ -21,7 +21,7 @@ function createRedisClient(): Redis | null {
   if (!url || !token) {
     logger.warn(
       'Upstash Redis 환경 변수가 설정되지 않았습니다. Rate limiting이 비활성화됩니다. ' +
-      '프로덕션 환경에서는 UPSTASH_REDIS_REST_URL과 UPSTASH_REDIS_REST_TOKEN을 설정하세요.'
+        '프로덕션 환경에서는 UPSTASH_REDIS_REST_URL과 UPSTASH_REDIS_REST_TOKEN을 설정하세요.'
     );
     return null;
   }
@@ -128,7 +128,7 @@ export function getClientIp(request: Request): string {
   // x-forwarded-for 헤더 확인 (여러 프록시를 거칠 경우 첫 번째 IP)
   const forwardedFor = headers.get('x-forwarded-for');
   if (forwardedFor) {
-    const ips = forwardedFor.split(',').map(ip => ip.trim());
+    const ips = forwardedFor.split(',').map((ip) => ip.trim());
     return ips[0];
   }
 
@@ -180,7 +180,8 @@ export async function checkRedisConnection(): Promise<{
     return {
       isConnected: false,
       isProduction,
-      error: 'Redis client not initialized. Check UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN',
+      error:
+        'Redis client not initialized. Check UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN',
     };
   }
 

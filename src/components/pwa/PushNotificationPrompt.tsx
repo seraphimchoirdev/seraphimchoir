@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { X, Bell, BellOff, AlertCircle } from 'lucide-react';
+import { AlertCircle, Bell, BellOff, X } from 'lucide-react';
+
+import { useCallback, useEffect, useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 
 const STORAGE_KEY_DISMISSED = 'push_prompt_dismissed';
@@ -20,8 +22,7 @@ export function PushNotificationPrompt({
   onPermissionChange,
 }: PushNotificationPromptProps) {
   const [showPrompt, setShowPrompt] = useState(false);
-  const [permission, setPermission] =
-    useState<NotificationPermission>('default');
+  const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [iOSVersion, setIOSVersion] = useState<number | null>(null);
@@ -42,8 +43,7 @@ export function PushNotificationPrompt({
       !(window as Window & { MSStream?: unknown }).MSStream;
 
     const standalone =
-      (window.navigator as Navigator & { standalone?: boolean }).standalone ===
-        true ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true ||
       window.matchMedia('(display-mode: standalone)').matches;
 
     // iOS 버전 추출
@@ -70,10 +70,7 @@ export function PushNotificationPrompt({
     }
 
     // 페이지 뷰 카운트
-    const pageViews = parseInt(
-      localStorage.getItem(STORAGE_KEY_PAGE_VIEWS) || '0',
-      10
-    );
+    const pageViews = parseInt(localStorage.getItem(STORAGE_KEY_PAGE_VIEWS) || '0', 10);
     localStorage.setItem(STORAGE_KEY_PAGE_VIEWS, (pageViews + 1).toString());
 
     // iOS에서는 PWA 모드이고 16.4+ 이상일 때만 표시
@@ -121,8 +118,7 @@ export function PushNotificationPrompt({
     localStorage.setItem(STORAGE_KEY_DISMISSED, 'true');
   }, []);
 
-  const shouldShow =
-    forceShow || (showPrompt && permission === 'default' && !isRequesting);
+  const shouldShow = forceShow || (showPrompt && permission === 'default' && !isRequesting);
 
   // iOS에서 PWA가 아니거나 버전이 낮으면 안내만 표시
   const showIOSNotSupported =
@@ -134,16 +130,14 @@ export function PushNotificationPrompt({
 
   if (showIOSNotSupported) {
     return (
-      <div className="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-md animate-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-[var(--color-background-secondary)] rounded-xl border border-[var(--color-border)] shadow-lg p-4">
+      <div className="animate-in slide-in-from-bottom-4 fixed right-4 bottom-20 left-4 z-50 mx-auto max-w-md duration-300">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-4 shadow-lg">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center">
-              <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-yellow-100 dark:bg-yellow-900/30">
+              <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-[var(--color-text-primary)]">
-                푸시 알림 제한
-              </h3>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-[var(--color-text-primary)]">푸시 알림 제한</h3>
               <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
                 {!isStandalone
                   ? 'iOS에서 푸시 알림을 받으려면 먼저 앱을 홈 화면에 설치해주세요.'
@@ -152,10 +146,10 @@ export function PushNotificationPrompt({
             </div>
             <button
               onClick={() => onPermissionChange?.('denied')}
-              className="flex-shrink-0 p-1 rounded-full hover:bg-[var(--color-background-tertiary)] transition-colors"
+              className="flex-shrink-0 rounded-full p-1 transition-colors hover:bg-[var(--color-background-tertiary)]"
               aria-label="닫기"
             >
-              <X className="w-5 h-5 text-[var(--color-text-tertiary)]" />
+              <X className="h-5 w-5 text-[var(--color-text-tertiary)]" />
             </button>
           </div>
         </div>
@@ -164,17 +158,15 @@ export function PushNotificationPrompt({
   }
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-md animate-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-[var(--color-background-secondary)] rounded-xl border border-[var(--color-border)] shadow-lg p-4">
+    <div className="animate-in slide-in-from-bottom-4 fixed right-4 bottom-20 left-4 z-50 mx-auto max-w-md duration-300">
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-4 shadow-lg">
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-12 h-12 bg-[var(--color-primary)]/10 rounded-xl flex items-center justify-center">
-            <Bell className="w-6 h-6 text-[var(--color-primary)]" />
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)]/10">
+            <Bell className="h-6 w-6 text-[var(--color-primary)]" />
           </div>
 
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-[var(--color-text-primary)]">
-              알림을 받으시겠어요?
-            </h3>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-semibold text-[var(--color-text-primary)]">알림을 받으시겠어요?</h3>
             <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               예배 일정, 출석 투표 알림 등 중요한 소식을 놓치지 마세요
             </p>
@@ -182,21 +174,16 @@ export function PushNotificationPrompt({
 
           <button
             onClick={handleDismiss}
-            className="flex-shrink-0 p-1 rounded-full hover:bg-[var(--color-background-tertiary)] transition-colors"
+            className="flex-shrink-0 rounded-full p-1 transition-colors hover:bg-[var(--color-background-tertiary)]"
             aria-label="닫기"
           >
-            <X className="w-5 h-5 text-[var(--color-text-tertiary)]" />
+            <X className="h-5 w-5 text-[var(--color-text-tertiary)]" />
           </button>
         </div>
 
         <div className="mt-4 flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDismiss}
-            className="flex-1"
-          >
-            <BellOff className="w-4 h-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={handleDismiss} className="flex-1">
+            <BellOff className="mr-2 h-4 w-4" />
             나중에
           </Button>
           <Button
@@ -205,7 +192,7 @@ export function PushNotificationPrompt({
             className="flex-1"
             disabled={isRequesting}
           >
-            <Bell className="w-4 h-4 mr-2" />
+            <Bell className="mr-2 h-4 w-4" />
             알림 받기
           </Button>
         </div>
@@ -216,8 +203,7 @@ export function PushNotificationPrompt({
 
 // 푸시 알림 권한 상태 훅
 export function usePushNotification() {
-  const [permission, setPermission] =
-    useState<NotificationPermission>('default');
+  const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isSupported, setIsSupported] = useState(false);
 
   useEffect(() => {

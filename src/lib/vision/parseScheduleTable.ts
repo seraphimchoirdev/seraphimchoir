@@ -10,19 +10,15 @@
  * 6. 봉헌송 연주자
  * 7. 절기/행사 정보
  */
-
 import { createLogger } from '@/lib/logger';
+
 import type { Database } from '@/types/database.types';
 
-const logger = createLogger({ prefix: 'ParseScheduleTable' });
-import {
-  ExtractedWord,
-  groupWordsIntoRows,
-  groupRowIntoColumns,
-} from './visionClient';
+import { ExtractedWord, groupRowIntoColumns, groupWordsIntoRows } from './visionClient';
 
-type ServiceScheduleInsert =
-  Database['public']['Tables']['service_schedules']['Insert'];
+const logger = createLogger({ prefix: 'ParseScheduleTable' });
+
+type ServiceScheduleInsert = Database['public']['Tables']['service_schedules']['Insert'];
 
 export interface ParsedSchedule {
   date: string;
@@ -43,7 +39,19 @@ export interface ParseResult {
 }
 
 // 후드 색상 목록
-const HOOD_COLORS = ['백', '녹', '보라', '적', '검정', '흰', '녹색', '보라색', '흰색', '검정색', '빨강'];
+const HOOD_COLORS = [
+  '백',
+  '녹',
+  '보라',
+  '적',
+  '검정',
+  '흰',
+  '녹색',
+  '보라색',
+  '흰색',
+  '검정색',
+  '빨강',
+];
 
 /**
  * 찬양대가 담당하는 절기찬양예배 (정확한 매칭)
@@ -55,12 +63,12 @@ const HOOD_COLORS = ['백', '녹', '보라', '적', '검정', '흰', '녹색', '
  * - 송구영신예배
  */
 const CHOIR_SPECIAL_SERVICES = [
-  '성금요',           // 성금요 촛불음악예배
-  '부활주일',         // 부활절 찬양예배
-  '창립기념',         // 창립기념주일 찬양예배
-  '추수감사',         // 추수감사주일 찬양예배
-  '성탄전야',         // 성탄전야 촛불음악예배
-  '송구영신',         // 송구영신예배
+  '성금요', // 성금요 촛불음악예배
+  '부활주일', // 부활절 찬양예배
+  '창립기념', // 창립기념주일 찬양예배
+  '추수감사', // 추수감사주일 찬양예배
+  '성탄전야', // 성탄전야 촛불음악예배
+  '송구영신', // 송구영신예배
 ];
 
 // 기도회로 분류되는 키워드
@@ -69,7 +77,7 @@ const PRAYER_MEETING_KEYWORDS = [
   '새벽',
   '부흥사경회',
   '사경회',
-  '구국',          // 구국기도회
+  '구국', // 구국기도회
 ];
 
 /**
@@ -88,10 +96,7 @@ export function hasWeekdayInfo(dateStr: string): boolean {
  * @param dateStr M/D 또는 MM/DD 형식 (선택적으로 요일 포함: 1/7(수), 3/12(목))
  * @param year 연도
  */
-export function normalizeDateString(
-  dateStr: string,
-  year: number
-): string | null {
+export function normalizeDateString(dateStr: string, year: number): string | null {
   // 다양한 날짜 형식 처리
   // 1/5, 01/05, 1.5, 01.05, 1/7(수), 3/12(목) 등
   const cleanedDate = dateStr.replace(/\s/g, '').trim();
@@ -221,9 +226,11 @@ function isDataRowWithDate(columns: string[]): boolean {
   // 1/7, 3/12(목), 4/1(수) 등의 형식 지원
   // 왼쪽 여백으로 인해 컬럼이 밀릴 수 있음
   const datePattern = /\d{1,2}[\/\.\-]\d{1,2}/;
-  return datePattern.test(columns[0] || '') ||
-         datePattern.test(columns[1] || '') ||
-         datePattern.test(columns[2] || '');
+  return (
+    datePattern.test(columns[0] || '') ||
+    datePattern.test(columns[1] || '') ||
+    datePattern.test(columns[2] || '')
+  );
 }
 
 /**
@@ -235,9 +242,10 @@ function isMergedCellRow(columns: string[], offset: number): boolean {
 
   // 날짜가 없고, 찬양곡명(3번째 컬럼)에 유의미한 값이 있는지 확인
   const datePattern = /\d{1,2}[\/\.\-]\d{1,2}/;
-  const hasDate = datePattern.test(columns[0] || '') ||
-                  datePattern.test(columns[1] || '') ||
-                  datePattern.test(columns[2] || '');
+  const hasDate =
+    datePattern.test(columns[0] || '') ||
+    datePattern.test(columns[1] || '') ||
+    datePattern.test(columns[2] || '');
 
   if (hasDate) return false;
 
@@ -256,12 +264,13 @@ function isMergedCellRow(columns: string[], offset: number): boolean {
   const notesText = notesColumn.trim();
 
   // 오후찬양예배, 찬양대연합 등의 키워드가 있으면 데이터 행
-  if (notesText && (
-    notesText.includes('오후') ||
-    notesText.includes('찬양대연합') ||
-    notesText.includes('연합') ||
-    notesText.includes('특별')
-  )) {
+  if (
+    notesText &&
+    (notesText.includes('오후') ||
+      notesText.includes('찬양대연합') ||
+      notesText.includes('연합') ||
+      notesText.includes('특별'))
+  ) {
     return true;
   }
 
@@ -449,7 +458,9 @@ export function parseScheduleFromWords(
     // 셀 병합된 행 처리 (날짜 없이 찬양곡 정보만 있는 행)
     else if (lastDate && isMergedCellRow(columns, offset)) {
       // 비고 필드에서 service_type 추론
-      const notesText = normalizeEmptyValue(columns[7 + offset] || columns[6 + offset] || columns[6]);
+      const notesText = normalizeEmptyValue(
+        columns[7 + offset] || columns[6 + offset] || columns[6]
+      );
 
       // 오후찬양예배, 찬양대연합 등 별도 예배 유형 판단
       let serviceType = '오후찬양예배'; // 기본값: 오후찬양예배
@@ -500,9 +511,7 @@ export function parseScheduleFromWords(
  * - 절기찬양예배: 예배 전 연습 + 예배 후 연습
  * - 찬양대연합예배: 예배 전 연습만
  */
-export function toServiceScheduleInsert(
-  parsed: ParsedSchedule
-): ServiceScheduleInsert {
+export function toServiceScheduleInsert(parsed: ParsedSchedule): ServiceScheduleInsert {
   // 예배 후 연습이 있는 예배 유형
   const hasPostPracticeTypes = ['주일 2부 예배', '절기찬양예배'];
   const hasPostPractice = hasPostPracticeTypes.includes(parsed.service_type);

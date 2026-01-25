@@ -1,13 +1,17 @@
 /**
  * 보안 감사 로그 조회 API (관리자 전용)
  */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { getSecuritySummary, getSuspiciousActivities } from '@/lib/security/audit-logger';
+
 import { createLogger } from '@/lib/logger';
-import { apiRateLimiter, getClientIp, createRateLimitErrorResponse } from '@/lib/security/rate-limiter';
+import { getSecuritySummary, getSuspiciousActivities } from '@/lib/security/audit-logger';
 import { logUnauthorizedAccess } from '@/lib/security/audit-logger';
+import {
+  apiRateLimiter,
+  createRateLimitErrorResponse,
+  getClientIp,
+} from '@/lib/security/rate-limiter';
+import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'SecurityAuditAPI' });
 
@@ -23,16 +27,15 @@ export async function GET(request: NextRequest) {
     const { success, reset } = await apiRateLimiter.limit(ip);
 
     if (!success) {
-      return NextResponse.json(
-        createRateLimitErrorResponse(reset),
-        { status: 429 }
-      );
+      return NextResponse.json(createRateLimitErrorResponse(reset), { status: 429 });
     }
 
     const supabase = await createClient();
 
     // 인증 확인
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       await logUnauthorizedAccess(request, 'audit_logs');
@@ -83,7 +86,11 @@ export async function GET(request: NextRequest) {
       case 'logs':
       default:
         // 전체 감사 로그
-        const { data: logs, error, count } = await supabase
+        const {
+          data: logs,
+          error,
+          count,
+        } = await supabase
           .from('audit_logs')
           .select('*', { count: 'exact' })
           .order('created_at', { ascending: false })
@@ -91,10 +98,7 @@ export async function GET(request: NextRequest) {
 
         if (error) {
           logger.error('Failed to fetch audit logs:', error);
-          return NextResponse.json(
-            { error: '로그 조회 실패' },
-            { status: 500 }
-          );
+          return NextResponse.json({ error: '로그 조회 실패' }, { status: 500 });
         }
 
         responseData = {
@@ -109,10 +113,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
     logger.error('Audit logs API error:', error);
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
   }
 }
 
@@ -126,7 +127,9 @@ export async function PATCH(request: NextRequest) {
     const supabase = await createClient();
 
     // 인증 및 권한 확인
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 });
@@ -148,10 +151,7 @@ export async function PATCH(request: NextRequest) {
     const { log_ids, is_reviewed } = body;
 
     if (!log_ids || !Array.isArray(log_ids)) {
-      return NextResponse.json(
-        { error: '로그 ID 목록이 필요합니다' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '로그 ID 목록이 필요합니다' }, { status: 400 });
     }
 
     // 로그 리뷰 상태 업데이트
@@ -166,10 +166,7 @@ export async function PATCH(request: NextRequest) {
 
     if (error) {
       logger.error('Failed to update audit logs:', error);
-      return NextResponse.json(
-        { error: '업데이트 실패' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: '업데이트 실패' }, { status: 500 });
     }
 
     return NextResponse.json(
@@ -181,9 +178,6 @@ export async function PATCH(request: NextRequest) {
     );
   } catch (error) {
     logger.error('Audit logs update error:', error);
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
   }
 }

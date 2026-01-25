@@ -1,7 +1,9 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+
+import { NextRequest, NextResponse } from 'next/server';
+
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'AttendancesAPI' });
 
@@ -49,7 +51,8 @@ export async function GET(request: NextRequest) {
     const isPracticeAttended = searchParams.get('is_practice_attended');
 
     // 필터가 하나도 없으면 빈 배열 반환 (의도치 않은 전체 조회 방지)
-    const hasAnyFilter = memberId || date || startDate || endDate || isServiceAvailable || isPracticeAttended;
+    const hasAnyFilter =
+      memberId || date || startDate || endDate || isServiceAvailable || isPracticeAttended;
     if (!hasAnyFilter) {
       logger.debug('Attendances: No filters provided, returning empty array');
       return NextResponse.json([]);
@@ -77,14 +80,16 @@ export async function GET(request: NextRequest) {
 
       let query = supabase
         .from('attendances')
-        .select(`
+        .select(
+          `
           *,
           members!member_id(
             id,
             name,
             part
           )
-        `)
+        `
+        )
         .order('date', { ascending: false })
         .range(from, to);
 
@@ -132,10 +137,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(allData);
   } catch (error) {
     logger.error('Attendances GET error:', error);
-    return NextResponse.json(
-      { error: '출석 현황을 불러오는데 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '출석 현황을 불러오는데 실패했습니다' }, { status: 500 });
   }
 }
 
@@ -166,10 +168,7 @@ export async function POST(request: NextRequest) {
 
     const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER'];
     if (!profile?.role || !allowedRoles.includes(profile.role)) {
-      return NextResponse.json(
-        { error: '출석 기록 생성 권한이 없습니다' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: '출석 기록 생성 권한이 없습니다' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -200,9 +199,6 @@ export async function POST(request: NextRequest) {
     }
 
     logger.error('Attendances POST error:', error);
-    return NextResponse.json(
-      { error: '출석 기록 생성에 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '출석 기록 생성에 실패했습니다' }, { status: 500 });
   }
 }

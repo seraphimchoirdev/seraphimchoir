@@ -3,8 +3,7 @@
  *
  * 내 프로필 및 연결된 대원 정보 조회/수정
  */
-
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface LinkedMember {
   id: string;

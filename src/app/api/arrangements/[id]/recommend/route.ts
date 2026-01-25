@@ -11,21 +11,33 @@
  * - DB 우선 로드: member_seat_statistics 테이블에서 학습 데이터 조회
  * - Fallback: DB 조회 실패 시 JSON 파일에서 로드
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { createLogger } from '@/lib/logger';
 
-const logger = createLogger({ prefix: 'RecommendAPI' });
+import { NextRequest, NextResponse } from 'next/server';
+
 import {
+  type DBMemberSeatStatistics,
+  type LearnedMemberPreference,
+  type Member,
+  type PreferredSeat,
   generateAISeatingArrangement,
   loadLearnedPreferences,
   loadPreferencesFromDB,
-  type Member,
-  type LearnedMemberPreference,
-  type DBMemberSeatStatistics,
-  type PreferredSeat,
 } from '@/lib/ai-seat-algorithm';
+import { createLogger } from '@/lib/logger';
+import {
+  type MLGridLayout,
+  type MLMemberInput,
+  type MLRecommendResponse,
+  isMLServiceEnabled,
+  isMLServiceReady,
+  requestMLRecommendation,
+} from '@/lib/ml-service-client';
+import { type SeatWithMember, calculateHeightOrder } from '@/lib/quality-metrics';
+import { createClient } from '@/lib/supabase/server';
+
+const logger = createLogger({ prefix: 'RecommendAPI' });
 
 // ============================================================================
 // Input Validation Schemas (Zod)
@@ -35,11 +47,13 @@ import {
 const uuidSchema = z.string().uuid('Invalid arrangement ID format');
 
 /** 그리드 레이아웃 요청 스키마 */
-const gridLayoutSchema = z.object({
-  rows: z.number().int().min(1, '최소 1행 이상').max(10, '최대 10행 이하'),
-  rowCapacities: z.array(z.number().int().min(1).max(20)).min(1).max(10),
-  zigzagPattern: z.enum(['none', 'even', 'odd']),
-}).optional();
+const gridLayoutSchema = z
+  .object({
+    rows: z.number().int().min(1, '최소 1행 이상').max(10, '최대 10행 이하'),
+    rowCapacities: z.array(z.number().int().min(1).max(20)).min(1).max(10),
+    zigzagPattern: z.enum(['none', 'even', 'odd']),
+  })
+  .optional();
 
 /** 추천 요청 본문 스키마 */
 const recommendRequestSchema = z.object({
@@ -47,19 +61,6 @@ const recommendRequestSchema = z.object({
   /** 기존 그리드 설정 유지 여부 (true면 AI가 추천하는 그리드 대신 기존 그리드 사용) */
   preserveGridLayout: z.boolean().optional().default(true),
 });
-import {
-  isMLServiceEnabled,
-  isMLServiceReady,
-  requestMLRecommendation,
-  type MLMemberInput,
-  type MLGridLayout,
-  type MLRecommendResponse,
-} from '@/lib/ml-service-client';
-import {
-  calculateHeightOrder,
-  type SeatWithMember,
-} from '@/lib/quality-metrics';
-import type { SupabaseClient } from '@supabase/supabase-js';
 
 // JSON Fallback: DB 실패 시 사용할 캐시
 let fallbackPreferences: Map<string, PreferredSeat> | null = null;
@@ -111,10 +112,7 @@ async function getPreferencesFromDB(
 /** Zod 스키마에서 추론된 타입 */
 type RecommendRequestBody = z.infer<typeof recommendRequestSchema>;
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
     const arrangementId = resolvedParams.id;
@@ -123,7 +121,10 @@ export async function POST(
     const idValidation = uuidSchema.safeParse(arrangementId);
     if (!idValidation.success) {
       return NextResponse.json(
-        { error: 'Invalid request', details: idValidation.error.issues[0]?.message || 'Invalid ID' },
+        {
+          error: 'Invalid request',
+          details: idValidation.error.issues[0]?.message || 'Invalid ID',
+        },
         { status: 400 }
       );
     }
@@ -135,7 +136,10 @@ export async function POST(
       const bodyValidation = recommendRequestSchema.safeParse(rawBody);
       if (!bodyValidation.success) {
         return NextResponse.json(
-          { error: 'Invalid request body', details: bodyValidation.error.issues.map(e => e.message).join(', ') },
+          {
+            error: 'Invalid request body',
+            details: bodyValidation.error.issues.map((e) => e.message).join(', '),
+          },
           { status: 400 }
         );
       }
@@ -149,12 +153,12 @@ export async function POST(
     const supabase = await createClient();
 
     // 3. 현재 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // 4. 배치표 정보 조회 (날짜 정보 필요)
@@ -166,10 +170,7 @@ export async function POST(
 
     if (arrError || !arrangement) {
       logger.error('Arrangement query error:', arrError);
-      return NextResponse.json(
-        { error: 'Arrangement not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Arrangement not found' }, { status: 404 });
     }
 
     // 5. 정대원 + 출석 데이터 + 파트장 정보 병렬 조회
@@ -194,7 +195,7 @@ export async function POST(
       supabase
         .from('user_profiles')
         .select('member_id, role')
-        .in('role', ['PART_LEADER', 'CONDUCTOR'])
+        .in('role', ['PART_LEADER', 'CONDUCTOR']),
     ]);
 
     const { data: allMembers, error: membersError } = membersResult;
@@ -222,14 +223,12 @@ export async function POST(
 
     // 출석 데이터를 Map으로 변환 (O(1) 조회)
     const attendanceMap = new Map<string, boolean>();
-    attendances?.forEach(att => {
+    attendances?.forEach((att) => {
       attendanceMap.set(att.member_id, att.is_service_available);
     });
 
     // 파트장 ID Set 생성
-    const partLeaderIds = new Set(
-      profiles?.map(p => p.member_id) || []
-    );
+    const partLeaderIds = new Set(profiles?.map((p) => p.member_id) || []);
 
     // 5. 등단 가능한 대원 필터링
     // - 출석 레코드가 없으면 기본값 true (등단 가능)
@@ -238,12 +237,12 @@ export async function POST(
     const memberLeaderMap = new Set<string>();
 
     const availableMembers: Member[] = (allMembers || [])
-      .filter(member => {
+      .filter((member) => {
         const isServiceAvailable = attendanceMap.get(member.id);
         // 출석 레코드가 없으면 기본값 true, 있으면 해당 값 사용
         return isServiceAvailable === undefined || isServiceAvailable === true;
       })
-      .map(member => {
+      .map((member) => {
         // 키 정보 저장
         if (member.height) {
           memberHeightMap.set(member.id, member.height);
@@ -264,10 +263,7 @@ export async function POST(
 
     // 최소 인원 확인
     if (availableMembers.length === 0) {
-      return NextResponse.json(
-        { error: 'No available members for this date' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No available members for this date' }, { status: 400 });
     }
 
     // 6. 추천 전략: Python ML 서비스 우선, 실패 시 TypeScript fallback
@@ -285,11 +281,9 @@ export async function POST(
       try {
         // 대원 데이터를 ML 서비스 형식으로 변환 (availableMembers 사용)
         // allMembers에서 height, experience 정보를 가져오기 위한 Map
-        const memberDetailsMap = new Map(
-          (allMembers || []).map(m => [m.id, m])
-        );
+        const memberDetailsMap = new Map((allMembers || []).map((m) => [m.id, m]));
 
-        const mlMembers: MLMemberInput[] = availableMembers.map(member => {
+        const mlMembers: MLMemberInput[] = availableMembers.map((member) => {
           const details = memberDetailsMap.get(member.id);
           return {
             id: member.id,
@@ -302,11 +296,13 @@ export async function POST(
         });
 
         // 그리드 레이아웃 설정 (요청에서 받거나 기본값)
-        const gridLayout: MLGridLayout | undefined = body.gridLayout ? {
-          rows: body.gridLayout.rows,
-          rowCapacities: body.gridLayout.rowCapacities,
-          zigzagPattern: body.gridLayout.zigzagPattern,
-        } : undefined;
+        const gridLayout: MLGridLayout | undefined = body.gridLayout
+          ? {
+              rows: body.gridLayout.rows,
+              rowCapacities: body.gridLayout.rowCapacities,
+              zigzagPattern: body.gridLayout.zigzagPattern,
+            }
+          : undefined;
 
         logger.debug('Requesting recommendation from Python service...');
         const mlResponse: MLRecommendResponse = await requestMLRecommendation({
@@ -323,17 +319,17 @@ export async function POST(
         // Python ML은 1-based row/col을 반환 (ml_output JSON과 동일)
         // 프론트엔드(SeatSlot, Grid Calculator)도 1-based를 사용하므로 변환 불필요
         const formattedMLResponse = {
-          seats: mlResponse.seats.map(seat => ({
-            memberId: seat.memberId,       // Python이 camelCase로 반환
+          seats: mlResponse.seats.map((seat) => ({
+            memberId: seat.memberId, // Python이 camelCase로 반환
             memberName: seat.memberName,
             row: seat.row,
             col: seat.col,
-            part: seat.part
+            part: seat.part,
           })),
           gridLayout: {
             rows: mlResponse.gridLayout.rows,
             rowCapacities: mlResponse.gridLayout.rowCapacities,
-            zigzagPattern: mlResponse.gridLayout.zigzagPattern
+            zigzagPattern: mlResponse.gridLayout.zigzagPattern,
           },
           metadata: {
             totalMembers: mlResponse.metadata.totalMembers,
@@ -361,13 +357,20 @@ export async function POST(
     // preserveGridLayout 옵션에 따라 기존 그리드 보존 여부 결정
     const preserveGridLayout = body.preserveGridLayout ?? true; // 기본값: 기존 그리드 유지
     // AI 알고리즘은 snake_case 형식의 GridLayout을 사용하므로 변환
-    const existingGridLayout = body.gridLayout ? {
-      rows: body.gridLayout.rows,
-      row_capacities: body.gridLayout.rowCapacities,
-      zigzag_pattern: body.gridLayout.zigzagPattern as 'even' | 'odd' | 'none',
-    } : undefined;
+    const existingGridLayout = body.gridLayout
+      ? {
+          rows: body.gridLayout.rows,
+          row_capacities: body.gridLayout.rowCapacities,
+          zigzag_pattern: body.gridLayout.zigzagPattern as 'even' | 'odd' | 'none',
+        }
+      : undefined;
 
-    logger.debug('preserveGridLayout:', preserveGridLayout, 'existingGridLayout:', existingGridLayout?.rows);
+    logger.debug(
+      'preserveGridLayout:',
+      preserveGridLayout,
+      'existingGridLayout:',
+      existingGridLayout?.rows
+    );
 
     const recommendation = generateAISeatingArrangement(availableMembers, {
       preferredSeats: preferences,
@@ -378,7 +381,7 @@ export async function POST(
     logger.debug('AI recommendation generated:', {
       totalMembers: recommendation.metadata.total_members,
       rows: recommendation.grid_layout.rows,
-      seats: recommendation.seats.length
+      seats: recommendation.seats.length,
     });
 
     // 7. 품질 점수 계산
@@ -387,15 +390,17 @@ export async function POST(
     // 파트 균형도 계산 (파트별 인원이 고르게 분포되었는지)
     const partCounts = Object.values(recommendation.metadata.breakdown);
     const avgPartSize = partCounts.reduce((a, b) => a + b, 0) / partCounts.length;
-    const partVariance = partCounts.reduce((sum, count) => sum + Math.pow(count - avgPartSize, 2), 0) / partCounts.length;
-    const partBalance = Math.max(0, 1 - (partVariance / (avgPartSize * avgPartSize)));
+    const partVariance =
+      partCounts.reduce((sum, count) => sum + Math.pow(count - avgPartSize, 2), 0) /
+      partCounts.length;
+    const partBalance = Math.max(0, 1 - partVariance / (avgPartSize * avgPartSize));
 
     // 품질 메트릭용 좌석 데이터 변환 (키, 파트장 정보 포함)
-    const seatsForMetrics: SeatWithMember[] = recommendation.seats.map(seat => ({
+    const seatsForMetrics: SeatWithMember[] = recommendation.seats.map((seat) => ({
       memberId: seat.member_id,
       memberName: seat.member_name,
       part: seat.part,
-      row: seat.row - 1,  // 0-based로 변환
+      row: seat.row - 1, // 0-based로 변환
       col: seat.col - 1,
       height: memberHeightMap.get(seat.member_id) ?? null,
       isLeader: memberLeaderMap.has(seat.member_id),
@@ -406,11 +411,10 @@ export async function POST(
 
     // 전체 품질 점수 (가중 평균)
     // 참고: leaderPosition은 더 이상 사용되지 않음 (파트장 위치 규칙 없음)
-    const qualityScore = (
-      placementRate * 0.5 +        // 배치율 50%
-      partBalance * 0.3 +          // 파트 균형 30%
-      heightOrder * 0.2            // 키 순서 20%
-    );
+    const qualityScore =
+      placementRate * 0.5 + // 배치율 50%
+      partBalance * 0.3 + // 파트 균형 30%
+      heightOrder * 0.2; // 키 순서 20%
 
     // 8. 응답 포맷팅 (camelCase로 변환)
     // AI 알고리즘은 1-based row/col을 반환
@@ -422,23 +426,23 @@ export async function POST(
       rows: recommendation.grid_layout.rows,
       rowCapacities: recommendation.grid_layout.row_capacities,
       zigzagPattern: recommendation.grid_layout.zigzag_pattern,
-      rowOffsets: recommendation.grid_layout.row_offsets,  // AI 기본 산 모양 패턴
+      rowOffsets: recommendation.grid_layout.row_offsets, // AI 기본 산 모양 패턴
     };
 
     const formattedResponse = {
-      seats: recommendation.seats.map(seat => ({
+      seats: recommendation.seats.map((seat) => ({
         memberId: seat.member_id,
         memberName: seat.member_name,
         row: seat.row,
         col: seat.col,
-        part: seat.part
+        part: seat.part,
       })),
       // 실제 사용할 그리드 (preserveGridLayout에 따라 기존 또는 AI 추천)
       gridLayout: {
         rows: recommendation.grid_layout.rows,
         rowCapacities: recommendation.grid_layout.row_capacities,
         zigzagPattern: recommendation.grid_layout.zigzag_pattern,
-        rowOffsets: recommendation.grid_layout.row_offsets,  // AI 기본 산 모양 패턴
+        rowOffsets: recommendation.grid_layout.row_offsets, // AI 기본 산 모양 패턴
       },
       // AI가 제안하는 그리드 (사용자가 선택적으로 적용 가능)
       suggestedGridLayout,
@@ -447,29 +451,29 @@ export async function POST(
       metadata: {
         totalMembers: recommendation.metadata.total_members,
         breakdown: recommendation.metadata.breakdown,
-        dataSource,  // 'db' 또는 'json' - 학습 데이터 소스
-        preferencesLoaded: preferences.size,  // 로드된 선호 좌석 데이터 수
+        dataSource, // 'db' 또는 'json' - 학습 데이터 소스
+        preferencesLoaded: preferences.size, // 로드된 선호 좌석 데이터 수
       },
       qualityScore,
       metrics: {
         placementRate,
         partBalance,
-        heightOrder,       // 실제 계산된 값
+        heightOrder, // 실제 계산된 값
       },
-      unassignedMembers: [],  // AI 알고리즘은 모든 멤버를 배치하므로 빈 배열
+      unassignedMembers: [], // AI 알고리즘은 모든 멤버를 배치하므로 빈 배열
       source: 'typescript-rule-based' as const,
     };
 
     return NextResponse.json(formattedResponse);
-
   } catch (error) {
     logger.error('Recommendation API error:', error);
 
     // 프로덕션 환경에서는 내부 에러 메시지를 노출하지 않음
     const isDev = process.env.NODE_ENV === 'development';
-    const errorResponse = isDev && error instanceof Error
-      ? { error: 'Internal server error', message: error.message }
-      : { error: 'Internal server error' };
+    const errorResponse =
+      isDev && error instanceof Error
+        ? { error: 'Internal server error', message: error.message }
+        : { error: 'Internal server error' };
 
     return NextResponse.json(errorResponse, { status: 500 });
   }

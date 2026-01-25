@@ -61,8 +61,9 @@ export function ProfilePage() {
 ```tsx
 'use client';
 
-import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
+
+import { useAuth } from '@/hooks/useAuth';
 
 export function LoginForm() {
   const { signIn, error } = useAuth();
@@ -140,11 +141,7 @@ export function LoginButton() {
   // isAuthenticated만 구독
   const isAuthenticated = useAuthStatus();
 
-  return (
-    <button>
-      {isAuthenticated ? '로그아웃' : '로그인'}
-    </button>
-  );
+  return <button>{isAuthenticated ? '로그아웃' : '로그인'}</button>;
 }
 ```
 
@@ -200,11 +197,11 @@ export function RoleBasedComponent() {
 
 ```typescript
 interface AuthState {
-  user: User | null;              // Supabase User 객체
-  profile: UserProfile | null;    // 사용자 프로필
-  isAuthenticated: boolean;       // 인증 여부
-  isLoading: boolean;             // 로딩 상태
-  error: Error | null;            // 에러 객체
+  user: User | null; // Supabase User 객체
+  profile: UserProfile | null; // 사용자 프로필
+  isAuthenticated: boolean; // 인증 여부
+  isLoading: boolean; // 로딩 상태
+  error: Error | null; // 에러 객체
 }
 ```
 
@@ -320,20 +317,20 @@ import { useAuth } from '@/hooks/useAuth';
 ```tsx
 // src/lib/providers.tsx
 <QueryClientProvider client={queryClient}>
-  <AuthProvider>
-    {children}
-  </AuthProvider>
+  <AuthProvider>{children}</AuthProvider>
 </QueryClientProvider>
 ```
 
 ## 성능 최적화 팁
 
 1. **선택적 구독**: 필요한 상태만 구독
+
    ```tsx
    const profile = useAuthProfile(); // user 변경시 리렌더링 안됨
    ```
 
 2. **얕은 비교**: 여러 상태를 객체로 반환할 때
+
    ```tsx
    const { user, profile } = useAuthStore(
      (state) => ({ user: state.user, profile: state.profile }),
@@ -346,7 +343,8 @@ import { useAuth } from '@/hooks/useAuth';
 ## 테스트
 
 ```typescript
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
+
 import { useAuthStore } from '@/store/authStore';
 
 describe('AuthStore', () => {

@@ -3,8 +3,9 @@
  * RPC 함수를 서버에서 호출하여 클라이언트에 반환합니다.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'AttendanceStatsAPI' });
 
@@ -59,10 +60,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'overall';
 
     if (!startDate || !endDate) {
-      return NextResponse.json(
-        { error: '시작 날짜와 종료 날짜는 필수입니다' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '시작 날짜와 종료 날짜는 필수입니다' }, { status: 400 });
     }
 
     switch (type) {
@@ -118,16 +116,10 @@ export async function GET(request: NextRequest) {
       }
 
       default:
-        return NextResponse.json(
-          { error: `지원하지 않는 통계 유형: ${type}` },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: `지원하지 않는 통계 유형: ${type}` }, { status: 400 });
     }
   } catch (error) {
     logger.error('Attendance stats error:', error);
-    return NextResponse.json(
-      { error: '출석 통계 조회에 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '출석 통계 조회에 실패했습니다' }, { status: 500 });
   }
 }

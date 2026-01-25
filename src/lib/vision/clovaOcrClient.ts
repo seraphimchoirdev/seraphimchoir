@@ -50,9 +50,7 @@ export interface ClovaOcrResponse {
  * Clova OCR API 설정 확인
  */
 export function isClovaOcrConfigured(): boolean {
-  return !!(
-    process.env.CLOVA_OCR_INVOKE_URL && process.env.CLOVA_OCR_SECRET_KEY
-  );
+  return !!(process.env.CLOVA_OCR_INVOKE_URL && process.env.CLOVA_OCR_SECRET_KEY);
 }
 
 /**
@@ -112,9 +110,7 @@ export async function extractTextWithClovaOcr(
 
   const imageResult = result.images[0];
   if (imageResult.inferResult !== 'SUCCESS') {
-    throw new Error(
-      `Clova OCR 인식 실패: ${imageResult.message || '알 수 없는 오류'}`
-    );
+    throw new Error(`Clova OCR 인식 실패: ${imageResult.message || '알 수 없는 오류'}`);
   }
 
   return result;
@@ -137,9 +133,7 @@ export interface ExtractedWord {
   confidence: number;
 }
 
-export function convertClovaResponseToWords(
-  response: ClovaOcrResponse
-): ExtractedWord[] {
+export function convertClovaResponseToWords(response: ClovaOcrResponse): ExtractedWord[] {
   const words: ExtractedWord[] = [];
 
   for (const image of response.images) {

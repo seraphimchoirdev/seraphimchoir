@@ -1,14 +1,17 @@
 'use client';
 
+import { BarChart3, Calendar, Users } from 'lucide-react';
+
 import { useState } from 'react';
+
+import StageStatistics from '@/components/features/arrangements/StageStatistics';
 import AttendanceStatistics from '@/components/features/attendances/AttendanceStatistics';
 import MemberAttendanceStats from '@/components/features/attendances/MemberAttendanceStats';
-import StageStatistics from '@/components/features/arrangements/StageStatistics';
-import { useAuth } from '@/hooks/useAuth';
-import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Users, Calendar } from 'lucide-react';
+
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ManagementStatisticsPage() {
   const { hasRole, isLoading: authLoading } = useAuth();
@@ -28,43 +31,41 @@ export default function ManagementStatisticsPage() {
 
   if (!hasPermission) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto max-w-2xl px-4 py-8">
         <Alert variant="error">
-          <AlertDescription>
-            출석 통계 페이지에 접근할 권한이 없습니다.
-          </AlertDescription>
+          <AlertDescription>출석 통계 페이지에 접근할 권한이 없습니다.</AlertDescription>
         </Alert>
       </div>
     );
   }
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-6">
         {/* 헤더 */}
-        <div className="bg-white p-6 rounded-xl shadow-sm space-y-4">
+        <div className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
           {/* 타이틀 영역 */}
           <div>
             <h2 className="heading-2 text-[var(--color-text-primary)]">출석 통계</h2>
-            <p className="mt-1 body-base text-[var(--color-text-secondary)]">
+            <p className="body-base mt-1 text-[var(--color-text-secondary)]">
               파트별, 대원별 출석 현황을 분석합니다.
             </p>
           </div>
 
           {/* 탭 선택 */}
-          <div className="pt-4 border-t border-[var(--color-border-subtle)]">
+          <div className="border-t border-[var(--color-border-subtle)] pt-4">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList>
                 <TabsTrigger value="part-stats">
-                  <BarChart3 className="h-4 w-4 mr-2" />
+                  <BarChart3 className="mr-2 h-4 w-4" />
                   파트별 통계
                 </TabsTrigger>
                 <TabsTrigger value="member-stats">
-                  <Users className="h-4 w-4 mr-2" />
+                  <Users className="mr-2 h-4 w-4" />
                   대원별 통계
                 </TabsTrigger>
                 <TabsTrigger value="stage-stats">
-                  <Calendar className="h-4 w-4 mr-2" />
+                  <Calendar className="mr-2 h-4 w-4" />
                   등단 통계
                 </TabsTrigger>
               </TabsList>

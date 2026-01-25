@@ -5,12 +5,13 @@
  * - 기존 useAuth 인터페이스 유지 (호환성)
  * - Router, Query Client 통합
  */
+import { type RolePermissionSet, RolePermissions, type UserRole } from '@/app/api/auth/types';
+import type { User } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
+
 import { useAuthStore } from '@/store/authStore';
-import type { User } from '@supabase/supabase-js';
-import { RolePermissions, type UserRole, type RolePermissionSet } from '@/app/api/auth/types';
 
 export interface UserProfile {
   id: string;
@@ -37,7 +38,11 @@ export interface UseAuthReturn {
   // 메서드
   signIn: (email: string, password: string) => Promise<{ data: unknown; error: Error | null }>;
   signInWithKakao: () => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, name: string) => Promise<{ data: unknown; error: Error | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    name: string
+  ) => Promise<{ data: unknown; error: Error | null }>;
   signOut: () => Promise<{ error: Error | null }>;
   hasRole: (requiredRoles: string[]) => boolean;
   isMemberLinked: () => boolean;

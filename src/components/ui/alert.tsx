@@ -1,6 +1,8 @@
-import * as React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
+import { type VariantProps, cva } from 'class-variance-authority';
 import { AlertCircle, CheckCircle, Info, XCircle } from 'lucide-react';
+
+import * as React from 'react';
+
 import { cn } from '@/lib/utils';
 
 const alertVariants = cva(
@@ -26,15 +28,18 @@ const alertVariants = cva(
 
 const Alert = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants> & { icon?: React.ElementType }
+  React.HTMLAttributes<HTMLDivElement> &
+    VariantProps<typeof alertVariants> & { icon?: React.ElementType }
 >(({ className, variant, icon: IconComponent, children, ...props }, ref) => {
-  const Icon = IconComponent || {
-    default: Info,
-    success: CheckCircle,
-    warning: AlertCircle,
-    error: XCircle,
-    info: Info,
-  }[variant || 'default'];
+  const Icon =
+    IconComponent ||
+    {
+      default: Info,
+      success: CheckCircle,
+      warning: AlertCircle,
+      error: XCircle,
+      info: Info,
+    }[variant || 'default'];
 
   return (
     <div ref={ref} role="alert" className={cn(alertVariants({ variant }), className)} {...props}>
@@ -49,7 +54,7 @@ const AlertTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<H
   ({ className, ...props }, ref) => (
     <h5
       ref={ref}
-      className={cn('mb-1 font-semibold leading-none tracking-tight', className)}
+      className={cn('mb-1 leading-none font-semibold tracking-tight', className)}
       {...props}
     />
   )

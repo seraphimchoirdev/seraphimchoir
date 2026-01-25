@@ -1,26 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { createLogger } from '@/lib/logger';
+import { Trash2 } from 'lucide-react';
 
-const logger = createLogger({ prefix: 'EventDialog' });
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { useMemo, useState } from 'react';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,15 +15,33 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
-  useCreateChoirEvent,
-  useUpdateChoirEvent,
-  useDeleteChoirEvent,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+
+import {
   EVENT_TYPES,
   EVENT_TYPE_LABELS,
+  useCreateChoirEvent,
+  useDeleteChoirEvent,
+  useUpdateChoirEvent,
 } from '@/hooks/useChoirEvents';
+
+import { createLogger } from '@/lib/logger';
+import { showError, showSuccess } from '@/lib/toast';
+
 import type { Database } from '@/types/database.types';
+
+const logger = createLogger({ prefix: 'EventDialog' });
 
 type ChoirEvent = Database['public']['Tables']['choir_events']['Row'];
 type ChoirEventInsert = Database['public']['Tables']['choir_events']['Insert'];
@@ -104,16 +105,14 @@ function EventForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="event_date">날짜</Label>
           <Input
             id="event_date"
             type="date"
             value={formData.date}
-            onChange={(e) =>
-              setFormData({ ...formData, date: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
             disabled={isEditing}
             required
           />
@@ -122,9 +121,7 @@ function EventForm({
           <Label htmlFor="event_type">행사 유형</Label>
           <Select
             value={formData.event_type}
-            onValueChange={(value) =>
-              setFormData({ ...formData, event_type: value })
-            }
+            onValueChange={(value) => setFormData({ ...formData, event_type: value })}
           >
             <SelectTrigger>
               <SelectValue placeholder="유형 선택" />
@@ -145,9 +142,7 @@ function EventForm({
         <Input
           id="title"
           value={formData.title}
-          onChange={(e) =>
-            setFormData({ ...formData, title: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           placeholder="예: 찬양대 야유회"
           required
         />
@@ -215,7 +210,7 @@ function EventForm({
         />
       </div>
 
-      <div className="flex justify-between items-center pt-4">
+      <div className="flex items-center justify-between pt-4">
         <div>
           {isEditing && onDelete && (
             <AlertDialog>
@@ -223,9 +218,9 @@ function EventForm({
                 <Button
                   type="button"
                   variant="ghost"
-                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                  className="text-red-500 hover:bg-red-50 hover:text-red-600"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="mr-2 h-4 w-4" />
                   삭제
                 </Button>
               </AlertDialogTrigger>
@@ -239,10 +234,7 @@ function EventForm({
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>취소</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={onDelete}
-                    className="bg-red-500 hover:bg-red-600"
-                  >
+                  <AlertDialogAction onClick={onDelete} className="bg-red-500 hover:bg-red-600">
                     삭제
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -251,19 +243,10 @@ function EventForm({
           )}
         </div>
         <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isLoading}
-          >
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
             취소
           </Button>
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
+          <Button type="submit" disabled={isLoading} className="bg-purple-600 hover:bg-purple-700">
             {isLoading ? '저장 중...' : isEditing ? '수정' : '등록'}
           </Button>
         </div>
@@ -285,9 +268,7 @@ export default function EventDialog({
 
   const isEditing = !!event;
   const isLoading =
-    createMutation.isPending ||
-    updateMutation.isPending ||
-    deleteMutation.isPending;
+    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   // 폼 리마운트용 key (이벤트 ID나 날짜 변경 시 리셋)
   const formKey = event?.id || date || 'new';
@@ -306,13 +287,16 @@ export default function EventDialog({
             description: data.description || null,
           },
         });
+        showSuccess('행사가 수정되었습니다.');
       } else {
         await createMutation.mutateAsync(data);
+        showSuccess('행사가 등록되었습니다.');
       }
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
       logger.error('Event mutation error:', error);
+      showError('저장에 실패했습니다.');
     }
   };
 
@@ -321,10 +305,12 @@ export default function EventDialog({
 
     try {
       await deleteMutation.mutateAsync(event.id);
+      showSuccess('행사가 삭제되었습니다.');
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
       logger.error('Event mutation error:', error);
+      showError('삭제에 실패했습니다.');
     }
   };
 
@@ -347,7 +333,7 @@ export default function EventDialog({
           <DialogTitle>
             {isEditing ? '행사 수정' : '행사 등록'}
             {displayDate && (
-              <span className="block text-sm font-normal text-[var(--color-text-secondary)] mt-1">
+              <span className="mt-1 block text-sm font-normal text-[var(--color-text-secondary)]">
                 {formatDate(displayDate)}
               </span>
             )}

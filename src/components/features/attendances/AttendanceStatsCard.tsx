@@ -5,8 +5,9 @@
 
 'use client';
 
-import { memo } from 'react';
 import type { LucideIcon } from 'lucide-react';
+
+import { memo } from 'react';
 
 interface AttendanceStatsCardProps {
   /** 카드 제목 */
@@ -80,20 +81,16 @@ function AttendanceStatsCard({
 
   return (
     <div className={`${bgColor} rounded-lg p-4 transition-all hover:shadow-md`}>
-      <div className="flex items-start justify-between mb-2">
-        <div className="text-sm text-gray-600 font-medium">{title}</div>
-        {Icon && (
-          <Icon className={`h-5 w-5 ${iconColor}`} aria-hidden="true" />
-        )}
+      <div className="mb-2 flex items-start justify-between">
+        <div className="text-sm font-medium text-gray-600">{title}</div>
+        {Icon && <Icon className={`h-5 w-5 ${iconColor}`} aria-hidden="true" />}
       </div>
 
       <div className="flex items-baseline gap-1">
         <div className={`text-2xl font-bold ${textColor}`}>
           {typeof value === 'number' ? value.toLocaleString() : value}
         </div>
-        {unit && (
-          <div className={`text-sm ${textColor} opacity-75`}>{unit}</div>
-        )}
+        {unit && <div className={`text-sm ${textColor} opacity-75`}>{unit}</div>}
       </div>
 
       {/* 추세 표시 (선택사항) */}

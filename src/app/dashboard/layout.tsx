@@ -1,5 +1,6 @@
-import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * 대시보드 레이아웃
@@ -8,11 +9,7 @@ import { redirect } from 'next/navigation';
  * - 미들웨어에서 1차 체크
  * - 레이아웃에서 2차 체크 (이중 보안)
  */
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
 
   const {

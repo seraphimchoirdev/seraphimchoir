@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Generated files
+*.d.ts
+next-env.d.ts
+src/types/database.types.ts
+
+# Misc
+.git/
+.vercel/
+coverage/
+*.log
+
+# ML service (Python)
+ml-service/

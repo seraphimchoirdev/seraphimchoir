@@ -1,14 +1,23 @@
 'use client';
 
+import { Check, Clock, Info, Loader2, UserCheck, X } from 'lucide-react';
+
 import { useState } from 'react';
-import { usePendingLinkRequests, useApproveMemberLink, useRejectMemberLink } from '@/hooks/useMemberLink';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Check, X, UserCheck, Clock, Info } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+
+import {
+  useApproveMemberLink,
+  usePendingLinkRequests,
+  useRejectMemberLink,
+} from '@/hooks/useMemberLink';
+
 import { createLogger } from '@/lib/logger';
+import { showWarning } from '@/lib/toast';
 import { cn } from '@/lib/utils';
-import { ROLE_LABELS } from '@/lib/constants';
 
 const logger = createLogger({ prefix: 'MemberLinksAdminPage' });
 
@@ -28,11 +37,14 @@ const PART_LABELS: Record<string, string> = {
 
 // 파트별 뱃지 스타일 (디자인 시스템 CSS 변수 활용)
 const PART_BADGE_STYLES: Record<string, string> = {
-  SOPRANO: 'bg-[var(--color-part-soprano-100)] text-[var(--color-part-soprano-700)] border-[var(--color-part-soprano-200)]',
+  SOPRANO:
+    'bg-[var(--color-part-soprano-100)] text-[var(--color-part-soprano-700)] border-[var(--color-part-soprano-200)]',
   ALTO: 'bg-[var(--color-part-alto-100)] text-[var(--color-part-alto-700)] border-[var(--color-part-alto-200)]',
-  TENOR: 'bg-[var(--color-part-tenor-100)] text-[var(--color-part-tenor-700)] border-[var(--color-part-tenor-200)]',
+  TENOR:
+    'bg-[var(--color-part-tenor-100)] text-[var(--color-part-tenor-700)] border-[var(--color-part-tenor-200)]',
   BASS: 'bg-[var(--color-part-bass-100)] text-[var(--color-part-bass-700)] border-[var(--color-part-bass-200)]',
-  SPECIAL: 'bg-[var(--color-part-special-100)] text-[var(--color-part-special-700)] border-[var(--color-part-special-200)]',
+  SPECIAL:
+    'bg-[var(--color-part-special-100)] text-[var(--color-part-special-700)] border-[var(--color-part-special-200)]',
 };
 
 // 파트별 필터 버튼 스타일 (선택 시)
@@ -46,20 +58,34 @@ const PART_FILTER_SELECTED_STYLES: Record<string, string> = {
 
 // 파트별 필터 버튼 스타일 (미선택 시)
 const PART_FILTER_OUTLINE_STYLES: Record<string, string> = {
-  SOPRANO: 'border-[var(--color-part-soprano-300)] text-[var(--color-part-soprano-600)] hover:bg-[var(--color-part-soprano-50)]',
+  SOPRANO:
+    'border-[var(--color-part-soprano-300)] text-[var(--color-part-soprano-600)] hover:bg-[var(--color-part-soprano-50)]',
   ALTO: 'border-[var(--color-part-alto-300)] text-[var(--color-part-alto-600)] hover:bg-[var(--color-part-alto-50)]',
-  TENOR: 'border-[var(--color-part-tenor-300)] text-[var(--color-part-tenor-600)] hover:bg-[var(--color-part-tenor-50)]',
+  TENOR:
+    'border-[var(--color-part-tenor-300)] text-[var(--color-part-tenor-600)] hover:bg-[var(--color-part-tenor-50)]',
   BASS: 'border-[var(--color-part-bass-300)] text-[var(--color-part-bass-600)] hover:bg-[var(--color-part-bass-50)]',
-  SPECIAL: 'border-[var(--color-part-special-300)] text-[var(--color-part-special-600)] hover:bg-[var(--color-part-special-50)]',
+  SPECIAL:
+    'border-[var(--color-part-special-300)] text-[var(--color-part-special-600)] hover:bg-[var(--color-part-special-50)]',
 };
 
 export default function MemberLinksAdminPage() {
   const [selectedPart, setSelectedPart] = useState<string>('');
   // 비등단자 역할 선택 상태 (userId -> role)
-  const [selectedRoles, setSelectedRoles] = useState<Record<string, 'CONDUCTOR' | 'ACCOMPANIST'>>({});
+  const [selectedRoles, setSelectedRoles] = useState<Record<string, 'CONDUCTOR' | 'ACCOMPANIST'>>(
+    {}
+  );
+  // 거부 확인 다이얼로그
+  const [rejectDialog, setRejectDialog] = useState<{ open: boolean; userId: string | null }>({
+    open: false,
+    userId: null,
+  });
 
   // ADMIN만 접근 가능 (layout.tsx에서 체크)
-  const { data: pendingRequests, isLoading, error } = usePendingLinkRequests(selectedPart || undefined);
+  const {
+    data: pendingRequests,
+    isLoading,
+    error,
+  } = usePendingLinkRequests(selectedPart || undefined);
   const approveMutation = useApproveMemberLink();
   const rejectMutation = useRejectMemberLink();
 
@@ -70,7 +96,7 @@ export default function MemberLinksAdminPage() {
   const handleApprove = async (userId: string, isSinger: boolean) => {
     // 비등단자인데 역할이 선택되지 않은 경우 경고
     if (!isSinger && !selectedRoles[userId]) {
-      alert('비등단자의 역할을 먼저 선택해주세요. (지휘자 또는 반주자)');
+      showWarning('비등단자의 역할을 먼저 선택해주세요. (지휘자 또는 반주자)');
       return;
     }
 
@@ -84,20 +110,26 @@ export default function MemberLinksAdminPage() {
     }
   };
 
-  const handleReject = async (userId: string) => {
-    if (!confirm('정말 이 연결 요청을 거부하시겠습니까?')) return;
+  const handleRejectClick = (userId: string) => {
+    setRejectDialog({ open: true, userId });
+  };
+
+  const handleReject = async () => {
+    if (!rejectDialog.userId) return;
 
     try {
-      await rejectMutation.mutateAsync(userId);
+      await rejectMutation.mutateAsync(rejectDialog.userId);
     } catch (err) {
       logger.error('거부 실패:', err);
+    } finally {
+      setRejectDialog({ open: false, userId: null });
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto max-w-4xl px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-[var(--color-text-primary)]">
           <UserCheck className="h-6 w-6" />
           대원 연결 승인
         </h1>
@@ -107,7 +139,7 @@ export default function MemberLinksAdminPage() {
       </div>
 
       {/* 파트 필터 - ADMIN은 모든 파트 조회 가능 */}
-      <div className="mb-6 flex gap-2 flex-wrap">
+      <div className="mb-6 flex flex-wrap gap-2">
         <Button
           variant={selectedPart === '' ? 'default' : 'outline'}
           size="sm"
@@ -136,9 +168,7 @@ export default function MemberLinksAdminPage() {
       {/* 에러 표시 */}
       {error && (
         <Alert variant="error" className="mb-6">
-          <AlertDescription>
-            데이터를 불러오는 중 오류가 발생했습니다.
-          </AlertDescription>
+          <AlertDescription>데이터를 불러오는 중 오류가 발생했습니다.</AlertDescription>
         </Alert>
       )}
 
@@ -153,11 +183,9 @@ export default function MemberLinksAdminPage() {
       {!isLoading && pendingRequests && (
         <>
           {pendingRequests.length === 0 ? (
-            <div className="text-center py-12">
-              <Clock className="h-12 w-12 mx-auto text-[var(--color-text-tertiary)] mb-4" />
-              <p className="text-[var(--color-text-secondary)]">
-                대기중인 연결 요청이 없습니다.
-              </p>
+            <div className="py-12 text-center">
+              <Clock className="mx-auto mb-4 h-12 w-12 text-[var(--color-text-tertiary)]" />
+              <p className="text-[var(--color-text-secondary)]">대기중인 연결 요청이 없습니다.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -166,11 +194,11 @@ export default function MemberLinksAdminPage() {
                 return (
                   <div
                     key={request.id}
-                    className="border border-[var(--color-border)] rounded-lg p-4 bg-[var(--color-background-secondary)]"
+                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-4"
                   >
                     <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-2 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium text-[var(--color-text-primary)]">
                             {request.name}
                           </span>
@@ -178,35 +206,33 @@ export default function MemberLinksAdminPage() {
                             ({request.email})
                           </span>
                         </div>
-                        <div className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2 flex-wrap">
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-secondary)]">
                           <span>연결 요청 대상:</span>
-                          <span className="font-medium">
-                            {request.member?.name}
-                          </span>
+                          <span className="font-medium">{request.member?.name}</span>
                           <Badge
                             className={cn(
                               'text-xs font-medium',
-                              PART_BADGE_STYLES[request.member?.part || ''] || 'bg-[var(--color-background-tertiary)]'
+                              PART_BADGE_STYLES[request.member?.part || ''] ||
+                                'bg-[var(--color-background-tertiary)]'
                             )}
                           >
                             {PART_LABELS[request.member?.part || ''] || request.member?.part}
                           </Badge>
                           {!isSinger && (
-                            <Badge className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                            <Badge className="bg-amber-100 text-xs text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                               비등단
                             </Badge>
                           )}
                         </div>
                         <div className="text-xs text-[var(--color-text-tertiary)]">
-                          요청 시간:{' '}
-                          {new Date(request.link_requested_at).toLocaleString('ko-KR')}
+                          요청 시간: {new Date(request.link_requested_at).toLocaleString('ko-KR')}
                         </div>
 
                         {/* 비등단자 역할 선택 */}
                         {!isSinger && (
-                          <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
-                            <div className="flex items-start gap-2 mb-2">
-                              <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                          <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
+                            <div className="mb-2 flex items-start gap-2">
+                              <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
                               <span className="text-sm text-amber-800 dark:text-amber-200">
                                 비등단자의 역할을 선택해주세요
                               </span>
@@ -218,10 +244,10 @@ export default function MemberLinksAdminPage() {
                                   type="button"
                                   onClick={() => handleRoleChange(request.id, option.value)}
                                   className={cn(
-                                    'px-3 py-1.5 text-sm rounded-md border transition-colors',
+                                    'rounded-md border px-3 py-1.5 text-sm transition-colors',
                                     selectedRoles[request.id] === option.value
-                                      ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
-                                      : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)] text-white'
+                                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                                   )}
                                 >
                                   {option.label}
@@ -231,13 +257,13 @@ export default function MemberLinksAdminPage() {
                           </div>
                         )}
                       </div>
-                      <div className="flex gap-2 flex-shrink-0">
+                      <div className="flex flex-shrink-0 gap-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleReject(request.id)}
+                          onClick={() => handleRejectClick(request.id)}
                           disabled={rejectMutation.isPending}
-                          className="text-[var(--color-error-600)] hover:text-[var(--color-error-700)] hover:bg-[var(--color-error-50)]"
+                          className="text-[var(--color-error-600)] hover:bg-[var(--color-error-50)] hover:text-[var(--color-error-700)]"
                         >
                           {rejectMutation.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -249,7 +275,9 @@ export default function MemberLinksAdminPage() {
                         <Button
                           size="sm"
                           onClick={() => handleApprove(request.id, isSinger)}
-                          disabled={approveMutation.isPending || (!isSinger && !selectedRoles[request.id])}
+                          disabled={
+                            approveMutation.isPending || (!isSinger && !selectedRoles[request.id])
+                          }
                         >
                           {approveMutation.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -267,6 +295,19 @@ export default function MemberLinksAdminPage() {
           )}
         </>
       )}
+
+      {/* 거부 확인 다이얼로그 */}
+      <ConfirmDialog
+        open={rejectDialog.open}
+        onOpenChange={(open) =>
+          setRejectDialog({ open, userId: open ? rejectDialog.userId : null })
+        }
+        title="연결 요청 거부"
+        description="정말 이 연결 요청을 거부하시겠습니까?"
+        confirmLabel="거부"
+        variant="destructive"
+        onConfirm={handleReject}
+      />
     </div>
   );
 }

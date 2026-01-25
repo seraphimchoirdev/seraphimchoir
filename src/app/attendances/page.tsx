@@ -1,22 +1,25 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import AppShell from '@/components/layout/AppShell';
-import { useAuth } from '@/hooks/useAuth';
-import AttendanceList from '@/components/features/attendances/AttendanceList';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Spinner } from '@/components/ui/spinner';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Music } from 'lucide-react';
-import { format } from 'date-fns/format';
-import { addWeeks } from 'date-fns/addWeeks';
-import { subWeeks } from 'date-fns/subWeeks';
-import { nextSunday } from 'date-fns/nextSunday';
-import { isSunday } from 'date-fns/isSunday';
-import { subMonths } from 'date-fns/subMonths';
 import { addMonths } from 'date-fns/addMonths';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { addWeeks } from 'date-fns/addWeeks';
+import { format } from 'date-fns/format';
+import { isSunday } from 'date-fns/isSunday';
+import { nextSunday } from 'date-fns/nextSunday';
+import { subMonths } from 'date-fns/subMonths';
+import { subWeeks } from 'date-fns/subWeeks';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Music } from 'lucide-react';
+
+import { useMemo, useState } from 'react';
+
+import AttendanceList from '@/components/features/attendances/AttendanceList';
+import AppShell from '@/components/layout/AppShell';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Spinner } from '@/components/ui/spinner';
+
+import { useAuth } from '@/hooks/useAuth';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
 
 export default function AttendancesPage() {
@@ -33,8 +36,8 @@ export default function AttendancesPage() {
   });
 
   // 날짜 네비게이션
-  const handlePrevWeek = () => setSelectedDate(prev => subWeeks(prev, 1));
-  const handleNextWeek = () => setSelectedDate(prev => addWeeks(prev, 1));
+  const handlePrevWeek = () => setSelectedDate((prev) => subWeeks(prev, 1));
+  const handleNextWeek = () => setSelectedDate((prev) => addWeeks(prev, 1));
 
   // 캘린더에 표시될 범위의 예배 일정 조회 (전후 3개월)
   const calendarStartDate = format(subMonths(selectedDate, 3), 'yyyy-MM-dd');
@@ -73,7 +76,7 @@ export default function AttendancesPage() {
   if (authLoading) {
     return (
       <AppShell>
-        <div className="min-h-screen bg-[var(--color-background-tertiary)] flex items-center justify-center py-20">
+        <div className="flex min-h-screen items-center justify-center bg-[var(--color-background-tertiary)] py-20">
           <Spinner size="lg" variant="default" />
         </div>
       </AppShell>
@@ -84,11 +87,9 @@ export default function AttendancesPage() {
     return (
       <AppShell>
         <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-          <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <div className="container mx-auto max-w-2xl px-4 py-8">
             <Alert variant="error">
-              <AlertDescription>
-                출석 관리 페이지에 접근할 권한이 없습니다.
-              </AlertDescription>
+              <AlertDescription>출석 관리 페이지에 접근할 권한이 없습니다.</AlertDescription>
             </Alert>
           </div>
         </div>
@@ -99,40 +100,46 @@ export default function AttendancesPage() {
   return (
     <AppShell>
       <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-
-      <div className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* 헤더 */}
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-              <div>
-                <h2 className="heading-2 text-[var(--color-text-primary)]">출석 관리</h2>
-                <p className="mt-1 body-base text-[var(--color-text-secondary)]">
-                  주일 예배 등단 및 연습 참석 현황을 관리합니다.
-                </p>
+        <div className="px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl space-y-6">
+            {/* 헤더 */}
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+              <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                <div>
+                  <h2 className="heading-2 text-[var(--color-text-primary)]">출석 관리</h2>
+                  <p className="body-base mt-1 text-[var(--color-text-secondary)]">
+                    주일 예배 등단 및 연습 참석 현황을 관리합니다.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* 날짜 선택 UI */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 border-t border-[var(--color-border-subtle)]">
+              {/* 날짜 선택 UI */}
+              <div className="flex flex-col justify-between gap-4 border-t border-[var(--color-border-subtle)] pt-4 md:flex-row md:items-center">
                 {selectedSchedule && (
                   <div className="flex items-center gap-2 text-sm text-[var(--color-primary-600)]">
                     <Music className="h-4 w-4" />
-                    <span className="font-medium">{selectedSchedule.service_type || '주일예배'}</span>
+                    <span className="font-medium">
+                      {selectedSchedule.service_type || '주일예배'}
+                    </span>
                     {selectedSchedule.hymn_name && (
-                      <span className="text-[var(--color-primary-500)]">• {selectedSchedule.hymn_name}</span>
+                      <span className="text-[var(--color-primary-500)]">
+                        • {selectedSchedule.hymn_name}
+                      </span>
                     )}
                   </div>
                 )}
 
-                <div className="flex items-center gap-4 bg-[var(--color-background-secondary)] p-2 rounded-lg">
+                <div className="flex items-center gap-4 rounded-lg bg-[var(--color-background-secondary)] p-2">
                   <Button variant="ghost" size="icon" onClick={handlePrevWeek}>
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="h-5 w-5" />
                   </Button>
 
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="min-w-[160px] font-medium text-lg border-none bg-transparent hover:bg-white shadow-sm">
+                      <Button
+                        variant="outline"
+                        className="min-w-[160px] border-none bg-transparent text-lg font-medium shadow-sm hover:bg-white"
+                      >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {format(selectedDate, 'yyyy-MM-dd')}
                       </Button>
@@ -149,26 +156,26 @@ export default function AttendancesPage() {
                         disabled={isDateDisabled}
                         initialFocus
                       />
-                      <div className="px-3 py-2 border-t text-xs text-muted-foreground">
-                        <Music className="inline h-3 w-3 mr-1" />
+                      <div className="text-muted-foreground border-t px-3 py-2 text-xs">
+                        <Music className="mr-1 inline h-3 w-3" />
                         예배 일정이 등록된 날짜만 선택 가능
                       </div>
                     </PopoverContent>
                   </Popover>
 
                   <Button variant="ghost" size="icon" onClick={handleNextWeek}>
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="h-5 w-5" />
                   </Button>
                 </div>
               </div>
-          </div>
+            </div>
 
-          {/* 출석 목록 */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <AttendanceList date={selectedDate} />
+            {/* 출석 목록 */}
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+              <AttendanceList date={selectedDate} />
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </AppShell>
   );

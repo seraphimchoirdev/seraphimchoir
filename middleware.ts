@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 import { generateNonce, generateFullCSPHeader, generateReportToHeader } from '@/lib/security/csp-nonce';
 

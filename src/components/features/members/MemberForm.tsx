@@ -1,12 +1,13 @@
 'use client';
 
+import { AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
+
 import { useState } from 'react';
-import { useCreateMember, useUpdateMember } from '@/hooks/useMembers';
-import type { Database } from '@/types/database.types';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -14,9 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+
+import { useCreateMember, useUpdateMember } from '@/hooks/useMembers';
+
 import { createLogger } from '@/lib/logger';
+import { showError, showSuccess } from '@/lib/toast';
+
+import type { Database } from '@/types/database.types';
 
 const logger = createLogger({ prefix: 'MemberForm' });
 
@@ -118,7 +124,7 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent, forceUpdate = false) => {
+  const handleSubmit = async (e: React.FormEvent, _forceUpdate = false) => {
     e.preventDefault();
 
     if (!validate()) return;
@@ -140,15 +146,21 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
       // 휴직 관련 필드 (휴직 상태일 때만 값 저장)
       leave_reason: isOnLeave && formData.leave_reason ? formData.leave_reason : null,
       leave_start_date: isOnLeave && formData.leave_start_date ? formData.leave_start_date : null,
-      leave_duration_months: isOnLeave && formData.leave_duration_months ? parseInt(formData.leave_duration_months, 10) : null,
-      expected_return_date: isOnLeave && formData.expected_return_date ? formData.expected_return_date : null,
+      leave_duration_months:
+        isOnLeave && formData.leave_duration_months
+          ? parseInt(formData.leave_duration_months, 10)
+          : null,
+      expected_return_date:
+        isOnLeave && formData.expected_return_date ? formData.expected_return_date : null,
     };
 
     try {
       if (isEditMode && member) {
         await updateMutation.mutateAsync({ id: member.id, data: submitData });
+        showSuccess('대원 정보가 수정되었습니다.');
       } else {
         await createMutation.mutateAsync(submitData);
+        showSuccess('대원이 등록되었습니다.');
       }
       setVersionConflict(false); // 성공 시 충돌 상태 초기화
       onSuccess?.();
@@ -159,6 +171,9 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
       const err = error as Error & { code?: string };
       if (err?.message?.includes('다른 곳에서 수정') || err?.code === 'VERSION_CONFLICT') {
         setVersionConflict(true);
+        showError('다른 곳에서 수정되어 충돌이 발생했습니다. 새로고침 후 다시 시도해주세요.');
+      } else {
+        showError('저장에 실패했습니다.');
       }
     }
   };
@@ -179,7 +194,7 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Subtitle - 모달 컨텍스트 설명 */}
-      <div className="pb-4 border-b border-[var(--color-border-default)]">
+      <div className="border-b border-[var(--color-border-default)] pb-4">
         <p className="text-sm text-[var(--color-text-secondary)]">
           {isEditMode
             ? '찬양대원의 정보를 수정합니다. 변경 사항은 즉시 반영됩니다.'
@@ -193,14 +208,10 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>버전 충돌 감지</AlertTitle>
           <AlertDescription>
-            이 대원 정보가 다른 곳에서 수정되었습니다. 최신 데이터를 불러오거나 현재 입력한 내용으로 덮어쓸 수 있습니다.
+            이 대원 정보가 다른 곳에서 수정되었습니다. 최신 데이터를 불러오거나 현재 입력한 내용으로
+            덮어쓸 수 있습니다.
             <div className="mt-4 flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-              >
+              <Button type="button" variant="outline" size="sm" onClick={handleRefresh}>
                 새로고침
               </Button>
               <Button
@@ -229,8 +240,10 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
       {/* 기본 정보 섹션 */}
       <div className="space-y-5">
         <div>
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-4">기본 정보</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h3 className="mb-4 text-base font-semibold text-[var(--color-text-primary)]">
+            기본 정보
+          </h3>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* 이름 */}
             <div className="space-y-2">
               <Label htmlFor="name">
@@ -244,7 +257,11 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
                 onChange={handleChange}
                 placeholder="홍길동"
                 required
-                className={errors.name ? 'border-[var(--color-error-300)] focus-visible:ring-[var(--color-error-500)]' : ''}
+                className={
+                  errors.name
+                    ? 'border-[var(--color-error-300)] focus-visible:ring-[var(--color-error-500)]'
+                    : ''
+                }
               />
               {errors.name && (
                 <p className="text-sm text-[var(--color-error-600)]">{errors.name}</p>
@@ -299,7 +316,7 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
                 name="is_leader"
                 checked={formData.is_leader}
                 onChange={handleChange}
-                className="h-4 w-4 rounded border-[var(--color-border-default)] text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)] cursor-pointer"
+                className="h-4 w-4 cursor-pointer rounded border-[var(--color-border-default)] text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)]"
               />
               <Label htmlFor="is_leader" className="cursor-pointer font-normal">
                 파트장으로 지정
@@ -314,7 +331,7 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
                 name="is_singer"
                 checked={formData.is_singer}
                 onChange={handleChange}
-                className="h-4 w-4 rounded border-[var(--color-border-default)] text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)] cursor-pointer"
+                className="h-4 w-4 cursor-pointer rounded border-[var(--color-border-default)] text-[var(--color-primary-600)] focus:ring-[var(--color-primary-500)]"
               />
               <Label htmlFor="is_singer" className="cursor-pointer font-normal">
                 등단자 (출석/자리배치 대상)
@@ -323,7 +340,7 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
 
             {/* 비등단자 안내 */}
             {!formData.is_singer && (
-              <div className="md:col-span-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 md:col-span-2 dark:border-amber-800 dark:bg-amber-900/20">
                 <p className="text-sm text-amber-700 dark:text-amber-300">
                   비등단자(지휘자, 반주자 등)는 출석체크 및 자리배치 대상에서 제외됩니다.
                 </p>
@@ -333,9 +350,11 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
         </div>
 
         {/* 대원 상태 섹션 */}
-        <div className="pt-6 border-t border-[var(--color-border-default)]">
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-4">대원 상태</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="border-t border-[var(--color-border-default)] pt-6">
+          <h3 className="mb-4 text-base font-semibold text-[var(--color-text-primary)]">
+            대원 상태
+          </h3>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="member_status">상태 구분</Label>
               <Select
@@ -379,9 +398,11 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
 
           {/* 휴직 정보 (휴직대원일 때만 표시) */}
           {formData.member_status === 'ON_LEAVE' && (
-            <div className="mt-6 p-4 bg-[var(--color-warning-50)] border border-[var(--color-warning-200)] rounded-lg">
-              <h4 className="text-sm font-semibold text-[var(--color-warning-700)] mb-4">휴직 정보</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mt-6 rounded-lg border border-[var(--color-warning-200)] bg-[var(--color-warning-50)] p-4">
+              <h4 className="mb-4 text-sm font-semibold text-[var(--color-warning-700)]">
+                휴직 정보
+              </h4>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* 휴직 사유 */}
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="leave_reason">휴직 사유</Label>
@@ -442,9 +463,11 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
         </div>
 
         {/* 연락처 정보 섹션 */}
-        <div className="pt-6 border-t border-[var(--color-border-default)]">
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-4">연락처 정보</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="border-t border-[var(--color-border-default)] pt-6">
+          <h3 className="mb-4 text-base font-semibold text-[var(--color-text-primary)]">
+            연락처 정보
+          </h3>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* 전화번호 */}
             <div className="space-y-2">
               <Label htmlFor="phone_number">연락처</Label>
@@ -471,7 +494,11 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="example@email.com"
-                className={errors.email ? 'border-[var(--color-error-300)] focus-visible:ring-[var(--color-error-500)]' : ''}
+                className={
+                  errors.email
+                    ? 'border-[var(--color-error-300)] focus-visible:ring-[var(--color-error-500)]'
+                    : ''
+                }
               />
               {errors.email && (
                 <p className="text-sm text-[var(--color-error-600)]">{errors.email}</p>
@@ -481,8 +508,10 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
         </div>
 
         {/* 추가 정보 섹션 */}
-        <div className="pt-6 border-t border-[var(--color-border-default)]">
-          <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-4">추가 정보</h3>
+        <div className="border-t border-[var(--color-border-default)] pt-6">
+          <h3 className="mb-4 text-base font-semibold text-[var(--color-text-primary)]">
+            추가 정보
+          </h3>
           <div className="space-y-2">
             <Label htmlFor="notes">특이사항</Label>
             <Textarea
@@ -502,21 +531,13 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
       </div>
 
       {/* 액션 버튼 */}
-      <div className="flex items-center justify-end gap-3 pt-6 border-t border-[var(--color-border-default)]">
+      <div className="flex items-center justify-end gap-3 border-t border-[var(--color-border-default)] pt-6">
         {onCancel && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isLoading}
-          >
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
             취소
           </Button>
         )}
-        <Button
-          type="submit"
-          disabled={isLoading}
-        >
+        <Button type="submit" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isLoading ? '처리 중...' : isEditMode ? '수정 완료' : '대원 등록'}
         </Button>

@@ -1,28 +1,16 @@
 'use client';
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { useState } from 'react';
-import { createLogger } from '@/lib/logger';
-
-const logger = createLogger({ prefix: 'Navigation' });
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
-import { User, Mail, LogOut, ChevronDown } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { RoleLabels, type UserRole } from '@/app/api/auth/types';
+import { ChevronDown, LogOut, Mail, User } from 'lucide-react';
 
-import { useMounted } from '@/hooks/useMounted';
+import { useState } from 'react';
 
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +19,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Spinner } from '@/components/ui/spinner';
+
+import { useAuth } from '@/hooks/useAuth';
+import { useMounted } from '@/hooks/useMounted';
+
+import { createLogger } from '@/lib/logger';
+import { showError } from '@/lib/toast';
+
+const logger = createLogger({ prefix: 'Navigation' });
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -46,14 +50,14 @@ export default function Navigation() {
 
       if (error) {
         logger.error('로그아웃 에러:', error);
-        alert('로그아웃 중 오류가 발생했습니다. 다시 시도해주세요.');
+        showError('로그아웃 중 오류가 발생했습니다. 다시 시도해주세요.', handleSignOut);
         setIsLoggingOut(false);
         setIsLogoutDialogOpen(false);
       }
       // 성공 시 signOut 함수 내부에서 리다이렉트됨
     } catch (err) {
       logger.error('로그아웃 예외:', err);
-      alert('로그아웃 중 오류가 발생했습니다.');
+      showError('로그아웃 중 오류가 발생했습니다.', handleSignOut);
       setIsLoggingOut(false);
       setIsLogoutDialogOpen(false);
     }
@@ -80,33 +84,46 @@ export default function Navigation() {
     { href: '/admin', label: '관리자', show: hasRole(['ADMIN']) },
 
     // 출석 관리 (ADMIN, CONDUCTOR, MANAGER, PART_LEADER)
-    { href: '/attendances', label: '출석 관리', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']) },
+    {
+      href: '/attendances',
+      label: '출석 관리',
+      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']),
+    },
 
     // 찬양대 일정 (모든 역할 조회 가능)
-    { href: '/service-schedules', label: '찬양대 일정', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']) },
+    {
+      href: '/service-schedules',
+      label: '찬양대 일정',
+      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']),
+    },
 
     // 자리배치 (조회는 모든 역할, 편집은 페이지에서 제한)
-    { href: '/arrangements', label: '자리배치', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']) },
+    {
+      href: '/arrangements',
+      label: '자리배치',
+      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']),
+    },
 
     // 임원 포털 (ADMIN, CONDUCTOR, MANAGER, STAFF, PART_LEADER)
-    { href: '/management', label: '임원 포털', show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER']) },
+    {
+      href: '/management',
+      label: '임원 포털',
+      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER']),
+    },
 
     // 대원 연결된 사용자용 메뉴 (역할 무관, 대원 연결됨)
     { href: '/my-attendance', label: '내 출석', show: isMemberLinked() },
     { href: '/mypage', label: '마이페이지', show: isMemberLinked() },
-  ].filter(link => link.show);
+  ].filter((link) => link.show);
 
   return (
     <>
-      <nav className="bg-[var(--color-background-primary)] shadow-[var(--shadow-sm)] border-b border-[var(--color-border-default)] sticky top-0 z-[var(--z-sticky)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+      <nav className="sticky top-0 z-[var(--z-sticky)] border-b border-[var(--color-border-default)] bg-[var(--color-background-primary)] shadow-[var(--shadow-sm)]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 justify-between">
             {/* 로고 및 데스크톱 메뉴 */}
             <div className="flex items-center gap-6">
-              <Link
-                href="/dashboard"
-                className="flex items-center"
-              >
+              <Link href="/dashboard" className="flex items-center">
                 <Image
                   src="/title_logo.png"
                   alt="새로핌:On"
@@ -117,17 +134,18 @@ export default function Navigation() {
                 />
               </Link>
               {/* 데스크톱 네비게이션 - lg(1024px) 이상에서 표시 */}
-              <div className="hidden lg:flex gap-4">
+              <div className="hidden gap-4 lg:flex">
                 {navLinks.map((link) => {
                   const isActive = pathname.startsWith(link.href);
                   return (
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`text-sm font-medium transition-colors px-3 py-2 rounded-[var(--radius-base)] ${isActive
-                        ? 'bg-[var(--color-primary-50)] text-[var(--color-primary-600)]'
-                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-text-primary)]'
-                        }`}
+                      className={`rounded-[var(--radius-base)] px-3 py-2 text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-[var(--color-primary-50)] text-[var(--color-primary-600)]'
+                          : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-text-primary)]'
+                      }`}
                     >
                       {link.label}
                     </Link>
@@ -137,12 +155,12 @@ export default function Navigation() {
             </div>
 
             {/* 데스크톱 사용자 정보 및 로그아웃 - lg(1024px) 이상에서 표시 */}
-            <div className="hidden lg:flex items-center gap-4">
+            <div className="hidden items-center gap-4 lg:flex">
               {mounted && user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-base)] hover:bg-[var(--color-background-tertiary)] transition-colors cursor-pointer">
-                      <div className="w-8 h-8 rounded-full bg-[var(--color-primary-100)] flex items-center justify-center">
+                    <button className="flex cursor-pointer items-center gap-2 rounded-[var(--radius-base)] px-3 py-2 transition-colors hover:bg-[var(--color-background-tertiary)]">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-primary-100)]">
                         <User className="h-4 w-4 text-[var(--color-primary-600)]" />
                       </div>
                       <div className="text-left">
@@ -156,9 +174,9 @@ export default function Navigation() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-72">
                     {/* Profile Header */}
-                    <div className="px-3 py-3 border-b border-[var(--color-border-default)]">
+                    <div className="border-b border-[var(--color-border-default)] px-3 py-3">
                       <p className="font-semibold">{displayName}</p>
-                      <p className="text-sm text-[var(--color-text-secondary)] flex items-center gap-1.5 mt-1">
+                      <p className="mt-1 flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)]">
                         <Mail className="h-3.5 w-3.5" />
                         {user.email}
                       </p>
@@ -174,15 +192,25 @@ export default function Navigation() {
                     </div>
                     {/* Link Status (conditional) */}
                     {profile?.linked_member_id && (
-                      <div className="px-3 py-2 border-t border-[var(--color-border-default)]">
+                      <div className="border-t border-[var(--color-border-default)] px-3 py-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-[var(--color-text-tertiary)]">대원 연결</span>
-                          <Badge variant={
-                            profile.link_status === 'approved' ? 'success' :
-                              profile.link_status === 'pending' ? 'warning' : 'destructive'
-                          }>
-                            {profile.link_status === 'approved' ? '승인됨' :
-                              profile.link_status === 'pending' ? '대기중' : '거절됨'}
+                          <span className="text-xs text-[var(--color-text-tertiary)]">
+                            대원 연결
+                          </span>
+                          <Badge
+                            variant={
+                              profile.link_status === 'approved'
+                                ? 'success'
+                                : profile.link_status === 'pending'
+                                  ? 'warning'
+                                  : 'destructive'
+                            }
+                          >
+                            {profile.link_status === 'approved'
+                              ? '승인됨'
+                              : profile.link_status === 'pending'
+                                ? '대기중'
+                                : '거절됨'}
                           </Badge>
                         </div>
                       </div>
@@ -191,69 +219,76 @@ export default function Navigation() {
                     {/* MyPage Link - 모든 로그인 사용자 접근 가능 */}
                     <DropdownMenuItem asChild>
                       <Link href="/mypage" className="cursor-pointer">
-                        <User className="h-4 w-4 mr-2" />
+                        <User className="mr-2 h-4 w-4" />
                         마이페이지
                       </Link>
                     </DropdownMenuItem>
                     {/* Logout */}
                     <DropdownMenuItem
                       onClick={() => setIsLogoutDialogOpen(true)}
-                      className="text-[var(--color-error-600)] hover:bg-[var(--color-error-50)] cursor-pointer"
+                      className="cursor-pointer text-[var(--color-error-600)] hover:bg-[var(--color-error-50)]"
                     >
-                      <LogOut className="h-4 w-4 mr-2" />
+                      <LogOut className="mr-2 h-4 w-4" />
                       로그아웃
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
                 <Link href="/login">
-                  <Button variant="ghost" size="sm">로그인</Button>
+                  <Button variant="ghost" size="sm">
+                    로그인
+                  </Button>
                 </Link>
               )}
             </div>
 
             {/* 모바일 프로필 Avatar - lg(1024px) 미만에서 표시 */}
-            <div className="flex lg:hidden items-center">
+            <div className="flex items-center lg:hidden">
               {mounted && user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 p-2 rounded-[var(--radius-base)] hover:bg-[var(--color-background-tertiary)] transition-colors cursor-pointer">
-                      <div className="w-8 h-8 rounded-full bg-[var(--color-primary-100)] flex items-center justify-center">
+                    <button className="flex cursor-pointer items-center gap-2 rounded-[var(--radius-base)] p-2 transition-colors hover:bg-[var(--color-background-tertiary)]">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-primary-100)]">
                         <User className="h-4 w-4 text-[var(--color-primary-600)]" />
                       </div>
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-64">
                     {/* Profile Header */}
-                    <div className="px-3 py-3 border-b border-[var(--color-border-default)]">
+                    <div className="border-b border-[var(--color-border-default)] px-3 py-3">
                       <p className="font-semibold">{displayName}</p>
-                      <p className="text-xs text-[var(--color-text-secondary)] truncate mt-0.5">
+                      <p className="mt-0.5 truncate text-xs text-[var(--color-text-secondary)]">
                         {user.email}
                       </p>
-                      <Badge variant={profile?.role ? 'default' : 'secondary'} className="mt-2 text-xs">
+                      <Badge
+                        variant={profile?.role ? 'default' : 'secondary'}
+                        className="mt-2 text-xs"
+                      >
                         {profile?.role ? RoleLabels[profile.role as UserRole] : '역할 미지정'}
                       </Badge>
                     </div>
                     {/* MyPage Link - 모든 로그인 사용자 접근 가능 */}
                     <DropdownMenuItem asChild>
                       <Link href="/mypage" className="cursor-pointer">
-                        <User className="h-4 w-4 mr-2" />
+                        <User className="mr-2 h-4 w-4" />
                         마이페이지
                       </Link>
                     </DropdownMenuItem>
                     {/* Logout */}
                     <DropdownMenuItem
                       onClick={() => setIsLogoutDialogOpen(true)}
-                      className="text-[var(--color-error-600)] hover:bg-[var(--color-error-50)] cursor-pointer"
+                      className="cursor-pointer text-[var(--color-error-600)] hover:bg-[var(--color-error-50)]"
                     >
-                      <LogOut className="h-4 w-4 mr-2" />
+                      <LogOut className="mr-2 h-4 w-4" />
                       로그아웃
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
                 <Link href="/login">
-                  <Button variant="ghost" size="sm">로그인</Button>
+                  <Button variant="ghost" size="sm">
+                    로그인
+                  </Button>
                 </Link>
               )}
             </div>
@@ -265,19 +300,21 @@ export default function Navigation() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>로그아웃</DialogTitle>
-            <DialogDescription>
-              정말 로그아웃 하시겠습니까?
-            </DialogDescription>
+            <DialogDescription>정말 로그아웃 하시겠습니까?</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsLogoutDialogOpen(false)} disabled={isLoggingOut}>
+            <Button
+              variant="outline"
+              onClick={() => setIsLogoutDialogOpen(false)}
+              disabled={isLoggingOut}
+            >
               취소
             </Button>
             <Button
               variant="destructive"
               onClick={handleSignOut}
               disabled={isLoggingOut}
-              className="bg-[var(--color-error-600)] hover:bg-[var(--color-error-700)] text-white"
+              className="bg-[var(--color-error-600)] text-white hover:bg-[var(--color-error-700)]"
             >
               {isLoggingOut ? <Spinner size="sm" className="mr-2" /> : null}
               로그아웃

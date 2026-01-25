@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { isPushSupported, isIOSPushSupported } from '@/lib/push-notifications';
+import { useCallback, useEffect, useState } from 'react';
+
+import { isIOSPushSupported, isPushSupported } from '@/lib/push-notifications';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -41,8 +42,7 @@ interface UsePWAResult {
 export function usePWA(): UsePWAResult {
   // 설치 상태
   const [isInstalled, setIsInstalled] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   // 플랫폼 감지
   const [isIOS, setIsIOS] = useState(false);
@@ -52,9 +52,9 @@ export function usePWA(): UsePWAResult {
   const [isStandalone, setIsStandalone] = useState(false);
 
   // 푸시 알림
-  const [pushPermission, setPushPermission] =
-    useState<PushPermission>('default');
+  const [pushPermission, setPushPermission] = useState<PushPermission>('default');
 
+  // 브라우저 환경 초기화 - 클라이언트 측에서만 감지 가능한 값들
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -64,19 +64,15 @@ export function usePWA(): UsePWAResult {
     const userAgent = navigator.userAgent;
 
     const iOS =
-      /iPad|iPhone|iPod/.test(userAgent) &&
-      !(window as Window & { MSStream?: unknown }).MSStream;
+      /iPad|iPhone|iPod/.test(userAgent) && !(window as Window & { MSStream?: unknown }).MSStream;
 
     const android = /Android/.test(userAgent);
 
-    const safari =
-      /Safari/.test(userAgent) &&
-      !/CriOS|FxiOS|OPiOS|EdgiOS|Chrome/.test(userAgent);
+    const safari = /Safari/.test(userAgent) && !/CriOS|FxiOS|OPiOS|EdgiOS|Chrome/.test(userAgent);
 
     const standalone =
       window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as Navigator & { standalone?: boolean }).standalone ===
-        true;
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
 
     // iOS 버전 추출
     let version: number | null = null;
@@ -124,10 +120,7 @@ export function usePWA(): UsePWAResult {
     displayModeQuery.addEventListener('change', handleDisplayModeChange);
 
     return () => {
-      window.removeEventListener(
-        'beforeinstallprompt',
-        handleBeforeInstallPrompt
-      );
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
       displayModeQuery.removeEventListener('change', handleDisplayModeChange);
     };
@@ -182,9 +175,7 @@ export function usePWA(): UsePWAResult {
 
   // 푸시 권한 요청 가능 여부
   const canRequestPush =
-    pushPermission === 'default' &&
-    isPushSupported() &&
-    (!isIOS || isIOSPushSupported());
+    pushPermission === 'default' && isPushSupported() && (!isIOS || isIOSPushSupported());
 
   // iOS PWA에서 푸시 지원 여부
   const supportsPushInPWA = !isIOS || (iOSVersion !== null && iOSVersion >= 16);

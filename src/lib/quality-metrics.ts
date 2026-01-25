@@ -14,9 +14,9 @@ export interface SeatWithMember {
 }
 
 export interface QualityMetrics {
-  placementRate: number;    // 배치율 (0-1)
-  partBalance: number;      // 파트 균형도 (0-1)
-  heightOrder: number;      // 키 순서 정렬도 (0-1)
+  placementRate: number; // 배치율 (0-1)
+  partBalance: number; // 파트 균형도 (0-1)
+  heightOrder: number; // 키 순서 정렬도 (0-1)
   // 참고: leaderPosition은 더 이상 사용되지 않음 (파트장 위치 규칙 없음)
 }
 
@@ -44,10 +44,7 @@ export function calculateQualityMetrics(
  * 배치율 계산
  * 전체 대원 중 좌석에 배치된 대원의 비율
  */
-export function calculatePlacementRate(
-  seats: SeatWithMember[],
-  totalMembers: number
-): number {
+export function calculatePlacementRate(seats: SeatWithMember[], totalMembers: number): number {
   if (totalMembers === 0) return 0;
   return seats.length / totalMembers;
 }
@@ -72,13 +69,11 @@ export function calculatePartBalance(seats: SeatWithMember[]): number {
   const avgSize = counts.reduce((a, b) => a + b, 0) / counts.length;
   if (avgSize === 0) return 0;
 
-  const variance = counts.reduce(
-    (sum, count) => sum + Math.pow(count - avgSize, 2),
-    0
-  ) / counts.length;
+  const variance =
+    counts.reduce((sum, count) => sum + Math.pow(count - avgSize, 2), 0) / counts.length;
 
   // 정규화: 분산이 작을수록 1에 가까움
-  return Math.max(0, 1 - (variance / (avgSize * avgSize)));
+  return Math.max(0, 1 - variance / (avgSize * avgSize));
 }
 
 /**
@@ -91,9 +86,7 @@ export function calculatePartBalance(seats: SeatWithMember[]): number {
  */
 export function calculateHeightOrder(seats: SeatWithMember[]): number {
   // 키 정보가 있는 좌석만 필터링
-  const seatsWithHeight = seats.filter(
-    (s) => s.height !== null && s.height !== undefined
-  );
+  const seatsWithHeight = seats.filter((s) => s.height !== null && s.height !== undefined);
 
   if (seatsWithHeight.length < 2) return 1; // 비교할 좌석이 부족하면 만점
 
@@ -136,20 +129,14 @@ export function calculateHeightOrder(seats: SeatWithMember[]): number {
 /**
  * 정렬 정도 계산 (오름차순 또는 내림차순)
  */
-function calculateSortedness(
-  values: number[],
-  direction: 'asc' | 'desc'
-): number {
+function calculateSortedness(values: number[], direction: 'asc' | 'desc'): number {
   if (values.length < 2) return 1;
 
   let correctPairs = 0;
   const totalPairs = values.length - 1;
 
   for (let i = 0; i < values.length - 1; i++) {
-    const isCorrect =
-      direction === 'asc'
-        ? values[i] <= values[i + 1]
-        : values[i] >= values[i + 1];
+    const isCorrect = direction === 'asc' ? values[i] <= values[i + 1] : values[i] >= values[i + 1];
     if (isCorrect) correctPairs++;
   }
 
@@ -195,9 +182,7 @@ export function calculateLeaderPosition(seats: SeatWithMember[]): number {
 
   for (const leader of leaderSeats) {
     // 같은 파트의 좌석들 찾기
-    const samePartSeats = seats.filter(
-      (s) => s.part === leader.part && s.row === leader.row
-    );
+    const samePartSeats = seats.filter((s) => s.part === leader.part && s.row === leader.row);
 
     if (samePartSeats.length <= 1) {
       totalScore += 1; // 파트원이 혼자면 만점
@@ -234,9 +219,5 @@ export function calculateLeaderPosition(seats: SeatWithMember[]): number {
  * 참고: leaderPosition은 제외됨 (파트장 위치 규칙 없음)
  */
 export function calculateOverallQualityScore(metrics: QualityMetrics): number {
-  return (
-    metrics.placementRate * 0.5 +
-    metrics.partBalance * 0.3 +
-    metrics.heightOrder * 0.2
-  );
+  return metrics.placementRate * 0.5 + metrics.partBalance * 0.3 + metrics.heightOrder * 0.2;
 }

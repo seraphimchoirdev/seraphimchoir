@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'AuthLogout' });
 
@@ -8,7 +9,7 @@ const logger = createLogger({ prefix: 'AuthLogout' });
  * POST /api/auth/logout
  * 현재 세션을 종료하고 로그아웃합니다.
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const supabase = await createClient();
 
@@ -18,10 +19,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      return NextResponse.json(
-        { error: '로그인 상태가 아닙니다.' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '로그인 상태가 아닙니다.' }, { status: 401 });
     }
 
     // Supabase Auth 로그아웃
@@ -43,9 +41,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     logger.error('Logout exception:', error);
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

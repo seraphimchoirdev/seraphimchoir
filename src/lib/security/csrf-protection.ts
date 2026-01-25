@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { cookies, headers } from 'next/headers';
-import { generateNonce } from './csp-nonce';
+import { NextRequest, NextResponse } from 'next/server';
+
 import { createLogger } from '../logger';
+import { generateNonce } from './csp-nonce';
 
 const logger = createLogger({ prefix: 'CSRF' });
 
@@ -93,7 +94,7 @@ export async function csrfProtection(
     return NextResponse.json(
       {
         error: 'CSRF token validation failed',
-        message: '보안 검증에 실패했습니다. 페이지를 새로고침 후 다시 시도해주세요.'
+        message: '보안 검증에 실패했습니다. 페이지를 새로고침 후 다시 시도해주세요.',
       },
       { status: 403 }
     );

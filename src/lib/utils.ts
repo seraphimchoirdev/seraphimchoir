@@ -1,6 +1,6 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { Part } from "@/types";
+import { Part } from '@/types';
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 // Tailwind CSS class merger
 export function cn(...inputs: ClassValue[]) {
@@ -10,11 +10,11 @@ export function cn(...inputs: ClassValue[]) {
 // Part 한글 변환
 export function getPartLabel(part: Part): string {
   const labels: Record<Part, string> = {
-    SOPRANO: "소프라노",
-    ALTO: "알토",
-    TENOR: "테너",
-    BASS: "베이스",
-    SPECIAL: "특별",
+    SOPRANO: '소프라노',
+    ALTO: '알토',
+    TENOR: '테너',
+    BASS: '베이스',
+    SPECIAL: '특별',
   };
   return labels[part];
 }
@@ -22,11 +22,11 @@ export function getPartLabel(part: Part): string {
 // Part 색상 (Tailwind classes)
 export function getPartColor(part: Part): string {
   const colors: Record<Part, string> = {
-    SOPRANO: "bg-purple-100 border-purple-300 text-purple-800",
-    ALTO: "bg-yellow-100 border-yellow-300 text-yellow-800",
-    TENOR: "bg-blue-100 border-blue-300 text-blue-800",
-    BASS: "bg-green-100 border-green-300 text-green-800",
-    SPECIAL: "bg-gray-100 border-gray-300 text-gray-800",
+    SOPRANO: 'bg-purple-100 border-purple-300 text-purple-800',
+    ALTO: 'bg-yellow-100 border-yellow-300 text-yellow-800',
+    TENOR: 'bg-blue-100 border-blue-300 text-blue-800',
+    BASS: 'bg-green-100 border-green-300 text-green-800',
+    SPECIAL: 'bg-gray-100 border-gray-300 text-gray-800',
   };
   return colors[part];
 }
@@ -34,11 +34,11 @@ export function getPartColor(part: Part): string {
 // Part 약어 (S, A, T, B)
 export function getPartAbbreviation(part: Part | string): string {
   const abbreviations: Record<string, string> = {
-    SOPRANO: "S",
-    ALTO: "A",
-    TENOR: "T",
-    BASS: "B",
-    SPECIAL: "SP",
+    SOPRANO: 'S',
+    ALTO: 'A',
+    TENOR: 'T',
+    BASS: 'B',
+    SPECIAL: 'SP',
   };
   return abbreviations[part] || part.charAt(0);
 }
@@ -78,10 +78,10 @@ export function isTestAccount(email: string | null | undefined): boolean {
  */
 export function getTestAccountPart(email: string): Part | null {
   const partMap: Record<string, Part> = {
-    'soprano': 'SOPRANO',
-    'alto': 'ALTO',
-    'tenor': 'TENOR',
-    'bass': 'BASS',
+    soprano: 'SOPRANO',
+    alto: 'ALTO',
+    tenor: 'TENOR',
+    bass: 'BASS',
   };
 
   const prefix = email.split('@')[0].toLowerCase();

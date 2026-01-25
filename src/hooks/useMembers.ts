@@ -1,7 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Database } from '@/types/database.types';
-import type { PaginatedResponse, SortByField, SortOrder } from '@/types/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import { STALE_TIME } from '@/lib/constants';
+
+import type { PaginatedResponse, SortByField, SortOrder } from '@/types/api';
+import type { Database } from '@/types/database.types';
 
 type Member = Database['public']['Tables']['members']['Row'];
 type MemberInsert = Database['public']['Tables']['members']['Insert'];
@@ -19,8 +21,8 @@ export interface MemberFilters {
   sortBy?: SortByField;
   sortOrder?: SortOrder;
   // 장기 미출석 필터 (일수 기준)
-  absentDaysService?: number;   // 등단 미출석 일수 (예: 30, 60, 90)
-  absentDaysPractice?: number;  // 연습 미출석 일수
+  absentDaysService?: number; // 등단 미출석 일수 (예: 30, 60, 90)
+  absentDaysPractice?: number; // 연습 미출석 일수
 }
 
 // API 응답 타입
@@ -144,7 +146,10 @@ export function useUpdateMember() {
 
         // 버전 충돌 에러 객체 생성 (code 포함)
         if (response.status === 409 && errorData.code === 'VERSION_CONFLICT') {
-          const error = new Error(errorData.error || '버전 충돌이 발생했습니다') as Error & { code: string; status: number };
+          const error = new Error(errorData.error || '버전 충돌이 발생했습니다') as Error & {
+            code: string;
+            status: number;
+          };
           error.code = 'VERSION_CONFLICT';
           error.status = 409;
           throw error;

@@ -1,14 +1,19 @@
 'use client';
 
+import { ChevronDown, ChevronUp, RotateCcw, Zap } from 'lucide-react';
+
 import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { GridLayout, GRID_CONSTRAINTS, RowOffsetValue } from '@/types/grid';
-import { calculateTotalSeats } from '@/lib/utils/gridUtils';
+
 import { recommendRowDistribution } from '@/lib/row-distribution-recommender';
-import { Zap, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { calculateTotalSeats } from '@/lib/utils/gridUtils';
+
+import { GRID_CONSTRAINTS, GridLayout } from '@/types/grid';
+
 import RowOffsetAdjuster from './RowOffsetAdjuster';
 
 interface GridSettingsPanelProps {
@@ -35,7 +40,8 @@ export default function GridSettingsPanel({
 
   // gridLayout에서 직접 값을 읽고, 없으면 기본값 사용
   const currentRows = gridLayout?.rows ?? GRID_CONSTRAINTS.DEFAULT_ROWS;
-  const currentCapacities = gridLayout?.rowCapacities ?? Array(GRID_CONSTRAINTS.DEFAULT_ROWS).fill(8);
+  const currentCapacities =
+    gridLayout?.rowCapacities ?? Array(GRID_CONSTRAINTS.DEFAULT_ROWS).fill(8);
   const currentZigzag = gridLayout?.zigzagPattern ?? 'even';
   const currentRowOffsets = gridLayout?.rowOffsets ?? {};
 
@@ -52,7 +58,7 @@ export default function GridSettingsPanel({
 
     // 행 수가 줄어들면 해당 행의 오프셋 제거
     const newRowOffsets = { ...currentRowOffsets };
-    Object.keys(newRowOffsets).forEach(key => {
+    Object.keys(newRowOffsets).forEach((key) => {
       if (parseInt(key) >= newRows) {
         delete newRowOffsets[parseInt(key)];
       }
@@ -108,7 +114,9 @@ export default function GridSettingsPanel({
     <>
       {/* 줄 수 선택 */}
       <div className="space-y-2">
-        <Label htmlFor="grid-rows" className="text-sm sm:text-base">줄 수</Label>
+        <Label htmlFor="grid-rows" className="text-sm sm:text-base">
+          줄 수
+        </Label>
         <div className="flex items-center gap-2">
           <Input
             id="grid-rows"
@@ -116,10 +124,12 @@ export default function GridSettingsPanel({
             min={GRID_CONSTRAINTS.MIN_ROWS}
             max={GRID_CONSTRAINTS.MAX_ROWS}
             value={currentRows}
-            onChange={(e) => handleRowsChange(parseInt(e.target.value) || GRID_CONSTRAINTS.DEFAULT_ROWS)}
-            className="w-20 h-11 text-base"
+            onChange={(e) =>
+              handleRowsChange(parseInt(e.target.value) || GRID_CONSTRAINTS.DEFAULT_ROWS)
+            }
+            className="h-11 w-20 text-base"
           />
-          <span className="text-xs sm:text-sm text-[var(--color-text-secondary)]">
+          <span className="text-xs text-[var(--color-text-secondary)] sm:text-sm">
             ({GRID_CONSTRAINTS.MIN_ROWS}~{GRID_CONSTRAINTS.MAX_ROWS}줄)
           </span>
         </div>
@@ -134,7 +144,7 @@ export default function GridSettingsPanel({
             className="w-full gap-2"
             disabled={totalMembers === 0}
           >
-            <Zap className="w-4 h-4" />
+            <Zap className="h-4 w-4" />
             AI 추천 분배 ({totalMembers}명)
           </Button>
         </div>
@@ -146,18 +156,16 @@ export default function GridSettingsPanel({
         <div className="space-y-2">
           {currentCapacities.map((capacity, idx) => (
             <div key={idx} className="flex items-center gap-2">
-              <span className="text-sm font-medium w-12 sm:w-14">
-                {idx + 1}줄:
-              </span>
+              <span className="w-12 text-sm font-medium sm:w-14">{idx + 1}줄:</span>
               <Input
                 type="number"
                 min={0}
                 max={GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW}
                 value={capacity}
                 onChange={(e) => handleCapacityChange(idx, e.target.value)}
-                className="w-20 h-11 text-base"
+                className="h-11 w-20 text-base"
               />
-              <span className="text-xs sm:text-sm text-[var(--color-text-tertiary)]">명</span>
+              <span className="text-xs text-[var(--color-text-tertiary)] sm:text-sm">명</span>
             </div>
           ))}
         </div>
@@ -171,13 +179,15 @@ export default function GridSettingsPanel({
             <Button
               variant={currentZigzag === 'even' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => onChange({
-                rows: currentRows,
-                rowCapacities: currentCapacities,
-                zigzagPattern: 'even',
-                rowOffsets: currentRowOffsets,
-                isManuallyConfigured: gridLayout?.isManuallyConfigured,
-              })}
+              onClick={() =>
+                onChange({
+                  rows: currentRows,
+                  rowCapacities: currentCapacities,
+                  zigzagPattern: 'even',
+                  rowOffsets: currentRowOffsets,
+                  isManuallyConfigured: gridLayout?.isManuallyConfigured,
+                })
+              }
               className="flex-1"
             >
               짝수줄 이동
@@ -185,13 +195,15 @@ export default function GridSettingsPanel({
             <Button
               variant={currentZigzag === 'odd' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => onChange({
-                rows: currentRows,
-                rowCapacities: currentCapacities,
-                zigzagPattern: 'odd',
-                rowOffsets: currentRowOffsets,
-                isManuallyConfigured: gridLayout?.isManuallyConfigured,
-              })}
+              onClick={() =>
+                onChange({
+                  rows: currentRows,
+                  rowCapacities: currentCapacities,
+                  zigzagPattern: 'odd',
+                  rowOffsets: currentRowOffsets,
+                  isManuallyConfigured: gridLayout?.isManuallyConfigured,
+                })
+              }
               className="flex-1"
             >
               홀수줄 이동
@@ -199,13 +211,15 @@ export default function GridSettingsPanel({
             <Button
               variant={currentZigzag === 'none' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => onChange({
-                rows: currentRows,
-                rowCapacities: currentCapacities,
-                zigzagPattern: 'none',
-                rowOffsets: currentRowOffsets,
-                isManuallyConfigured: gridLayout?.isManuallyConfigured,
-              })}
+              onClick={() =>
+                onChange({
+                  rows: currentRows,
+                  rowCapacities: currentCapacities,
+                  zigzagPattern: 'none',
+                  rowOffsets: currentRowOffsets,
+                  isManuallyConfigured: gridLayout?.isManuallyConfigured,
+                })
+              }
               className="flex-1"
             >
               없음
@@ -220,25 +234,25 @@ export default function GridSettingsPanel({
           <button
             type="button"
             onClick={() => setIsRowOffsetsExpanded(!isRowOffsetsExpanded)}
-            className="flex items-center justify-between w-full text-sm sm:text-base font-medium text-[var(--color-text-primary)] hover:text-[var(--color-primary-600)] transition-colors"
+            className="flex w-full items-center justify-between text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:text-[var(--color-primary-600)] sm:text-base"
           >
             <span>행별 세부 조정</span>
             <span className="flex items-center gap-1">
               {Object.keys(currentRowOffsets).length > 0 && (
-                <span className="text-xs text-[var(--color-primary-600)] bg-[var(--color-primary-50)] px-1.5 py-0.5 rounded">
+                <span className="rounded bg-[var(--color-primary-50)] px-1.5 py-0.5 text-xs text-[var(--color-primary-600)]">
                   {Object.keys(currentRowOffsets).length}개 설정
                 </span>
               )}
               {isRowOffsetsExpanded ? (
-                <ChevronUp className="w-4 h-4" />
+                <ChevronUp className="h-4 w-4" />
               ) : (
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="h-4 w-4" />
               )}
             </span>
           </button>
 
           {isRowOffsetsExpanded && (
-            <div className="space-y-3 pt-2 border-t border-[var(--color-border)]">
+            <div className="space-y-3 border-t border-[var(--color-border)] pt-2">
               <p className="text-xs text-[var(--color-text-tertiary)]">
                 화살표 버튼으로 각 행의 오프셋을 조정합니다. 0.25칸 단위로 조정됩니다.
               </p>
@@ -283,7 +297,7 @@ export default function GridSettingsPanel({
                   }}
                   className="w-full gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-error-600)]"
                 >
-                  <RotateCcw className="w-3 h-3" />
+                  <RotateCcw className="h-3 w-3" />
                   모두 기본값으로 초기화
                 </Button>
               )}
@@ -293,15 +307,13 @@ export default function GridSettingsPanel({
       )}
 
       {/* 총 좌석 수 */}
-      <div className="pt-4 border-t">
+      <div className="border-t pt-4">
         <div className="flex justify-between text-sm">
           <span className="text-[var(--color-text-secondary)]">총 좌석:</span>
-          <span className="font-semibold text-[var(--color-primary-600)]">
-            {totalSeats}개
-          </span>
+          <span className="font-semibold text-[var(--color-primary-600)]">{totalSeats}개</span>
         </div>
         {totalSeats !== totalMembers && (
-          <p className="text-xs text-[var(--color-warning-600)] mt-1">
+          <p className="mt-1 text-xs text-[var(--color-warning-600)]">
             ⚠ 출석 인원({totalMembers}명)과 총 좌석({totalSeats}개)이 일치하지 않습니다
           </p>
         )}
@@ -311,22 +323,16 @@ export default function GridSettingsPanel({
 
   // embedded 모드: Card wrapper 없이 콘텐츠만 렌더링
   if (embedded) {
-    return (
-      <div className="space-y-4">
-        {renderContent()}
-      </div>
-    );
+    return <div className="space-y-4">{renderContent()}</div>;
   }
 
   // 기본 모드: Card로 감싸서 렌더링
   return (
-    <Card className="w-full lg:w-80 flex-shrink-0 max-w-full lg:max-w-[320px] flex flex-col overflow-hidden">
+    <Card className="flex w-full max-w-full flex-shrink-0 flex-col overflow-hidden lg:w-80 lg:max-w-[320px]">
       <CardHeader>
         <CardTitle className="text-base sm:text-lg">좌석 그리드 설정</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 overflow-y-auto flex-1">
-        {renderContent()}
-      </CardContent>
+      <CardContent className="flex-1 space-y-4 overflow-y-auto">{renderContent()}</CardContent>
     </Card>
   );
 }

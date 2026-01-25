@@ -1,9 +1,14 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { NextRequest, NextResponse } from 'next/server';
+
+import { createClient } from '@/lib/supabase/server';
+
 const updateServiceScheduleSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   service_type: z.string().nullable().optional(),
   hymn_name: z.string().nullable().optional(),
   offertory_performer: z.string().nullable().optional(),
@@ -14,10 +19,7 @@ const updateServiceScheduleSchema = z.object({
  * GET /api/service-schedules/[id]
  * 단일 예배 일정 조회
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
   const { id } = await params;
 
@@ -29,10 +31,7 @@ export async function GET(
 
   if (error) {
     if (error.code === 'PGRST116') {
-      return NextResponse.json(
-        { error: '예배 일정을 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: '예배 일정을 찾을 수 없습니다.' }, { status: 404 });
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -44,10 +43,7 @@ export async function GET(
  * PATCH /api/service-schedules/[id]
  * 예배 일정 수정
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient();
   const { id } = await params;
 
@@ -64,10 +60,7 @@ export async function PATCH(
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: '예배 일정을 찾을 수 없습니다.' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: '예배 일정을 찾을 수 없습니다.' }, { status: 404 });
       }
       // UNIQUE 제약 위반 처리
       if (error.code === '23505') {
@@ -102,10 +95,7 @@ export async function DELETE(
   const supabase = await createClient();
   const { id } = await params;
 
-  const { error } = await supabase
-    .from('service_schedules')
-    .delete()
-    .eq('id', id);
+  const { error } = await supabase.from('service_schedules').delete().eq('id', id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -3,12 +3,18 @@
  */
 'use client';
 
+import { Loader2, Sparkles } from 'lucide-react';
+
 import { useState } from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
-import { useRecommendSeats, type RecommendationResponse } from '@/hooks/useRecommendSeats';
-import { GridLayout } from '@/types/grid';
-import RecommendPreviewModal from './RecommendPreviewModal';
+
+import { type RecommendationResponse, useRecommendSeats } from '@/hooks/useRecommendSeats';
+
 import { createLogger } from '@/lib/logger';
+import { showError } from '@/lib/toast';
+
+import { GridLayout } from '@/types/grid';
+
+import RecommendPreviewModal from './RecommendPreviewModal';
 
 const logger = createLogger({ prefix: 'RecommendButton' });
 
@@ -24,7 +30,7 @@ export default function RecommendButton({
   arrangementId,
   gridLayout,
   onApply,
-  disabled
+  disabled,
 }: RecommendButtonProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [recommendation, setRecommendation] = useState<RecommendationResponse | null>(null);
@@ -36,14 +42,14 @@ export default function RecommendButton({
       // 사용자가 설정한 gridLayout을 API에 전달
       const result = await recommendMutation.mutateAsync({
         arrangementId,
-        gridLayout,  // 사용자 설정 그리드 전달
+        gridLayout, // 사용자 설정 그리드 전달
       });
 
       setRecommendation(result);
       setShowPreview(true);
     } catch (error) {
       logger.error('Recommendation failed:', error);
-      alert('AI 추천 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      showError('AI 추천 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', handleRecommend);
     }
   };
 
@@ -65,16 +71,16 @@ export default function RecommendButton({
       <button
         onClick={handleRecommend}
         disabled={disabled || recommendMutation.isPending}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-primary-600)] text-white rounded-lg font-medium hover:from-[var(--color-primary-600)] hover:to-[var(--color-primary-700)] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+        className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-primary-600)] px-4 py-2 font-medium text-white shadow-lg transition-all duration-200 hover:from-[var(--color-primary-600)] hover:to-[var(--color-primary-700)] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
       >
         {recommendMutation.isPending ? (
           <>
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin" />
             <span>AI 분석 중...</span>
           </>
         ) : (
           <>
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="h-5 w-5" />
             <span>AI 자동 배치</span>
           </>
         )}

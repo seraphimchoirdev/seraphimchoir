@@ -6,13 +6,13 @@
  * - localStorage persist (user, profile)
  * - DevTools 통합 (개발 환경)
  */
-
-import { create } from 'zustand';
-import { persist, devtools } from 'zustand/middleware';
-import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { create } from 'zustand';
+import { devtools, persist } from 'zustand/middleware';
+
 import { AUTH_CONFIG } from '@/lib/constants';
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/client';
 
 const logger = createLogger({ prefix: 'AuthStore' });
 
@@ -142,11 +142,15 @@ export const useAuthStore = create<AuthStore>()(
 
             // fetchUser는 onAuthStateChange에서 자동 호출되지만,
             // UI 반응성을 위해 여기서도 상태를 업데이트합니다.
-            set({
-              user: data.user,
-              isAuthenticated: !!data.user,
-              isLoading: false
-            }, false, 'auth/signIn/success');
+            set(
+              {
+                user: data.user,
+                isAuthenticated: !!data.user,
+                isLoading: false,
+              },
+              false,
+              'auth/signIn/success'
+            );
             return { error: null };
           } catch (error) {
             const err = translateAuthError(error as Error);
@@ -226,7 +230,12 @@ export const useAuthStore = create<AuthStore>()(
             // 네트워크 이슈 등으로 응답이 없어도 로컬 상태는 초기화해야 함
             try {
               const signOutPromise = supabase.auth.signOut();
-              const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve({ error: new Error('Timeout') }), AUTH_CONFIG.SIGN_OUT_TIMEOUT));
+              const timeoutPromise = new Promise((resolve) =>
+                setTimeout(
+                  () => resolve({ error: new Error('Timeout') }),
+                  AUTH_CONFIG.SIGN_OUT_TIMEOUT
+                )
+              );
 
               await Promise.race([signOutPromise, timeoutPromise]);
             } catch (e) {
@@ -234,13 +243,17 @@ export const useAuthStore = create<AuthStore>()(
             }
 
             // 성공/실패/타임아웃 여부와 관계없이 로컬 상태 초기화
-            set({
-              user: null,
-              profile: null,
-              isAuthenticated: false,
-              isLoading: false,
-              error: null,
-            }, false, 'auth/signOut/success');
+            set(
+              {
+                user: null,
+                profile: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: null,
+              },
+              false,
+              'auth/signOut/success'
+            );
 
             return { error: null };
           } catch (error) {
@@ -248,13 +261,17 @@ export const useAuthStore = create<AuthStore>()(
             logger.error('SignOut catch error:', error);
 
             // 예외 발생 시에도 상태 초기화
-            set({
-              user: null,
-              profile: null,
-              isAuthenticated: false,
-              isLoading: false,
-              error: null,
-            }, false, 'auth/signOut/catch');
+            set(
+              {
+                user: null,
+                profile: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: null,
+              },
+              false,
+              'auth/signOut/catch'
+            );
 
             return { error: err };
           }
@@ -269,7 +286,10 @@ export const useAuthStore = create<AuthStore>()(
             set({ isLoading: true, error: null }, false, 'auth/fetchUser/start');
 
             logger.debug('[fetchUser] getSession 호출');
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            const {
+              data: { session },
+              error: sessionError,
+            } = await supabase.auth.getSession();
             logger.debug('[fetchUser] getSession 완료:', { hasSession: !!session, sessionError });
 
             if (sessionError) {
@@ -278,12 +298,16 @@ export const useAuthStore = create<AuthStore>()(
 
             if (!session?.user) {
               logger.debug('[fetchUser] 세션 없음');
-              set({
-                user: null,
-                profile: null,
-                isAuthenticated: false,
-                isLoading: false
-              }, false, 'auth/fetchUser/noSession');
+              set(
+                {
+                  user: null,
+                  profile: null,
+                  isAuthenticated: false,
+                  isLoading: false,
+                },
+                false,
+                'auth/fetchUser/noSession'
+              );
               return;
             }
 
@@ -291,47 +315,63 @@ export const useAuthStore = create<AuthStore>()(
             logger.debug('[fetchUser] 프로필 조회 시작:', session.user.id);
             const { data: profileData, error: profileError } = await supabase
               .from('user_profiles')
-              .select('id, email, name, role, linked_member_id, link_status, members:linked_member_id(name)')
+              .select(
+                'id, email, name, role, linked_member_id, link_status, members:linked_member_id(name)'
+              )
               .eq('id', session.user.id)
               .single();
             logger.debug('[fetchUser] 프로필 조회 완료:', { profileData, profileError });
 
             // members JOIN 결과를 linked_member로 매핑
             // Supabase FK 관계 쿼리 결과는 단일 객체 또는 배열일 수 있음
-            const profile = profileData ? {
-              ...profileData,
-              linked_member: profileData.members as unknown as { name: string } | null,
-            } : null;
+            const profile = profileData
+              ? {
+                  ...profileData,
+                  linked_member: profileData.members as unknown as { name: string } | null,
+                }
+              : null;
 
             if (profileError) {
               logger.error('[fetchUser] 프로필 로드 에러:', profileError);
             }
 
-            set({
-              user: session.user,
-              profile: profile || null,
-              isAuthenticated: true,
-              isLoading: false
-            }, false, 'auth/fetchUser/success');
+            set(
+              {
+                user: session.user,
+                profile: profile || null,
+                isAuthenticated: true,
+                isLoading: false,
+              },
+              false,
+              'auth/fetchUser/success'
+            );
             logger.debug('[fetchUser] 완료');
           } catch (error) {
             logger.error('[fetchUser] 예외:', error);
-            set({
-              user: null,
-              profile: null,
-              isAuthenticated: false,
-              isLoading: false,
-              error: error as Error
-            }, false, 'auth/fetchUser/catch');
+            set(
+              {
+                user: null,
+                profile: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: error as Error,
+              },
+              false,
+              'auth/fetchUser/catch'
+            );
           }
         },
 
         // 사용자 설정
         setUser: (user: User | null) => {
-          set({
-            user,
-            isAuthenticated: !!user
-          }, false, 'auth/setUser');
+          set(
+            {
+              user,
+              isAuthenticated: !!user,
+            },
+            false,
+            'auth/setUser'
+          );
         },
 
         // 프로필 설정

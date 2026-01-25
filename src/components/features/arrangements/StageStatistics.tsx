@@ -6,30 +6,35 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { endOfMonth } from 'date-fns/endOfMonth';
+import { endOfYear } from 'date-fns/endOfYear';
 import { format } from 'date-fns/format';
 import { startOfMonth } from 'date-fns/startOfMonth';
-import { endOfMonth } from 'date-fns/endOfMonth';
-import { subMonths } from 'date-fns/subMonths';
 import { startOfYear } from 'date-fns/startOfYear';
-import { endOfYear } from 'date-fns/endOfYear';
+import { subMonths } from 'date-fns/subMonths';
 import { subYears } from 'date-fns/subYears';
 import {
-  Users,
-  TrendingUp,
-  TrendingDown,
-  Calendar,
   BarChart3,
-  ChevronUp,
+  Calendar,
   ChevronDown,
+  ChevronUp,
+  TrendingDown,
+  TrendingUp,
+  Users,
 } from 'lucide-react';
-import { useStageStatistics } from '@/hooks/useStageStatistics';
-import AttendanceStatsCard from '../attendances/AttendanceStatsCard';
+
+import { useMemo, useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+import { useStageStatistics } from '@/hooks/useStageStatistics';
+
 import type { Part } from '@/types/stage-stats.types';
+
+import AttendanceStatsCard from '../attendances/AttendanceStatsCard';
 
 // 파트별 색상 (기존 시스템과 통일)
 const PART_COLORS: Record<Part, { bg: string; text: string; bar: string }> = {
@@ -132,9 +137,7 @@ export default function StageStatistics() {
 
     return [...dailyStats].sort((a, b) => {
       if (sortField === 'date') {
-        return sortOrder === 'asc'
-          ? a.date.localeCompare(b.date)
-          : b.date.localeCompare(a.date);
+        return sortOrder === 'asc' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date);
       } else {
         return sortOrder === 'asc'
           ? a.totalMembers - b.totalMembers
@@ -156,23 +159,23 @@ export default function StageStatistics() {
   // 로딩 스켈레톤
   if (isLoading) {
     return (
-      <Card className="p-6 shadow-[var(--shadow-sm)] border-none">
+      <Card className="border-none p-6 shadow-[var(--shadow-sm)]">
         <div className="animate-pulse space-y-6">
-          <div className="flex justify-between items-center">
-            <div className="h-6 bg-[var(--color-background-tertiary)] rounded w-48"></div>
-            <div className="h-10 bg-[var(--color-background-tertiary)] rounded w-64"></div>
+          <div className="flex items-center justify-between">
+            <div className="h-6 w-48 rounded bg-[var(--color-background-tertiary)]"></div>
+            <div className="h-10 w-64 rounded bg-[var(--color-background-tertiary)]"></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="h-24 bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)]"
+                className="h-24 rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)]"
               ></div>
             ))}
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-80 bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)]"></div>
-            <div className="h-80 bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)]"></div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="h-80 rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)]"></div>
+            <div className="h-80 rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)]"></div>
           </div>
         </div>
       </Card>
@@ -182,8 +185,8 @@ export default function StageStatistics() {
   // 에러 처리
   if (error) {
     return (
-      <Card className="p-6 shadow-[var(--shadow-sm)] border-none">
-        <div className="text-center py-12">
+      <Card className="border-none p-6 shadow-[var(--shadow-sm)]">
+        <div className="py-12 text-center">
           <div className="mx-auto h-12 w-12 text-[var(--color-error-400)]">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -209,11 +212,11 @@ export default function StageStatistics() {
   const hasData = data && data.summary.totalServices > 0;
 
   return (
-    <Card className="p-6 shadow-[var(--shadow-sm)] border-none bg-[var(--color-surface)]">
+    <Card className="border-none bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]">
       {/* 헤더 및 필터 */}
       <div className="mb-6 space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <h2 className="heading-3 text-[var(--color-text-primary)] flex items-center gap-2">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <h2 className="heading-3 flex items-center gap-2 text-[var(--color-text-primary)]">
             <BarChart3 className="h-5 w-5 text-[var(--color-primary-600)]" />
             등단 통계 대시보드
           </h2>
@@ -241,10 +244,10 @@ export default function StageStatistics() {
 
         {/* 커스텀 날짜 선택 */}
         {dateRangePreset === 'custom' && (
-          <div className="flex flex-wrap items-center gap-3 p-4 bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)]">
+          <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)] p-4">
             <Calendar className="h-5 w-5 text-[var(--color-text-tertiary)]" />
             <div className="flex items-center gap-2">
-              <Label className="text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
+              <Label className="text-sm whitespace-nowrap text-[var(--color-text-secondary)]">
                 시작일:
               </Label>
               <Input
@@ -256,7 +259,7 @@ export default function StageStatistics() {
             </div>
             <span className="text-[var(--color-text-tertiary)]">~</span>
             <div className="flex items-center gap-2">
-              <Label className="text-sm text-[var(--color-text-secondary)] whitespace-nowrap">
+              <Label className="text-sm whitespace-nowrap text-[var(--color-text-secondary)]">
                 종료일:
               </Label>
               <Input
@@ -281,7 +284,7 @@ export default function StageStatistics() {
               <select
                 value={selectedServiceType}
                 onChange={(e) => setSelectedServiceType(e.target.value)}
-                className="h-9 rounded-[var(--radius-base)] border border-[var(--color-border-default)] bg-[var(--color-background-primary)] px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-400)]"
+                className="ring-offset-background h-9 rounded-[var(--radius-base)] border border-[var(--color-border-default)] bg-[var(--color-background-primary)] px-3 py-1 text-sm focus-visible:ring-2 focus-visible:ring-[var(--color-primary-400)] focus-visible:outline-none"
               >
                 <option value="전체">전체</option>
                 {data.serviceTypes.map((type) => (
@@ -297,7 +300,7 @@ export default function StageStatistics() {
 
       {/* KPI 카드 */}
       {data && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <AttendanceStatsCard
             title="총 예배 횟수"
             value={data.summary.totalServices}
@@ -338,7 +341,7 @@ export default function StageStatistics() {
       )}
 
       {!hasData ? (
-        <div className="text-center py-12">
+        <div className="py-12 text-center">
           <svg
             className="mx-auto h-12 w-12 text-[var(--color-text-tertiary)]"
             fill="none"
@@ -362,11 +365,11 @@ export default function StageStatistics() {
       ) : (
         <div className="space-y-8">
           {/* 파트별 평균 & 월별 추이 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* 파트별 평균 인원 */}
             {data && (
-              <div className="bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)] p-6">
-                <h3 className="text-md font-semibold text-[var(--color-text-primary)] mb-4">
+              <div className="rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)] p-6">
+                <h3 className="text-md mb-4 font-semibold text-[var(--color-text-primary)]">
                   파트별 평균 인원
                 </h3>
                 <div className="space-y-4">
@@ -381,14 +384,12 @@ export default function StageStatistics() {
                     return (
                       <div key={part} className="space-y-1">
                         <div className="flex items-center justify-between text-sm">
-                          <span className={`font-medium ${colors.text}`}>
-                            {PART_LABELS[part]}
-                          </span>
+                          <span className={`font-medium ${colors.text}`}>{PART_LABELS[part]}</span>
                           <span className="text-[var(--color-text-secondary)]">
                             {stats.average}명 ({stats.percentage}%)
                           </span>
                         </div>
-                        <div className="w-full bg-[var(--color-background-primary)] rounded-full h-4">
+                        <div className="h-4 w-full rounded-full bg-[var(--color-background-primary)]">
                           <div
                             className={`${colors.bar} h-4 rounded-full transition-all duration-300`}
                             style={{ width: `${barWidth}%` }}
@@ -403,11 +404,11 @@ export default function StageStatistics() {
 
             {/* 월별 추이 */}
             {data && data.monthlyTrend.length > 0 && (
-              <div className="bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)] p-6">
-                <h3 className="text-md font-semibold text-[var(--color-text-primary)] mb-4">
+              <div className="rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)] p-6">
+                <h3 className="text-md mb-4 font-semibold text-[var(--color-text-primary)]">
                   월별 추이
                 </h3>
-                <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                <div className="max-h-[300px] space-y-3 overflow-y-auto">
                   {data.monthlyTrend.map((month) => {
                     const maxAvg = Math.max(...data.monthlyTrend.map((m) => m.averageMembers));
                     const barWidth = maxAvg > 0 ? (month.averageMembers / maxAvg) * 100 : 0;
@@ -422,9 +423,9 @@ export default function StageStatistics() {
                             {month.serviceCount}회, 평균 {month.averageMembers}명
                           </span>
                         </div>
-                        <div className="w-full bg-[var(--color-background-primary)] rounded-full h-3">
+                        <div className="h-3 w-full rounded-full bg-[var(--color-background-primary)]">
                           <div
-                            className="bg-[var(--color-primary-500)] h-3 rounded-full transition-all duration-300"
+                            className="h-3 rounded-full bg-[var(--color-primary-500)] transition-all duration-300"
                             style={{ width: `${barWidth}%` }}
                           ></div>
                         </div>
@@ -438,8 +439,8 @@ export default function StageStatistics() {
 
           {/* 예배별 상세 테이블 */}
           {sortedDailyStats.length > 0 && (
-            <div className="bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)] p-6">
-              <h3 className="text-md font-semibold text-[var(--color-text-primary)] mb-4">
+            <div className="rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)] p-6">
+              <h3 className="text-md mb-4 font-semibold text-[var(--color-text-primary)]">
                 예배별 상세
               </h3>
               <div className="overflow-x-auto">
@@ -447,7 +448,7 @@ export default function StageStatistics() {
                   <thead>
                     <tr className="border-b border-[var(--color-border-default)]">
                       <th
-                        className="text-left py-3 px-2 font-medium text-[var(--color-text-secondary)] cursor-pointer hover:text-[var(--color-text-primary)]"
+                        className="cursor-pointer px-2 py-3 text-left font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                         onClick={() => toggleSort('date')}
                       >
                         <div className="flex items-center gap-1">
@@ -460,11 +461,11 @@ export default function StageStatistics() {
                             ))}
                         </div>
                       </th>
-                      <th className="text-left py-3 px-2 font-medium text-[var(--color-text-secondary)]">
+                      <th className="px-2 py-3 text-left font-medium text-[var(--color-text-secondary)]">
                         예배 유형
                       </th>
                       <th
-                        className="text-center py-3 px-2 font-medium text-[var(--color-text-secondary)] cursor-pointer hover:text-[var(--color-text-primary)]"
+                        className="cursor-pointer px-2 py-3 text-center font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                         onClick={() => toggleSort('totalMembers')}
                       >
                         <div className="flex items-center justify-center gap-1">
@@ -477,16 +478,16 @@ export default function StageStatistics() {
                             ))}
                         </div>
                       </th>
-                      <th className="text-center py-3 px-2 font-medium text-[var(--color-part-soprano-600)]">
+                      <th className="px-2 py-3 text-center font-medium text-[var(--color-part-soprano-600)]">
                         S
                       </th>
-                      <th className="text-center py-3 px-2 font-medium text-[var(--color-part-alto-600)]">
+                      <th className="px-2 py-3 text-center font-medium text-[var(--color-part-alto-600)]">
                         A
                       </th>
-                      <th className="text-center py-3 px-2 font-medium text-[var(--color-part-tenor-600)]">
+                      <th className="px-2 py-3 text-center font-medium text-[var(--color-part-tenor-600)]">
                         T
                       </th>
-                      <th className="text-center py-3 px-2 font-medium text-[var(--color-part-bass-600)]">
+                      <th className="px-2 py-3 text-center font-medium text-[var(--color-part-bass-600)]">
                         B
                       </th>
                     </tr>
@@ -497,25 +498,25 @@ export default function StageStatistics() {
                         key={`${stat.date}-${stat.serviceType}`}
                         className="border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-background-primary)]"
                       >
-                        <td className="py-3 px-2 text-[var(--color-text-primary)]">
+                        <td className="px-2 py-3 text-[var(--color-text-primary)]">
                           {format(new Date(stat.date), 'yyyy-MM-dd')}
                         </td>
-                        <td className="py-3 px-2 text-[var(--color-text-secondary)]">
+                        <td className="px-2 py-3 text-[var(--color-text-secondary)]">
                           {stat.serviceType || '-'}
                         </td>
-                        <td className="py-3 px-2 text-center font-medium text-[var(--color-text-primary)]">
+                        <td className="px-2 py-3 text-center font-medium text-[var(--color-text-primary)]">
                           {stat.totalMembers}
                         </td>
-                        <td className="py-3 px-2 text-center text-[var(--color-part-soprano-600)]">
+                        <td className="px-2 py-3 text-center text-[var(--color-part-soprano-600)]">
                           {stat.partBreakdown.SOPRANO || 0}
                         </td>
-                        <td className="py-3 px-2 text-center text-[var(--color-part-alto-600)]">
+                        <td className="px-2 py-3 text-center text-[var(--color-part-alto-600)]">
                           {stat.partBreakdown.ALTO || 0}
                         </td>
-                        <td className="py-3 px-2 text-center text-[var(--color-part-tenor-600)]">
+                        <td className="px-2 py-3 text-center text-[var(--color-part-tenor-600)]">
                           {stat.partBreakdown.TENOR || 0}
                         </td>
-                        <td className="py-3 px-2 text-center text-[var(--color-part-bass-600)]">
+                        <td className="px-2 py-3 text-center text-[var(--color-part-bass-600)]">
                           {stat.partBreakdown.BASS || 0}
                         </td>
                       </tr>

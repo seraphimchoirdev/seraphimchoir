@@ -113,12 +113,7 @@ export function isValidZeroBasedCoordinate(
   maxRow: number,
   maxCol: number
 ): boolean {
-  return (
-    coord.row >= 0 &&
-    coord.row < maxRow &&
-    coord.col >= 0 &&
-    coord.col < maxCol
-  );
+  return coord.row >= 0 && coord.row < maxRow && coord.col >= 0 && coord.col < maxCol;
 }
 
 /**
@@ -134,12 +129,7 @@ export function isValidOneBasedCoordinate(
   maxRow: number,
   maxCol: number
 ): boolean {
-  return (
-    coord.row >= 1 &&
-    coord.row <= maxRow &&
-    coord.col >= 1 &&
-    coord.col <= maxCol
-  );
+  return coord.row >= 1 && coord.row <= maxRow && coord.col >= 1 && coord.col <= maxCol;
 }
 
 /**
@@ -156,10 +146,7 @@ export function isValidOneBasedCoordinate(
  * coordinateToString({ row: 1, col: 1 }, true);
  * // "Row 1, Col 1 (1-based)"
  */
-export function coordinateToString(
-  coord: Coordinate,
-  isOneBased: boolean = false
-): string {
+export function coordinateToString(coord: Coordinate, isOneBased: boolean = false): string {
   const base = isOneBased ? '1-based' : '0-based';
   return `Row ${coord.row}, Col ${coord.col} (${base})`;
 }

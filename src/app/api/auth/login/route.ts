@@ -1,26 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { createLogger } from '@/lib/logger';
-import { authRateLimiter, getClientIp, createRateLimitErrorResponse } from '@/lib/security/rate-limiter';
 import { z } from 'zod';
+
+import { NextRequest, NextResponse } from 'next/server';
+
 import { sanitizeRequestBody } from '@/lib/api/sanitization-middleware';
-import { sanitizers } from '@/lib/security/input-sanitizer';
+import { createLogger } from '@/lib/logger';
 import { logLoginEvent, logRateLimitExceeded } from '@/lib/security/audit-logger';
+import { sanitizers } from '@/lib/security/input-sanitizer';
+import {
+  authRateLimiter,
+  createRateLimitErrorResponse,
+  getClientIp,
+} from '@/lib/security/rate-limiter';
+import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'AuthLogin' });
 
 // 로그인 요청 스키마 (sanitization 포함)
 const loginSchema = z.object({
-  email: z.string()
+  email: z
+    .string()
     .email('올바른 이메일 형식이 아닙니다')
-    .transform(v => {
+    .transform((v) => {
       const sanitized = sanitizers.sanitizeEmail(v);
       if (!sanitized) {
         throw new Error('올바른 이메일 형식이 아닙니다');
       }
       return sanitized;
     }),
-  password: z.string()
+  password: z
+    .string()
     .min(6, '비밀번호는 최소 6자 이상이어야 합니다')
     .max(128, '비밀번호는 최대 128자까지 입력 가능합니다'),
   // 비밀번호는 sanitize하지 않음 (특수문자 허용)
@@ -41,10 +49,7 @@ export async function POST(request: NextRequest) {
       logger.warn(`Rate limit exceeded for login attempt from IP: ${ip}`);
       // 감사 로그: Rate limit 위반
       await logRateLimitExceeded(request, '/api/auth/login');
-      return NextResponse.json(
-        createRateLimitErrorResponse(reset),
-        { status: 429 }
-      );
+      return NextResponse.json(createRateLimitErrorResponse(reset), { status: 429 });
     }
 
     // 요청 body sanitization 및 검증
@@ -53,10 +58,7 @@ export async function POST(request: NextRequest) {
       validatedData = await sanitizeRequestBody(request, loginSchema);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return NextResponse.json(
-          { error: error.issues[0].message },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: error.issues[0].message }, { status: 400 });
       }
       throw error;
     }
@@ -75,13 +77,7 @@ export async function POST(request: NextRequest) {
       logger.error('Login error:', error);
 
       // 감사 로그: 로그인 실패
-      await logLoginEvent(
-        request,
-        false,
-        email,
-        undefined,
-        error.message
-      );
+      await logLoginEvent(request, false, email, undefined, error.message);
 
       // 인증 실패 (이메일 또는 비밀번호 불일치)
       if (error.message.includes('Invalid login credentials')) {
@@ -110,12 +106,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 감사 로그: 로그인 성공
-    await logLoginEvent(
-      request,
-      true,
-      data.user.email,
-      data.user.id
-    );
+    await logLoginEvent(request, true, data.user.email, data.user.id);
 
     return NextResponse.json(
       {
@@ -128,9 +119,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     logger.error('Login exception:', error);
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

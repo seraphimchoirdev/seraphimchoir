@@ -5,54 +5,64 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
-import dynamic from 'next/dynamic';
+import { endOfMonth } from 'date-fns/endOfMonth';
+import { endOfWeek } from 'date-fns/endOfWeek';
+import { endOfYear } from 'date-fns/endOfYear';
 import { format } from 'date-fns/format';
 import { startOfMonth } from 'date-fns/startOfMonth';
-import { endOfMonth } from 'date-fns/endOfMonth';
-import { subMonths } from 'date-fns/subMonths';
 import { startOfWeek } from 'date-fns/startOfWeek';
-import { endOfWeek } from 'date-fns/endOfWeek';
 import { startOfYear } from 'date-fns/startOfYear';
-import { endOfYear } from 'date-fns/endOfYear';
+import { subMonths } from 'date-fns/subMonths';
 import { subYears } from 'date-fns/subYears';
-import { Users, UserCheck, UserX, TrendingUp, Calendar, BarChart3 } from 'lucide-react';
-import {
-  useAttendanceStatistics,
-  usePartAttendanceStatistics,
-  useAttendanceSummaryByDate,
-} from '@/hooks/useAttendanceStatistics';
-import AttendanceStatsCard from './AttendanceStatsCard';
+import { BarChart3, Calendar, TrendingUp, UserCheck, UserX, Users } from 'lucide-react';
 
-// 차트 컴포넌트 동적 임포트 (recharts 368K 번들 분리)
-const DonutChart = dynamic(
-  () => import('./AttendanceChart').then(mod => ({ default: mod.DonutChart })),
-  {
-    loading: () => <div className="h-[300px] bg-[var(--color-background-tertiary)] animate-pulse rounded-lg" />,
-    ssr: false
-  }
-);
+import { useMemo, useState } from 'react';
 
-const PartBarChart = dynamic(
-  () => import('./AttendanceChart').then(mod => ({ default: mod.PartBarChart })),
-  {
-    loading: () => <div className="h-[300px] bg-[var(--color-background-tertiary)] animate-pulse rounded-lg" />,
-    ssr: false
-  }
-);
-
-const TrendLineChart = dynamic(
-  () => import('./AttendanceChart').then(mod => ({ default: mod.TrendLineChart })),
-  {
-    loading: () => <div className="h-[300px] bg-[var(--color-background-tertiary)] animate-pulse rounded-lg" />,
-    ssr: false
-  }
-);
+import dynamic from 'next/dynamic';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+import {
+  useAttendanceStatistics,
+  useAttendanceSummaryByDate,
+  usePartAttendanceStatistics,
+} from '@/hooks/useAttendanceStatistics';
+
+import AttendanceStatsCard from './AttendanceStatsCard';
+
+// 차트 컴포넌트 동적 임포트 (recharts 368K 번들 분리)
+const DonutChart = dynamic(
+  () => import('./AttendanceChart').then((mod) => ({ default: mod.DonutChart })),
+  {
+    loading: () => (
+      <div className="h-[300px] animate-pulse rounded-lg bg-[var(--color-background-tertiary)]" />
+    ),
+    ssr: false,
+  }
+);
+
+const PartBarChart = dynamic(
+  () => import('./AttendanceChart').then((mod) => ({ default: mod.PartBarChart })),
+  {
+    loading: () => (
+      <div className="h-[300px] animate-pulse rounded-lg bg-[var(--color-background-tertiary)]" />
+    ),
+    ssr: false,
+  }
+);
+
+const TrendLineChart = dynamic(
+  () => import('./AttendanceChart').then((mod) => ({ default: mod.TrendLineChart })),
+  {
+    loading: () => (
+      <div className="h-[300px] animate-pulse rounded-lg bg-[var(--color-background-tertiary)]" />
+    ),
+    ssr: false,
+  }
+);
 
 // 파트별 색상 (악보 스티커 색상 기준 - 자리배치와 통일)
 const PART_COLORS = {
@@ -90,7 +100,13 @@ const PART_COLORS = {
 
 type Part = keyof typeof PART_COLORS;
 
-type DateRangePreset = 'this_week' | 'this_month' | 'last_month' | 'this_year' | 'last_year' | 'custom';
+type DateRangePreset =
+  | 'this_week'
+  | 'this_month'
+  | 'last_month'
+  | 'this_year'
+  | 'last_year'
+  | 'custom';
 
 /**
  * 출석 통계 대시보드
@@ -181,25 +197,28 @@ export default function AttendanceStatistics() {
   // 로딩 스켈레톤
   if (isLoading) {
     return (
-      <Card className="p-6 shadow-[var(--shadow-sm)] border-none">
+      <Card className="border-none p-6 shadow-[var(--shadow-sm)]">
         <div className="animate-pulse space-y-6">
           {/* 헤더 스켈레톤 */}
-          <div className="flex justify-between items-center">
-            <div className="h-6 bg-[var(--color-background-tertiary)] rounded w-48"></div>
-            <div className="h-10 bg-[var(--color-background-tertiary)] rounded w-64"></div>
+          <div className="flex items-center justify-between">
+            <div className="h-6 w-48 rounded bg-[var(--color-background-tertiary)]"></div>
+            <div className="h-10 w-64 rounded bg-[var(--color-background-tertiary)]"></div>
           </div>
 
           {/* KPI 카드 스켈레톤 */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)]"></div>
+              <div
+                key={i}
+                className="h-24 rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)]"
+              ></div>
             ))}
           </div>
 
           {/* 차트 스켈레톤 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-80 bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)]"></div>
-            <div className="h-80 bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)]"></div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="h-80 rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)]"></div>
+            <div className="h-80 rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)]"></div>
           </div>
         </div>
       </Card>
@@ -209,8 +228,8 @@ export default function AttendanceStatistics() {
   // 에러 처리
   if (hasError) {
     return (
-      <Card className="p-6 shadow-[var(--shadow-sm)] border-none">
-        <div className="text-center py-12">
+      <Card className="border-none p-6 shadow-[var(--shadow-sm)]">
+        <div className="py-12 text-center">
           <div className="mx-auto h-12 w-12 text-[var(--color-error-400)]">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -221,14 +240,13 @@ export default function AttendanceStatistics() {
               />
             </svg>
           </div>
-          <h3 className="mt-2 text-sm font-medium text-[var(--color-text-primary)]">통계 조회 실패</h3>
+          <h3 className="mt-2 text-sm font-medium text-[var(--color-text-primary)]">
+            통계 조회 실패
+          </h3>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             {overallError?.message || partError?.message || dailyError?.message}
           </p>
-          <Button
-            onClick={() => window.location.reload()}
-            className="mt-4"
-          >
+          <Button onClick={() => window.location.reload()} className="mt-4">
             다시 시도
           </Button>
         </div>
@@ -240,11 +258,11 @@ export default function AttendanceStatistics() {
   const hasData = overallStats && overallStats.total_records > 0;
 
   return (
-    <Card className="p-6 shadow-[var(--shadow-sm)] border-none bg-[var(--color-surface)]">
+    <Card className="border-none bg-[var(--color-surface)] p-6 shadow-[var(--shadow-sm)]">
       {/* 헤더 및 필터 */}
       <div className="mb-6 space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <h2 className="heading-3 text-[var(--color-text-primary)] flex items-center gap-2">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <h2 className="heading-3 flex items-center gap-2 text-[var(--color-text-primary)]">
             <BarChart3 className="h-5 w-5 text-[var(--color-primary-600)]" />
             출석 통계 대시보드
           </h2>
@@ -273,10 +291,12 @@ export default function AttendanceStatistics() {
 
         {/* 커스텀 날짜 선택 */}
         {dateRangePreset === 'custom' && (
-          <div className="flex flex-wrap items-center gap-3 p-4 bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)]">
+          <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)] p-4">
             <Calendar className="h-5 w-5 text-[var(--color-text-tertiary)]" />
             <div className="flex items-center gap-2">
-              <Label className="text-sm text-[var(--color-text-secondary)] whitespace-nowrap">시작일:</Label>
+              <Label className="text-sm whitespace-nowrap text-[var(--color-text-secondary)]">
+                시작일:
+              </Label>
               <Input
                 type="date"
                 value={customStartDate}
@@ -286,7 +306,9 @@ export default function AttendanceStatistics() {
             </div>
             <span className="text-[var(--color-text-tertiary)]">~</span>
             <div className="flex items-center gap-2">
-              <Label className="text-sm text-[var(--color-text-secondary)] whitespace-nowrap">종료일:</Label>
+              <Label className="text-sm whitespace-nowrap text-[var(--color-text-secondary)]">
+                종료일:
+              </Label>
               <Input
                 type="date"
                 value={customEndDate}
@@ -305,7 +327,7 @@ export default function AttendanceStatistics() {
 
       {/* KPI 카드 */}
       {overallStats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <AttendanceStatsCard
             title="총 출석 기록"
             value={overallStats.total_records}
@@ -347,7 +369,7 @@ export default function AttendanceStatistics() {
 
       {!hasData ? (
         /* 데이터 없음 메시지 */
-        <div className="text-center py-12">
+        <div className="py-12 text-center">
           <svg
             className="mx-auto h-12 w-12 text-[var(--color-text-tertiary)]"
             fill="none"
@@ -361,7 +383,9 @@ export default function AttendanceStatistics() {
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-[var(--color-text-primary)]">출석 데이터 없음</h3>
+          <h3 className="mt-2 text-sm font-medium text-[var(--color-text-primary)]">
+            출석 데이터 없음
+          </h3>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
             선택한 기간에 등록된 출석 기록이 없습니다.
           </p>
@@ -371,11 +395,11 @@ export default function AttendanceStatistics() {
           {/* 차트 영역 */}
           <div className="space-y-8">
             {/* 도넛 차트 & 파트별 막대 그래프 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               {/* 전체 출석률 도넛 차트 */}
               {overallStats && (
-                <div className="bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)] p-6">
-                  <h3 className="text-md font-semibold text-[var(--color-text-primary)] mb-4">
+                <div className="rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)] p-6">
+                  <h3 className="text-md mb-4 font-semibold text-[var(--color-text-primary)]">
                     전체 출석 현황
                   </h3>
                   <DonutChart data={overallStats} />
@@ -384,8 +408,8 @@ export default function AttendanceStatistics() {
 
               {/* 파트별 출석률 막대 그래프 */}
               {partStats && partStats.length > 0 && (
-                <div className="bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)] p-6">
-                  <h3 className="text-md font-semibold text-[var(--color-text-primary)] mb-4">
+                <div className="rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)] p-6">
+                  <h3 className="text-md mb-4 font-semibold text-[var(--color-text-primary)]">
                     파트별 출석률 비교
                   </h3>
                   <PartBarChart data={partStats} />
@@ -395,8 +419,8 @@ export default function AttendanceStatistics() {
 
             {/* 날짜별 추세 라인 차트 */}
             {dailySummary && dailySummary.length > 0 && (
-              <div className="bg-[var(--color-background-tertiary)] rounded-[var(--radius-lg)] p-6">
-                <h3 className="text-md font-semibold text-[var(--color-text-primary)] mb-4">
+              <div className="rounded-[var(--radius-lg)] bg-[var(--color-background-tertiary)] p-6">
+                <h3 className="text-md mb-4 font-semibold text-[var(--color-text-primary)]">
                   날짜별 출석률 추세
                 </h3>
                 <TrendLineChart data={dailySummary} />
@@ -406,14 +430,16 @@ export default function AttendanceStatistics() {
             {/* 파트별 상세 통계 테이블 */}
             {partStats && partStats.length > 0 && (
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-md font-semibold text-[var(--color-text-primary)]">파트별 상세 통계</h3>
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-md font-semibold text-[var(--color-text-primary)]">
+                    파트별 상세 통계
+                  </h3>
 
                   {/* 파트 필터 */}
                   <select
                     value={selectedPart}
                     onChange={(e) => setSelectedPart(e.target.value as Part | 'ALL')}
-                    className="h-9 rounded-[var(--radius-base)] border border-[var(--color-border-default)] bg-[var(--color-background-primary)] px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-400)]"
+                    className="ring-offset-background h-9 rounded-[var(--radius-base)] border border-[var(--color-border-default)] bg-[var(--color-background-primary)] px-3 py-1 text-sm focus-visible:ring-2 focus-visible:ring-[var(--color-primary-400)] focus-visible:outline-none"
                   >
                     <option value="ALL">전체 파트</option>
                     <option value="SOPRANO">SOPRANO</option>
@@ -433,7 +459,7 @@ export default function AttendanceStatistics() {
                         key={stat.part}
                         className={`border ${colors.border} ${colors.bg} rounded-[var(--radius-lg)] p-4`}
                       >
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="mb-3 flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <span className={`text-sm font-semibold ${colors.text}`}>
                               {stat.part}
@@ -451,7 +477,7 @@ export default function AttendanceStatistics() {
                         </div>
 
                         {/* 출석률 바 */}
-                        <div className="w-full bg-[var(--color-background-tertiary)] rounded-full h-3 mb-2">
+                        <div className="mb-2 h-3 w-full rounded-full bg-[var(--color-background-tertiary)]">
                           <div
                             className={`${colors.bar} h-3 rounded-full transition-all duration-300`}
                             style={{ width: `${stat.attendance_rate}%` }}
@@ -460,8 +486,12 @@ export default function AttendanceStatistics() {
 
                         {/* 상세 수치 */}
                         <div className="flex justify-between text-sm">
-                          <span className="text-[var(--color-success-600)]">출석: {stat.available_count}건</span>
-                          <span className="text-[var(--color-error-600)]">불참: {stat.unavailable_count}건</span>
+                          <span className="text-[var(--color-success-600)]">
+                            출석: {stat.available_count}건
+                          </span>
+                          <span className="text-[var(--color-error-600)]">
+                            불참: {stat.unavailable_count}건
+                          </span>
                         </div>
                       </div>
                     );

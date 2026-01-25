@@ -1,22 +1,18 @@
 'use client';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import ServiceScheduleForm from './ServiceScheduleForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+import { useCreateServiceSchedule, useUpdateServiceSchedule } from '@/hooks/useServiceSchedules';
+
 import { createLogger } from '@/lib/logger';
-import {
-  useCreateServiceSchedule,
-  useUpdateServiceSchedule,
-} from '@/hooks/useServiceSchedules';
+import { showError, showSuccess } from '@/lib/toast';
+
 import type { Database } from '@/types/database.types';
 
+import ServiceScheduleForm from './ServiceScheduleForm';
+
 type ServiceSchedule = Database['public']['Tables']['service_schedules']['Row'];
-type ServiceScheduleInsert =
-  Database['public']['Tables']['service_schedules']['Insert'];
+type ServiceScheduleInsert = Database['public']['Tables']['service_schedules']['Insert'];
 
 const logger = createLogger({ prefix: 'ServiceScheduleDialog' });
 
@@ -65,14 +61,16 @@ export default function ServiceScheduleDialog({
             post_practice_location: data.post_practice_location,
           },
         });
+        showSuccess('일정이 수정되었습니다.');
       } else {
         await createMutation.mutateAsync(data);
+        showSuccess('일정이 등록되었습니다.');
       }
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      // 에러는 mutation에서 처리됨
       logger.error('ServiceSchedule mutation error:', error);
+      showError('저장에 실패했습니다.');
     }
   };
 
@@ -95,7 +93,7 @@ export default function ServiceScheduleDialog({
           <DialogTitle>
             {isEditing ? '예배 일정 수정' : '예배 일정 등록'}
             {displayDate && (
-              <span className="block text-sm font-normal text-[var(--color-text-secondary)] mt-1">
+              <span className="mt-1 block text-sm font-normal text-[var(--color-text-secondary)]">
                 {formatDate(displayDate)}
               </span>
             )}

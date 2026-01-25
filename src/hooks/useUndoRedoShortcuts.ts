@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+
 import { useArrangementStore } from '@/store/arrangement-store';
 
 /**
@@ -10,52 +11,48 @@ import { useArrangementStore } from '@/store/arrangement-store';
  * - Ctrl+Y: Redo (Windows 스타일)
  */
 export function useUndoRedoShortcuts() {
-    const undo = useArrangementStore((state) => state.undo);
-    const redo = useArrangementStore((state) => state.redo);
-    const canUndo = useArrangementStore((state) => state.canUndo);
-    const canRedo = useArrangementStore((state) => state.canRedo);
+  const undo = useArrangementStore((state) => state.undo);
+  const redo = useArrangementStore((state) => state.redo);
+  const canUndo = useArrangementStore((state) => state.canUndo);
+  const canRedo = useArrangementStore((state) => state.canRedo);
 
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // Check for Ctrl (Windows) or Cmd (Mac)
-            const isModifier = e.ctrlKey || e.metaKey;
-            if (!isModifier) return;
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl (Windows) or Cmd (Mac)
+      const isModifier = e.ctrlKey || e.metaKey;
+      if (!isModifier) return;
 
-            // Prevent shortcuts when typing in input fields
-            const target = e.target as HTMLElement;
-            if (
-                target.tagName === 'INPUT' ||
-                target.tagName === 'TEXTAREA' ||
-                target.isContentEditable
-            ) {
-                return;
-            }
+      // Prevent shortcuts when typing in input fields
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
 
-            if (e.key === 'z' || e.key === 'Z') {
-                e.preventDefault();
-                if (e.shiftKey) {
-                    // Redo: Ctrl+Shift+Z or Cmd+Shift+Z
-                    if (canRedo()) {
-                        redo();
-                    }
-                } else {
-                    // Undo: Ctrl+Z or Cmd+Z
-                    if (canUndo()) {
-                        undo();
-                    }
-                }
-            }
+      if (e.key === 'z' || e.key === 'Z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          // Redo: Ctrl+Shift+Z or Cmd+Shift+Z
+          if (canRedo()) {
+            redo();
+          }
+        } else {
+          // Undo: Ctrl+Z or Cmd+Z
+          if (canUndo()) {
+            undo();
+          }
+        }
+      }
 
-            // Alternative Redo: Ctrl+Y (Windows convention)
-            if ((e.key === 'y' || e.key === 'Y') && !e.shiftKey) {
-                e.preventDefault();
-                if (canRedo()) {
-                    redo();
-                }
-            }
-        };
+      // Alternative Redo: Ctrl+Y (Windows convention)
+      if ((e.key === 'y' || e.key === 'Y') && !e.shiftKey) {
+        e.preventDefault();
+        if (canRedo()) {
+          redo();
+        }
+      }
+    };
 
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [undo, redo, canUndo, canRedo]);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, canUndo, canRedo]);
 }

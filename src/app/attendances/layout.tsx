@@ -1,16 +1,13 @@
-import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * 출석 관리 레이아웃
  *
  * 서버 사이드에서 인증 체크를 수행하여 보안을 강화합니다.
  */
-export default async function AttendancesLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AttendancesLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
 
   const {

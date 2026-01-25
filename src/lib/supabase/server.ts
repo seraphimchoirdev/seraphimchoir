@@ -1,9 +1,11 @@
 import { createServerClient } from '@supabase/ssr';
+
 import { cookies } from 'next/headers';
+
 import {
-  getSupabaseUrl,
   getSupabaseAnonKey,
   getSupabaseServiceRoleKey,
+  getSupabaseUrl,
 } from '@/lib/env-validation';
 
 /**
@@ -13,27 +15,21 @@ import {
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(
-    getSupabaseUrl(),
-    getSupabaseAnonKey(),
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Server Component에서 setAll이 호출된 경우 무시
-            // Middleware에서만 쿠키를 설정할 수 있습니다
-          }
-        },
+  return createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+        } catch {
+          // Server Component에서 setAll이 호출된 경우 무시
+          // Middleware에서만 쿠키를 설정할 수 있습니다
+        }
+      },
+    },
+  });
 }
 
 /**
@@ -42,18 +38,14 @@ export async function createClient() {
  * 주의: 클라이언트에 노출하지 마세요!
  */
 export async function createAdminClient() {
-  return createServerClient(
-    getSupabaseUrl(),
-    getSupabaseServiceRoleKey(),
-    {
-      cookies: {
-        getAll() {
-          return [];
-        },
-        setAll() {
-          // Admin client doesn't need to set cookies
-        },
+  return createServerClient(getSupabaseUrl(), getSupabaseServiceRoleKey(), {
+    cookies: {
+      getAll() {
+        return [];
       },
-    }
-  );
+      setAll() {
+        // Admin client doesn't need to set cookies
+      },
+    },
+  });
 }

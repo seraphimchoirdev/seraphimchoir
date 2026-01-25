@@ -1,13 +1,27 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import AppShell from '@/components/layout/AppShell';
-import { QuarterSelector, QuarterlyCalendar, MonthSelector, MonthlyCalendar, ServiceScheduleDialog, ServiceScheduleImporter } from '@/components/features/service-schedules';
+import {
+  AlertCircle,
+  Calendar,
+  CalendarRange,
+  FileSpreadsheet,
+  Music,
+  PartyPopper,
+  Plus,
+} from 'lucide-react';
+
+import { useCallback, useState } from 'react';
+
+import {
+  MonthSelector,
+  MonthlyCalendar,
+  QuarterSelector,
+  QuarterlyCalendar,
+  ServiceScheduleDialog,
+  ServiceScheduleImporter,
+} from '@/components/features/service-schedules';
 import EventDialog from '@/components/features/service-schedules/EventDialog';
-import { useServiceSchedules } from '@/hooks/useServiceSchedules';
-import { useChoirEvents } from '@/hooks/useChoirEvents';
-import { useAuth } from '@/hooks/useAuth';
-import { Spinner } from '@/components/ui/spinner';
+import AppShell from '@/components/layout/AppShell';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +30,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { AlertCircle, Plus, FileSpreadsheet, Music, PartyPopper, Calendar, CalendarRange } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+
+import { useAuth } from '@/hooks/useAuth';
+import { useChoirEvents } from '@/hooks/useChoirEvents';
+import { useServiceSchedules } from '@/hooks/useServiceSchedules';
 
 type ViewMode = 'monthly' | 'quarterly';
 
@@ -24,7 +42,14 @@ export default function ServiceSchedulesPage() {
   const { hasRole, isLoading: authLoading } = useAuth();
 
   // 일정 조회 권한: 모든 역할
-  const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']);
+  const hasPermission = hasRole([
+    'ADMIN',
+    'CONDUCTOR',
+    'MANAGER',
+    'STAFF',
+    'PART_LEADER',
+    'MEMBER',
+  ]);
   // 예배 일정 관리 권한: ADMIN, CONDUCTOR, MANAGER만
   const canManageService = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
   // 행사 일정 관리 권한: 현재는 ADMIN, CONDUCTOR, MANAGER만 (향후 대원 승인제 도입 예정)
@@ -34,9 +59,7 @@ export default function ServiceSchedulesPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('monthly');
   const [year, setYear] = useState(currentDate.getFullYear());
   const [month, setMonth] = useState(currentDate.getMonth() + 1); // 1-12
-  const [quarter, setQuarter] = useState(
-    Math.ceil((currentDate.getMonth() + 1) / 3)
-  );
+  const [quarter, setQuarter] = useState(Math.ceil((currentDate.getMonth() + 1) / 3));
 
   // 예배 일정 추가 다이얼로그 상태
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
@@ -48,9 +71,7 @@ export default function ServiceSchedulesPage() {
   const [isImporterOpen, setIsImporterOpen] = useState(false);
 
   // 뷰 모드에 따른 필터 설정
-  const scheduleFilters = viewMode === 'monthly'
-    ? { year, month }
-    : { year, quarter };
+  const scheduleFilters = viewMode === 'monthly' ? { year, month } : { year, quarter };
 
   const { data, isLoading, error, refetch } = useServiceSchedules(scheduleFilters);
 
@@ -71,7 +92,7 @@ export default function ServiceSchedulesPage() {
   if (authLoading) {
     return (
       <AppShell>
-        <div className="min-h-screen bg-[var(--color-background-tertiary)] flex items-center justify-center py-20">
+        <div className="flex min-h-screen items-center justify-center bg-[var(--color-background-tertiary)] py-20">
           <Spinner size="lg" />
         </div>
       </AppShell>
@@ -82,11 +103,9 @@ export default function ServiceSchedulesPage() {
     return (
       <AppShell>
         <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-          <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <div className="container mx-auto max-w-2xl px-4 py-8">
             <Alert variant="error">
-              <AlertDescription>
-                찬양대 일정 페이지에 접근할 권한이 없습니다.
-              </AlertDescription>
+              <AlertDescription>찬양대 일정 페이지에 접근할 권한이 없습니다.</AlertDescription>
             </Alert>
           </div>
         </div>
@@ -97,144 +116,152 @@ export default function ServiceSchedulesPage() {
   return (
     <AppShell>
       <div className="min-h-screen bg-[var(--color-background-tertiary)]">
-
-      <div className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto space-y-6">
-          {/* 헤더 - 타이틀 영역 */}
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">
-              찬양대 일정 관리
-            </h1>
-            <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-              {viewMode === 'monthly' ? '월별' : '분기별'} 예배 및 행사 일정을 관리합니다
-            </p>
-          </div>
-
-          {/* 컨트롤 영역 */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            {/* 좌측: 날짜 선택기 */}
+        <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          <div className="mx-auto max-w-3xl space-y-6">
+            {/* 헤더 - 타이틀 영역 */}
             <div>
-              {viewMode === 'monthly' ? (
-                <MonthSelector
-                  year={year}
-                  month={month}
-                  onChange={(y, m) => {
-                    setYear(y);
-                    setMonth(m);
-                  }}
-                />
-              ) : (
-                <QuarterSelector
-                  year={year}
-                  quarter={quarter}
-                  onChange={(y, q) => {
-                    setYear(y);
-                    setQuarter(q);
-                  }}
-                />
-              )}
+              <h1 className="text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl">
+                찬양대 일정 관리
+              </h1>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                {viewMode === 'monthly' ? '월별' : '분기별'} 예배 및 행사 일정을 관리합니다
+              </p>
             </div>
 
-            {/* 우측: 뷰 토글 + 액션 버튼 */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              {/* 뷰 전환 토글 */}
-              <div className="flex items-center border border-[var(--color-border-subtle)] rounded-lg p-0.5 bg-[var(--color-background-secondary)]">
-                <Button
-                  variant={viewMode === 'monthly' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="gap-1.5 h-8"
-                  onClick={() => setViewMode('monthly')}
-                >
-                  <Calendar className="h-4 w-4" />
-                  <span className="hidden sm:inline">월간</span>
-                </Button>
-                <Button
-                  variant={viewMode === 'quarterly' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="gap-1.5 h-8"
-                  onClick={() => setViewMode('quarterly')}
-                >
-                  <CalendarRange className="h-4 w-4" />
-                  <span className="hidden sm:inline">분기</span>
-                </Button>
+            {/* 컨트롤 영역 */}
+            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+              {/* 좌측: 날짜 선택기 */}
+              <div>
+                {viewMode === 'monthly' ? (
+                  <MonthSelector
+                    year={year}
+                    month={month}
+                    onChange={(y, m) => {
+                      setYear(y);
+                      setMonth(m);
+                    }}
+                  />
+                ) : (
+                  <QuarterSelector
+                    year={year}
+                    quarter={quarter}
+                    onChange={(y, q) => {
+                      setYear(y);
+                      setQuarter(q);
+                    }}
+                  />
+                )}
               </div>
 
-              {canManageService && (
-                <Button
-                  onClick={() => setIsImporterOpen(true)}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <FileSpreadsheet className="h-4 w-4" />
-                  <span className="hidden sm:inline">일괄 등록</span>
-                </Button>
-              )}
-              {(canManageService || canManageEvents) && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      <span className="hidden sm:inline">일정 추가</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {canManageService && (
-                      <DropdownMenuItem onClick={() => setIsServiceDialogOpen(true)} className="gap-2 cursor-pointer">
-                        <Music className="h-4 w-4 text-[var(--color-primary-600)]" />
-                        예배 일정
-                      </DropdownMenuItem>
-                    )}
-                    {canManageEvents && (
-                      <DropdownMenuItem onClick={() => setIsEventDialogOpen(true)} className="gap-2 cursor-pointer">
-                        <PartyPopper className="h-4 w-4 text-[var(--color-accent-600)]" />
-                        행사 일정
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+              {/* 우측: 뷰 토글 + 액션 버튼 */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {/* 뷰 전환 토글 */}
+                <div className="flex items-center rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-background-secondary)] p-0.5">
+                  <Button
+                    variant={viewMode === 'monthly' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-8 gap-1.5"
+                    onClick={() => setViewMode('monthly')}
+                  >
+                    <Calendar className="h-4 w-4" />
+                    <span className="hidden sm:inline">월간</span>
+                  </Button>
+                  <Button
+                    variant={viewMode === 'quarterly' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-8 gap-1.5"
+                    onClick={() => setViewMode('quarterly')}
+                  >
+                    <CalendarRange className="h-4 w-4" />
+                    <span className="hidden sm:inline">분기</span>
+                  </Button>
+                </div>
+
+                {canManageService && (
+                  <Button
+                    onClick={() => setIsImporterOpen(true)}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    <span className="hidden sm:inline">일괄 등록</span>
+                  </Button>
+                )}
+                {(canManageService || canManageEvents) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="gap-2">
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">일정 추가</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {canManageService && (
+                        <DropdownMenuItem
+                          onClick={() => setIsServiceDialogOpen(true)}
+                          className="cursor-pointer gap-2"
+                        >
+                          <Music className="h-4 w-4 text-[var(--color-primary-600)]" />
+                          예배 일정
+                        </DropdownMenuItem>
+                      )}
+                      {canManageEvents && (
+                        <DropdownMenuItem
+                          onClick={() => setIsEventDialogOpen(true)}
+                          className="cursor-pointer gap-2"
+                        >
+                          <PartyPopper className="h-4 w-4 text-[var(--color-accent-600)]" />
+                          행사 일정
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
+
+            {/* 로딩 */}
+            {(isLoading || eventsLoading) && (
+              <div className="flex justify-center py-12">
+                <Spinner className="h-8 w-8" />
+              </div>
+            )}
+
+            {/* 에러 */}
+            {(error || eventsError) && (
+              <Alert variant="error">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {error?.message || eventsError?.message || '일정을 불러오는데 실패했습니다.'}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* 캘린더 */}
+            {!isLoading &&
+              !eventsLoading &&
+              !error &&
+              !eventsError &&
+              data &&
+              (viewMode === 'monthly' ? (
+                <MonthlyCalendar
+                  year={year}
+                  month={month}
+                  schedules={data.data}
+                  events={eventsData?.data || []}
+                  onRefresh={handleRefresh}
+                />
+              ) : (
+                <QuarterlyCalendar
+                  year={year}
+                  quarter={quarter}
+                  schedules={data.data}
+                  events={eventsData?.data || []}
+                  onRefresh={handleRefresh}
+                />
+              ))}
           </div>
-
-          {/* 로딩 */}
-          {(isLoading || eventsLoading) && (
-            <div className="flex justify-center py-12">
-              <Spinner className="h-8 w-8" />
-            </div>
-          )}
-
-          {/* 에러 */}
-          {(error || eventsError) && (
-            <Alert variant="error">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {error?.message || eventsError?.message || '일정을 불러오는데 실패했습니다.'}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* 캘린더 */}
-          {!isLoading && !eventsLoading && !error && !eventsError && data && (
-            viewMode === 'monthly' ? (
-              <MonthlyCalendar
-                year={year}
-                month={month}
-                schedules={data.data}
-                events={eventsData?.data || []}
-                onRefresh={handleRefresh}
-              />
-            ) : (
-              <QuarterlyCalendar
-                year={year}
-                quarter={quarter}
-                schedules={data.data}
-                events={eventsData?.data || []}
-                onRefresh={handleRefresh}
-              />
-            )
-          )}
         </div>
-      </div>
       </div>
 
       {/* 예배 일정 추가 다이얼로그 */}

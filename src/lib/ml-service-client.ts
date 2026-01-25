@@ -2,22 +2,23 @@
  * ML Service Client
  * Python FastAPI ML 서비스와 통신하는 클라이언트
  */
+import { createLogger } from '@/lib/logger';
 
 import { ML_SERVICE_CONFIG } from './constants';
-import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'MLServiceClient' });
 
 // 환경 변수
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
-const ML_SERVICE_TIMEOUT = Number(process.env.ML_SERVICE_TIMEOUT) || ML_SERVICE_CONFIG.DEFAULT_TIMEOUT;
-const ML_SERVICE_ENABLED = process.env.ML_SERVICE_ENABLED !== "false";
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
+const ML_SERVICE_TIMEOUT =
+  Number(process.env.ML_SERVICE_TIMEOUT) || ML_SERVICE_CONFIG.DEFAULT_TIMEOUT;
+const ML_SERVICE_ENABLED = process.env.ML_SERVICE_ENABLED !== 'false';
 
 // Types
 export interface MLMemberInput {
   id: string;
   name: string;
-  part: "SOPRANO" | "ALTO" | "TENOR" | "BASS" | "SPECIAL";
+  part: 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS' | 'SPECIAL';
   height: number | null;
   experience: number | null;
   is_leader: boolean;
@@ -25,8 +26,8 @@ export interface MLMemberInput {
 
 export interface MLGridLayout {
   rows: number;
-  rowCapacities: number[];      // Python: alias="rowCapacities"
-  zigzagPattern: "even" | "odd" | "none";  // Python: alias="zigzagPattern"
+  rowCapacities: number[]; // Python: alias="rowCapacities"
+  zigzagPattern: 'even' | 'odd' | 'none'; // Python: alias="zigzagPattern"
 }
 
 export interface MLRecommendRequest {
@@ -35,8 +36,8 @@ export interface MLRecommendRequest {
 }
 
 export interface MLSeatRecommendation {
-  memberId: string;      // Python: alias="memberId"
-  memberName: string;    // Python: alias="memberName"
+  memberId: string; // Python: alias="memberId"
+  memberName: string; // Python: alias="memberName"
   part: string;
   row: number;
   col: number;
@@ -44,8 +45,8 @@ export interface MLSeatRecommendation {
 
 export interface MLRecommendResponse {
   seats: MLSeatRecommendation[];
-  gridLayout: MLGridLayout;       // Python: alias="gridLayout"
-  qualityScore: number;           // Python: alias="qualityScore"
+  gridLayout: MLGridLayout; // Python: alias="gridLayout"
+  qualityScore: number; // Python: alias="qualityScore"
   metrics: {
     placementRate: number;
     partBalance: number;
@@ -57,14 +58,14 @@ export interface MLRecommendResponse {
     placedMembers: number;
     statsLoaded: number;
   };
-  unassignedMembers: string[];    // Python: alias="unassignedMembers"
-  source: "python-ml";
+  unassignedMembers: string[]; // Python: alias="unassignedMembers"
+  source: 'python-ml';
 }
 
 export interface MLHealthResponse {
-  status: "healthy" | "degraded" | "unhealthy";
+  status: 'healthy' | 'degraded' | 'unhealthy';
   version: string;
-  modelLoaded: boolean;      // Python ML 서비스가 camelCase로 반환
+  modelLoaded: boolean; // Python ML 서비스가 camelCase로 반환
   databaseConnected: boolean;
 }
 
@@ -87,7 +88,7 @@ export class MLServiceError extends Error {
     public originalError?: unknown
   ) {
     super(message);
-    this.name = "MLServiceError";
+    this.name = 'MLServiceError';
   }
 }
 
@@ -111,7 +112,7 @@ export async function checkMLServiceHealth(): Promise<MLHealthResponse | null> {
     const timeoutId = setTimeout(() => controller.abort(), ML_SERVICE_CONFIG.HEALTH_CHECK_TIMEOUT);
 
     const response = await fetch(`${ML_SERVICE_URL}/api/v1/health`, {
-      method: "GET",
+      method: 'GET',
       signal: controller.signal,
     });
 
@@ -123,7 +124,7 @@ export async function checkMLServiceHealth(): Promise<MLHealthResponse | null> {
 
     return (await response.json()) as MLHealthResponse;
   } catch {
-    logger.warn("Health check failed - service may be unavailable");
+    logger.warn('Health check failed - service may be unavailable');
     return null;
   }
 }
@@ -133,7 +134,7 @@ export async function checkMLServiceHealth(): Promise<MLHealthResponse | null> {
  */
 export async function isMLServiceReady(): Promise<boolean> {
   const health = await checkMLServiceHealth();
-  return health !== null && health.status === "healthy" && health.modelLoaded;
+  return health !== null && health.status === 'healthy' && health.modelLoaded;
 }
 
 /**
@@ -143,7 +144,7 @@ export async function requestMLRecommendation(
   request: MLRecommendRequest
 ): Promise<MLRecommendResponse> {
   if (!ML_SERVICE_ENABLED) {
-    throw new MLServiceError("ML service is disabled");
+    throw new MLServiceError('ML service is disabled');
   }
 
   const controller = new AbortController();
@@ -151,9 +152,9 @@ export async function requestMLRecommendation(
 
   try {
     const response = await fetch(`${ML_SERVICE_URL}/api/v1/recommend`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(request),
       signal: controller.signal,
@@ -177,26 +178,20 @@ export async function requestMLRecommendation(
       throw error;
     }
 
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new MLServiceError("ML service request timed out");
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new MLServiceError('ML service request timed out');
     }
 
-    throw new MLServiceError(
-      "Failed to connect to ML service",
-      undefined,
-      error
-    );
+    throw new MLServiceError('Failed to connect to ML service', undefined, error);
   }
 }
 
 /**
  * ML 모델 학습 요청
  */
-export async function requestMLTraining(
-  force: boolean = false
-): Promise<MLTrainResponse> {
+export async function requestMLTraining(force: boolean = false): Promise<MLTrainResponse> {
   if (!ML_SERVICE_ENABLED) {
-    throw new MLServiceError("ML service is disabled");
+    throw new MLServiceError('ML service is disabled');
   }
 
   const controller = new AbortController();
@@ -205,9 +200,9 @@ export async function requestMLTraining(
 
   try {
     const response = await fetch(`${ML_SERVICE_URL}/api/v1/train`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ force }),
       signal: controller.signal,
@@ -231,11 +226,7 @@ export async function requestMLTraining(
       throw error;
     }
 
-    throw new MLServiceError(
-      "Failed to request model training",
-      undefined,
-      error
-    );
+    throw new MLServiceError('Failed to request model training', undefined, error);
   }
 }
 
@@ -255,7 +246,7 @@ export async function getMLModelStatus(): Promise<{
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     const response = await fetch(`${ML_SERVICE_URL}/api/v1/model/status`, {
-      method: "GET",
+      method: 'GET',
       signal: controller.signal,
     });
 

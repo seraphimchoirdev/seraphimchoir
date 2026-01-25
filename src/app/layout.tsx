@@ -1,104 +1,121 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import { Providers } from "@/lib/providers";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+
+import type { Metadata } from 'next';
+
+import SplashScreen from '@/components/layout/SplashScreen';
+
+import { Providers } from '@/lib/providers';
+
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "새로핌:On",
-  description: "새문안교회 새로핌찬양대를 위한 종합 플랫폼",
-  manifest: "/manifest.json",
+  title: '새로핌:On',
+  description: '새문안교회 새로핌찬양대를 위한 종합 플랫폼',
+  manifest: '/manifest.json',
   icons: {
-    icon: "/icon-192x192.png?v=2",
-    shortcut: "/icon-192x192.png?v=2",
-    apple: "/icon-512x512.png?v=2",
+    icon: '/icon-192x192.png?v=2',
+    shortcut: '/icon-192x192.png?v=2',
+    apple: '/icon-512x512.png?v=2',
   },
   openGraph: {
-    title: "새로핌:On",
-    description: "새문안교회 새로핌찬양대를 위한 종합 플랫폼",
+    title: '새로핌:On',
+    description: '새문안교회 새로핌찬양대를 위한 종합 플랫폼',
     images: [
       {
-        url: "/title_logo.png",
+        url: '/title_logo.png',
         width: 1200,
         height: 630,
-        alt: "새로핌:On 로고",
+        alt: '새로핌:On 로고',
       },
     ],
-    locale: "ko_KR",
-    type: "website",
+    locale: 'ko_KR',
+    type: 'website',
   },
   twitter: {
-    card: "summary_large_image",
-    title: "새로핌:On",
-    description: "새문안교회 새로핌찬양대를 위한 종합 플랫폼",
-    images: ["/title_logo.png"],
+    card: 'summary_large_image',
+    title: '새로핌:On',
+    description: '새문안교회 새로핌찬양대를 위한 종합 플랫폼',
+    images: ['/title_logo.png'],
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "새로핌:On",
+    statusBarStyle: 'default',
+    title: '새로핌:On',
     startupImage: [
       {
         url: '/ios/splash-2048x2732.png',
-        media: '(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
+        media:
+          '(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-1668x2388.png',
-        media: '(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
+        media:
+          '(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-1640x2360.png',
-        media: '(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
+        media:
+          '(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-1536x2048.png',
-        media: '(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
+        media:
+          '(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-1290x2796.png',
-        media: '(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
+        media:
+          '(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-1284x2778.png',
-        media: '(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
+        media:
+          '(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-1179x2556.png',
-        media: '(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
+        media:
+          '(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-1170x2532.png',
-        media: '(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
+        media:
+          '(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-1242x2688.png',
-        media: '(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
+        media:
+          '(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-1125x2436.png',
-        media: '(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
+        media:
+          '(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-828x1792.png',
-        media: '(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
+        media:
+          '(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-1242x2208.png',
-        media: '(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
+        media:
+          '(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-750x1334.png',
-        media: '(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
+        media:
+          '(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
       },
       {
         url: '/ios/splash-640x1136.png',
-        media: '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
+        media:
+          '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)',
       },
     ],
   },
 };
-
-import SplashScreen from "@/components/layout/SplashScreen";
 
 export default function RootLayout({
   children,
@@ -116,13 +133,11 @@ export default function RootLayout({
         />
       </head>
       <body
-        className="antialiased bg-[var(--color-background-primary)] text-[var(--color-text-primary)]"
+        className="bg-[var(--color-background-primary)] text-[var(--color-text-primary)] antialiased"
         suppressHydrationWarning
       >
         <SplashScreen />
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
         <Analytics />
         <SpeedInsights />
       </body>

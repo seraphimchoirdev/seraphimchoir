@@ -64,7 +64,7 @@ function sanitizeObject(obj: any, depth = 0): any {
 
   // 배열 처리
   if (Array.isArray(obj)) {
-    return obj.map(item => sanitizeObject(item, depth + 1));
+    return obj.map((item) => sanitizeObject(item, depth + 1));
   }
 
   // 객체가 아닌 경우
@@ -103,9 +103,7 @@ function sanitizeObject(obj: any, depth = 0): any {
     const lowerKey = key.toLowerCase();
 
     // 민감한 필드 체크
-    const isSensitive = SENSITIVE_FIELDS.some(field =>
-      lowerKey.includes(field)
-    );
+    const isSensitive = SENSITIVE_FIELDS.some((field) => lowerKey.includes(field));
 
     if (isSensitive) {
       sanitized[key] = '[REDACTED]';
@@ -199,9 +197,7 @@ export function sanitizeSentryEvent(event: Sentry.Event): Sentry.Event | null {
     const sanitizedEnv: Record<string, string> = {};
 
     for (const [key, value] of Object.entries(event.contexts.runtime.env)) {
-      const shouldRedact = ENV_VAR_PATTERNS.some(pattern =>
-        pattern.test(key)
-      );
+      const shouldRedact = ENV_VAR_PATTERNS.some((pattern) => pattern.test(key));
 
       if (shouldRedact) {
         sanitizedEnv[key] = '[REDACTED]';
@@ -215,24 +211,24 @@ export function sanitizeSentryEvent(event: Sentry.Event): Sentry.Event | null {
 
   // Breadcrumbs sanitization
   if (event.breadcrumbs) {
-    event.breadcrumbs = event.breadcrumbs.map(breadcrumb => ({
+    event.breadcrumbs = event.breadcrumbs.map((breadcrumb) => ({
       ...breadcrumb,
       data: breadcrumb.data ? sanitizeObject(breadcrumb.data) : undefined,
-      message: breadcrumb.message ?
-        breadcrumb.message.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '[EMAIL]') :
-        breadcrumb.message,
+      message: breadcrumb.message
+        ? breadcrumb.message.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '[EMAIL]')
+        : breadcrumb.message,
     }));
   }
 
   // Exception values sanitization
   if (event.exception?.values) {
-    event.exception.values = event.exception.values.map(exception => ({
+    event.exception.values = event.exception.values.map((exception) => ({
       ...exception,
-      value: exception.value ?
-        exception.value
-          .replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '[EMAIL]')
-          .replace(/\b\d{3,4}\b/g, '[NUM]') // 3-4 digit numbers (potential sensitive IDs)
-          : exception.value,
+      value: exception.value
+        ? exception.value
+            .replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '[EMAIL]')
+            .replace(/\b\d{3,4}\b/g, '[NUM]') // 3-4 digit numbers (potential sensitive IDs)
+        : exception.value,
     }));
   }
 

@@ -3,7 +3,6 @@
  *
  * 프로덕션 환경에서 인라인 스크립트를 안전하게 실행하기 위한 nonce 생성 및 관리
  */
-
 import { headers } from 'next/headers';
 
 /**
@@ -22,6 +21,7 @@ export function generateNonce(): string {
   }
   // Node.js 환경 (fallback)
   else if (typeof require !== 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- Node.js fallback
     const crypto = require('crypto');
     const buffer = crypto.randomBytes(16);
     array.set(buffer);
@@ -44,7 +44,7 @@ export function generateNonce(): string {
  * @param nonce - 프로덕션 환경에서 사용할 nonce (개발 환경에서는 무시)
  * @returns CSP 헤더 문자열
  */
-export function generateCSPHeader(nonce?: string): string {
+export function generateCSPHeader(_nonce?: string): string {
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   // 기본 CSP 지시어
@@ -152,9 +152,11 @@ export function getCSPReportUri(): string | undefined {
     // Sentry DSN이 있으면 Sentry CSP 리포팅 사용
     if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
       // Sentry DSN에서 project ID 추출
-      const match = process.env.NEXT_PUBLIC_SENTRY_DSN.match(/https:\/\/(.+)@(.+)\.ingest\.sentry\.io\/(\d+)/);
+      const match = process.env.NEXT_PUBLIC_SENTRY_DSN.match(
+        /https:\/\/(.+)@(.+)\.ingest\.sentry\.io\/(\d+)/
+      );
       if (match) {
-        const [, publicKey, org, projectId] = match;
+        const [, publicKey, _org, projectId] = match;
         return `https://sentry.io/api/${projectId}/security/?sentry_key=${publicKey}`;
       }
     }

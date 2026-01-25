@@ -1,11 +1,15 @@
 'use client';
 
-import { ReactNode } from 'react';
-import { useArrangementStore, WORKFLOW_STEPS, WorkflowStep } from '@/store/arrangement-store';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Button } from '@/components/ui/button';
 import { Check, ChevronDown, ChevronRight, Lock } from 'lucide-react';
+
+import { ReactNode } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
 import { cn } from '@/lib/utils';
+
+import { WORKFLOW_STEPS, WorkflowStep, useArrangementStore } from '@/store/arrangement-store';
 
 interface WorkflowSectionProps {
   /** 워크플로우 단계 번호 */
@@ -85,14 +89,14 @@ export default function WorkflowSection({
       open={isExpanded}
       onOpenChange={() => handleHeaderClick()}
       className={cn(
-        'border rounded-lg overflow-hidden transition-all duration-200',
+        'overflow-hidden rounded-lg border transition-all duration-200',
         isCurrent
           ? 'border-[var(--color-primary-400)] ring-1 ring-[var(--color-primary-200)]'
           : isCompleted
-          ? 'border-[var(--color-success-300)]'
-          : canAccess
-          ? 'border-[var(--color-border-default)]'
-          : 'border-[var(--color-border-subtle)] opacity-60',
+            ? 'border-[var(--color-success-300)]'
+            : canAccess
+              ? 'border-[var(--color-border-default)]'
+              : 'border-[var(--color-border-subtle)] opacity-60',
         className
       )}
     >
@@ -102,13 +106,13 @@ export default function WorkflowSection({
           type="button"
           disabled={!canAccess}
           className={cn(
-            'w-full flex items-center justify-between px-4 py-3 text-left transition-colors',
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-primary-400)]',
+            'flex w-full items-center justify-between px-4 py-3 text-left transition-colors',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-400)] focus-visible:ring-inset',
             isCurrent
               ? 'bg-[var(--color-primary-50)]'
               : isCompleted
-              ? 'bg-[var(--color-success-50)]'
-              : 'bg-[var(--color-surface)] hover:bg-[var(--color-background-secondary)]',
+                ? 'bg-[var(--color-success-50)]'
+                : 'bg-[var(--color-surface)] hover:bg-[var(--color-background-secondary)]',
             !canAccess && 'cursor-not-allowed'
           )}
           aria-expanded={isExpanded}
@@ -119,22 +123,22 @@ export default function WorkflowSection({
             {/* 단계 아이콘 */}
             <div
               className={cn(
-                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold',
+                'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold',
                 isCompleted
                   ? 'bg-[var(--color-success-500)] text-white'
                   : isCurrent
-                  ? 'bg-[var(--color-primary-500)] text-white'
-                  : canAccess
-                  ? 'bg-[var(--color-background-tertiary)] text-[var(--color-text-secondary)]'
-                  : 'bg-[var(--color-background-secondary)] text-[var(--color-text-quaternary)]'
+                    ? 'bg-[var(--color-primary-500)] text-white'
+                    : canAccess
+                      ? 'bg-[var(--color-background-tertiary)] text-[var(--color-text-secondary)]'
+                      : 'bg-[var(--color-background-secondary)] text-[var(--color-text-quaternary)]'
               )}
             >
               {isCompleted ? (
-                <Check className="w-4 h-4" strokeWidth={3} />
+                <Check className="h-4 w-4" strokeWidth={3} />
               ) : canAccess ? (
                 step
               ) : (
-                <Lock className="w-3 h-3" />
+                <Lock className="h-3 w-3" />
               )}
             </div>
 
@@ -145,10 +149,10 @@ export default function WorkflowSection({
                 isCurrent
                   ? 'text-[var(--color-primary-700)]'
                   : isCompleted
-                  ? 'text-[var(--color-success-700)]'
-                  : canAccess
-                  ? 'text-[var(--color-text-primary)]'
-                  : 'text-[var(--color-text-tertiary)]'
+                    ? 'text-[var(--color-success-700)]'
+                    : canAccess
+                      ? 'text-[var(--color-text-primary)]'
+                      : 'text-[var(--color-text-tertiary)]'
               )}
             >
               {stepMeta.title}
@@ -159,14 +163,14 @@ export default function WorkflowSection({
           <div className="flex items-center gap-2">
             {/* 완료 배지 */}
             {isCompleted && (
-              <span className="text-xs font-medium text-[var(--color-success-600)] bg-[var(--color-success-100)] px-2 py-0.5 rounded-full">
+              <span className="rounded-full bg-[var(--color-success-100)] px-2 py-0.5 text-xs font-medium text-[var(--color-success-600)]">
                 완료
               </span>
             )}
 
             {/* 진행 중 배지 */}
             {isCurrent && !isCompleted && (
-              <span className="text-xs font-medium text-[var(--color-primary-600)] bg-[var(--color-primary-100)] px-2 py-0.5 rounded-full animate-pulse">
+              <span className="animate-pulse rounded-full bg-[var(--color-primary-100)] px-2 py-0.5 text-xs font-medium text-[var(--color-primary-600)]">
                 진행 중
               </span>
             )}
@@ -175,9 +179,9 @@ export default function WorkflowSection({
             {canAccess && (
               <div className="text-[var(--color-text-tertiary)]">
                 {isExpanded ? (
-                  <ChevronDown className="w-4 h-4" />
+                  <ChevronDown className="h-4 w-4" />
                 ) : (
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="h-4 w-4" />
                 )}
               </div>
             )}
@@ -189,23 +193,21 @@ export default function WorkflowSection({
       <CollapsibleContent className="data-[state=open]:animate-slideDown data-[state=closed]:animate-slideUp">
         <div
           className={cn(
-            'p-4 border-t',
+            'border-t p-4',
             isCurrent
               ? 'border-[var(--color-primary-200)] bg-white'
               : isCompleted
-              ? 'border-[var(--color-success-200)]'
-              : 'border-[var(--color-border-subtle)]'
+                ? 'border-[var(--color-success-200)]'
+                : 'border-[var(--color-border-subtle)]'
           )}
         >
           {children}
 
           {/* 단계 완료/다음 버튼 (위자드 모드일 때, hideCompleteButton이 아닐 때) */}
           {isWizardMode && isCurrent && !isCompleted && !hideCompleteButton && (
-            <div className="mt-4 pt-4 border-t border-[var(--color-border-subtle)] flex flex-col items-end gap-2">
+            <div className="mt-4 flex flex-col items-end gap-2 border-t border-[var(--color-border-subtle)] pt-4">
               {canComplete === false && cannotCompleteMessage && (
-                <p className="text-xs text-[var(--color-text-tertiary)]">
-                  {cannotCompleteMessage}
-                </p>
+                <p className="text-xs text-[var(--color-text-tertiary)]">{cannotCompleteMessage}</p>
               )}
               <Button
                 variant="default"
@@ -214,8 +216,7 @@ export default function WorkflowSection({
                 disabled={canComplete === false}
                 className="gap-1"
               >
-                <Check className="w-4 h-4" />
-                이 단계 완료
+                <Check className="h-4 w-4" />이 단계 완료
               </Button>
             </div>
           )}

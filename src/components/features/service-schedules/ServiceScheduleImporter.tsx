@@ -1,21 +1,25 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import {
+  AlertCircle,
+  CheckCircle,
+  Download,
+  FileSpreadsheet,
+  Image as ImageIcon,
+  Loader2,
+  Upload,
+  XCircle,
+} from 'lucide-react';
 import Papa from 'papaparse';
-import { createLogger } from '@/lib/logger';
 
-const logger = createLogger({ prefix: 'ScheduleImporter' });
+import { useRef, useState } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 // xlsx는 동적 임포트로 변경 (312K 번들 분리)
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -24,17 +28,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+
 import { useBulkUpsertServiceSchedules } from '@/hooks/useServiceSchedules';
-import {
-  Upload,
-  Download,
-  FileSpreadsheet,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Loader2,
-  Image as ImageIcon,
-} from 'lucide-react';
+
+import { createLogger } from '@/lib/logger';
+import { showError, showWarning } from '@/lib/toast';
+
+const logger = createLogger({ prefix: 'ScheduleImporter' });
 
 // 파싱된 예배 일정 타입
 interface ParsedSchedule {
@@ -139,13 +139,23 @@ function parseAndValidateData(rawData: Record<string, string>[]): ValidationResu
     const date = normalizeDate(dateRaw.trim());
 
     // 예배 유형
-    const serviceType = (row['service_type'] || row['예배유형'] || row['Service Type'] || '주일 2부 예배').trim();
+    const serviceType = (
+      row['service_type'] ||
+      row['예배유형'] ||
+      row['Service Type'] ||
+      '주일 2부 예배'
+    ).trim();
 
     // 찬양곡명
     const hymnName = (row['hymn_name'] || row['찬양곡명'] || row['Hymn Name'] || '').trim();
 
     // 봉헌송 연주자
-    const offertoryPerformer = (row['offertory_performer'] || row['봉헌송연주자'] || row['Offertory Performer'] || '').trim();
+    const offertoryPerformer = (
+      row['offertory_performer'] ||
+      row['봉헌송연주자'] ||
+      row['Offertory Performer'] ||
+      ''
+    ).trim();
 
     // 비고
     const notes = (row['notes'] || row['비고'] || row['Notes'] || '').trim();
@@ -313,7 +323,7 @@ export default function ServiceScheduleImporter({
       if (result.debug?.wordCount > 0 && (!result.data || result.data.length === 0)) {
         throw new Error(
           `Clova OCR로 ${result.debug.wordCount}개의 텍스트를 추출했지만, 예배 일정 표 형식을 인식하지 못했습니다. ` +
-          `날짜 컬럼이 포함된 표 형식의 이미지를 사용해주세요.`
+            `날짜 컬럼이 포함된 표 형식의 이미지를 사용해주세요.`
         );
       }
 
@@ -326,14 +336,14 @@ export default function ServiceScheduleImporter({
 
     // Vision API 결과를 ParsedSchedule 형식으로 변환
     return (result.data || []).map((schedule: Record<string, unknown>) => ({
-      date: schedule.date as string || '',
-      service_type: schedule.service_type as string || '주일 2부 예배',
-      hymn_name: schedule.hymn_name as string || '',
-      offertory_performer: schedule.offertory_performer as string || '',
-      notes: schedule.notes as string || '',
-      hood_color: schedule.hood_color as string || '',
-      composer: schedule.composer as string || '',
-      music_source: schedule.music_source as string || '',
+      date: (schedule.date as string) || '',
+      service_type: (schedule.service_type as string) || '주일 2부 예배',
+      hymn_name: (schedule.hymn_name as string) || '',
+      offertory_performer: (schedule.offertory_performer as string) || '',
+      notes: (schedule.notes as string) || '',
+      hood_color: (schedule.hood_color as string) || '',
+      composer: (schedule.composer as string) || '',
+      music_source: (schedule.music_source as string) || '',
       valid: !!(schedule.date as string),
       errors: (schedule.date as string) ? [] : ['날짜를 인식할 수 없습니다'],
     }));
@@ -353,10 +363,10 @@ export default function ServiceScheduleImporter({
         data = await parseImageFile(file);
         setParsedData(data);
         setValidationResult({
-          valid: data.every(d => d.valid),
+          valid: data.every((d) => d.valid),
           data,
           errors: data
-            .filter(d => !d.valid)
+            .filter((d) => !d.valid)
             .map((d, idx) => ({ row: idx + 1, message: d.errors.join(', ') })),
         });
       } else {
@@ -367,7 +377,7 @@ export default function ServiceScheduleImporter({
         setValidationResult(validation);
       }
     } catch (error) {
-      alert(`파일 파싱 실패: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError(`파일 파싱 실패: ${error instanceof Error ? error.message : 'Unknown error'}`);
       resetState();
     } finally {
       setIsProcessing(false);
@@ -404,7 +414,7 @@ export default function ServiceScheduleImporter({
       if (supportedExts.includes(ext || '') || isVisionFile(file)) {
         handleFileSelect(file);
       } else {
-        alert('CSV, Excel, 이미지(PNG, JPG) 또는 PDF 파일만 업로드 가능합니다');
+        showWarning('CSV, Excel, 이미지(PNG, JPG) 또는 PDF 파일만 업로드 가능합니다');
       }
     }
   };
@@ -420,7 +430,7 @@ export default function ServiceScheduleImporter({
 
     const validData = parsedData.filter((d) => d.valid);
     if (validData.length === 0) {
-      alert('업로드할 유효한 데이터가 없습니다.');
+      showWarning('업로드할 유효한 데이터가 없습니다.');
       return;
     }
 
@@ -483,7 +493,7 @@ export default function ServiceScheduleImporter({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5" />
@@ -498,7 +508,7 @@ export default function ServiceScheduleImporter({
               <CardTitle className="text-base">1. 템플릿 다운로드</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-[var(--color-text-secondary)] mb-3">
+              <p className="mb-3 text-sm text-[var(--color-text-secondary)]">
                 예시가 포함된 CSV 템플릿을 다운로드하여 양식에 맞게 데이터를 입력하세요.
               </p>
               <Button variant="outline" onClick={handleDownloadTemplate} className="gap-2">
@@ -526,31 +536,31 @@ export default function ServiceScheduleImporter({
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`
-                  border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer
-                  ${isDragging
+                className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+                  isDragging
                     ? 'border-[var(--color-primary-500)] bg-[var(--color-primary-50)]'
                     : 'border-[var(--color-border-default)] bg-[var(--color-background-secondary)]'
-                  }
-                `}
+                } `}
                 onClick={handleButtonClick}
               >
-                <div className="flex justify-center gap-3 mb-3">
+                <div className="mb-3 flex justify-center gap-3">
                   <Upload className="h-10 w-10 text-[var(--color-text-tertiary)]" />
                   <ImageIcon className="h-10 w-10 text-[var(--color-text-tertiary)]" />
                 </div>
-                <p className="text-sm font-medium text-[var(--color-text-primary)] mb-1">
+                <p className="mb-1 text-sm font-medium text-[var(--color-text-primary)]">
                   파일을 드래그하거나 클릭하여 선택
                 </p>
                 <p className="text-xs text-[var(--color-text-tertiary)]">
-                  CSV, Excel, <span className="text-[var(--color-primary-600)]">이미지</span>(PNG, JPG), <span className="text-[var(--color-primary-600)]">PDF</span> 지원
+                  CSV, Excel, <span className="text-[var(--color-primary-600)]">이미지</span>(PNG,
+                  JPG), <span className="text-[var(--color-primary-600)]">PDF</span> 지원
                 </p>
               </div>
 
               {/* Clova OCR 안내 */}
-              <div className="mt-4 p-3 bg-[var(--color-background-secondary)] rounded-lg border border-[var(--color-border-default)]">
+              <div className="mt-4 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-background-secondary)] p-3">
                 <p className="text-sm text-[var(--color-text-secondary)]">
-                  <span className="font-medium text-[var(--color-text-primary)]">Clova OCR</span>을 사용하여 이미지/PDF에서 텍스트를 추출합니다.
+                  <span className="font-medium text-[var(--color-text-primary)]">Clova OCR</span>을
+                  사용하여 이미지/PDF에서 텍스트를 추출합니다.
                   <Badge variant="secondary" className="ml-2 text-xs">
                     한글 최적화
                   </Badge>
@@ -558,9 +568,10 @@ export default function ServiceScheduleImporter({
               </div>
 
               {selectedFile && (
-                <div className="mt-3 p-3 bg-[var(--color-primary-50)] border border-[var(--color-primary-200)] rounded-md">
+                <div className="mt-3 rounded-md border border-[var(--color-primary-200)] bg-[var(--color-primary-50)] p-3">
                   <p className="text-sm text-[var(--color-primary-700)]">
-                    선택된 파일: <strong>{selectedFile.name}</strong> ({(selectedFile.size / 1024).toFixed(2)} KB)
+                    선택된 파일: <strong>{selectedFile.name}</strong> (
+                    {(selectedFile.size / 1024).toFixed(2)} KB)
                   </p>
                 </div>
               )}
@@ -571,10 +582,13 @@ export default function ServiceScheduleImporter({
           {parsedData.length > 0 && validationResult && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center justify-between">
+                <CardTitle className="flex items-center justify-between text-base">
                   <span>3. 데이터 미리보기</span>
                   <div className="flex gap-2">
-                    <Badge variant={validationResult.valid ? 'default' : 'secondary'} className="gap-1">
+                    <Badge
+                      variant={validationResult.valid ? 'default' : 'secondary'}
+                      className="gap-1"
+                    >
                       {validationResult.valid ? (
                         <CheckCircle className="h-3 w-3" />
                       ) : (
@@ -597,10 +611,12 @@ export default function ServiceScheduleImporter({
                   <Alert variant="error" className="mb-4">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      <p className="font-medium mb-1">오류 목록:</p>
-                      <ul className="list-disc list-inside text-sm max-h-24 overflow-y-auto">
+                      <p className="mb-1 font-medium">오류 목록:</p>
+                      <ul className="max-h-24 list-inside list-disc overflow-y-auto text-sm">
                         {validationResult.errors.slice(0, 5).map((error, idx) => (
-                          <li key={idx}>행 {error.row}: {error.message}</li>
+                          <li key={idx}>
+                            행 {error.row}: {error.message}
+                          </li>
                         ))}
                         {validationResult.errors.length > 5 && (
                           <li className="text-[var(--color-text-tertiary)]">
@@ -613,7 +629,7 @@ export default function ServiceScheduleImporter({
                 )}
 
                 {/* 테이블 */}
-                <div className="border rounded-lg overflow-hidden max-h-64 overflow-y-auto">
+                <div className="max-h-64 overflow-hidden overflow-y-auto rounded-lg border">
                   <Table>
                     <TableHeader className="sticky top-0 bg-[var(--color-surface)]">
                       <TableRow>
@@ -640,26 +656,40 @@ export default function ServiceScheduleImporter({
                               <XCircle className="h-4 w-4 text-[var(--color-error-600)]" />
                             )}
                           </TableCell>
-                          <TableCell className="font-medium whitespace-nowrap">{item.date}</TableCell>
+                          <TableCell className="font-medium whitespace-nowrap">
+                            {item.date}
+                          </TableCell>
                           <TableCell>
                             {item.hood_color ? (
                               <Badge variant="outline" className="text-xs">
                                 {item.hood_color}
                               </Badge>
-                            ) : '-'}
+                            ) : (
+                              '-'
+                            )}
                           </TableCell>
-                          <TableCell className="max-w-24 truncate">{item.hymn_name || '-'}</TableCell>
-                          <TableCell className="max-w-20 truncate text-xs">{item.composer || '-'}</TableCell>
-                          <TableCell className="max-w-20 truncate text-xs">{item.music_source || '-'}</TableCell>
-                          <TableCell className="max-w-20 truncate text-xs">{item.offertory_performer || '-'}</TableCell>
-                          <TableCell className="max-w-20 truncate text-xs">{item.notes || '-'}</TableCell>
+                          <TableCell className="max-w-24 truncate">
+                            {item.hymn_name || '-'}
+                          </TableCell>
+                          <TableCell className="max-w-20 truncate text-xs">
+                            {item.composer || '-'}
+                          </TableCell>
+                          <TableCell className="max-w-20 truncate text-xs">
+                            {item.music_source || '-'}
+                          </TableCell>
+                          <TableCell className="max-w-20 truncate text-xs">
+                            {item.offertory_performer || '-'}
+                          </TableCell>
+                          <TableCell className="max-w-20 truncate text-xs">
+                            {item.notes || '-'}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </div>
                 {parsedData.length > 50 && (
-                  <p className="text-center text-sm text-[var(--color-text-tertiary)] mt-2">
+                  <p className="mt-2 text-center text-sm text-[var(--color-text-tertiary)]">
                     ... 외 {parsedData.length - 50}건 (처음 50건만 표시)
                   </p>
                 )}
@@ -680,10 +710,11 @@ export default function ServiceScheduleImporter({
                   {uploadResult.success ? '업로드 완료!' : '업로드 실패'}
                 </p>
                 <p className="text-sm">
-                  전체: {uploadResult.total}건 / 성공: {uploadResult.succeeded}건 / 실패: {uploadResult.failed}건
+                  전체: {uploadResult.total}건 / 성공: {uploadResult.succeeded}건 / 실패:{' '}
+                  {uploadResult.failed}건
                 </p>
                 {uploadResult.error && (
-                  <p className="text-sm text-[var(--color-error-600)] mt-1">{uploadResult.error}</p>
+                  <p className="mt-1 text-sm text-[var(--color-error-600)]">{uploadResult.error}</p>
                 )}
               </AlertDescription>
             </Alert>

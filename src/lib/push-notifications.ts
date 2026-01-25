@@ -66,7 +66,7 @@ export async function requestFCMToken(): Promise<string | null> {
  * @returns 구독 해제 함수
  */
 export function onForegroundMessage(
-  callback: (payload: PushNotificationPayload) => void
+  _callback: (payload: PushNotificationPayload) => void
 ): () => void {
   // FCM 서비스 세팅 후 주석 해제
 
@@ -100,10 +100,7 @@ export function onForegroundMessage(
  * @param token FCM 토큰
  * @param userId 사용자 ID (선택)
  */
-export async function saveTokenToServer(
-  token: string,
-  userId?: string
-): Promise<boolean> {
+export async function saveTokenToServer(token: string, userId?: string): Promise<boolean> {
   // TODO: Supabase에 토큰 저장 구현
   // 필요한 테이블 스키마:
   // CREATE TABLE push_subscriptions (
@@ -139,11 +136,7 @@ export function isPushSupported(): boolean {
     return false;
   }
 
-  return (
-    'Notification' in window &&
-    'serviceWorker' in navigator &&
-    'PushManager' in window
-  );
+  return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
 }
 
 /**
@@ -180,8 +173,7 @@ export function isIOSPushSupported(): boolean {
 
   // PWA 모드 확인
   const isStandalone =
-    (window.navigator as Navigator & { standalone?: boolean }).standalone ===
-      true ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true ||
     window.matchMedia('(display-mode: standalone)').matches;
 
   return version >= 16 && isStandalone;

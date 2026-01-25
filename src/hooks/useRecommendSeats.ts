@@ -3,6 +3,7 @@
  * Python ML 서비스와 연동하여 자동 추천 수행
  */
 import { useMutation } from '@tanstack/react-query';
+
 import { GridLayout } from '@/types/grid';
 
 interface RecommendSeatsParams {
@@ -59,16 +60,18 @@ export function useRecommendSeats() {
       const response = await fetch(`/api/arrangements/${arrangementId}/recommend`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          gridLayout: gridLayout ? {
-            rows: gridLayout.rows,
-            rowCapacities: gridLayout.rowCapacities,
-            zigzagPattern: gridLayout.zigzagPattern
-          } : undefined,
+          gridLayout: gridLayout
+            ? {
+                rows: gridLayout.rows,
+                rowCapacities: gridLayout.rowCapacities,
+                zigzagPattern: gridLayout.zigzagPattern,
+              }
+            : undefined,
           preserveGridLayout,
-        })
+        }),
       });
 
       if (!response.ok) {
@@ -79,6 +82,6 @@ export function useRecommendSeats() {
       }
 
       return response.json();
-    }
+    },
   });
 }

@@ -1,4 +1,5 @@
-import type { User, Session } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
+
 import type { Tables } from '@/types/database.types';
 
 /**
@@ -116,13 +117,13 @@ export interface RolePermissionSet {
   // 출석 관리
   canManageAttendance: boolean;
   canManageOwnAttendance: boolean;
-  partRestricted: boolean;  // 자기 파트만 관리 가능 여부
+  partRestricted: boolean; // 자기 파트만 관리 가능 여부
 
   // 자리배치 관리
   canCreateArrangements: boolean;
   canEditArrangements: boolean;
   canDeleteArrangements: boolean;
-  canEmergencyEditArrangements: boolean;  // 공유됨 상태에서 긴급수정
+  canEmergencyEditArrangements: boolean; // 공유됨 상태에서 긴급수정
   canViewArrangements: boolean;
 
   // 문서 관리
@@ -154,7 +155,7 @@ export const RolePermissions: Record<UserRole, RolePermissionSet> = {
     canViewArrangements: true,
     canManageDocuments: true,
     canViewDocuments: true,
-    canViewConductorNotes: false,  // 지휘자 메모는 CONDUCTOR만 접근 가능
+    canViewConductorNotes: false, // 지휘자 메모는 CONDUCTOR만 접근 가능
   },
   CONDUCTOR: {
     canManageUsers: false,
@@ -188,7 +189,7 @@ export const RolePermissions: Record<UserRole, RolePermissionSet> = {
     canCreateArrangements: false,
     canEditArrangements: false,
     canDeleteArrangements: false,
-    canEmergencyEditArrangements: true,  // 공유됨 상태에서만 긴급수정 가능
+    canEmergencyEditArrangements: true, // 공유됨 상태에서만 긴급수정 가능
     canViewArrangements: true,
     canManageDocuments: true,
     canViewDocuments: true,
@@ -218,11 +219,11 @@ export const RolePermissions: Record<UserRole, RolePermissionSet> = {
     canManageRoles: false,
     canApproveLinks: false,
     canAccessAdmin: false,
-    canManageMembers: true,  // 대원 등록/수정 가능 (삭제는 별도 권한 필요)
+    canManageMembers: true, // 대원 등록/수정 가능 (삭제는 별도 권한 필요)
     canViewMembers: true,
     canManageAttendance: true,
     canManageOwnAttendance: true,
-    partRestricted: true,  // 자기 파트만
+    partRestricted: true, // 자기 파트만
     canCreateArrangements: false,
     canEditArrangements: false,
     canDeleteArrangements: false,
@@ -238,15 +239,15 @@ export const RolePermissions: Record<UserRole, RolePermissionSet> = {
     canApproveLinks: false,
     canAccessAdmin: false,
     canManageMembers: false,
-    canViewMembers: false,  // 다른 대원 정보 조회 불가
+    canViewMembers: false, // 다른 대원 정보 조회 불가
     canManageAttendance: false,
-    canManageOwnAttendance: true,  // 본인 출석만
+    canManageOwnAttendance: true, // 본인 출석만
     partRestricted: true,
     canCreateArrangements: false,
     canEditArrangements: false,
     canDeleteArrangements: false,
     canEmergencyEditArrangements: false,
-    canViewArrangements: true,  // 조회만 가능
+    canViewArrangements: true, // 조회만 가능
     canManageDocuments: false,
     canViewDocuments: false,
     canViewConductorNotes: false,

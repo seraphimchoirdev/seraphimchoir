@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+
+import { type NextRequest, NextResponse } from 'next/server';
 
 /**
  * Supabase 미들웨어 클라이언트
@@ -49,9 +50,7 @@ export async function updateSession(request: NextRequest) {
     '/member-link',
     '/admin',
   ];
-  const isProtectedPath = protectedPaths.some(path =>
-    request.nextUrl.pathname.startsWith(path)
-  );
+  const isProtectedPath = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 
   if (!user && isProtectedPath) {
     const url = request.nextUrl.clone();
@@ -61,9 +60,7 @@ export async function updateSession(request: NextRequest) {
 
   // 로그인한 사용자가 로그인/회원가입 페이지 접근 시 리다이렉트
   const authPaths = ['/login', '/signup'];
-  const isAuthPath = authPaths.some(path =>
-    request.nextUrl.pathname.startsWith(path)
-  );
+  const isAuthPath = authPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 
   if (user && isAuthPath) {
     const url = request.nextUrl.clone();

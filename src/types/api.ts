@@ -26,5 +26,11 @@ export interface ApiResponse<T> {
 }
 
 // 정렬 옵션
-export type SortByField = 'name' | 'part' | 'experience' | 'createdAt' | 'lastServiceDate' | 'lastPracticeDate';
+export type SortByField =
+  | 'name'
+  | 'part'
+  | 'experience'
+  | 'createdAt'
+  | 'lastServiceDate'
+  | 'lastPracticeDate';
 export type SortOrder = 'asc' | 'desc';

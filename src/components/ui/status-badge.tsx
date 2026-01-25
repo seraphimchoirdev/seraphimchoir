@@ -1,6 +1,8 @@
+import { type VariantProps, cva } from 'class-variance-authority';
+import { CheckCircle, Clock, HelpCircle, XCircle } from 'lucide-react';
+
 import * as React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { CheckCircle, XCircle, Clock, HelpCircle } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 
 const statusBadgeVariants = cva(
@@ -24,8 +26,7 @@ const statusBadgeVariants = cva(
 );
 
 export interface StatusBadgeProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof statusBadgeVariants> {
+  extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof statusBadgeVariants> {
   showIcon?: boolean;
 }
 

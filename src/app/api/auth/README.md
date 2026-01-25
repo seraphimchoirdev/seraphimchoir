@@ -11,6 +11,7 @@
 **Endpoint:** `POST /api/auth/signup`
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -20,6 +21,7 @@
 ```
 
 **Response (201 Created):**
+
 ```json
 {
   "user": {
@@ -37,6 +39,7 @@
 ```
 
 **Error Responses:**
+
 - `400 Bad Request`: 입력값 검증 실패
 - `409 Conflict`: 이미 가입된 이메일
 - `500 Internal Server Error`: 서버 오류
@@ -50,6 +53,7 @@
 **Endpoint:** `POST /api/auth/login`
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -58,6 +62,7 @@
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "user": {
@@ -82,6 +87,7 @@
 ```
 
 **Error Responses:**
+
 - `400 Bad Request`: 입력값 검증 실패
 - `401 Unauthorized`: 이메일 또는 비밀번호 불일치
 - `500 Internal Server Error`: 서버 오류
@@ -95,11 +101,13 @@
 **Endpoint:** `POST /api/auth/logout`
 
 **Headers:**
+
 ```
 Cookie: sb-<project-ref>-auth-token=<token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "message": "로그아웃되었습니다."
@@ -107,6 +115,7 @@ Cookie: sb-<project-ref>-auth-token=<token>
 ```
 
 **Error Responses:**
+
 - `401 Unauthorized`: 로그인 상태가 아님
 - `500 Internal Server Error`: 서버 오류
 
@@ -119,11 +128,13 @@ Cookie: sb-<project-ref>-auth-token=<token>
 **Endpoint:** `GET /api/auth/me`
 
 **Headers:**
+
 ```
 Cookie: sb-<project-ref>-auth-token=<token>
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "user": {
@@ -143,6 +154,7 @@ Cookie: sb-<project-ref>-auth-token=<token>
 ```
 
 **Error Responses:**
+
 - `401 Unauthorized`: 인증되지 않은 사용자
 - `404 Not Found`: 프로필을 찾을 수 없음
 - `500 Internal Server Error`: 서버 오류
@@ -156,11 +168,13 @@ Cookie: sb-<project-ref>-auth-token=<token>
 **Endpoint:** `PATCH /api/auth/roles`
 
 **Headers:**
+
 ```
 Cookie: sb-<project-ref>-auth-token=<token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "userId": "target-user-uuid",
@@ -169,12 +183,14 @@ Cookie: sb-<project-ref>-auth-token=<token>
 ```
 
 **Valid Roles:**
+
 - `ADMIN`: 관리자 (모든 권한)
 - `CONDUCTOR`: 지휘자 (자리배치 생성/수정)
 - `MANAGER`: 매니저 (인원 관리)
 - `PART_LEADER`: 파트 리더 (파트별 출석 관리)
 
 **Response (200 OK):**
+
 ```json
 {
   "profile": {
@@ -189,6 +205,7 @@ Cookie: sb-<project-ref>-auth-token=<token>
 ```
 
 **Error Responses:**
+
 - `400 Bad Request`: 입력값 검증 실패 또는 자기 자신의 역할 변경 시도
 - `401 Unauthorized`: 인증되지 않은 사용자
 - `403 Forbidden`: ADMIN 권한 없음
@@ -260,13 +277,13 @@ await fetch('/api/auth/logout', { method: 'POST' });
 
 ## 에러 코드 정리
 
-| Status Code | 의미 | 사용 케이스 |
-|------------|------|------------|
-| 200 | OK | 성공 (조회, 로그인, 로그아웃, 역할 변경) |
-| 201 | Created | 성공 (회원가입) |
-| 400 | Bad Request | 입력값 검증 실패 |
-| 401 | Unauthorized | 인증 실패 또는 인증 필요 |
-| 403 | Forbidden | 권한 부족 |
-| 404 | Not Found | 리소스를 찾을 수 없음 |
-| 409 | Conflict | 중복된 리소스 (이미 가입된 이메일) |
-| 500 | Internal Server Error | 서버 오류 |
+| Status Code | 의미                  | 사용 케이스                              |
+| ----------- | --------------------- | ---------------------------------------- |
+| 200         | OK                    | 성공 (조회, 로그인, 로그아웃, 역할 변경) |
+| 201         | Created               | 성공 (회원가입)                          |
+| 400         | Bad Request           | 입력값 검증 실패                         |
+| 401         | Unauthorized          | 인증 실패 또는 인증 필요                 |
+| 403         | Forbidden             | 권한 부족                                |
+| 404         | Not Found             | 리소스를 찾을 수 없음                    |
+| 409         | Conflict              | 중복된 리소스 (이미 가입된 이메일)       |
+| 500         | Internal Server Error | 서버 오류                                |

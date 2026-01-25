@@ -4,8 +4,9 @@
  * - 출석 기록이 없는 날짜는 미등단으로 처리
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'AttendanceStatsMembers' });
 
@@ -13,12 +14,12 @@ export interface MemberAttendanceStats {
   memberId: string;
   memberName: string;
   part: 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS' | 'SPECIAL';
-  totalRecords: number;      // 실제 기록 수
-  expectedRecords: number;   // 예상 기록 수 (총 예배 횟수)
-  availableCount: number;    // 등단 횟수
-  unavailableCount: number;  // 미등단 횟수 (기록된 미등단 + 누락된 기록)
-  missingRecords: number;    // 누락된 기록 수
-  attendanceRate: number;    // 출석률 (등단 / 총 예배 횟수)
+  totalRecords: number; // 실제 기록 수
+  expectedRecords: number; // 예상 기록 수 (총 예배 횟수)
+  availableCount: number; // 등단 횟수
+  unavailableCount: number; // 미등단 횟수 (기록된 미등단 + 누락된 기록)
+  missingRecords: number; // 누락된 기록 수
+  attendanceRate: number; // 출석률 (등단 / 총 예배 횟수)
 }
 
 export interface MemberAttendanceStatsResponse {
@@ -26,7 +27,7 @@ export interface MemberAttendanceStatsResponse {
   period: {
     startDate: string;
     endDate: string;
-    totalServiceDates: number;  // 해당 기간 총 예배 횟수
+    totalServiceDates: number; // 해당 기간 총 예배 횟수
   };
   summary: {
     totalMembers: number;
@@ -66,10 +67,7 @@ export async function GET(request: NextRequest) {
     const order = searchParams.get('order') || 'desc';
 
     if (!startDate || !endDate) {
-      return NextResponse.json(
-        { error: '시작 날짜와 종료 날짜는 필수입니다' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '시작 날짜와 종료 날짜는 필수입니다' }, { status: 400 });
     }
 
     // 1. 모든 정대원 목록 조회 (등단자만 - 지휘자/반주자 제외)
@@ -87,10 +85,7 @@ export async function GET(request: NextRequest) {
 
     if (membersError) {
       logger.error('Members query error:', membersError);
-      return NextResponse.json(
-        { error: '대원 목록을 불러오는데 실패했습니다' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: '대원 목록을 불러오는데 실패했습니다' }, { status: 500 });
     }
 
     // 2. 해당 기간의 출석 데이터 조회 (페이지네이션으로 모든 데이터 가져오기)
@@ -143,7 +138,9 @@ export async function GET(request: NextRequest) {
       if (!attendanceMap.has(attendance.member_id)) {
         attendanceMap.set(attendance.member_id, new Map());
       }
-      attendanceMap.get(attendance.member_id)!.set(attendance.date, attendance.is_service_available);
+      attendanceMap
+        .get(attendance.member_id)!
+        .set(attendance.date, attendance.is_service_available);
     }
 
     // 5. 대원별 통계 계산
@@ -174,9 +171,10 @@ export async function GET(request: NextRequest) {
       const unavailableCount = recordedUnavailableCount + missingRecords;
 
       // 출석률 계산 (총 예배 횟수 기준)
-      const attendanceRate = totalServiceDates > 0
-        ? Math.round((availableCount / totalServiceDates) * 100 * 100) / 100
-        : 0;
+      const attendanceRate =
+        totalServiceDates > 0
+          ? Math.round((availableCount / totalServiceDates) * 100 * 100) / 100
+          : 0;
 
       memberStats.push({
         memberId: member.id,
@@ -213,11 +211,12 @@ export async function GET(request: NextRequest) {
 
     // 7. 요약 통계 계산
     const totalMembers = memberStats.length;
-    const averageAttendanceRate = totalMembers > 0
-      ? Math.round(
-          (memberStats.reduce((sum, m) => sum + m.attendanceRate, 0) / totalMembers) * 100
-        ) / 100
-      : 0;
+    const averageAttendanceRate =
+      totalMembers > 0
+        ? Math.round(
+            (memberStats.reduce((sum, m) => sum + m.attendanceRate, 0) / totalMembers) * 100
+          ) / 100
+        : 0;
 
     const response: MemberAttendanceStatsResponse = {
       members: memberStats,
@@ -235,9 +234,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     logger.error('Member attendance stats error:', error);
-    return NextResponse.json(
-      { error: '대원별 출석 통계 조회에 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '대원별 출석 통계 조회에 실패했습니다' }, { status: 500 });
   }
 }

@@ -1,8 +1,10 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+
+import { NextRequest, NextResponse } from 'next/server';
+
 import { ApiError, handleApiError } from '@/lib/api-error-handler';
 import { logger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
 
 // Part enum validation
 const PartEnum = z.enum(['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL']);
@@ -123,10 +125,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     // 낙관적 잠금을 위한 원자적 업데이트
     // WHERE 절에서 version을 체크하여 경쟁 상태 방지
-    let query = supabase
-      .from('members')
-      .update(dataToUpdate)
-      .eq('id', id);
+    let query = supabase.from('members').update(dataToUpdate).eq('id', id);
 
     // clientVersion이 있으면 WHERE 절에 version 조건 추가 (원자적 체크)
     if (clientVersion !== undefined) {
@@ -159,7 +158,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       throw ApiError.internal('찬양대원 수정에 실패했습니다');
     }
 
-    return NextResponse.json({ data: updatedMember, message: '찬양대원 정보가 성공적으로 수정되었습니다' }, { status: 200 });
+    return NextResponse.json(
+      { data: updatedMember, message: '찬양대원 정보가 성공적으로 수정되었습니다' },
+      { status: 200 }
+    );
   } catch (error) {
     return handleApiError(error, 'PATCH /api/members/[id]');
   }
@@ -172,7 +174,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
  * 권한: MANAGER 이상
  * CASCADE 삭제: attendances, seats 자동 삭제됨
  */
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
     const supabase = await createClient();

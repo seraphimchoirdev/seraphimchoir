@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, createAdminClient } from '@/lib/supabase/server';
+
 import { createLogger } from '@/lib/logger';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'RolesAPI' });
 
@@ -16,10 +17,7 @@ export async function PATCH(request: NextRequest) {
 
     // 입력 검증 - userId는 필수, role/title은 선택
     if (!userId) {
-      return NextResponse.json(
-        { error: 'userId를 입력해주세요.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'userId를 입력해주세요.' }, { status: 400 });
     }
 
     // role 유효성 검증 (role이 제공된 경우에만)
@@ -27,7 +25,7 @@ export async function PATCH(request: NextRequest) {
     if (role && !validRoles.includes(role)) {
       return NextResponse.json(
         {
-          error: `유효하지 않은 역할입니다. 사용 가능한 역할: ${validRoles.join(', ')}`
+          error: `유효하지 않은 역할입니다. 사용 가능한 역할: ${validRoles.join(', ')}`,
         },
         { status: 400 }
       );
@@ -42,10 +40,7 @@ export async function PATCH(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: '인증되지 않은 사용자입니다.' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '인증되지 않은 사용자입니다.' }, { status: 401 });
     }
 
     // 현재 사용자의 프로필 조회 (권한 확인)
@@ -57,18 +52,12 @@ export async function PATCH(request: NextRequest) {
 
     if (currentProfileError || !currentUserProfile) {
       logger.error('Current user profile fetch error:', currentProfileError);
-      return NextResponse.json(
-        { error: '사용자 프로필을 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: '사용자 프로필을 찾을 수 없습니다.' }, { status: 404 });
     }
 
     // ADMIN 권한 확인
     if (currentUserProfile.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'ADMIN 권한이 필요합니다.' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'ADMIN 권한이 필요합니다.' }, { status: 403 });
     }
 
     // 자기 자신의 역할 변경 방지
@@ -91,10 +80,7 @@ export async function PATCH(request: NextRequest) {
 
     if (targetUserError || !targetUser) {
       logger.error('Target user fetch error:', targetUserError);
-      return NextResponse.json(
-        { error: '대상 사용자를 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: '대상 사용자를 찾을 수 없습니다.' }, { status: 404 });
     }
 
     // 업데이트할 필드 구성
@@ -122,10 +108,7 @@ export async function PATCH(request: NextRequest) {
 
     if (updateError) {
       logger.error('Role update error:', updateError);
-      return NextResponse.json(
-        { error: '역할 업데이트 중 오류가 발생했습니다.' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: '역할 업데이트 중 오류가 발생했습니다.' }, { status: 500 });
     }
 
     const roleLabel = role ? `역할: ${role}` : '';
@@ -141,9 +124,6 @@ export async function PATCH(request: NextRequest) {
     );
   } catch (error) {
     logger.error('Update role exception:', error);
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

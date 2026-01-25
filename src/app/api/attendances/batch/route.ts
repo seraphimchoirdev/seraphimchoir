@@ -1,10 +1,13 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import { z } from 'zod';
+
+import { NextRequest, NextResponse } from 'next/server';
+
 import { createLogger } from '@/lib/logger';
-import { isTestAccount, getTestAccountPart } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/server';
+import { getTestAccountPart, isTestAccount } from '@/lib/utils';
+
+import type { Database } from '@/types/database.types';
 
 const logger = createLogger({ prefix: 'AttendancesBatch' });
 
@@ -43,7 +46,7 @@ async function getClosedParts(
     .not('part', 'is', null);
 
   if (!data) return new Set();
-  return new Set(data.map(d => d.part as Part));
+  return new Set(data.map((d) => d.part as Part));
 }
 
 /**
@@ -54,13 +57,10 @@ async function getMemberParts(
   supabase: SupabaseClient<Database>,
   memberIds: string[]
 ): Promise<Map<string, Part>> {
-  const { data } = await supabase
-    .from('members')
-    .select('id, part')
-    .in('id', memberIds);
+  const { data } = await supabase.from('members').select('id, part').in('id', memberIds);
 
   const map = new Map<string, Part>();
-  data?.forEach(m => map.set(m.id, m.part as Part));
+  data?.forEach((m) => map.set(m.id, m.part as Part));
   return map;
 }
 
@@ -72,11 +72,7 @@ async function checkServiceScheduleExists(
   supabase: SupabaseClient<Database>,
   date: string
 ): Promise<boolean> {
-  const { data } = await supabase
-    .from('service_schedules')
-    .select('id')
-    .eq('date', date)
-    .single();
+  const { data } = await supabase.from('service_schedules').select('id').eq('date', date).single();
 
   return data !== null;
 }
@@ -165,10 +161,7 @@ export async function POST(request: NextRequest) {
 
     const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER'];
     if (!profile?.role || !allowedRoles.includes(profile.role)) {
-      return NextResponse.json(
-        { error: '출석 기록 생성 권한이 없습니다' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: '출석 기록 생성 권한이 없습니다' }, { status: 403 });
     }
 
     // 2. PART_LEADER인 경우, members 테이블에서 본인의 파트 확인
@@ -234,14 +227,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: '자리배치표가 이미 생성되어 출석을 수정할 수 없습니다.',
-          hint: '출석 변경이 필요하면 파트장 단톡방에 메시지를 남겨주세요.'
+          hint: '출석 변경이 필요하면 파트장 단톡방에 메시지를 남겨주세요.',
         },
         { status: 403 }
       );
     }
 
     // 6. 파트별 마감 확인 및 필터링 (ADMIN/CONDUCTOR는 제외)
-    const memberIds = validatedData.attendances.map(a => a.member_id);
+    const memberIds = validatedData.attendances.map((a) => a.member_id);
     const memberParts = await getMemberParts(supabase, memberIds);
     let attendancesToSave = validatedData.attendances;
 
@@ -250,7 +243,7 @@ export async function POST(request: NextRequest) {
 
       if (closedParts.size > 0) {
         // 마감된 파트의 대원 필터링
-        attendancesToSave = validatedData.attendances.filter(a => {
+        attendancesToSave = validatedData.attendances.filter((a) => {
           const part = memberParts.get(a.member_id);
           return part && !closedParts.has(part);
         });
@@ -267,7 +260,7 @@ export async function POST(request: NextRequest) {
 
     // 6. PART_LEADER인 경우, 요청된 모든 멤버가 본인 파트인지 검증
     if (leaderPart) {
-      const invalidMembers = attendancesToSave.filter(a => {
+      const invalidMembers = attendancesToSave.filter((a) => {
         const part = memberParts.get(a.member_id);
         return part !== leaderPart;
       });
@@ -329,10 +322,7 @@ export async function POST(request: NextRequest) {
     }
 
     logger.error('Batch attendances POST error:', error);
-    return NextResponse.json(
-      { error: '출석 기록 일괄 생성에 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '출석 기록 일괄 생성에 실패했습니다' }, { status: 500 });
   }
 }
 
@@ -390,24 +380,21 @@ export async function PATCH(request: NextRequest) {
 
     const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER'];
     if (!profile?.role || !allowedRoles.includes(profile.role)) {
-      return NextResponse.json(
-        { error: '출석 기록 수정 권한이 없습니다' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: '출석 기록 수정 권한이 없습니다' }, { status: 403 });
     }
 
     const body = await request.json();
     const validatedData = batchUpdateSchema.parse(body);
 
     // 마감 검증을 위해 기존 출석 레코드 조회
-    const attendanceIds = validatedData.updates.map(u => u.id);
+    const attendanceIds = validatedData.updates.map((u) => u.id);
     const { data: existingAttendances } = await supabase
       .from('attendances')
       .select('id, date')
       .in('id', attendanceIds);
 
     // 각 날짜별 전체 마감 확인
-    const uniqueDates = [...new Set(existingAttendances?.map(a => a.date) || [])];
+    const uniqueDates = [...new Set(existingAttendances?.map((a) => a.date) || [])];
     for (const date of uniqueDates) {
       const isFullyClosed = await checkFullDeadline(supabase, date);
       if (isFullyClosed && !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
@@ -477,9 +464,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     logger.error('Batch attendances PATCH error:', error);
-    return NextResponse.json(
-      { error: '출석 기록 일괄 수정에 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '출석 기록 일괄 수정에 실패했습니다' }, { status: 500 });
   }
 }

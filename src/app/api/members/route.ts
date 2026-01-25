@@ -1,9 +1,12 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import type { PaginatedResponse, PaginationMeta } from '@/types/api';
+
+import { NextRequest, NextResponse } from 'next/server';
+
 import { createLogger } from '@/lib/logger';
 import { sanitizers } from '@/lib/security/input-sanitizer';
+import { createClient } from '@/lib/supabase/server';
+
+import type { PaginatedResponse, PaginationMeta } from '@/types/api';
 
 const logger = createLogger({ prefix: 'MembersAPI' });
 
@@ -22,8 +25,15 @@ const queryParamsSchema = z.object({
   search: z.string().optional().nullish(),
   member_status: MemberStatusEnum.optional().nullish(),
   // 자리배치/출석체크 대상 필터 (true=등단자만, false=비등단자만)
-  is_singer: z.enum(['true', 'false']).transform(v => v === 'true').optional().nullish(),
-  sortBy: z.enum(['name', 'part', 'createdAt', 'lastServiceDate', 'lastPracticeDate']).optional().default('createdAt'),
+  is_singer: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional()
+    .nullish(),
+  sortBy: z
+    .enum(['name', 'part', 'createdAt', 'lastServiceDate', 'lastPracticeDate'])
+    .optional()
+    .default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
   // 장기 미출석 필터 (일수 기준)
   absentDaysService: z.coerce.number().int().min(0).optional().nullish(),
@@ -32,7 +42,8 @@ const queryParamsSchema = z.object({
 
 // Member creation schema (with input sanitization)
 const createMemberSchema = z.object({
-  name: z.string()
+  name: z
+    .string()
     .min(2, '이름은 최소 2자 이상이어야 합니다')
     .max(50, '이름은 최대 50자까지 입력 가능합니다')
     .transform(sanitizers.sanitizeMemberName), // XSS 방어: HTML 태그 제거
@@ -41,19 +52,22 @@ const createMemberSchema = z.object({
   is_singer: z.boolean().default(true), // 등단 여부 (false=지휘자/반주자 등 비등단)
   member_status: MemberStatusEnum.default('NEW'),
   joined_date: z.string().optional(), // YYYY-MM-DD 형식, 미입력 시 오늘 날짜
-  phone_number: z.string()
+  phone_number: z
+    .string()
     .nullable()
     .optional()
-    .transform(v => v ? sanitizers.sanitizePhoneNumber(v) : null), // 전화번호 정규화
-  email: z.string()
+    .transform((v) => (v ? sanitizers.sanitizePhoneNumber(v) : null)), // 전화번호 정규화
+  email: z
+    .string()
     .email('올바른 이메일 형식이 아닙니다')
     .nullable()
     .optional()
-    .transform(v => v ? sanitizers.sanitizeEmail(v) : null), // 이메일 정규화
-  notes: z.string()
+    .transform((v) => (v ? sanitizers.sanitizeEmail(v) : null)), // 이메일 정규화
+  notes: z
+    .string()
     .nullable()
     .optional()
-    .transform(v => v ? sanitizers.sanitizeTextNote(v, 1000) : null), // XSS 방어: HTML 태그 제거, 길이 제한
+    .transform((v) => (v ? sanitizers.sanitizeTextNote(v, 1000) : null)), // XSS 방어: HTML 태그 제거, 길이 제한
 });
 
 /**
@@ -133,9 +147,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Supabase query (members_with_attendance view 사용 - 출석 정보 포함)
-    let query = supabase
-      .from('members_with_attendance')
-      .select('*', { count: 'exact' });
+    let query = supabase.from('members_with_attendance').select('*', { count: 'exact' });
 
     // 파트 필터링
     if (params.part) {
@@ -146,7 +158,7 @@ export async function GET(request: NextRequest) {
     if (params.search) {
       // SQL 와일드카드 문자 이스케이프하여 injection 방지
       const sanitizedSearch = params.search
-        .replace(/[%_\\]/g, '\\$&')  // SQL 와일드카드 및 이스케이프 문자 처리
+        .replace(/[%_\\]/g, '\\$&') // SQL 와일드카드 및 이스케이프 문자 처리
         .trim();
 
       if (sanitizedSearch.length > 0) {
@@ -194,7 +206,10 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       logger.error('Members fetch error:', error);
-      return NextResponse.json({ error: '찬양대원 목록을 불러오는데 실패했습니다' }, { status: 500 });
+      return NextResponse.json(
+        { error: '찬양대원 목록을 불러오는데 실패했습니다' },
+        { status: 500 }
+      );
     }
 
     // members_with_attendance 뷰에서 이미 출석 정보가 포함되어 있음
@@ -233,16 +248,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Rate Limiting: 대량 데이터 생성 방지 (100회/분)
-    const { apiRateLimiter, getClientIp, createRateLimitErrorResponse } = await import('@/lib/security/rate-limiter');
+    const { apiRateLimiter, getClientIp, createRateLimitErrorResponse } =
+      await import('@/lib/security/rate-limiter');
     const ip = getClientIp(request);
     const { success, reset } = await apiRateLimiter.limit(ip);
 
     if (!success) {
       logger.warn(`Rate limit exceeded for member creation from IP: ${ip}`);
-      return NextResponse.json(
-        createRateLimitErrorResponse(reset),
-        { status: 429 }
-      );
+      return NextResponse.json(createRateLimitErrorResponse(reset), { status: 429 });
     }
 
     const supabase = await createClient();
@@ -300,7 +313,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '찬양대원 등록에 실패했습니다' }, { status: 500 });
     }
 
-    return NextResponse.json({ data: newMember, message: '찬양대원이 성공적으로 등록되었습니다' }, { status: 201 });
+    return NextResponse.json(
+      { data: newMember, message: '찬양대원이 성공적으로 등록되었습니다' },
+      { status: 201 }
+    );
   } catch (error) {
     logger.error('POST /api/members error:', error);
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });

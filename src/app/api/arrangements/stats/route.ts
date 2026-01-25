@@ -3,15 +3,17 @@
  * ml_arrangement_history 테이블에서 실제 배치 인원 통계를 조회합니다.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
+
 import type {
+  DailyStageStats,
+  MonthlyTrendStats,
+  Part,
+  PartAverageStats,
   StageStatisticsResponse,
   StageStatsSummary,
-  PartAverageStats,
-  MonthlyTrendStats,
-  DailyStageStats,
-  Part,
 } from '@/types/stage-stats.types';
 
 const logger = createLogger({ prefix: 'ArrangementsStats' });
@@ -52,10 +54,7 @@ export async function GET(request: NextRequest) {
     const serviceType = searchParams.get('service_type');
 
     if (!startDate || !endDate) {
-      return NextResponse.json(
-        { error: '시작 날짜와 종료 날짜는 필수입니다' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '시작 날짜와 종료 날짜는 필수입니다' }, { status: 400 });
     }
 
     // ml_arrangement_history 테이블에서 데이터 조회
@@ -83,10 +82,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       logger.error('ML history query error:', error);
-      return NextResponse.json(
-        { error: `등단 이력 조회 실패: ${error.message}` },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: `등단 이력 조회 실패: ${error.message}` }, { status: 500 });
     }
 
     if (!records || records.length === 0) {
@@ -129,9 +125,7 @@ export async function GET(request: NextRequest) {
 
     const uniqueServiceTypes = [
       ...new Set(
-        (allServiceTypes || [])
-          .map((r) => r.service_type)
-          .filter((st): st is string => st !== null)
+        (allServiceTypes || []).map((r) => r.service_type).filter((st): st is string => st !== null)
       ),
     ].sort();
 
@@ -194,8 +188,7 @@ function calculateStatistics(records: MLHistoryRecord[]): StageStatisticsRespons
   for (const part of ['SOPRANO', 'ALTO', 'TENOR', 'BASS'] as Part[]) {
     partAverages[part] = {
       average: Math.round((partTotals[part] / totalServices) * 10) / 10,
-      percentage:
-        totalPartSum > 0 ? Math.round((partTotals[part] / totalPartSum) * 1000) / 10 : 0,
+      percentage: totalPartSum > 0 ? Math.round((partTotals[part] / totalPartSum) * 1000) / 10 : 0,
       total: partTotals[part],
     };
   }
@@ -214,10 +207,7 @@ function calculateStatistics(records: MLHistoryRecord[]): StageStatisticsRespons
   }
 
   // 월별 추이 계산
-  const monthlyMap = new Map<
-    string,
-    { serviceCount: number; totalMembers: number }
-  >();
+  const monthlyMap = new Map<string, { serviceCount: number; totalMembers: number }>();
 
   for (const record of records) {
     const month = record.date.substring(0, 7); // YYYY-MM

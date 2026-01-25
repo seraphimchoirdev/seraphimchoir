@@ -1,9 +1,11 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
-import { Loader2, Users, UserCheck, Link2, Settings } from 'lucide-react';
+import { Link2, Loader2, UserCheck, Users } from 'lucide-react';
+
 import Link from 'next/link';
+
+import { createClient } from '@/lib/supabase/client';
 
 export default function AdminDashboardPage() {
   const supabase = createClient();
@@ -26,9 +28,7 @@ export default function AdminDashboardPage() {
   const { data: roleStats, isLoading: roleLoading } = useQuery({
     queryKey: ['admin', 'role-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('role');
+      const { data, error } = await supabase.from('user_profiles').select('role');
 
       if (error) throw error;
 
@@ -77,11 +77,9 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto max-w-6xl px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
-          관리자 대시보드
-        </h1>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">관리자 대시보드</h1>
         <p className="mt-2 text-[var(--color-text-secondary)]">
           시스템 현황을 확인하고 관리 작업을 수행합니다.
         </p>
@@ -94,11 +92,11 @@ export default function AdminDashboardPage() {
       ) : (
         <div className="space-y-8">
           {/* 요약 카드 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* 전체 사용자 */}
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-6">
+            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-full bg-[var(--color-primary-50)]">
+                <div className="rounded-full bg-[var(--color-primary-50)] p-3">
                   <Users className="h-6 w-6 text-[var(--color-primary)]" />
                 </div>
                 <div>
@@ -113,19 +111,23 @@ export default function AdminDashboardPage() {
             {/* 대기 중인 연결 요청 */}
             <Link
               href="/admin/member-links"
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-6 hover:shadow-md transition-shadow"
+              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6 transition-shadow hover:shadow-md"
             >
               <div className="flex items-center gap-3">
-                <div className={`p-3 rounded-full ${
-                  (pendingCount || 0) > 0
-                    ? 'bg-[var(--color-warning-50)]'
-                    : 'bg-[var(--color-success-50)]'
-                }`}>
-                  <Link2 className={`h-6 w-6 ${
+                <div
+                  className={`rounded-full p-3 ${
                     (pendingCount || 0) > 0
-                      ? 'text-[var(--color-warning-600)]'
-                      : 'text-[var(--color-success-600)]'
-                  }`} />
+                      ? 'bg-[var(--color-warning-50)]'
+                      : 'bg-[var(--color-success-50)]'
+                  }`}
+                >
+                  <Link2
+                    className={`h-6 w-6 ${
+                      (pendingCount || 0) > 0
+                        ? 'text-[var(--color-warning-600)]'
+                        : 'text-[var(--color-success-600)]'
+                    }`}
+                  />
                 </div>
                 <div>
                   <p className="text-sm text-[var(--color-text-secondary)]">대기 중인 연결 요청</p>
@@ -139,10 +141,10 @@ export default function AdminDashboardPage() {
             {/* 역할 할당된 사용자 */}
             <Link
               href="/admin/users"
-              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-6 hover:shadow-md transition-shadow"
+              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6 transition-shadow hover:shadow-md"
             >
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-full bg-[var(--color-success-50)]">
+                <div className="rounded-full bg-[var(--color-success-50)] p-3">
                   <UserCheck className="h-6 w-6 text-[var(--color-success-600)]" />
                 </div>
                 <div>
@@ -156,19 +158,17 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* 역할별 통계 */}
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+            <h2 className="mb-4 text-lg font-semibold text-[var(--color-text-primary)]">
               역할별 사용자 현황
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
               {Object.entries(roleStats || {}).map(([role, count]) => (
                 <div
                   key={role}
-                  className="text-center p-4 rounded-lg bg-[var(--color-background-secondary)]"
+                  className="rounded-lg bg-[var(--color-background-secondary)] p-4 text-center"
                 >
-                  <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-                    {count}
-                  </p>
+                  <p className="text-2xl font-bold text-[var(--color-text-primary)]">{count}</p>
                   <p className="text-sm text-[var(--color-text-secondary)]">
                     {roleLabels[role] || role}
                   </p>
@@ -178,20 +178,18 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* 빠른 메뉴 */}
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+            <h2 className="mb-4 text-lg font-semibold text-[var(--color-text-primary)]">
               빠른 메뉴
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Link
                 href="/admin/users"
-                className="flex items-center gap-4 p-4 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-background-secondary)] transition-colors"
+                className="flex items-center gap-4 rounded-lg border border-[var(--color-border)] p-4 transition-colors hover:bg-[var(--color-background-secondary)]"
               >
                 <Users className="h-8 w-8 text-[var(--color-primary)]" />
                 <div>
-                  <h3 className="font-medium text-[var(--color-text-primary)]">
-                    사용자 관리
-                  </h3>
+                  <h3 className="font-medium text-[var(--color-text-primary)]">사용자 관리</h3>
                   <p className="text-sm text-[var(--color-text-secondary)]">
                     역할 및 직책 설정, 사용자 검색
                   </p>
@@ -199,13 +197,11 @@ export default function AdminDashboardPage() {
               </Link>
               <Link
                 href="/admin/member-links"
-                className="flex items-center gap-4 p-4 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-background-secondary)] transition-colors"
+                className="flex items-center gap-4 rounded-lg border border-[var(--color-border)] p-4 transition-colors hover:bg-[var(--color-background-secondary)]"
               >
                 <Link2 className="h-8 w-8 text-[var(--color-primary)]" />
                 <div>
-                  <h3 className="font-medium text-[var(--color-text-primary)]">
-                    대원 연결 승인
-                  </h3>
+                  <h3 className="font-medium text-[var(--color-text-primary)]">대원 연결 승인</h3>
                   <p className="text-sm text-[var(--color-text-secondary)]">
                     카카오 로그인 사용자의 대원 연결 요청 관리
                   </p>

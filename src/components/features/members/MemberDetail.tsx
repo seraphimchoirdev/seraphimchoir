@@ -1,13 +1,20 @@
 'use client';
 
+import { format } from 'date-fns/format';
+
+import { useState } from 'react';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns/format';
-import { useMember, useDeleteMember } from '@/hooks/useMembers';
-import type { Database } from '@/types/database.types';
-import { useState } from 'react';
-import ConductorNotes from './ConductorNotes';
+
+import { useDeleteMember, useMember } from '@/hooks/useMembers';
+
 import { createLogger } from '@/lib/logger';
+import { showError, showSuccess } from '@/lib/toast';
+
+import type { Database } from '@/types/database.types';
+
+import ConductorNotes from './ConductorNotes';
 
 const logger = createLogger({ prefix: 'MemberDetail' });
 
@@ -45,15 +52,17 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(memberId);
+      showSuccess('대원이 삭제되었습니다.');
       router.push('/management/members');
     } catch (error) {
       logger.error('Delete error:', error);
+      showError('삭제에 실패했습니다.');
     }
   };
 
   if (isLoading) {
     return (
-      <div className="text-center py-12">
+      <div className="py-12 text-center">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
         <p className="mt-2 text-sm text-gray-600">로딩 중...</p>
       </div>
@@ -62,7 +71,7 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
 
   if (error || !member) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
         <p className="text-sm text-red-800">
           {error?.message || '찬양대원 정보를 불러오는데 실패했습니다.'}
         </p>
@@ -73,19 +82,19 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
   return (
     <div className="space-y-6">
       {/* 헤더 */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-start justify-between mb-4">
+      <div className="rounded-lg bg-white p-6 shadow">
+        <div className="mb-4 flex items-start justify-between">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{member.name}</h2>
-            <div className="flex items-center gap-2 mt-2">
-              <span className="px-3 py-1 text-sm font-medium bg-indigo-100 text-indigo-800 rounded">
+            <div className="mt-2 flex items-center gap-2">
+              <span className="rounded bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-800">
                 {PART_LABELS[member.part]}
               </span>
-              <span className="px-3 py-1 text-sm font-medium bg-gray-100 text-gray-800 rounded">
+              <span className="rounded bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">
                 {STATUS_LABELS[member.member_status]}
               </span>
               {member.is_leader && (
-                <span className="px-3 py-1 text-sm font-medium bg-purple-100 text-purple-800 rounded">
+                <span className="rounded bg-purple-100 px-3 py-1 text-sm font-medium text-purple-800">
                   리더
                 </span>
               )}
@@ -94,13 +103,13 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
           <div className="flex gap-2">
             <Link
               href={`/management/members/${member.id}/edit`}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700"
+              className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
             >
               수정
             </Link>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700"
+              className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
             >
               삭제
             </button>
@@ -108,7 +117,7 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
         </div>
 
         {/* 기본 정보 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <h3 className="text-sm font-medium text-gray-500">파트</h3>
             <p className="mt-1 text-base text-gray-900">{PART_LABELS[member.part]}</p>
@@ -133,14 +142,19 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
 
         {/* 휴직 정보 (휴직대원일 때만 표시) */}
         {member.member_status === 'ON_LEAVE' && (
-          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <h3 className="text-sm font-semibold text-amber-800 mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-amber-800">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               휴직 정보
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {member.leave_reason && (
                 <div className="md:col-span-2">
                   <h4 className="text-xs font-medium text-amber-700">휴직 사유</h4>
@@ -177,12 +191,12 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
         {member.notes && (
           <div className="mt-6">
             <h3 className="text-sm font-medium text-gray-500">특이사항</h3>
-            <p className="mt-1 text-base text-gray-900 whitespace-pre-wrap">{member.notes}</p>
+            <p className="mt-1 text-base whitespace-pre-wrap text-gray-900">{member.notes}</p>
           </div>
         )}
 
         {/* 생성/수정 일시 */}
-        <div className="mt-6 pt-6 border-t border-gray-200 text-xs text-gray-500">
+        <div className="mt-6 border-t border-gray-200 pt-6 text-xs text-gray-500">
           <p>생성일: {new Date(member.created_at).toLocaleString('ko-KR')}</p>
           <p>수정일: {new Date(member.updated_at).toLocaleString('ko-KR')}</p>
         </div>
@@ -193,28 +207,28 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
 
       {/* 삭제 확인 모달 */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">찬양대원 삭제</h3>
-            <p className="text-sm text-gray-600 mb-4">
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+          <div className="mx-4 w-full max-w-sm rounded-lg bg-white p-6">
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">찬양대원 삭제</h3>
+            <p className="mb-4 text-sm text-gray-600">
               <strong>{member.name}</strong> 찬양대원을 정말 삭제하시겠습니까?
               <br />
               관련된 모든 출석 기록과 자리배치 정보도 함께 삭제됩니다.
             </p>
             {deleteMutation.error && (
-              <p className="text-sm text-red-600 mb-4">{deleteMutation.error.message}</p>
+              <p className="mb-4 text-sm text-red-600">{deleteMutation.error.message}</p>
             )}
             <div className="flex gap-2">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
+                className="flex-1 rounded bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
                 disabled={deleteMutation.isPending}
               >
                 취소
               </button>
               <button
                 onClick={handleDelete}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
+                className="flex-1 rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
                 disabled={deleteMutation.isPending}
               >
                 {deleteMutation.isPending ? '삭제 중...' : '삭제'}

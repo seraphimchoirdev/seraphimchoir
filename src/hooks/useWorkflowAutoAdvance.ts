@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useArrangementStore, WorkflowStep } from '@/store/arrangement-store';
+
 import { createLogger } from '@/lib/logger';
+
+import { WorkflowStep, useArrangementStore } from '@/store/arrangement-store';
 
 const logger = createLogger({ prefix: 'WorkflowAutoAdvance' });
 
@@ -33,18 +35,9 @@ interface StepCompletionResult {
  * @param totalMembers - 총 멤버 수 (미배치 계산용)
  * @param arrangementStatus - 현재 배치표 상태
  */
-export function useWorkflowAutoAdvance(
-  totalMembers: number,
-  arrangementStatus?: string
-) {
-  const {
-    gridLayout,
-    assignments,
-    workflow,
-    completeStep,
-    goToStep,
-    isStepCompleted,
-  } = useArrangementStore();
+export function useWorkflowAutoAdvance(totalMembers: number, arrangementStatus?: string) {
+  const { gridLayout, assignments, workflow, completeStep, goToStep, isStepCompleted } =
+    useArrangementStore();
 
   // 이전 상태 추적 (불필요한 업데이트 방지)
   const prevStatesRef = useRef<{
@@ -144,7 +137,12 @@ export function useWorkflowAutoAdvance(
       results.push({
         step: 7,
         isCompleted: arrangementStatus === 'SHARED' || arrangementStatus === 'CONFIRMED',
-        reason: arrangementStatus === 'SHARED' ? '공유됨' : arrangementStatus === 'CONFIRMED' ? '확정됨' : '미공유',
+        reason:
+          arrangementStatus === 'SHARED'
+            ? '공유됨'
+            : arrangementStatus === 'CONFIRMED'
+              ? '확정됨'
+              : '미공유',
       });
 
       return results;

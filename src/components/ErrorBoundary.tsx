@@ -1,8 +1,11 @@
 'use client';
 
+import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
+
 import React, { Component, ReactNode } from 'react';
+
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'ErrorBoundary' });
@@ -47,7 +50,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // 에러 로깅 (프로덕션에서는 외부 서비스로 전송 가능)
-    logger.error('Error caught:', { error: error.message, componentStack: errorInfo.componentStack });
+    logger.error('Error caught:', {
+      error: error.message,
+      componentStack: errorInfo.componentStack,
+    });
 
     this.setState({
       error,
@@ -84,9 +90,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
             </div>
 
-            <h1 className="mb-2 text-2xl font-bold text-gray-900">
-              오류가 발생했습니다
-            </h1>
+            <h1 className="mb-2 text-2xl font-bold text-gray-900">오류가 발생했습니다</h1>
 
             <p className="mb-6 text-gray-600">
               페이지를 표시하는 중 문제가 발생했습니다.
@@ -97,9 +101,7 @@ export class ErrorBoundary extends Component<Props, State> {
             {/* 개발 환경에서만 에러 상세 정보 표시 */}
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <div className="mb-6 rounded-lg bg-gray-100 p-4 text-left">
-                <p className="mb-2 font-mono text-sm text-red-600">
-                  {this.state.error.message}
-                </p>
+                <p className="mb-2 font-mono text-sm text-red-600">{this.state.error.message}</p>
                 {this.state.errorInfo && (
                   <pre className="max-h-32 overflow-auto text-xs text-gray-500">
                     {this.state.errorInfo.componentStack}
@@ -127,10 +129,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 새로고침
               </Button>
 
-              <Button
-                onClick={this.handleGoHome}
-                className="flex items-center gap-2"
-              >
+              <Button onClick={this.handleGoHome} className="flex items-center gap-2">
                 <Home className="h-4 w-4" />
                 홈으로 이동
               </Button>
@@ -160,9 +159,7 @@ export function PageErrorBoundary({ children }: { children: ReactNode }) {
               </div>
             </div>
 
-            <h1 className="mb-2 text-3xl font-bold text-gray-900">
-              페이지 오류
-            </h1>
+            <h1 className="mb-2 text-3xl font-bold text-gray-900">페이지 오류</h1>
 
             <p className="mb-8 text-lg text-gray-600">
               이 페이지를 불러오는 중 오류가 발생했습니다.

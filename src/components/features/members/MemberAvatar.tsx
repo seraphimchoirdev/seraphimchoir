@@ -34,14 +34,7 @@ export default function MemberAvatar({ name, part, size = 'md' }: MemberAvatarPr
 
   return (
     <div
-      className={`
-        ${SIZE_CLASSES[size]}
-        ${PART_AVATAR_COLORS[part]}
-        rounded-full
-        flex items-center justify-center
-        text-white font-semibold
-        shadow-sm
-      `}
+      className={` ${SIZE_CLASSES[size]} ${PART_AVATAR_COLORS[part]} flex items-center justify-center rounded-full font-semibold text-white shadow-sm`}
       aria-label={`${name}의 아바타`}
     >
       {initial}

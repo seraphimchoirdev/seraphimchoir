@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { cn } from '@/lib/utils';
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
@@ -6,7 +7,7 @@ const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableE
     <div className="relative w-full overflow-auto">
       <table
         ref={ref}
-        className={cn('w-full caption-bottom text-sm border-collapse', className)}
+        className={cn('w-full caption-bottom border-collapse text-sm', className)}
         {...props}
       />
     </div>
@@ -20,7 +21,10 @@ const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <thead
     ref={ref}
-    className={cn('bg-[var(--color-background-tertiary)] border-b-2 border-[var(--color-border-default)]', className)}
+    className={cn(
+      'border-b-2 border-[var(--color-border-default)] bg-[var(--color-background-tertiary)]',
+      className
+    )}
     {...props}
   />
 ));
@@ -70,7 +74,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      'h-12 px-4 text-left align-middle font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider text-xs [&:has([role=checkbox])]:pr-0',
+      'h-12 px-4 text-left align-middle text-xs font-semibold tracking-wider text-[var(--color-text-secondary)] uppercase [&:has([role=checkbox])]:pr-0',
       className
     )}
     {...props}

@@ -57,42 +57,37 @@ export interface ExtractedWord {
 /**
  * Google Cloud Vision API로 이미지에서 텍스트 추출
  */
-export async function extractTextFromImage(
-  imageBase64: string
-): Promise<VisionResponse> {
+export async function extractTextFromImage(imageBase64: string): Promise<VisionResponse> {
   const apiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
 
   if (!apiKey) {
     throw new Error('GOOGLE_CLOUD_VISION_API_KEY 환경변수가 설정되지 않았습니다.');
   }
 
-  const response = await fetch(
-    `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        requests: [
-          {
-            image: {
-              content: imageBase64,
-            },
-            features: [
-              {
-                type: 'DOCUMENT_TEXT_DETECTION',
-                maxResults: 1,
-              },
-            ],
-            imageContext: {
-              languageHints: ['ko', 'en'],
-            },
+  const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      requests: [
+        {
+          image: {
+            content: imageBase64,
           },
-        ],
-      }),
-    }
-  );
+          features: [
+            {
+              type: 'DOCUMENT_TEXT_DETECTION',
+              maxResults: 1,
+            },
+          ],
+          imageContext: {
+            languageHints: ['ko', 'en'],
+          },
+        },
+      ],
+    }),
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -111,9 +106,7 @@ export async function extractTextFromImage(
 /**
  * VisionResponse에서 단어별 위치 정보 추출
  */
-export function extractWordsWithPositions(
-  response: VisionResponse
-): ExtractedWord[] {
+export function extractWordsWithPositions(response: VisionResponse): ExtractedWord[] {
   const words: ExtractedWord[] = [];
 
   // textAnnotations 사용 (첫 번째 항목은 전체 텍스트)
@@ -123,8 +116,8 @@ export function extractWordsWithPositions(
     const vertices = annotation.boundingPoly.vertices;
 
     if (vertices.length >= 4) {
-      const xs = vertices.map(v => v.x || 0);
-      const ys = vertices.map(v => v.y || 0);
+      const xs = vertices.map((v) => v.x || 0);
+      const ys = vertices.map((v) => v.y || 0);
 
       const left = Math.min(...xs);
       const right = Math.max(...xs);
@@ -155,9 +148,7 @@ export function calculateDynamicYThreshold(words: ExtractedWord[]): number {
   if (words.length === 0) return 15; // 기본값
 
   // 각 단어의 높이 계산
-  const heights = words
-    .map((w) => w.bottom - w.top)
-    .filter((h) => h > 0 && h < 500); // 비정상적인 값 제외
+  const heights = words.map((w) => w.bottom - w.top).filter((h) => h > 0 && h < 500); // 비정상적인 값 제외
 
   if (heights.length === 0) return 15;
 
@@ -185,10 +176,7 @@ export function calculateDynamicYThreshold(words: ExtractedWord[]): number {
  * yThreshold가 제공되지 않으면 단어 높이 기반으로 동적 계산
  * (Google Vision, Clova OCR 등 다양한 좌표 스케일 지원)
  */
-export function groupWordsIntoRows(
-  words: ExtractedWord[],
-  yThreshold?: number
-): ExtractedWord[][] {
+export function groupWordsIntoRows(words: ExtractedWord[], yThreshold?: number): ExtractedWord[][] {
   if (words.length === 0) return [];
 
   // 동적 임계값 계산 (제공되지 않은 경우)
@@ -239,13 +227,14 @@ export function groupRowIntoColumns(
     const right = columnBoundaries[i + 1];
 
     // 해당 컬럼 범위에 있는 단어들 필터
-    const wordsInColumn = rowWords.filter(
-      w => w.centerX >= left && w.centerX < right
-    );
+    const wordsInColumn = rowWords.filter((w) => w.centerX >= left && w.centerX < right);
 
     // X좌표 순으로 정렬 후 합치기
     wordsInColumn.sort((a, b) => a.centerX - b.centerX);
-    const text = wordsInColumn.map(w => w.text).join(' ').trim();
+    const text = wordsInColumn
+      .map((w) => w.text)
+      .join(' ')
+      .trim();
     columns.push(text);
   }
 

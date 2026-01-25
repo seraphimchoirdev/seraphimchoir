@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { encryptConductorNotes, decryptConductorNotes } from '@/lib/crypto';
+
+import { decryptConductorNotes, encryptConductorNotes } from '@/lib/crypto';
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'ConductorNotesAPI' });
 
@@ -9,10 +10,7 @@ const logger = createLogger({ prefix: 'ConductorNotesAPI' });
  * 지휘자 메모 조회 API
  * 오직 CONDUCTOR만 접근 가능 (ADMIN 포함 다른 역할 접근 불가)
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient();
     const { id } = await params;
@@ -24,10 +22,7 @@ export async function GET(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: '인증이 필요합니다.' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
     }
 
     // 사용자 권한 확인 (오직 CONDUCTOR만 가능)
@@ -38,17 +33,11 @@ export async function GET(
       .single();
 
     if (profileError || !profile) {
-      return NextResponse.json(
-        { error: '사용자 프로필을 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: '사용자 프로필을 찾을 수 없습니다.' }, { status: 404 });
     }
 
     if (profile.role !== 'CONDUCTOR') {
-      return NextResponse.json(
-        { error: '지휘자만 접근할 수 있습니다.' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: '지휘자만 접근할 수 있습니다.' }, { status: 403 });
     }
 
     // 찬양대원 정보 조회 (암호화된 메모 포함)
@@ -59,10 +48,7 @@ export async function GET(
       .single();
 
     if (memberError || !member) {
-      return NextResponse.json(
-        { error: '찬양대원을 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: '찬양대원을 찾을 수 없습니다.' }, { status: 404 });
     }
 
     // 메모가 없으면 빈 문자열 반환
@@ -100,10 +86,7 @@ export async function GET(
     }
   } catch (error) {
     logger.error('지휘자 메모 조회 오류:', error);
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }
 
@@ -111,10 +94,7 @@ export async function GET(
  * 지휘자 메모 업데이트 API
  * 오직 CONDUCTOR만 접근 가능 (ADMIN 포함 다른 역할 접근 불가)
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient();
     const { id } = await params;
@@ -126,10 +106,7 @@ export async function PUT(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: '인증이 필요합니다.' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
     }
 
     // 사용자 권한 확인 (오직 CONDUCTOR만 가능)
@@ -140,17 +117,11 @@ export async function PUT(
       .single();
 
     if (profileError || !profile) {
-      return NextResponse.json(
-        { error: '사용자 프로필을 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: '사용자 프로필을 찾을 수 없습니다.' }, { status: 404 });
     }
 
     if (profile.role !== 'CONDUCTOR') {
-      return NextResponse.json(
-        { error: '지휘자만 접근할 수 있습니다.' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: '지휘자만 접근할 수 있습니다.' }, { status: 403 });
     }
 
     // 요청 본문 파싱
@@ -158,10 +129,7 @@ export async function PUT(
     const { notes } = body;
 
     if (typeof notes !== 'string') {
-      return NextResponse.json(
-        { error: '메모는 문자열이어야 합니다.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '메모는 문자열이어야 합니다.' }, { status: 400 });
     }
 
     // 찬양대원 존재 여부 확인
@@ -172,10 +140,7 @@ export async function PUT(
       .single();
 
     if (memberError || !member) {
-      return NextResponse.json(
-        { error: '찬양대원을 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: '찬양대원을 찾을 수 없습니다.' }, { status: 404 });
     }
 
     // 메모가 비어있으면 NULL로 저장
@@ -191,10 +156,7 @@ export async function PUT(
 
       if (updateError) {
         logger.error('메모 삭제 오류:', updateError);
-        return NextResponse.json(
-          { error: '메모를 삭제할 수 없습니다.' },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: '메모를 삭제할 수 없습니다.' }, { status: 500 });
       }
 
       return NextResponse.json({
@@ -221,10 +183,7 @@ export async function PUT(
 
       if (updateError) {
         logger.error('메모 저장 오류:', updateError);
-        return NextResponse.json(
-          { error: '메모를 저장할 수 없습니다.' },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: '메모를 저장할 수 없습니다.' }, { status: 500 });
       }
 
       return NextResponse.json({
@@ -235,17 +194,11 @@ export async function PUT(
       });
     } catch (encryptError) {
       logger.error('암호화 오류:', encryptError);
-      return NextResponse.json(
-        { error: '메모를 암호화할 수 없습니다.' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: '메모를 암호화할 수 없습니다.' }, { status: 500 });
     }
   } catch (error) {
     logger.error('지휘자 메모 업데이트 오류:', error);
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }
 
@@ -268,10 +221,7 @@ export async function DELETE(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: '인증이 필요합니다.' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
     }
 
     // 사용자 권한 확인 (오직 CONDUCTOR만 가능)
@@ -282,17 +232,11 @@ export async function DELETE(
       .single();
 
     if (profileError || !profile) {
-      return NextResponse.json(
-        { error: '사용자 프로필을 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: '사용자 프로필을 찾을 수 없습니다.' }, { status: 404 });
     }
 
     if (profile.role !== 'CONDUCTOR') {
-      return NextResponse.json(
-        { error: '지휘자만 접근할 수 있습니다.' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: '지휘자만 접근할 수 있습니다.' }, { status: 403 });
     }
 
     // 메모 삭제 (NULL로 설정)
@@ -307,10 +251,7 @@ export async function DELETE(
 
     if (updateError) {
       logger.error('메모 삭제 오류:', updateError);
-      return NextResponse.json(
-        { error: '메모를 삭제할 수 없습니다.' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: '메모를 삭제할 수 없습니다.' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -319,9 +260,6 @@ export async function DELETE(
     });
   } catch (error) {
     logger.error('지휘자 메모 삭제 오류:', error);
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }
