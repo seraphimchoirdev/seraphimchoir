@@ -96,6 +96,7 @@ interface LeaveInfoFormData {
   leave_start_date: string;
   leave_duration_months: number | null;
   expected_return_date: string;
+  showDetails: boolean; // 상세 정보 입력 여부
 }
 
 // 복직 처리 정보
@@ -388,6 +389,7 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
     leave_start_date: format(new Date(), 'yyyy-MM-dd'),
     leave_duration_months: 3,
     expected_return_date: format(addMonths(new Date(), 3), 'yyyy-MM-dd'),
+    showDetails: false,
   });
   // 복직 처리 모달 상태
   const [returnModalInfo, setReturnModalInfo] = useState<ReturnFromLeaveInfo | null>(null);
@@ -435,6 +437,7 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
           leave_start_date: format(today, 'yyyy-MM-dd'),
           leave_duration_months: 3,
           expected_return_date: format(addMonths(today, 3), 'yyyy-MM-dd'),
+          showDetails: false, // 기본적으로 상세 정보 접음
         });
         return;
       }
@@ -477,31 +480,45 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
   );
 
   // 휴직 정보 제출 핸들러
-  const handleLeaveSubmit = useCallback(async () => {
-    if (!leaveModalMemberId) return;
+  const handleLeaveSubmit = useCallback(
+    async (includeDetails: boolean = true) => {
+      if (!leaveModalMemberId) return;
 
-    setUpdatingStatusId(leaveModalMemberId);
-    try {
-      await updateMutation.mutateAsync({
-        id: leaveModalMemberId,
-        data: {
-          member_status: 'ON_LEAVE',
-          leave_reason: leaveFormData.leave_reason || null,
-          leave_start_date: leaveFormData.leave_start_date || null,
-          leave_duration_months: leaveFormData.leave_duration_months,
-          expected_return_date: leaveFormData.expected_return_date || null,
-        },
-      });
-      showSuccess('휴직 처리되었습니다.');
-      onRefetch?.();
-      setLeaveModalMemberId(null);
-    } catch (error) {
-      logger.error('Leave status update error:', error);
-      showError('휴직 처리에 실패했습니다.');
-    } finally {
-      setUpdatingStatusId(null);
-    }
-  }, [leaveModalMemberId, leaveFormData, updateMutation, onRefetch]);
+      setUpdatingStatusId(leaveModalMemberId);
+      try {
+        // 상세 정보 포함 여부에 따라 데이터 구성
+        const updateData = includeDetails
+          ? {
+              member_status: 'ON_LEAVE' as const,
+              leave_reason: leaveFormData.leave_reason || null,
+              leave_start_date: leaveFormData.leave_start_date || null,
+              leave_duration_months: leaveFormData.leave_duration_months,
+              expected_return_date: leaveFormData.expected_return_date || null,
+            }
+          : {
+              member_status: 'ON_LEAVE' as const,
+              leave_reason: null,
+              leave_start_date: null,
+              leave_duration_months: null,
+              expected_return_date: null,
+            };
+
+        await updateMutation.mutateAsync({
+          id: leaveModalMemberId,
+          data: updateData,
+        });
+        showSuccess('휴직 처리되었습니다.');
+        onRefetch?.();
+        setLeaveModalMemberId(null);
+      } catch (error) {
+        logger.error('Leave status update error:', error);
+        showError('휴직 처리에 실패했습니다.');
+      } finally {
+        setUpdatingStatusId(null);
+      }
+    },
+    [leaveModalMemberId, leaveFormData, updateMutation, onRefetch]
+  );
 
   // 휴직 기간 변경 시 복직 예정일 자동 계산
   const handleLeaveDurationChange = useCallback(
@@ -721,84 +738,105 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
               </div>
             </div>
 
-            {/* 휴직 정보 폼 */}
-            <div className="space-y-4">
-              {/* 휴직 사유 */}
-              <div className="space-y-1.5">
-                <Label htmlFor="leave_reason" className="text-sm font-medium">
-                  휴직 사유
-                </Label>
-                <Input
-                  type="text"
-                  id="leave_reason"
-                  placeholder="예: 해외 출장, 건강 문제, 개인 사정 등"
-                  value={leaveFormData.leave_reason}
-                  onChange={(e) =>
-                    setLeaveFormData((prev) => ({
-                      ...prev,
-                      leave_reason: e.target.value,
-                    }))
-                  }
-                />
-              </div>
+            {/* 상세 정보 토글 */}
+            <button
+              type="button"
+              onClick={() =>
+                setLeaveFormData((prev) => ({ ...prev, showDetails: !prev.showDetails }))
+              }
+              className="mb-4 flex w-full items-center justify-between rounded-md border border-neutral-200 px-3 py-2 text-sm text-neutral-600 transition-colors hover:bg-neutral-50"
+            >
+              <span>휴직 상세 정보 입력 (선택)</span>
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${leaveFormData.showDetails ? 'rotate-180' : ''}`}
+              />
+            </button>
 
-              {/* 휴직 시작일 & 기간 */}
-              <div className="grid grid-cols-2 gap-3">
+            {/* 휴직 정보 폼 - 토글로 표시 */}
+            {leaveFormData.showDetails && (
+              <div className="mb-4 space-y-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+                {/* 휴직 사유 */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="leave_start_date" className="text-sm font-medium">
-                    휴직 시작일
+                  <Label htmlFor="leave_reason" className="text-sm font-medium">
+                    휴직 사유
+                    <span className="ml-1 text-xs text-neutral-400">(선택)</span>
+                  </Label>
+                  <Input
+                    type="text"
+                    id="leave_reason"
+                    placeholder="예: 해외 출장, 건강 문제, 개인 사정 등"
+                    value={leaveFormData.leave_reason}
+                    onChange={(e) =>
+                      setLeaveFormData((prev) => ({
+                        ...prev,
+                        leave_reason: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* 휴직 시작일 & 기간 */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="leave_start_date" className="text-sm font-medium">
+                      휴직 시작일
+                      <span className="ml-1 text-xs text-neutral-400">(선택)</span>
+                    </Label>
+                    <Input
+                      type="date"
+                      id="leave_start_date"
+                      value={leaveFormData.leave_start_date}
+                      onChange={(e) => handleLeaveStartDateChange(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="leave_duration_months" className="text-sm font-medium">
+                      휴직 기간
+                      <span className="ml-1 text-xs text-neutral-400">(선택)</span>
+                    </Label>
+                    <Input
+                      type="number"
+                      id="leave_duration_months"
+                      min={1}
+                      max={24}
+                      placeholder="개월"
+                      value={leaveFormData.leave_duration_months || ''}
+                      onChange={(e) => handleLeaveDurationChange(parseInt(e.target.value, 10) || 0)}
+                    />
+                  </div>
+                </div>
+
+                {/* 복직 예정일 */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="expected_return_date" className="text-sm font-medium">
+                    복직 예정일
+                    <span className="ml-1 text-xs text-neutral-400">(선택)</span>
                   </Label>
                   <Input
                     type="date"
-                    id="leave_start_date"
-                    value={leaveFormData.leave_start_date}
-                    onChange={(e) => handleLeaveStartDateChange(e.target.value)}
+                    id="expected_return_date"
+                    value={leaveFormData.expected_return_date}
+                    onChange={(e) =>
+                      setLeaveFormData((prev) => ({
+                        ...prev,
+                        expected_return_date: e.target.value,
+                      }))
+                    }
                   />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="leave_duration_months" className="text-sm font-medium">
-                    휴직 기간 (개월)
-                  </Label>
-                  <Input
-                    type="number"
-                    id="leave_duration_months"
-                    min={1}
-                    max={24}
-                    value={leaveFormData.leave_duration_months || ''}
-                    onChange={(e) => handleLeaveDurationChange(parseInt(e.target.value, 10) || 0)}
-                  />
+                  <p className="text-xs text-neutral-500">
+                    휴직 기간에 따라 자동 계산됩니다. 직접 수정도 가능합니다.
+                  </p>
                 </div>
               </div>
-
-              {/* 복직 예정일 */}
-              <div className="space-y-1.5">
-                <Label htmlFor="expected_return_date" className="text-sm font-medium">
-                  복직 예정일
-                </Label>
-                <Input
-                  type="date"
-                  id="expected_return_date"
-                  value={leaveFormData.expected_return_date}
-                  onChange={(e) =>
-                    setLeaveFormData((prev) => ({
-                      ...prev,
-                      expected_return_date: e.target.value,
-                    }))
-                  }
-                />
-                <p className="text-xs text-neutral-500">
-                  휴직 기간에 따라 자동 계산됩니다. 직접 수정도 가능합니다.
-                </p>
-              </div>
-            </div>
+            )}
 
             {/* 에러 메시지 */}
             {updateMutation.error && (
-              <p className="mt-4 text-sm text-red-600">{updateMutation.error.message}</p>
+              <p className="mb-4 text-sm text-red-600">{updateMutation.error.message}</p>
             )}
 
             {/* 액션 버튼 */}
-            <div className="mt-6 flex gap-2">
+            <div className="flex gap-2">
               <button
                 onClick={handleCancelLeave}
                 className="flex-1 rounded-md bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
@@ -807,7 +845,7 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
                 취소
               </button>
               <button
-                onClick={handleLeaveSubmit}
+                onClick={() => handleLeaveSubmit(leaveFormData.showDetails)}
                 className="flex-1 rounded-md bg-[var(--color-warning-600)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-warning-700)] disabled:opacity-50"
                 disabled={updatingStatusId === leaveModalMemberId}
               >
