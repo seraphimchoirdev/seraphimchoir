@@ -5,7 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  title: "새로핌On",
+  title: "새로핌:On",
   description: "새문안교회 새로핌찬양대를 위한 종합 플랫폼",
   manifest: "/manifest.json",
   icons: {
@@ -13,10 +13,30 @@ export const metadata: Metadata = {
     shortcut: "/icon-192x192.png?v=2",
     apple: "/icon-512x512.png?v=2",
   },
+  openGraph: {
+    title: "새로핌:On",
+    description: "새문안교회 새로핌찬양대를 위한 종합 플랫폼",
+    images: [
+      {
+        url: "/title_logo.png",
+        width: 1200,
+        height: 630,
+        alt: "새로핌:On 로고",
+      },
+    ],
+    locale: "ko_KR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "새로핌:On",
+    description: "새문안교회 새로핌찬양대를 위한 종합 플랫폼",
+    images: ["/title_logo.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "새로핌On",
+    title: "새로핌:On",
     startupImage: [
       {
         url: '/ios/splash-2048x2732.png',

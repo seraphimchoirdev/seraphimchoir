@@ -163,10 +163,10 @@ git branch -d hotfix/login-error
 
 | 브랜치 | Vercel 환경 | URL 패턴 |
 |--------|-------------|----------|
-| `main` | Production | `seraphimchoir.vercel.app` |
-| `develop` | Preview | `develop-seraphimchoir.vercel.app` |
-| `feature/*` | Preview | `feature-xxx-seraphimchoir.vercel.app` |
-| PR | Preview | `pr-123-seraphimchoir.vercel.app` |
+| `main` | Production | `saeropimon.vercel.app` |
+| `develop` | Preview | `develop-saeropimon.vercel.app` |
+| `feature/*` | Preview | `feature-xxx-saeropimon.vercel.app` |
+| PR | Preview | `pr-123-saeropimon.vercel.app` |
 
 ### Vercel 설정 권장사항
 

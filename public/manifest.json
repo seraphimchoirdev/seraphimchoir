@@ -1,6 +1,6 @@
 {
-  "name": "새로핌On",
-  "short_name": " ",
+  "name": "새로핌:On",
+  "short_name": "새로핌:On",
   "description": "새문안교회 새로핌찬양대를 위한 종합 플랫폼 - 일정 관리, 출석 투표, AI 자리배치",
   "start_url": "/login",
   "scope": "/",
