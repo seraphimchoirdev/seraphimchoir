@@ -1,14 +1,19 @@
 'use client';
 
+import { ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
+
 import { ReactNode, useMemo } from 'react';
-import { useArrangementStore, WORKFLOW_STEPS, WorkflowStep } from '@/store/arrangement-store';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { useSkipStep } from '@/hooks/useWorkflowAutoAdvance';
+
+import { WORKFLOW_STEPS, WorkflowStep, useArrangementStore } from '@/store/arrangement-store';
+
+import WorkflowModeToggle from './WorkflowModeToggle';
 import WorkflowProgress from './WorkflowProgress';
 import WorkflowSection from './WorkflowSection';
-import WorkflowModeToggle from './WorkflowModeToggle';
-import { ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
-import { useSkipStep } from '@/hooks/useWorkflowAutoAdvance';
 
 /**
  * 각 단계별 완료 조건 및 안내 메시지
@@ -72,7 +77,8 @@ export default function WorkflowPanel({
     return {
       1: {
         // 1단계: AI 추천 분배 실행 필요 (또는 수동 설정)
-        canComplete: gridLayout?.isAIRecommended === true || gridLayout?.isManuallyConfigured === true,
+        canComplete:
+          gridLayout?.isAIRecommended === true || gridLayout?.isManuallyConfigured === true,
         message: 'AI 추천 분배를 실행하거나 수동으로 그리드를 설정해야 합니다.',
       },
       2: {
@@ -102,7 +108,13 @@ export default function WorkflowPanel({
         canComplete: true,
       },
     };
-  }, [gridLayout?.isAIRecommended, gridLayout?.isManuallyConfigured, assignmentsCount, totalMembers, unassignedCount]);
+  }, [
+    gridLayout?.isAIRecommended,
+    gridLayout?.isManuallyConfigured,
+    assignmentsCount,
+    totalMembers,
+    unassignedCount,
+  ]);
 
   return (
     <Card className={className}>
@@ -119,7 +131,7 @@ export default function WorkflowPanel({
 
         {/* 워크플로우 네비게이션 (위자드 모드) */}
         {isWizardMode && (
-          <div className="flex items-center justify-between pt-2 border-t border-[var(--color-border-subtle)]">
+          <div className="flex items-center justify-between border-t border-[var(--color-border-subtle)] pt-2">
             <Button
               variant="ghost"
               size="sm"
@@ -160,7 +172,7 @@ export default function WorkflowPanel({
         )}
 
         {/* 워크플로우 섹션들 */}
-        <div className="space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto">
+        <div className="max-h-[calc(100vh-400px)] space-y-3 overflow-y-auto">
           {steps.map((stepMeta) => {
             const config = stepCompletionConfigs[stepMeta.step];
             return (

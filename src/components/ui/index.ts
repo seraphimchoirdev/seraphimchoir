@@ -19,3 +19,5 @@ export * from './avatar';
 export * from './status-badge';
 export * from './spinner';
 export * from './table';
+export { Toaster, toast } from './sonner';
+export { ConfirmDialog } from './confirm-dialog';

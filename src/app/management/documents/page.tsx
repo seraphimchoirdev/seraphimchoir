@@ -1,30 +1,35 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import {
+  Calendar,
+  Download,
+  FileText,
+  Loader2,
+  Plus,
+  Search,
+  Tag,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react';
+
+import { useRef, useState } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Input } from '@/components/ui/input';
+
 import { useAuth } from '@/hooks/useAuth';
 import {
-  useDocuments,
-  useDocumentTags,
-  useUploadDocument,
+  formatFileSize,
   useDeleteDocument,
   useDocumentDownloadUrl,
-  formatFileSize,
+  useDocumentTags,
+  useDocuments,
+  useUploadDocument,
 } from '@/hooks/useDocuments';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Loader2,
-  FileText,
-  Upload,
-  Trash2,
-  Download,
-  Search,
-  X,
-  Tag,
-  Calendar,
-  Plus,
-} from 'lucide-react';
+
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'ManagementDocumentsPage' });
@@ -49,6 +54,17 @@ export default function ManagementDocumentsPage() {
   const [uploadTags, setUploadTags] = useState<string[]>([]);
   const [uploadYear, setUploadYear] = useState(CURRENT_YEAR);
   const [newTag, setNewTag] = useState('');
+
+  // 삭제 확인 다이얼로그
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    id: string | null;
+    title: string;
+  }>({
+    open: false,
+    id: null,
+    title: '',
+  });
 
   // 데이터 조회
   const { data: documents, isLoading } = useDocuments({
@@ -75,11 +91,9 @@ export default function ManagementDocumentsPage() {
 
   if (!canView) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto max-w-2xl px-4 py-8">
         <Alert variant="error">
-          <AlertDescription>
-            문서 아카이브에 접근할 권한이 없습니다.
-          </AlertDescription>
+          <AlertDescription>문서 아카이브에 접근할 권한이 없습니다.</AlertDescription>
         </Alert>
       </div>
     );
@@ -110,13 +124,19 @@ export default function ManagementDocumentsPage() {
     }
   };
 
-  const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`"${title}" 문서를 삭제하시겠습니까?`)) return;
+  const handleDeleteClick = (id: string, title: string) => {
+    setDeleteDialog({ open: true, id, title });
+  };
+
+  const handleDelete = async () => {
+    if (!deleteDialog.id) return;
 
     try {
-      await deleteMutation.mutateAsync(id);
+      await deleteMutation.mutateAsync(deleteDialog.id);
     } catch (err) {
       logger.error('삭제 실패:', err);
+    } finally {
+      setDeleteDialog({ open: false, id: null, title: '' });
     }
   };
 
@@ -128,14 +148,14 @@ export default function ManagementDocumentsPage() {
   };
 
   const removeTag = (tag: string) => {
-    setUploadTags(uploadTags.filter(t => t !== tag));
+    setUploadTags(uploadTags.filter((t) => t !== tag));
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="flex items-center justify-between mb-8">
+    <div className="container mx-auto max-w-6xl px-4 py-8">
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-[var(--color-text-primary)]">
             <FileText className="h-6 w-6" />
             문서 아카이브
           </h1>
@@ -145,7 +165,7 @@ export default function ManagementDocumentsPage() {
         </div>
         {canManage && (
           <Button onClick={() => setIsUploadOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="mr-2 h-4 w-4" />
             문서 업로드
           </Button>
         )}
@@ -153,8 +173,8 @@ export default function ManagementDocumentsPage() {
 
       {/* 업로드 폼 */}
       {canManage && isUploadOpen && (
-        <div className="mb-8 p-6 border border-[var(--color-border)] rounded-lg bg-[var(--color-background-secondary)]">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-6">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-medium">새 문서 업로드</h2>
             <button onClick={() => setIsUploadOpen(false)}>
               <X className="h-5 w-5" />
@@ -164,7 +184,7 @@ export default function ManagementDocumentsPage() {
           <div className="space-y-4">
             {/* 파일 선택 */}
             <div>
-              <label className="block text-sm font-medium mb-2">파일</label>
+              <label className="mb-2 block text-sm font-medium">파일</label>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -182,7 +202,7 @@ export default function ManagementDocumentsPage() {
 
             {/* 제목 */}
             <div>
-              <label className="block text-sm font-medium mb-2">제목 *</label>
+              <label className="mb-2 block text-sm font-medium">제목 *</label>
               <Input
                 value={uploadTitle}
                 onChange={(e) => setUploadTitle(e.target.value)}
@@ -192,7 +212,7 @@ export default function ManagementDocumentsPage() {
 
             {/* 설명 */}
             <div>
-              <label className="block text-sm font-medium mb-2">설명</label>
+              <label className="mb-2 block text-sm font-medium">설명</label>
               <Input
                 value={uploadDescription}
                 onChange={(e) => setUploadDescription(e.target.value)}
@@ -202,26 +222,28 @@ export default function ManagementDocumentsPage() {
 
             {/* 연도 */}
             <div>
-              <label className="block text-sm font-medium mb-2">연도</label>
+              <label className="mb-2 block text-sm font-medium">연도</label>
               <select
                 value={uploadYear}
                 onChange={(e) => setUploadYear(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md"
+                className="w-full rounded-md border border-[var(--color-border)] px-3 py-2"
               >
                 {YEARS.map((year) => (
-                  <option key={year} value={year}>{year}년</option>
+                  <option key={year} value={year}>
+                    {year}년
+                  </option>
                 ))}
               </select>
             </div>
 
             {/* 태그 */}
             <div>
-              <label className="block text-sm font-medium mb-2">태그</label>
-              <div className="flex gap-2 mb-2 flex-wrap">
+              <label className="mb-2 block text-sm font-medium">태그</label>
+              <div className="mb-2 flex flex-wrap gap-2">
                 {uploadTags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm bg-[var(--color-primary-light)] text-[var(--color-primary)]"
+                    className="inline-flex items-center gap-1 rounded-full bg-[var(--color-primary-light)] px-2 py-1 text-sm text-[var(--color-primary)]"
                   >
                     {tag}
                     <button onClick={() => removeTag(tag)}>
@@ -257,12 +279,12 @@ export default function ManagementDocumentsPage() {
             >
               {uploadMutation.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   업로드 중...
                 </>
               ) : (
                 <>
-                  <Upload className="h-4 w-4 mr-2" />
+                  <Upload className="mr-2 h-4 w-4" />
                   업로드
                 </>
               )}
@@ -274,9 +296,9 @@ export default function ManagementDocumentsPage() {
       {/* 필터 */}
       <div className="mb-6 flex flex-wrap gap-4">
         {/* 검색 */}
-        <div className="flex-1 min-w-[200px]">
+        <div className="min-w-[200px] flex-1">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-text-tertiary)]" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--color-text-tertiary)]" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -290,27 +312,29 @@ export default function ManagementDocumentsPage() {
         <select
           value={selectedYear || ''}
           onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : undefined)}
-          className="px-3 py-2 border border-[var(--color-border)] rounded-md"
+          className="rounded-md border border-[var(--color-border)] px-3 py-2"
         >
           <option value="">전체 연도</option>
           {YEARS.map((year) => (
-            <option key={year} value={year}>{year}년</option>
+            <option key={year} value={year}>
+              {year}년
+            </option>
           ))}
         </select>
 
         {/* 태그 필터 */}
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap gap-2">
           {allTags?.slice(0, 10).map((tag) => (
             <button
               key={tag}
               onClick={() => {
                 if (selectedTags.includes(tag)) {
-                  setSelectedTags(selectedTags.filter(t => t !== tag));
+                  setSelectedTags(selectedTags.filter((t) => t !== tag));
                 } else {
                   setSelectedTags([...selectedTags, tag]);
                 }
               }}
-              className={`px-3 py-1 rounded-full text-sm transition-colors ${
+              className={`rounded-full px-3 py-1 text-sm transition-colors ${
                 selectedTags.includes(tag)
                   ? 'bg-[var(--color-primary)] text-white'
                   : 'bg-[var(--color-background-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-background-secondary)]'
@@ -333,20 +357,35 @@ export default function ManagementDocumentsPage() {
             <DocumentCard
               key={doc.id}
               document={doc}
-              onDelete={() => handleDelete(doc.id, doc.title)}
+              onDelete={() => handleDeleteClick(doc.id, doc.title)}
               isDeleting={deleteMutation.isPending}
               canDelete={canManage}
             />
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <FileText className="h-12 w-12 mx-auto text-[var(--color-text-tertiary)] mb-4" />
-          <p className="text-[var(--color-text-secondary)]">
-            문서가 없습니다.
-          </p>
+        <div className="py-12 text-center">
+          <FileText className="mx-auto mb-4 h-12 w-12 text-[var(--color-text-tertiary)]" />
+          <p className="text-[var(--color-text-secondary)]">문서가 없습니다.</p>
         </div>
       )}
+
+      {/* 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) =>
+          setDeleteDialog({
+            open,
+            id: open ? deleteDialog.id : null,
+            title: open ? deleteDialog.title : '',
+          })
+        }
+        title="문서 삭제"
+        description={`"${deleteDialog.title}" 문서를 삭제하시겠습니까?`}
+        confirmLabel="삭제"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
@@ -386,26 +425,24 @@ function DocumentCard({
   };
 
   return (
-    <div className="border border-[var(--color-border)] rounded-lg p-4 bg-[var(--color-background-secondary)] hover:shadow-md transition-shadow">
+    <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-4 transition-shadow hover:shadow-md">
       <div className="flex items-start gap-3">
         <span className="text-2xl">{getFileIcon(doc.mime_type)}</span>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-[var(--color-text-primary)] truncate">
-            {doc.title}
-          </h3>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate font-medium text-[var(--color-text-primary)]">{doc.title}</h3>
           {doc.description && (
-            <p className="text-sm text-[var(--color-text-secondary)] truncate mt-1">
+            <p className="mt-1 truncate text-sm text-[var(--color-text-secondary)]">
               {doc.description}
             </p>
           )}
 
           {/* 태그 */}
           {doc.tags.length > 0 && (
-            <div className="flex gap-1 mt-2 flex-wrap">
+            <div className="mt-2 flex flex-wrap gap-1">
               {doc.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[var(--color-background-tertiary)] text-[var(--color-text-secondary)]"
+                  className="inline-flex items-center gap-1 rounded-full bg-[var(--color-background-tertiary)] px-2 py-0.5 text-xs text-[var(--color-text-secondary)]"
                 >
                   <Tag className="h-2.5 w-2.5" />
                   {tag}
@@ -420,7 +457,7 @@ function DocumentCard({
           )}
 
           {/* 메타 정보 */}
-          <div className="flex items-center gap-3 mt-2 text-xs text-[var(--color-text-tertiary)]">
+          <div className="mt-2 flex items-center gap-3 text-xs text-[var(--color-text-tertiary)]">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               {doc.year}년
@@ -431,7 +468,7 @@ function DocumentCard({
       </div>
 
       {/* 액션 버튼 */}
-      <div className="flex gap-2 mt-4">
+      <div className="mt-4 flex gap-2">
         <Button
           size="sm"
           variant="outline"
@@ -439,7 +476,7 @@ function DocumentCard({
           disabled={!downloadUrl}
           className={canDelete ? 'flex-1' : 'w-full'}
         >
-          <Download className="h-4 w-4 mr-1" />
+          <Download className="mr-1 h-4 w-4" />
           다운로드
         </Button>
         {canDelete && (
@@ -448,7 +485,7 @@ function DocumentCard({
             variant="outline"
             onClick={onDelete}
             disabled={isDeleting}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="text-red-600 hover:bg-red-50 hover:text-red-700"
           >
             {isDeleting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

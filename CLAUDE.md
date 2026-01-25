@@ -210,6 +210,31 @@ choir-seat-app/
 
 6. **한국어**: 이 프로젝트는 한국어 프로젝트입니다. UI 텍스트, 주석, 문서가 한국어로 작성될 수 있습니다
 
+7. **알림/피드백 시스템**: 사용자 피드백 UI를 구현할 때는 `docs/NOTIFICATION_SYSTEM_ANALYSIS.md`를 참고하세요.
+   - **Toast**: 순수 정보 전달 (저장 완료, 복사 완료 등) → `showSuccess()`, `showError()`, `showWarning()`, `showInfo()`
+   - **Snackbar**: 액션 버튼이 필요한 피드백 (재시도, 실행취소) → `showError(message, onRetry)`
+   - **AlertDialog**: 사용자 확인이 필수인 중요 작업 (삭제 확인) → `ConfirmDialog` 컴포넌트
+
+   ```typescript
+   // 사용 예시
+   import { showSuccess, showError, showWarning } from '@/lib/toast';
+   import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+
+   // Toast 사용
+   showSuccess('저장되었습니다.');
+   showError('저장 실패', handleRetry);  // 재시도 버튼 포함
+
+   // AlertDialog 사용 (삭제 등 중요 작업)
+   <ConfirmDialog
+     open={showDialog}
+     onOpenChange={setShowDialog}
+     title="삭제 확인"
+     description="정말 삭제하시겠습니까?"
+     variant="destructive"
+     onConfirm={handleDelete}
+   />
+   ```
+
 ## Supabase 로컬 개발
 
 Supabase CLI를 사용하여 로컬에서 개발할 수 있습니다 (Docker 필요):

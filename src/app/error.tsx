@@ -1,8 +1,11 @@
 'use client';
 
+import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
+
 import { useEffect } from 'react';
+
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+
 import { logger } from '@/lib/logger';
 
 interface ErrorProps {
@@ -35,9 +38,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
           </div>
         </div>
 
-        <h1 className="mb-2 text-2xl font-bold text-gray-900">
-          오류가 발생했습니다
-        </h1>
+        <h1 className="mb-2 text-2xl font-bold text-gray-900">오류가 발생했습니다</h1>
 
         <p className="mb-6 text-gray-600">
           페이지를 표시하는 중 문제가 발생했습니다.
@@ -48,23 +49,13 @@ export default function GlobalError({ error, reset }: ErrorProps) {
         {/* 개발 환경에서만 에러 상세 정보 표시 */}
         {process.env.NODE_ENV === 'development' && (
           <div className="mb-6 rounded-lg bg-gray-100 p-4 text-left">
-            <p className="mb-2 font-mono text-sm text-red-600">
-              {error.message}
-            </p>
-            {error.digest && (
-              <p className="text-xs text-gray-500">
-                Error ID: {error.digest}
-              </p>
-            )}
+            <p className="mb-2 font-mono text-sm text-red-600">{error.message}</p>
+            {error.digest && <p className="text-xs text-gray-500">Error ID: {error.digest}</p>}
           </div>
         )}
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <Button
-            variant="outline"
-            onClick={reset}
-            className="flex items-center gap-2"
-          >
+          <Button variant="outline" onClick={reset} className="flex items-center gap-2">
             <RefreshCw className="h-4 w-4" />
             다시 시도
           </Button>

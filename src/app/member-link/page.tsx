@@ -1,13 +1,17 @@
 'use client';
 
-import { useState, Suspense, useMemo } from 'react';
+import { CheckCircle, ChevronRight, Clock, Info, Loader2, Search, UserCheck } from 'lucide-react';
+
+import { Suspense, useMemo, useState } from 'react';
+
 import { useSearchParams } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { useAvailableMembers, useRequestMemberLink, useMyLinkStatus } from '@/hooks/useMemberLink';
-import { useDebounce } from '@/hooks/useDebounce';
-import { Button } from '@/components/ui/button';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle, Clock, UserCheck, Search, Info, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+import { useAuth } from '@/hooks/useAuth';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useAvailableMembers, useMyLinkStatus, useRequestMemberLink } from '@/hooks/useMemberLink';
 
 const PART_LABELS: Record<string, string> = {
   SOPRANO: '소프라노',
@@ -40,7 +44,8 @@ function MemberLinkContent() {
   // 검색어 디바운싱
   const debouncedSearch = useDebounce(searchInput, 300);
 
-  const { data: availableMembers, isLoading: membersLoading } = useAvailableMembers(debouncedSearch);
+  const { data: availableMembers, isLoading: membersLoading } =
+    useAvailableMembers(debouncedSearch);
   const { data: myLinkStatus, isLoading: statusLoading } = useMyLinkStatus();
   const requestMutation = useRequestMemberLink();
 
@@ -50,7 +55,12 @@ function MemberLinkContent() {
     return availableMembers || [];
   }, [availableMembers, debouncedSearch]);
 
-  const handleSelectMember = (member: { id: string; name: string; part: string; is_singer: boolean }) => {
+  const handleSelectMember = (member: {
+    id: string;
+    name: string;
+    part: string;
+    is_singer: boolean;
+  }) => {
     setSelectedMemberId(member.id);
     setSelectedMemberName(member.name);
     setSelectedMemberPart(member.part);
@@ -106,7 +116,7 @@ function MemberLinkContent() {
   // 로딩 중
   if (authLoading || statusLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
       </div>
     );
@@ -115,10 +125,13 @@ function MemberLinkContent() {
   // 인증되지 않은 경우
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="flex min-h-screen items-center justify-center px-4">
         <Alert>
           <AlertDescription>
-            로그인이 필요합니다. <a href="/login" className="underline">로그인 페이지로 이동</a>
+            로그인이 필요합니다.{' '}
+            <a href="/login" className="underline">
+              로그인 페이지로 이동
+            </a>
           </AlertDescription>
         </Alert>
       </div>
@@ -131,18 +144,17 @@ function MemberLinkContent() {
     const linkedMember = Array.isArray(memberData) ? memberData[0] : memberData;
 
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center space-y-6">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-md space-y-6 text-center">
           <div className="flex justify-center">
             <CheckCircle className="h-16 w-16 text-green-500" />
           </div>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
-            연결 완료
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">연결 완료</h1>
           <p className="text-[var(--color-text-secondary)]">
-            {linkedMember?.name} ({PART_LABELS[linkedMember?.part || ''] || linkedMember?.part}) 대원으로 연결되어 있습니다.
+            {linkedMember?.name} ({PART_LABELS[linkedMember?.part || ''] || linkedMember?.part})
+            대원으로 연결되어 있습니다.
           </p>
-          <Button onClick={() => window.location.href = '/my-attendance'}>
+          <Button onClick={() => (window.location.href = '/my-attendance')}>
             내 출석으로 이동
           </Button>
         </div>
@@ -156,16 +168,15 @@ function MemberLinkContent() {
     const pendingMember = Array.isArray(memberData) ? memberData[0] : memberData;
 
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center space-y-6">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-md space-y-6 text-center">
           <div className="flex justify-center">
             <Clock className="h-16 w-16 text-yellow-500" />
           </div>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
-            승인 대기중
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">승인 대기중</h1>
           <p className="text-[var(--color-text-secondary)]">
-            {pendingMember?.name} ({PART_LABELS[pendingMember?.part || ''] || pendingMember?.part}) 대원으로 연결 요청이 진행중입니다.
+            {pendingMember?.name} ({PART_LABELS[pendingMember?.part || ''] || pendingMember?.part})
+            대원으로 연결 요청이 진행중입니다.
           </p>
           <p className="text-sm text-[var(--color-text-tertiary)]">
             파트장 또는 관리자가 요청을 확인하면 승인됩니다.
@@ -177,15 +188,13 @@ function MemberLinkContent() {
 
   // 연결 요청 폼
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="flex min-h-screen items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <div className="flex justify-center mb-4">
+          <div className="mb-4 flex justify-center">
             <UserCheck className="h-12 w-12 text-[var(--color-primary)]" />
           </div>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
-            대원 연결
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">대원 연결</h1>
           <p className="mt-2 text-[var(--color-text-secondary)]">
             본인의 이름을 검색하여 찬양대원 정보와 연결해주세요
           </p>
@@ -212,8 +221,8 @@ function MemberLinkContent() {
 
             {/* 선택된 대원 표시 */}
             {selectedMemberId ? (
-              <div className="flex items-center justify-between p-4 bg-[var(--color-primary-light)] border border-[var(--color-primary)] rounded-md">
-                <div className="flex items-center flex-wrap gap-2">
+              <div className="flex items-center justify-between rounded-md border border-[var(--color-primary)] bg-[var(--color-primary-light)] p-4">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium text-[var(--color-primary)]">
                     {selectedMemberName}
                   </span>
@@ -221,7 +230,7 @@ function MemberLinkContent() {
                     ({PART_LABELS[selectedMemberPart] || selectedMemberPart})
                   </span>
                   {!selectedMemberIsSinger && (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                       비등단
                     </span>
                   )}
@@ -229,7 +238,7 @@ function MemberLinkContent() {
                 <button
                   type="button"
                   onClick={handleClearSelection}
-                  className="text-sm text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] underline"
+                  className="text-sm text-[var(--color-text-tertiary)] underline hover:text-[var(--color-text-secondary)]"
                 >
                   다시 선택
                 </button>
@@ -238,16 +247,16 @@ function MemberLinkContent() {
               <>
                 {/* 검색 입력 */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--color-text-tertiary)]" />
+                  <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-[var(--color-text-tertiary)]" />
                   <input
                     type="text"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     placeholder="이름을 입력하세요"
-                    className="w-full pl-10 pr-4 py-3 border border-[var(--color-border)] rounded-md bg-[var(--color-background-primary)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                    className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-background-primary)] py-3 pr-4 pl-10 text-[var(--color-text-primary)] focus:border-transparent focus:ring-2 focus:ring-[var(--color-primary)] focus:outline-none"
                   />
                   {searchInput !== debouncedSearch && (
-                    <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-[var(--color-text-tertiary)]" />
+                    <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 transform animate-spin text-[var(--color-text-tertiary)]" />
                   )}
                 </div>
 
@@ -260,7 +269,7 @@ function MemberLinkContent() {
 
                 {/* 검색 결과 */}
                 {debouncedSearch.trim() && (
-                  <div className="mt-2 max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-md bg-[var(--color-background-primary)]">
+                  <div className="mt-2 max-h-60 overflow-y-auto rounded-md border border-[var(--color-border)] bg-[var(--color-background-primary)]">
                     {membersLoading ? (
                       <div className="flex justify-center py-4">
                         <Loader2 className="h-6 w-6 animate-spin" />
@@ -268,7 +277,7 @@ function MemberLinkContent() {
                     ) : filteredMembers.length > 0 ? (
                       <>
                         {/* 안내 헤더 */}
-                        <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-[var(--color-border)] text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                        <div className="flex items-center gap-2 border-b border-[var(--color-border)] bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
                           <span>👆</span>
                           <span>아래에서 본인 이름을 선택하세요</span>
                         </div>
@@ -277,22 +286,24 @@ function MemberLinkContent() {
                             key={member.id}
                             type="button"
                             onClick={() => handleSelectMember(member)}
-                            className="w-full text-left px-4 py-3 border-b border-[var(--color-border)] last:border-b-0 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors cursor-pointer group"
+                            className="group w-full cursor-pointer border-b border-[var(--color-border)] px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <span className="font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{member.name}</span>
+                                <span className="font-medium transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                                  {member.name}
+                                </span>
                                 <span className="ml-2 text-sm text-[var(--color-text-secondary)]">
                                   ({PART_LABELS[member.part] || member.part})
                                 </span>
                               </div>
-                              <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                              <ChevronRight className="h-4 w-4 text-gray-400 transition-colors group-hover:text-blue-500" />
                             </div>
                           </button>
                         ))}
                       </>
                     ) : (
-                      <p className="text-center py-4 text-[var(--color-text-secondary)]">
+                      <p className="py-4 text-center text-[var(--color-text-secondary)]">
                         검색 결과가 없습니다. 파트장에게 문의해주세요.
                       </p>
                     )}
@@ -317,10 +328,10 @@ function MemberLinkContent() {
                   placeholder="예: 170"
                   min={100}
                   max={250}
-                  className="w-full px-4 py-3 border border-[var(--color-border)] rounded-md bg-[var(--color-background-primary)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-background-primary)] px-4 py-3 text-[var(--color-text-primary)] focus:border-transparent focus:ring-2 focus:ring-[var(--color-primary)] focus:outline-none"
                 />
                 <div className="flex items-start gap-2 text-xs text-[var(--color-text-tertiary)]">
-                  <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
                   <span>입력하신 키 정보는 AI 자리배치 추천에 활용됩니다.</span>
                 </div>
               </div>
@@ -334,33 +345,40 @@ function MemberLinkContent() {
                   type="date"
                   value={regularMemberSince}
                   onChange={(e) => setRegularMemberSince(e.target.value)}
-                  className="w-full px-4 py-3 border border-[var(--color-border)] rounded-md bg-[var(--color-background-primary)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-background-primary)] px-4 py-3 text-[var(--color-text-primary)] focus:border-transparent focus:ring-2 focus:ring-[var(--color-primary)] focus:outline-none"
                 />
                 <p className="text-xs text-[var(--color-text-tertiary)]">
                   정대원으로 임명된 날짜를 입력해주세요. 마이페이지에서 나중에 수정할 수 있습니다.
                 </p>
               </div>
             </>
-          ) : selectedMemberId && (
-            /* 비등단자(지휘자/반주자) 안내 */
-            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
-              <div className="flex items-start gap-3">
-                <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-amber-800 dark:text-amber-200">
-                  <p className="font-medium">지휘자 또는 반주자로 등록됩니다</p>
-                  <p className="mt-1 text-amber-700 dark:text-amber-300">
-                    비등단 구성원은 출석 체크 및 자리배치 대상에서 제외됩니다. 키와 임명일 정보는 필요하지 않습니다.
-                  </p>
+          ) : (
+            selectedMemberId && (
+              /* 비등단자(지휘자/반주자) 안내 */
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+                <div className="flex items-start gap-3">
+                  <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                  <div className="text-sm text-amber-800 dark:text-amber-200">
+                    <p className="font-medium">지휘자 또는 반주자로 등록됩니다</p>
+                    <p className="mt-1 text-amber-700 dark:text-amber-300">
+                      비등단 구성원은 출석 체크 및 자리배치 대상에서 제외됩니다. 키와 임명일 정보는
+                      필요하지 않습니다.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )
           )}
 
           {/* 제출 버튼 */}
           <Button
             type="submit"
             className="w-full"
-            disabled={!selectedMemberId || (selectedMemberIsSinger && !heightCm) || requestMutation.isPending}
+            disabled={
+              !selectedMemberId ||
+              (selectedMemberIsSinger && !heightCm) ||
+              requestMutation.isPending
+            }
           >
             {requestMutation.isPending ? (
               <>
@@ -372,7 +390,7 @@ function MemberLinkContent() {
             )}
           </Button>
 
-          <p className="text-xs text-center text-[var(--color-text-tertiary)]">
+          <p className="text-center text-xs text-[var(--color-text-tertiary)]">
             연결 요청 후 파트장 또는 관리자의 승인이 필요합니다.
           </p>
         </form>
@@ -386,7 +404,7 @@ export default function MemberLinkPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="flex min-h-screen items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
         </div>
       }

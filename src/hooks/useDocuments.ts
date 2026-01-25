@@ -7,11 +7,11 @@
  * - 문서 삭제
  * - 태그 목록 조회
  */
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
-import { createLogger } from '@/lib/logger';
 import { STALE_TIME } from '@/lib/constants';
+import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/client';
 
 const logger = createLogger({ prefix: 'useDocuments' });
 
@@ -51,10 +51,7 @@ export function useDocuments(filters?: DocumentFilters) {
     queryFn: async () => {
       const supabase = createClient();
 
-      let query = supabase
-        .from('documents')
-        .select('*')
-        .order('created_at', { ascending: false });
+      let query = supabase.from('documents').select('*').order('created_at', { ascending: false });
 
       // 연도 필터
       if (filters?.year) {
@@ -87,11 +84,7 @@ export function useDocument(id: string) {
     queryFn: async () => {
       const supabase = createClient();
 
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error } = await supabase.from('documents').select('*').eq('id', id).single();
 
       if (error) throw error;
 
@@ -137,7 +130,9 @@ export function useUploadDocument() {
       if (uploadError) throw uploadError;
 
       // 2. documents 테이블에 메타데이터 저장
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       const { data, error } = await supabase
         .from('documents')
@@ -240,10 +235,7 @@ export function useDeleteDocument() {
       }
 
       // 3. documents 테이블에서 삭제
-      const { error } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from('documents').delete().eq('id', id);
 
       if (error) throw error;
     },

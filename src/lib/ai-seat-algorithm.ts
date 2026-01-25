@@ -10,9 +10,9 @@
  * - 파트끼리 모여 앉음: 같은 파트는 연속으로 배치
  * - 고정석: 대원별 이전 배치 이력 기반 선호 좌석 우선 배치 (61.2% 대원이 고정석 성향)
  */
+import { createLogger } from '@/lib/logger';
 
 import { recommendRowDistribution } from './row-distribution-recommender';
-import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'AI-Seat' });
 
@@ -41,26 +41,26 @@ export interface SeatHistory {
  */
 export interface PreferredSeat {
   member_id: string;
-  preferred_row: number;        // 가장 많이 앉은 행
-  preferred_col: number;        // 평균 열 위치
-  row_consistency: number;      // 행 일관성 (0-1)
-  col_consistency: number;      // 열 일관성 (0-1)
-  total_appearances: number;    // 총 출석 횟수
+  preferred_row: number; // 가장 많이 앉은 행
+  preferred_col: number; // 평균 열 위치
+  row_consistency: number; // 행 일관성 (0-1)
+  col_consistency: number; // 열 일관성 (0-1)
+  total_appearances: number; // 총 출석 횟수
 }
 
 export interface Seat {
   member_id: string;
   member_name: string;
   part: 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS';
-  row: number;  // 1-based (1 = 맨 앞줄)
-  col: number;  // 1-based (1 = 맨 왼쪽)
+  row: number; // 1-based (1 = 맨 앞줄)
+  col: number; // 1-based (1 = 맨 왼쪽)
 }
 
 export interface GridLayout {
   rows: number;
-  row_capacities: number[];  // 1줄부터 n줄까지 순서
-  zigzag_pattern: 'even' | 'odd' | 'none';  // 'none' 추가 (rowOffsets 사용 시)
-  row_offsets?: Record<number, number>;      // 행별 오프셋 (0-based index)
+  row_capacities: number[]; // 1줄부터 n줄까지 순서
+  zigzag_pattern: 'even' | 'odd' | 'none'; // 'none' 추가 (rowOffsets 사용 시)
+  row_offsets?: Record<number, number>; // 행별 오프셋 (0-based index)
 }
 
 export interface ArrangementResult {
@@ -90,10 +90,34 @@ export interface ArrangementResult {
  * 중요: 알토는 4행까지만 overflow 가능 (5~6행 배치 금지)
  */
 const PART_PLACEMENT_RULES = {
-  SOPRANO: { side: 'left', preferredRows: [1, 2, 3], overflowRows: [4, 5, 6], sidePercentage: 92.0, frontRowPercentage: 78.0 },
-  ALTO: { side: 'right', preferredRows: [1, 2, 3], overflowRows: [4], sidePercentage: 99.8, frontRowPercentage: 86.6 }, // 5, 6행 제외!
-  TENOR: { side: 'left', preferredRows: [4, 5, 6], overflowRows: [], sidePercentage: 97.7, frontRowPercentage: 0.5 },
-  BASS: { side: 'right', preferredRows: [4, 5, 6], overflowRows: [], sidePercentage: 97.8, frontRowPercentage: 0.5 },
+  SOPRANO: {
+    side: 'left',
+    preferredRows: [1, 2, 3],
+    overflowRows: [4, 5, 6],
+    sidePercentage: 92.0,
+    frontRowPercentage: 78.0,
+  },
+  ALTO: {
+    side: 'right',
+    preferredRows: [1, 2, 3],
+    overflowRows: [4],
+    sidePercentage: 99.8,
+    frontRowPercentage: 86.6,
+  }, // 5, 6행 제외!
+  TENOR: {
+    side: 'left',
+    preferredRows: [4, 5, 6],
+    overflowRows: [],
+    sidePercentage: 97.7,
+    frontRowPercentage: 0.5,
+  },
+  BASS: {
+    side: 'right',
+    preferredRows: [4, 5, 6],
+    overflowRows: [],
+    sidePercentage: 97.8,
+    frontRowPercentage: 0.5,
+  },
 } as const;
 
 /**
@@ -102,9 +126,9 @@ const PART_PLACEMENT_RULES = {
  * - HIGH_CONSISTENCY: 고정석으로 간주하는 일관성 임계값
  */
 const FIXED_SEAT_CONFIG = {
-  MIN_APPEARANCES: 3,           // 최소 3회 이상 출석해야 선호 좌석 계산
-  HIGH_CONSISTENCY: 0.8,        // 80% 이상이면 고정석으로 간주
-  COL_TOLERANCE: 2,             // 열 일관성 계산 시 ±2열 허용
+  MIN_APPEARANCES: 3, // 최소 3회 이상 출석해야 선호 좌석 계산
+  HIGH_CONSISTENCY: 0.8, // 80% 이상이면 고정석으로 간주
+  COL_TOLERANCE: 2, // 열 일관성 계산 시 ±2열 허용
 } as const;
 
 /**
@@ -121,14 +145,17 @@ const BASE_GRID_COLS = 15;
  * - 2026-01-14(v5): avg 값 추가하여 중앙 우선 배치 지원
  * - 2026-01-14(v4): 전체 OCR 오류 수정 후 최종 재학습 데이터 반영
  */
-const PART_COL_CONSTRAINTS: Record<string, Record<number, { min: number; max: number; avg: number }>> = {
+const PART_COL_CONSTRAINTS: Record<
+  string,
+  Record<number, { min: number; max: number; avg: number }>
+> = {
   SOPRANO: {
     1: { min: 1, max: 9, avg: 4.51 },
     2: { min: 1, max: 9, avg: 4.74 },
     3: { min: 1, max: 10, avg: 5.08 },
-    4: { min: 1, max: 5, avg: 2.38 },   // 오버플로우, 좌측 집중
-    5: { min: 1, max: 4, avg: 1.88 },   // 오버플로우, 좌측 집중
-    6: { min: 1, max: 2, avg: 1.5 },    // 오버플로우, 극좌측만
+    4: { min: 1, max: 5, avg: 2.38 }, // 오버플로우, 좌측 집중
+    5: { min: 1, max: 4, avg: 1.88 }, // 오버플로우, 좌측 집중
+    6: { min: 1, max: 2, avg: 1.5 }, // 오버플로우, 극좌측만
   },
   ALTO: {
     1: { min: 7, max: 16, avg: 11.8 },
@@ -167,7 +194,7 @@ function getAdjustedColConstraints(
   return {
     min: Math.max(1, Math.round(constraint.min * ratio)),
     max: Math.min(rowCapacity, Math.round(constraint.max * ratio)),
-    avg: Math.round(constraint.avg * ratio * 100) / 100,  // 소수점 2자리
+    avg: Math.round(constraint.avg * ratio * 100) / 100, // 소수점 2자리
   };
 }
 
@@ -278,12 +305,7 @@ function isInOtherPartTerritory(
  * - Priority 3: 오버플로우행 + 열 범위 외 (최후 수단, 다른 파트 영역 아닐 때만)
  * - Priority 5: 금지 영역 (다른 파트 영역 포함)
  */
-function getSeatPriority(
-  row: number,
-  col: number,
-  part: string,
-  rowCapacity: number
-): number {
+function getSeatPriority(row: number, col: number, part: string, rowCapacity: number): number {
   const rules = PART_PLACEMENT_RULES[part as keyof typeof PART_PLACEMENT_RULES];
   if (!rules) return 5;
 
@@ -294,9 +316,7 @@ function getSeatPriority(
   const inPreferredRow = preferredRows.includes(row);
   const inOverflowRow = overflowRows.includes(row);
   const colConstraint = getAdjustedColConstraints(part, row, rowCapacity);
-  const inColRange = colConstraint
-    ? col >= colConstraint.min && col <= colConstraint.max
-    : true;
+  const inColRange = colConstraint ? col >= colConstraint.min && col <= colConstraint.max : true;
 
   // === 수정: Row 4-6에서 열 범위 상관없이 다른 파트 영역 침범 확인 ===
   // 열 범위 체크보다 먼저 수행하여 다른 파트 영역 침범 방지
@@ -305,14 +325,14 @@ function getSeatPriority(
   }
 
   // 열 범위 내 좌석 우선 (위 체크 통과 후)
-  if (inPreferredRow && inColRange) return 0;   // 최고: 선호행 + 열범위 내
-  if (inOverflowRow && inColRange) return 1;    // 오버플로우 + 열범위 내
+  if (inPreferredRow && inColRange) return 0; // 최고: 선호행 + 열범위 내
+  if (inOverflowRow && inColRange) return 1; // 오버플로우 + 열범위 내
 
   // 열 범위 밖 fallback (다른 파트 영역이 아닌 경우에만)
-  if (inPreferredRow) return 2;                 // 선호행 + 열범위 밖
-  if (inOverflowRow) return 3;                  // 오버플로우 + 열범위 밖
+  if (inPreferredRow) return 2; // 선호행 + 열범위 밖
+  if (inOverflowRow) return 3; // 오버플로우 + 열범위 밖
 
-  return 5;  // 금지 영역
+  return 5; // 금지 영역
 }
 
 /**
@@ -323,9 +343,7 @@ function getSeatPriority(
  * - 평균 열 일관성 (±2열): 92.5%
  * - 고정석 대원 비율: 61.2% (행/열 모두 80%+ 일관성)
  */
-export function calculatePreferredSeats(
-  histories: SeatHistory[]
-): Map<string, PreferredSeat> {
+export function calculatePreferredSeats(histories: SeatHistory[]): Map<string, PreferredSeat> {
   const preferredSeats = new Map<string, PreferredSeat>();
 
   for (const history of histories) {
@@ -333,8 +351,8 @@ export function calculatePreferredSeats(
       continue;
     }
 
-    const rows = history.positions.map(p => p.row);
-    const cols = history.positions.map(p => p.col);
+    const rows = history.positions.map((p) => p.row);
+    const cols = history.positions.map((p) => p.col);
 
     // 가장 많이 앉은 행 찾기
     const rowCounts = new Map<number, number>();
@@ -358,7 +376,7 @@ export function calculatePreferredSeats(
 
     // 열 일관성: ±2열 범위 내에 앉은 비율
     const colsInRange = cols.filter(
-      c => Math.abs(c - avgCol) <= FIXED_SEAT_CONFIG.COL_TOLERANCE
+      (c) => Math.abs(c - avgCol) <= FIXED_SEAT_CONFIG.COL_TOLERANCE
     ).length;
     const colConsistency = colsInRange / cols.length;
 
@@ -378,9 +396,7 @@ export function calculatePreferredSeats(
 /**
  * 고정석 성향이 강한 대원인지 확인
  */
-export function hasStrongFixedSeatPreference(
-  preferredSeat: PreferredSeat | undefined
-): boolean {
+export function hasStrongFixedSeatPreference(preferredSeat: PreferredSeat | undefined): boolean {
   if (!preferredSeat) return false;
   return (
     preferredSeat.row_consistency >= FIXED_SEAT_CONFIG.HIGH_CONSISTENCY &&
@@ -407,7 +423,7 @@ function groupAndSortMembers(
     BASS: [],
   };
 
-  members.forEach(member => {
+  members.forEach((member) => {
     grouped[member.part].push(member);
   });
 
@@ -590,7 +606,8 @@ function distributePartsToRows(
 
     // 초과하면 가장 많은 행에서 감소
     while (totalAlloc > sopranoRemaining) {
-      for (const row of [6, 5, 4]) { // 뒤에서부터 감소
+      for (const row of [6, 5, 4]) {
+        // 뒤에서부터 감소
         if (totalAlloc <= sopranoRemaining) break;
         if (initialAlloc[row] > 0) {
           initialAlloc[row]--;
@@ -642,9 +659,10 @@ function distributePartsToRows(
     if (availableSpace <= 0) continue;
 
     // TENOR/BASS 인원 비율로 분배
-    const currentTenorRatio = (tenorRemaining + bassRemaining > 0)
-      ? tenorRemaining / (tenorRemaining + bassRemaining)
-      : tenorRatio;
+    const currentTenorRatio =
+      tenorRemaining + bassRemaining > 0
+        ? tenorRemaining / (tenorRemaining + bassRemaining)
+        : tenorRatio;
 
     const tenorForThisRow = Math.round(availableSpace * currentTenorRatio);
     const bassForThisRow = availableSpace - tenorForThisRow;
@@ -747,7 +765,11 @@ function assignSeatsToRows(
   // === 행별 배치 할당량 추적 (distribution 기반) ===
   // overflow 행에서 각 파트가 배치할 수 있는 남은 좌석 수
   const remainingAllocation: Record<string, Record<number, number>> = {
-    SOPRANO: { 4: distribution[4]?.SOPRANO || 0, 5: distribution[5]?.SOPRANO || 0, 6: distribution[6]?.SOPRANO || 0 },
+    SOPRANO: {
+      4: distribution[4]?.SOPRANO || 0,
+      5: distribution[5]?.SOPRANO || 0,
+      6: distribution[6]?.SOPRANO || 0,
+    },
     ALTO: { 4: distribution[4]?.ALTO || 0 },
   };
 
@@ -854,11 +876,15 @@ function assignSeatsToRows(
         const sopranoAlloc: Record<number, number> = {
           4: remainingAllocation.SOPRANO[4] || 0,
           5: remainingAllocation.SOPRANO[5] || 0,
-          6: remainingAllocation.SOPRANO[6] || 0
+          6: remainingAllocation.SOPRANO[6] || 0,
         };
 
         // 각 행의 가용 좌석 수집 (col 1부터 순서대로)
-        const rowSeats: Record<number, Array<{ row: number; col: number }>> = { 4: [], 5: [], 6: [] };
+        const rowSeats: Record<number, Array<{ row: number; col: number }>> = {
+          4: [],
+          5: [],
+          6: [],
+        };
         for (const row of [4, 5, 6]) {
           if (row > numRows || sopranoAlloc[row] <= 0) continue;
           const rowCap = rowCapacities[row - 1];
@@ -909,7 +935,8 @@ function assignSeatsToRows(
         if (occupiedSeats.has(seatKey(row, col))) continue;
 
         const priority = getSeatPriority(row, col, part, rowCapacity);
-        if (priority <= 3) {  // 금지 영역(4) 제외
+        if (priority <= 3) {
+          // 금지 영역(4) 제외
           availableSeats.push({ row, col, priority });
         }
       }
@@ -950,7 +977,7 @@ function assignSeatsToRows(
           const targetCol = Math.round(constraint.avg);
 
           // 열 범위 내 좌석만 필터 (priority 0-1)
-          const inRangeSeats = availableSeats.filter(s => s.priority <= 1);
+          const inRangeSeats = availableSeats.filter((s) => s.priority <= 1);
           if (inRangeSeats.length > 0) {
             // 행 우선, 그 다음 avg 거리 순 정렬
             inRangeSeats.sort((a, b) => {
@@ -980,21 +1007,15 @@ function assignSeatsToRows(
     }
 
     // 2순위: 같은 행 내 열 범위 내 가장 가까운 열
-    const sameRowInRangeSeats = availableSeats.filter(s =>
-      s.row === prefRow && s.priority <= 1
-    );
+    const sameRowInRangeSeats = availableSeats.filter((s) => s.row === prefRow && s.priority <= 1);
     if (sameRowInRangeSeats.length > 0) {
-      sameRowInRangeSeats.sort((a, b) =>
-        Math.abs(a.col - prefCol) - Math.abs(b.col - prefCol)
-      );
+      sameRowInRangeSeats.sort((a, b) => Math.abs(a.col - prefCol) - Math.abs(b.col - prefCol));
       return sameRowInRangeSeats[0];
     }
     // fallback: 열 범위 밖도 허용 (좌석 부족 시)
-    const sameRowSeats = availableSeats.filter(s => s.row === prefRow);
+    const sameRowSeats = availableSeats.filter((s) => s.row === prefRow);
     if (sameRowSeats.length > 0) {
-      sameRowSeats.sort((a, b) =>
-        Math.abs(a.col - prefCol) - Math.abs(b.col - prefCol)
-      );
+      sameRowSeats.sort((a, b) => Math.abs(a.col - prefCol) - Math.abs(b.col - prefCol));
       return sameRowSeats[0];
     }
 
@@ -1002,9 +1023,7 @@ function assignSeatsToRows(
     const rules = PART_PLACEMENT_RULES[member.part as keyof typeof PART_PLACEMENT_RULES];
     if (rules) {
       const partPreferredRows = rules.preferredRows as readonly number[];
-      const preferredRowSeats = availableSeats.filter(s =>
-        partPreferredRows.includes(s.row)
-      );
+      const preferredRowSeats = availableSeats.filter((s) => partPreferredRows.includes(s.row));
       if (preferredRowSeats.length > 0) {
         // priority(열 범위) 우선, 그 다음 거리
         preferredRowSeats.sort((a, b) => {
@@ -1031,7 +1050,7 @@ function assignSeatsToRows(
   // SOPRANO/ALTO를 먼저 처리하여 overflow 영역(5-6행 col 1-3) 확보
   // (TENOR/BASS가 먼저 처리되면 5-6행 col 1-3을 점유하여 SOPRANO overflow 자리 부족)
   for (const part of ['SOPRANO', 'ALTO', 'TENOR', 'BASS'] as const) {
-    const members = [...membersByPart[part]];  // 복사본 사용
+    const members = [...membersByPart[part]]; // 복사본 사용
 
     // 고정석 대원 우선 정렬 (출석 횟수 높은 순)
     if (preferredSeats) {
@@ -1096,9 +1115,7 @@ function assignSeatsToRows(
     /**
      * 파트별 fallback 좌석 찾기 (getAdjustedColConstraints 활용)
      */
-    const findFallbackSeat = (
-      member: Member
-    ): { row: number; col: number } | null => {
+    const findFallbackSeat = (member: Member): { row: number; col: number } | null => {
       const part = member.part;
       const rules = PART_PLACEMENT_RULES[part as keyof typeof PART_PLACEMENT_RULES];
       const preferredRows = rules.preferredRows as readonly number[];
@@ -1127,7 +1144,11 @@ function assignSeatsToRows(
       };
 
       // 좌우 제약 체크 헬퍼
-      const isValidForLeftRightConstraint = (row: number, col: number, partType: string): boolean => {
+      const isValidForLeftRightConstraint = (
+        row: number,
+        col: number,
+        partType: string
+      ): boolean => {
         const isLeftPart = partType === 'SOPRANO' || partType === 'TENOR';
         if (isLeftPart) {
           const minRightCol = findMinRightPartCol(row);
@@ -1168,9 +1189,10 @@ function assignSeatsToRows(
 
       // 3순위: 모든 허용 행 + 열 범위 확장 (±2열)
       // 다른 파트 영역 침범 방지 체크 + 좌우 제약 포함
-      const allAllowedRows = part === 'ALTO'
-        ? [1, 2, 3, 4]  // ALTO는 5-6행 금지
-        : [...preferredRows, ...overflowRows];
+      const allAllowedRows =
+        part === 'ALTO'
+          ? [1, 2, 3, 4] // ALTO는 5-6행 금지
+          : [...preferredRows, ...overflowRows];
 
       for (const row of allAllowedRows) {
         if (row > numRows) continue;
@@ -1197,11 +1219,12 @@ function assignSeatsToRows(
       // - TENOR/BASS: 1-3행 금지 → [4, 5, 6]
       // - SOPRANO: 모든 행 허용
       // 4-1: 다른 파트 영역 침범 안 하는 빈좌석 우선
-      const lastResortRows = part === 'ALTO'
-        ? [1, 2, 3, 4]
-        : part === 'TENOR' || part === 'BASS'
-          ? [4, 5, 6].filter(r => r <= numRows)
-          : Array.from({ length: numRows }, (_, i) => i + 1);
+      const lastResortRows =
+        part === 'ALTO'
+          ? [1, 2, 3, 4]
+          : part === 'TENOR' || part === 'BASS'
+            ? [4, 5, 6].filter((r) => r <= numRows)
+            : Array.from({ length: numRows }, (_, i) => i + 1);
 
       for (const row of lastResortRows) {
         const rowCap = rowCapacities[row - 1];
@@ -1242,8 +1265,8 @@ function assignSeatsToRows(
           // BASS min과 TENOR max가 오버랩되는 경우에도 유효한 범위 생성
           const overflowMin = tenorCol.max + 1;
           const overflowMax = Math.min(
-            Math.floor(bassCol.avg),  // BASS 평균값까지만
-            rowCap - 2                // 안전 마진
+            Math.floor(bassCol.avg), // BASS 평균값까지만
+            rowCap - 2 // 안전 마진
           );
           for (let col = overflowMin; col <= overflowMax; col++) {
             if (!occupiedSeats.has(seatKey(row, col))) {
@@ -1298,7 +1321,7 @@ function assignSeatsToRows(
         for (const row of lastResortRows) {
           const rowCap = rowCapacities[row - 1];
           const bassCol = getAdjustedColConstraints('BASS', row, rowCap);
-          const minRightCol = findMinRightPartCol(row);  // 기존 ALTO/BASS 위치
+          const minRightCol = findMinRightPartCol(row); // 기존 ALTO/BASS 위치
           // BASS avg까지만 허용, 그리고 기존 오른쪽 파트보다 왼쪽에 배치
           const maxAllowedCol = Math.min(
             bassCol ? Math.floor(bassCol.avg) : rowCap,
@@ -1306,7 +1329,9 @@ function assignSeatsToRows(
           );
           for (let col = 1; col <= maxAllowedCol; col++) {
             if (!occupiedSeats.has(seatKey(row, col))) {
-              logger.warn(`${member.name}(${part}) BASS 경계 배치: ${row}행 ${col}열 (수작업 최소화)`);
+              logger.warn(
+                `${member.name}(${part}) BASS 경계 배치: ${row}행 ${col}열 (수작업 최소화)`
+              );
               return { row, col };
             }
           }
@@ -1321,21 +1346,18 @@ function assignSeatsToRows(
         const preferredRows = Array.from(
           { length: Math.max(0, numRows - 3) },
           (_, i) => i + 4
-        ).filter(r => r <= numRows);
-        const otherRows = [1, 2, 3].filter(r => r <= numRows);
+        ).filter((r) => r <= numRows);
+        const otherRows = [1, 2, 3].filter((r) => r <= numRows);
         const orderedRows = [...preferredRows, ...otherRows];
 
         for (const row of orderedRows) {
           const rowCap = rowCapacities[row - 1];
-          const midPoint = Math.ceil(rowCap / 2);  // 중간점 계산
+          const midPoint = Math.ceil(rowCap / 2); // 중간점 계산
 
           if (part === 'TENOR') {
             // TENOR: 왼쪽부터 탐색, 기존 오른쪽 파트보다 오른쪽으로 가지 않음
             const minRightCol = findMinRightPartCol(row);
-            const maxCol = Math.min(
-              row <= 3 ? midPoint : MAX_ROW_CAPACITY,
-              minRightCol - 1
-            );
+            const maxCol = Math.min(row <= 3 ? midPoint : MAX_ROW_CAPACITY, minRightCol - 1);
             for (let col = 1; col <= maxCol; col++) {
               if (!occupiedSeats.has(seatKey(row, col))) {
                 logger.warn(`${member.name}(${part}) 최후의 최후 배치: ${row}행 ${col}열`);
@@ -1345,10 +1367,7 @@ function assignSeatsToRows(
           } else {
             // BASS: 오른쪽부터 탐색, 기존 왼쪽 파트보다 왼쪽으로 가지 않음
             const maxLeftCol = findMaxLeftPartCol(row);
-            const minCol = Math.max(
-              row <= 3 ? midPoint + 1 : 1,
-              maxLeftCol + 1
-            );
+            const minCol = Math.max(row <= 3 ? midPoint + 1 : 1, maxLeftCol + 1);
             for (let col = MAX_ROW_CAPACITY; col >= minCol; col--) {
               if (!occupiedSeats.has(seatKey(row, col))) {
                 logger.warn(`${member.name}(${part}) 최후의 최후 배치: ${row}행 ${col}열`);
@@ -1363,8 +1382,12 @@ function assignSeatsToRows(
       // TENOR/BASS는 선호 행(4-6)을 먼저 탐색
       const isLowerPart = part === 'TENOR' || part === 'BASS';
       const rows46 = isLowerPart
-        ? [...Array.from({ length: Math.max(0, numRows - 3) }, (_, i) => i + 4).filter(r => r <= numRows),
-           ...Array.from({ length: Math.min(3, numRows) }, (_, i) => i + 1)]
+        ? [
+            ...Array.from({ length: Math.max(0, numRows - 3) }, (_, i) => i + 4).filter(
+              (r) => r <= numRows
+            ),
+            ...Array.from({ length: Math.min(3, numRows) }, (_, i) => i + 1),
+          ]
         : Array.from({ length: numRows }, (_, i) => i + 1);
 
       for (const row of rows46) {
@@ -1400,21 +1423,25 @@ function assignSeatsToRows(
   // === 후처리: 좌우 분할 위반 수정 ===
   // 같은 행에서 왼쪽 파트(SOPRANO/TENOR)가 오른쪽 파트(ALTO/BASS)보다 오른쪽에 있으면 교환
   for (let row = 1; row <= rowCapacities.length; row++) {
-    const rowSeats = seats.filter(s => s.row === row);
-    const leftParts = rowSeats.filter(s => s.part === 'SOPRANO' || s.part === 'TENOR');
-    const rightParts = rowSeats.filter(s => s.part === 'ALTO' || s.part === 'BASS');
+    const rowSeats = seats.filter((s) => s.row === row);
+    const leftParts = rowSeats.filter((s) => s.part === 'SOPRANO' || s.part === 'TENOR');
+    const rightParts = rowSeats.filter((s) => s.part === 'ALTO' || s.part === 'BASS');
 
     if (leftParts.length === 0 || rightParts.length === 0) continue;
 
     // 왼쪽 파트의 최대 열과 오른쪽 파트의 최소 열 찾기
-    const maxLeftCol = Math.max(...leftParts.map(s => s.col));
-    const minRightCol = Math.min(...rightParts.map(s => s.col));
+    const maxLeftCol = Math.max(...leftParts.map((s) => s.col));
+    const minRightCol = Math.min(...rightParts.map((s) => s.col));
 
     // 위반이 있으면 교환
     if (maxLeftCol > minRightCol) {
       // 위반하는 좌석들 찾기
-      const violatingLeftSeats = leftParts.filter(s => s.col >= minRightCol).sort((a, b) => b.col - a.col);
-      const violatingRightSeats = rightParts.filter(s => s.col <= maxLeftCol).sort((a, b) => a.col - b.col);
+      const violatingLeftSeats = leftParts
+        .filter((s) => s.col >= minRightCol)
+        .sort((a, b) => b.col - a.col);
+      const violatingRightSeats = rightParts
+        .filter((s) => s.col <= maxLeftCol)
+        .sort((a, b) => a.col - b.col);
 
       // 교환 수행
       const swapCount = Math.min(violatingLeftSeats.length, violatingRightSeats.length);
@@ -1425,7 +1452,9 @@ function assignSeatsToRows(
         const tempCol = leftSeat.col;
         leftSeat.col = rightSeat.col;
         rightSeat.col = tempCol;
-        logger.debug(`좌우 위반 수정: ${leftSeat.member_name}(${leftSeat.part}) ↔ ${rightSeat.member_name}(${rightSeat.part}) in row ${row}`);
+        logger.debug(
+          `좌우 위반 수정: ${leftSeat.member_name}(${leftSeat.part}) ↔ ${rightSeat.member_name}(${rightSeat.part}) in row ${row}`
+        );
       }
     }
   }
@@ -1480,7 +1509,7 @@ export function generateAISeatingArrangement(
     BASS: 0,
   };
 
-  attendingMembers.forEach(member => {
+  attendingMembers.forEach((member) => {
     partCounts[member.part]++;
   });
 
@@ -1538,15 +1567,19 @@ export function generateAISeatingArrangement(
     }
 
     logger.debug(`[${part}] 총 ${ps.length}명:`);
-    for (const row of Object.keys(rowGroups).map(Number).sort((a, b) => a - b)) {
+    for (const row of Object.keys(rowGroups)
+      .map(Number)
+      .sort((a, b) => a - b)) {
       const cols = rowGroups[row].sort((a, b) => a - b);
       const constraint = getAdjustedColConstraints(part, row, rowCapacities[row - 1]);
-      const constraintStr = constraint ? `학습범위: ${constraint.min}-${constraint.max}` : '(학습데이터 없음)';
+      const constraintStr = constraint
+        ? `학습범위: ${constraint.min}-${constraint.max}`
+        : '(학습데이터 없음)';
       logger.debug(`  ${row}행: col ${cols.join(', ')} [${constraintStr}]`);
 
       // 범위 이탈 체크
       if (constraint) {
-        const outOfRange = cols.filter(c => c < constraint.min || c > constraint.max);
+        const outOfRange = cols.filter((c) => c < constraint.min || c > constraint.max);
         if (outOfRange.length > 0) {
           logger.debug(`    ⚠️ 범위 이탈: col ${outOfRange.join(', ')}`);
         }
@@ -1560,16 +1593,16 @@ export function generateAISeatingArrangement(
 
   if (options?.preserveGridLayout && options?.existingGridLayout) {
     // 기존 그리드 레이아웃 보존 - 이미 사용자 그리드로 배치했으므로 그대로 유지
-    finalRowCapacities = rowCapacities;  // 이미 사용자 그리드 값 (라인 1493-1495에서 할당됨)
+    finalRowCapacities = rowCapacities; // 이미 사용자 그리드 값 (라인 1493-1495에서 할당됨)
     logger.debug('그리드 보존: preserveGridLayout=true, 사용자 그리드 유지');
   } else {
     // 각 행에서 실제로 사용된 최대 열 번호를 찾아 rowCapacities 조정
     const adjustedRowCapacities: number[] = [];
     for (let row = 1; row <= numRows; row++) {
-      const seatsInRow = seats.filter(s => s.row === row);
+      const seatsInRow = seats.filter((s) => s.row === row);
       if (seatsInRow.length > 0) {
         // 해당 행에서 가장 오른쪽에 배치된 열 번호
-        const maxCol = Math.max(...seatsInRow.map(s => s.col));
+        const maxCol = Math.max(...seatsInRow.map((s) => s.col));
         adjustedRowCapacities.push(maxCol);
       } else {
         // 해당 행에 배치된 대원이 없으면 0
@@ -1579,7 +1612,9 @@ export function generateAISeatingArrangement(
 
     const totalSeatsBeforeAdjust = rowCapacities.reduce((a, b) => a + b, 0);
     const totalSeatsAfterAdjust = adjustedRowCapacities.reduce((a, b) => a + b, 0);
-    logger.debug(`그리드 압축: ${totalSeatsBeforeAdjust}석 → ${totalSeatsAfterAdjust}석 (${totalSeatsBeforeAdjust - totalSeatsAfterAdjust}석 감소)`);
+    logger.debug(
+      `그리드 압축: ${totalSeatsBeforeAdjust}석 → ${totalSeatsAfterAdjust}석 (${totalSeatsBeforeAdjust - totalSeatsAfterAdjust}석 감소)`
+    );
 
     finalRowCapacities = adjustedRowCapacities;
   }
@@ -1591,8 +1626,8 @@ export function generateAISeatingArrangement(
   return {
     grid_layout: {
       rows: numRows,
-      row_capacities: finalRowCapacities,  // 압축된 용량 또는 기존 용량 (preserveGridLayout에 따라)
-      zigzag_pattern: 'none',  // 왼쪽 정렬
+      row_capacities: finalRowCapacities, // 압축된 용량 또는 기존 용량 (preserveGridLayout에 따라)
+      zigzag_pattern: 'none', // 왼쪽 정렬
       // row_offsets 생략 = 모든 행 동일 시작점 (왼쪽 정렬)
     },
     seats,
@@ -1613,8 +1648,8 @@ export interface LearnedMemberPreference {
   part?: string;
   preferred_row: number;
   preferred_col: number;
-  row_consistency: number;  // 0-100
-  col_consistency: number;  // 0-100
+  row_consistency: number; // 0-100
+  col_consistency: number; // 0-100
   is_fixed_seat: boolean;
   total_appearances: number;
 }
@@ -1653,8 +1688,8 @@ export function loadLearnedPreferences(
       member_id: pref.member_id,
       preferred_row: pref.preferred_row,
       preferred_col: pref.preferred_col,
-      row_consistency: pref.row_consistency / 100,  // 0-1로 변환
-      col_consistency: pref.col_consistency / 100,  // 0-1로 변환
+      row_consistency: pref.row_consistency / 100, // 0-1로 변환
+      col_consistency: pref.col_consistency / 100, // 0-1로 변환
       total_appearances: pref.total_appearances,
     });
   }
@@ -1681,8 +1716,8 @@ export function loadPreferencesFromDB(
       member_id: stat.member_id,
       preferred_row: stat.preferred_row,
       preferred_col: stat.preferred_col,
-      row_consistency: (stat.row_consistency ?? 0) / 100,  // 0-1로 변환
-      col_consistency: (stat.col_consistency ?? 0) / 100,  // 0-1로 변환
+      row_consistency: (stat.row_consistency ?? 0) / 100, // 0-1로 변환
+      col_consistency: (stat.col_consistency ?? 0) / 100, // 0-1로 변환
       total_appearances: stat.total_appearances,
     });
   }

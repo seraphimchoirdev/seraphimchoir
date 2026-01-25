@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateCSRFToken, setCSRFTokenCookie, getCSRFToken } from '@/lib/security/csrf-protection';
+
+import {
+  generateCSRFToken,
+  getCSRFToken,
+  setCSRFTokenCookie,
+} from '@/lib/security/csrf-protection';
 
 /**
  * GET /api/csrf
  * CSRF 토큰을 반환합니다.
  * 클라이언트는 이 토큰을 헤더에 포함해서 요청해야 합니다.
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // 기존 토큰 확인
     let token = await getCSRFToken();
@@ -23,9 +28,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ token });
   } catch (error) {
     console.error('CSRF token generation error:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate CSRF token' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to generate CSRF token' }, { status: 500 });
   }
 }

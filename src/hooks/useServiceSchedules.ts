@@ -1,5 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import { STALE_TIME } from '@/lib/constants';
+
 import type { Database } from '@/types/database.types';
 
 type ServiceSchedule = Database['public']['Tables']['service_schedules']['Row'];
@@ -129,13 +131,7 @@ export function useUpdateServiceSchedule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: ServiceScheduleUpdate;
-    }) => {
+    mutationFn: async ({ id, data }: { id: string; data: ServiceScheduleUpdate }) => {
       const response = await fetch(`/api/service-schedules/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

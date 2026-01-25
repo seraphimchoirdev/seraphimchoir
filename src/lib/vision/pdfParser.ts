@@ -3,36 +3,49 @@
  * - 텍스트 기반 PDF: 직접 텍스트 추출 (100% 정확도)
  * - 스캔 PDF: 이미지로 변환 후 Vision API OCR
  */
-
-import { extractText, getDocumentProxy } from 'unpdf';
 import { pdfToPng } from 'pdf-to-png-converter';
-import type { ParsedSchedule, ParseResult } from './parseScheduleTable';
-import { normalizeDateString, hasWeekdayInfo } from './parseScheduleTable';
+import { extractText, getDocumentProxy } from 'unpdf';
+
 import { createLogger } from '@/lib/logger';
+
+import type { ParseResult, ParsedSchedule } from './parseScheduleTable';
+import { hasWeekdayInfo, normalizeDateString } from './parseScheduleTable';
 
 const logger = createLogger({ prefix: 'PDFParser' });
 
 // 후드 색상 목록
-const HOOD_COLORS = ['백', '녹', '보라', '적', '검정', '흰', '녹색', '보라색', '흰색', '검정색', '빨강'];
+const HOOD_COLORS = [
+  '백',
+  '녹',
+  '보라',
+  '적',
+  '검정',
+  '흰',
+  '녹색',
+  '보라색',
+  '흰색',
+  '검정색',
+  '빨강',
+];
 
 // 절기/행사 키워드에서 예배 유형 추론
 const SERVICE_TYPE_KEYWORDS: Record<string, string> = {
-  '성탄': '절기찬양예배',
-  '부활': '절기찬양예배',
-  '추수감사': '절기찬양예배',
-  '맥추': '절기찬양예배',
-  '종려': '절기찬양예배',
-  '사순': '절기찬양예배',
-  '부활절': '절기찬양예배',
-  '성탄절': '절기찬양예배',
-  '오순절': '절기찬양예배',
-  '대림절': '절기찬양예배',
-  '송구영신': '절기찬양예배',
-  '신년': '절기찬양예배',
-  '설날': '절기찬양예배',
-  '새해': '절기찬양예배',
-  '기도회': '기도회',
-  '새벽': '기도회',
+  성탄: '절기찬양예배',
+  부활: '절기찬양예배',
+  추수감사: '절기찬양예배',
+  맥추: '절기찬양예배',
+  종려: '절기찬양예배',
+  사순: '절기찬양예배',
+  부활절: '절기찬양예배',
+  성탄절: '절기찬양예배',
+  오순절: '절기찬양예배',
+  대림절: '절기찬양예배',
+  송구영신: '절기찬양예배',
+  신년: '절기찬양예배',
+  설날: '절기찬양예배',
+  새해: '절기찬양예배',
+  기도회: '기도회',
+  새벽: '기도회',
 };
 
 /**
@@ -92,11 +105,14 @@ function extractHoodColor(text: string): string | null {
 function splitRowIntoColumns(line: string): string[] {
   // 먼저 탭으로 분리 시도
   if (line.includes('\t')) {
-    return line.split('\t').map(col => col.trim());
+    return line.split('\t').map((col) => col.trim());
   }
 
   // 탭이 없으면 2개 이상의 연속 공백으로 분리
-  return line.split(/\s{2,}/).map(col => col.trim()).filter(col => col.length > 0);
+  return line
+    .split(/\s{2,}/)
+    .map((col) => col.trim())
+    .filter((col) => col.length > 0);
 }
 
 /**
@@ -110,15 +126,12 @@ function isDatePattern(text: string): boolean {
 /**
  * PDF에서 추출된 텍스트를 파싱하여 예배 일정으로 변환
  */
-export function parseScheduleFromPdfText(
-  text: string,
-  year: number
-): ParseResult {
+export function parseScheduleFromPdfText(text: string, year: number): ParseResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   const schedules: ParsedSchedule[] = [];
 
-  const lines = text.split('\n').filter(line => line.trim().length > 0);
+  const lines = text.split('\n').filter((line) => line.trim().length > 0);
 
   logger.debug('=== PDF 텍스트 파싱 ===');
   logger.debug('총 라인 수:', lines.length);

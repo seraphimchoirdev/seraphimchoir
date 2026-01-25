@@ -1,8 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, ExternalLink, Globe } from 'lucide-react';
+import { ExternalLink, Globe, X } from 'lucide-react';
+
+import { useEffect, useState } from 'react';
+
 import { Button } from '@/components/ui/button';
+
+import { showInfo } from '@/lib/toast';
 
 const STORAGE_KEY = 'inapp_browser_dismissed';
 const DISMISS_DURATION = 24 * 60 * 60 * 1000; // 24시간
@@ -25,7 +29,8 @@ function detectInAppBrowser(): {
 
   const ua = navigator.userAgent;
 
-  const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as Window & { MSStream?: unknown }).MSStream;
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) && !(window as Window & { MSStream?: unknown }).MSStream;
   const isAndroid = /Android/.test(ua);
 
   // 카카오톡 인앱 브라우저
@@ -138,7 +143,7 @@ export function InAppBrowserGuide({ forceShow, onClose }: InAppBrowserGuideProps
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      alert('주소가 복사되었습니다.\nSafari 또는 Chrome에서 붙여넣기 하세요.');
+      showInfo('주소가 복사되었습니다. Safari 또는 Chrome에서 붙여넣기 하세요.');
     } catch {
       // 클립보드 API 실패 시 대체 방법
       const textArea = document.createElement('textarea');
@@ -147,7 +152,7 @@ export function InAppBrowserGuide({ forceShow, onClose }: InAppBrowserGuideProps
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      alert('주소가 복사되었습니다.\nSafari 또는 Chrome에서 붙여넣기 하세요.');
+      showInfo('주소가 복사되었습니다. Safari 또는 Chrome에서 붙여넣기 하세요.');
     }
   };
 
@@ -160,13 +165,13 @@ export function InAppBrowserGuide({ forceShow, onClose }: InAppBrowserGuideProps
   const browserName = browserInfo.isIOS ? 'Safari' : 'Chrome';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-300">
-      <div className="w-full max-w-sm bg-[var(--color-background-secondary)] rounded-2xl shadow-2xl animate-in zoom-in-95 duration-300">
+    <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 duration-300">
+      <div className="animate-in zoom-in-95 w-full max-w-sm rounded-2xl bg-[var(--color-background-secondary)] shadow-2xl duration-300">
         {/* 헤더 */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
-              <Globe className="w-5 h-5 text-amber-500" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+              <Globe className="h-5 w-5 text-amber-500" />
             </div>
             <div>
               <h2 className="font-semibold text-[var(--color-text-primary)]">
@@ -181,37 +186,33 @@ export function InAppBrowserGuide({ forceShow, onClose }: InAppBrowserGuideProps
           </div>
           <button
             onClick={handleDismiss}
-            className="p-2 rounded-full hover:bg-[var(--color-background-tertiary)] transition-colors"
+            className="rounded-full p-2 transition-colors hover:bg-[var(--color-background-tertiary)]"
             aria-label="닫기"
           >
-            <X className="w-5 h-5 text-[var(--color-text-tertiary)]" />
+            <X className="h-5 w-5 text-[var(--color-text-tertiary)]" />
           </button>
         </div>
 
         {/* 본문 */}
         <div className="p-4">
-          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+          <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
             앱 설치 및 모든 기능을 사용하려면{' '}
-            <span className="font-medium text-[var(--color-text-primary)]">
-              {browserName}
-            </span>
+            <span className="font-medium text-[var(--color-text-primary)]">{browserName}</span>
             에서 열어주세요.
           </p>
 
-          <div className="mt-4 p-3 bg-[var(--color-background-tertiary)] rounded-lg">
-            <p className="text-xs text-[var(--color-text-tertiary)] mb-2">
-              현재 주소
-            </p>
-            <p className="text-sm text-[var(--color-text-primary)] break-all font-mono">
+          <div className="mt-4 rounded-lg bg-[var(--color-background-tertiary)] p-3">
+            <p className="mb-2 text-xs text-[var(--color-text-tertiary)]">현재 주소</p>
+            <p className="font-mono text-sm break-all text-[var(--color-text-primary)]">
               {typeof window !== 'undefined' ? window.location.href : ''}
             </p>
           </div>
         </div>
 
         {/* 버튼 */}
-        <div className="p-4 space-y-2 border-t border-[var(--color-border)]">
+        <div className="space-y-2 border-t border-[var(--color-border)] p-4">
           <Button onClick={handleOpenExternal} className="w-full">
-            <ExternalLink className="w-4 h-4 mr-2" />
+            <ExternalLink className="mr-2 h-4 w-4" />
             {browserName}에서 열기
           </Button>
           <Button variant="outline" onClick={copyToClipboard} className="w-full">
@@ -219,7 +220,7 @@ export function InAppBrowserGuide({ forceShow, onClose }: InAppBrowserGuideProps
           </Button>
           <button
             onClick={handleDismiss}
-            className="w-full text-sm text-[var(--color-text-tertiary)] py-2 hover:text-[var(--color-text-secondary)] transition-colors"
+            className="w-full py-2 text-sm text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-secondary)]"
           >
             그냥 계속하기
           </button>

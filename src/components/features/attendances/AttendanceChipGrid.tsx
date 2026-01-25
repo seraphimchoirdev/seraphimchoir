@@ -1,9 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
-import { cn, getPartLabel } from '@/lib/utils';
-import { CheckCheck, XCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { Part } from '@/types';
+import { CheckCheck, ChevronDown, ChevronRight, XCircle } from 'lucide-react';
+
+import { useMemo } from 'react';
+
+import { cn, getPartLabel } from '@/lib/utils';
+
 import MemberChip from './MemberChip';
 
 interface Member {
@@ -81,27 +84,25 @@ export default function AttendanceChipGrid({
   if (members.length === 0) return null;
 
   return (
-    <div className="rounded-xl overflow-hidden border border-[var(--color-border-default)] bg-white shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-[var(--color-border-default)] bg-white shadow-sm">
       {/* 파트 헤더 - 접기/펼치기 */}
       <button
         type="button"
         onClick={onToggleExpand}
         className={cn(
-          "w-full flex items-center justify-between px-4 py-3",
-          "bg-gradient-to-r transition-colors duration-200",
+          'flex w-full items-center justify-between px-4 py-3',
+          'bg-gradient-to-r transition-colors duration-200',
           partGradients[part],
-          "hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-primary-300)]"
+          'hover:brightness-95 focus:ring-2 focus:ring-[var(--color-primary-300)] focus:outline-none focus:ring-inset'
         )}
       >
         <div className="flex items-center gap-3">
           {isExpanded ? (
-            <ChevronDown className={cn("w-5 h-5", partAccentColors[part])} />
+            <ChevronDown className={cn('h-5 w-5', partAccentColors[part])} />
           ) : (
-            <ChevronRight className={cn("w-5 h-5", partAccentColors[part])} />
+            <ChevronRight className={cn('h-5 w-5', partAccentColors[part])} />
           )}
-          <span className={cn("font-bold", partAccentColors[part])}>
-            {getPartLabel(part)}
-          </span>
+          <span className={cn('font-bold', partAccentColors[part])}>{getPartLabel(part)}</span>
           <span className="text-sm text-[var(--color-text-secondary)]">
             {stats.attending}/{stats.total}명
           </span>
@@ -109,11 +110,11 @@ export default function AttendanceChipGrid({
 
         {/* 불참자 또는 전원출석 배지 */}
         {stats.absent > 0 ? (
-          <span className="px-2 py-0.5 text-xs font-medium bg-[var(--color-error-100)] text-[var(--color-error-700)] rounded-full">
+          <span className="rounded-full bg-[var(--color-error-100)] px-2 py-0.5 text-xs font-medium text-[var(--color-error-700)]">
             {stats.absent}명 불참
           </span>
         ) : (
-          <span className="px-2 py-0.5 text-xs font-medium bg-[var(--color-success-100)] text-[var(--color-success-700)] rounded-full">
+          <span className="rounded-full bg-[var(--color-success-100)] px-2 py-0.5 text-xs font-medium text-[var(--color-success-700)]">
             전원출석
           </span>
         )}
@@ -121,20 +122,18 @@ export default function AttendanceChipGrid({
 
       {/* 펼쳐진 내용 */}
       {isExpanded && (
-        <div className="p-4 space-y-3 bg-white">
+        <div className="space-y-3 bg-white p-4">
           {/* 빠른 액션 버튼들 */}
-          <div className="flex gap-2 justify-end">
+          <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onSelectAll();
               }}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md
-                text-[var(--color-success-600)] bg-[var(--color-success-50)]
-                hover:bg-[var(--color-success-100)] transition-colors"
+              className="inline-flex items-center gap-1 rounded-md bg-[var(--color-success-50)] px-2.5 py-1 text-xs font-medium text-[var(--color-success-600)] transition-colors hover:bg-[var(--color-success-100)]"
             >
-              <CheckCheck className="w-3.5 h-3.5" />
+              <CheckCheck className="h-3.5 w-3.5" />
               전체 출석
             </button>
             <button
@@ -143,11 +142,9 @@ export default function AttendanceChipGrid({
                 e.stopPropagation();
                 onDeselectAll();
               }}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md
-                text-[var(--color-text-tertiary)] bg-gray-100
-                hover:bg-gray-200 transition-colors"
+              className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-[var(--color-text-tertiary)] transition-colors hover:bg-gray-200"
             >
-              <XCircle className="w-3.5 h-3.5" />
+              <XCircle className="h-3.5 w-3.5" />
               전체 불참
             </button>
           </div>
@@ -173,9 +170,10 @@ export default function AttendanceChipGrid({
 
       {/* 접힌 상태에서 미니 프리뷰 */}
       {!isExpanded && stats.absent > 0 && (
-        <div className="px-4 py-2 bg-gray-50 border-t border-[var(--color-border-default)]">
+        <div className="border-t border-[var(--color-border-default)] bg-gray-50 px-4 py-2">
           <p className="text-xs text-[var(--color-text-tertiary)]">
-            불참: {members
+            불참:{' '}
+            {members
               .filter((m) => !attendanceStates.get(m.id)?.is_service_available)
               .map((m) => m.name)
               .slice(0, 5)

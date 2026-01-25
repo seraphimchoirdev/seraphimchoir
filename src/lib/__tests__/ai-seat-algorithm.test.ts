@@ -1,14 +1,13 @@
 /**
  * AI 자동배치 알고리즘 테스트
  */
-
 import {
-  generateAISeatingArrangement,
-  calculatePreferredSeats,
-  hasStrongFixedSeatPreference,
   type Member,
-  type SeatHistory,
   type PreferredSeat,
+  type SeatHistory,
+  calculatePreferredSeats,
+  generateAISeatingArrangement,
+  hasStrongFixedSeatPreference,
 } from '../ai-seat-algorithm';
 
 describe('AI Seat Arrangement Algorithm', () => {
@@ -70,18 +69,10 @@ describe('AI Seat Arrangement Algorithm', () => {
 
     it('45명 배치 - 소규모', () => {
       const members: Member[] = [
-        ...Array.from({ length: 16 }, (_, i) =>
-          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')
-        ),
-        ...Array.from({ length: 14 }, (_, i) =>
-          createMember(`a${i}`, `알토${i}`, 'ALTO')
-        ),
-        ...Array.from({ length: 6 }, (_, i) =>
-          createMember(`t${i}`, `테너${i}`, 'TENOR')
-        ),
-        ...Array.from({ length: 9 }, (_, i) =>
-          createMember(`b${i}`, `베이스${i}`, 'BASS')
-        ),
+        ...Array.from({ length: 16 }, (_, i) => createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')),
+        ...Array.from({ length: 14 }, (_, i) => createMember(`a${i}`, `알토${i}`, 'ALTO')),
+        ...Array.from({ length: 6 }, (_, i) => createMember(`t${i}`, `테너${i}`, 'TENOR')),
+        ...Array.from({ length: 9 }, (_, i) => createMember(`b${i}`, `베이스${i}`, 'BASS')),
       ];
 
       const result = generateAISeatingArrangement(members);
@@ -95,18 +86,10 @@ describe('AI Seat Arrangement Algorithm', () => {
   describe('6행 구성 (56명 이상)', () => {
     it('84명 배치 - 대규모', () => {
       const members: Member[] = [
-        ...Array.from({ length: 34 }, (_, i) =>
-          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')
-        ),
-        ...Array.from({ length: 23 }, (_, i) =>
-          createMember(`a${i}`, `알토${i}`, 'ALTO')
-        ),
-        ...Array.from({ length: 12 }, (_, i) =>
-          createMember(`t${i}`, `테너${i}`, 'TENOR')
-        ),
-        ...Array.from({ length: 15 }, (_, i) =>
-          createMember(`b${i}`, `베이스${i}`, 'BASS')
-        ),
+        ...Array.from({ length: 34 }, (_, i) => createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')),
+        ...Array.from({ length: 23 }, (_, i) => createMember(`a${i}`, `알토${i}`, 'ALTO')),
+        ...Array.from({ length: 12 }, (_, i) => createMember(`t${i}`, `테너${i}`, 'TENOR')),
+        ...Array.from({ length: 15 }, (_, i) => createMember(`b${i}`, `베이스${i}`, 'BASS')),
       ];
 
       const result = generateAISeatingArrangement(members);
@@ -124,16 +107,16 @@ describe('AI Seat Arrangement Algorithm', () => {
     it('72명 배치 - 실제 데이터 기반 (소프라노 29, 알토 20, 테너 11, 베이스 12)', () => {
       const members: Member[] = [
         ...Array.from({ length: 29 }, (_, i) =>
-          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO', { height: 155 + i % 10 })
+          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO', { height: 155 + (i % 10) })
         ),
         ...Array.from({ length: 20 }, (_, i) =>
-          createMember(`a${i}`, `알토${i}`, 'ALTO', { height: 158 + i % 10 })
+          createMember(`a${i}`, `알토${i}`, 'ALTO', { height: 158 + (i % 10) })
         ),
         ...Array.from({ length: 11 }, (_, i) =>
-          createMember(`t${i}`, `테너${i}`, 'TENOR', { height: 170 + i % 10 })
+          createMember(`t${i}`, `테너${i}`, 'TENOR', { height: 170 + (i % 10) })
         ),
         ...Array.from({ length: 12 }, (_, i) =>
-          createMember(`b${i}`, `베이스${i}`, 'BASS', { height: 175 + i % 10 })
+          createMember(`b${i}`, `베이스${i}`, 'BASS', { height: 175 + (i % 10) })
         ),
       ];
 
@@ -153,16 +136,16 @@ describe('AI Seat Arrangement Algorithm', () => {
     it('83명 배치 - 실제 데이터 기반 (소프라노 33, 알토 21, 테너 14, 베이스 15)', () => {
       const members: Member[] = [
         ...Array.from({ length: 33 }, (_, i) =>
-          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO', { height: 155 + i % 10 })
+          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO', { height: 155 + (i % 10) })
         ),
         ...Array.from({ length: 21 }, (_, i) =>
-          createMember(`a${i}`, `알토${i}`, 'ALTO', { height: 158 + i % 10 })
+          createMember(`a${i}`, `알토${i}`, 'ALTO', { height: 158 + (i % 10) })
         ),
         ...Array.from({ length: 14 }, (_, i) =>
-          createMember(`t${i}`, `테너${i}`, 'TENOR', { height: 170 + i % 10 })
+          createMember(`t${i}`, `테너${i}`, 'TENOR', { height: 170 + (i % 10) })
         ),
         ...Array.from({ length: 15 }, (_, i) =>
-          createMember(`b${i}`, `베이스${i}`, 'BASS', { height: 175 + i % 10 })
+          createMember(`b${i}`, `베이스${i}`, 'BASS', { height: 175 + (i % 10) })
         ),
       ];
 
@@ -182,16 +165,16 @@ describe('AI Seat Arrangement Algorithm', () => {
     it('79명 배치 - 실제 데이터 기반 (소프라노 28, 알토 22, 테너 13, 베이스 16)', () => {
       const members: Member[] = [
         ...Array.from({ length: 28 }, (_, i) =>
-          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO', { height: 155 + i % 10 })
+          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO', { height: 155 + (i % 10) })
         ),
         ...Array.from({ length: 22 }, (_, i) =>
-          createMember(`a${i}`, `알토${i}`, 'ALTO', { height: 158 + i % 10 })
+          createMember(`a${i}`, `알토${i}`, 'ALTO', { height: 158 + (i % 10) })
         ),
         ...Array.from({ length: 13 }, (_, i) =>
-          createMember(`t${i}`, `테너${i}`, 'TENOR', { height: 170 + i % 10 })
+          createMember(`t${i}`, `테너${i}`, 'TENOR', { height: 170 + (i % 10) })
         ),
         ...Array.from({ length: 16 }, (_, i) =>
-          createMember(`b${i}`, `베이스${i}`, 'BASS', { height: 175 + i % 10 })
+          createMember(`b${i}`, `베이스${i}`, 'BASS', { height: 175 + (i % 10) })
         ),
       ];
 
@@ -211,16 +194,16 @@ describe('AI Seat Arrangement Algorithm', () => {
     it('89명 배치 - 실제 데이터 기반 최대 규모 (소프라노 35, 알토 23, 테너 15, 베이스 16)', () => {
       const members: Member[] = [
         ...Array.from({ length: 35 }, (_, i) =>
-          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO', { height: 155 + i % 10 })
+          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO', { height: 155 + (i % 10) })
         ),
         ...Array.from({ length: 23 }, (_, i) =>
-          createMember(`a${i}`, `알토${i}`, 'ALTO', { height: 158 + i % 10 })
+          createMember(`a${i}`, `알토${i}`, 'ALTO', { height: 158 + (i % 10) })
         ),
         ...Array.from({ length: 15 }, (_, i) =>
-          createMember(`t${i}`, `테너${i}`, 'TENOR', { height: 170 + i % 10 })
+          createMember(`t${i}`, `테너${i}`, 'TENOR', { height: 170 + (i % 10) })
         ),
         ...Array.from({ length: 16 }, (_, i) =>
-          createMember(`b${i}`, `베이스${i}`, 'BASS', { height: 175 + i % 10 })
+          createMember(`b${i}`, `베이스${i}`, 'BASS', { height: 175 + (i % 10) })
         ),
       ];
 
@@ -240,16 +223,16 @@ describe('AI Seat Arrangement Algorithm', () => {
     it('68명 배치 - 실제 데이터 기반 최소 규모 (소프라노 29, 알토 18, 테너 10, 베이스 11)', () => {
       const members: Member[] = [
         ...Array.from({ length: 29 }, (_, i) =>
-          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO', { height: 155 + i % 10 })
+          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO', { height: 155 + (i % 10) })
         ),
         ...Array.from({ length: 18 }, (_, i) =>
-          createMember(`a${i}`, `알토${i}`, 'ALTO', { height: 158 + i % 10 })
+          createMember(`a${i}`, `알토${i}`, 'ALTO', { height: 158 + (i % 10) })
         ),
         ...Array.from({ length: 10 }, (_, i) =>
-          createMember(`t${i}`, `테너${i}`, 'TENOR', { height: 170 + i % 10 })
+          createMember(`t${i}`, `테너${i}`, 'TENOR', { height: 170 + (i % 10) })
         ),
         ...Array.from({ length: 11 }, (_, i) =>
-          createMember(`b${i}`, `베이스${i}`, 'BASS', { height: 175 + i % 10 })
+          createMember(`b${i}`, `베이스${i}`, 'BASS', { height: 175 + (i % 10) })
         ),
       ];
 
@@ -279,37 +262,27 @@ describe('AI Seat Arrangement Algorithm', () => {
     it('좌우 분할: SOPRANO/TENOR는 왼쪽, ALTO/BASS는 오른쪽 배치', () => {
       // 소프라노 30, 알토 20, 테너 13, 베이스 15 = 78명
       const members: Member[] = [
-        ...Array.from({ length: 30 }, (_, i) =>
-          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')
-        ),
-        ...Array.from({ length: 20 }, (_, i) =>
-          createMember(`a${i}`, `알토${i}`, 'ALTO')
-        ),
-        ...Array.from({ length: 13 }, (_, i) =>
-          createMember(`t${i}`, `테너${i}`, 'TENOR')
-        ),
-        ...Array.from({ length: 15 }, (_, i) =>
-          createMember(`b${i}`, `베이스${i}`, 'BASS')
-        ),
+        ...Array.from({ length: 30 }, (_, i) => createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')),
+        ...Array.from({ length: 20 }, (_, i) => createMember(`a${i}`, `알토${i}`, 'ALTO')),
+        ...Array.from({ length: 13 }, (_, i) => createMember(`t${i}`, `테너${i}`, 'TENOR')),
+        ...Array.from({ length: 15 }, (_, i) => createMember(`b${i}`, `베이스${i}`, 'BASS')),
       ];
 
       const result = generateAISeatingArrangement(members);
 
       // 각 행에서 좌우 분할 확인
       for (let row = 1; row <= result.grid_layout.rows; row++) {
-        const rowSeats = result.seats.filter(s => s.row === row).sort((a, b) => a.col - b.col);
+        const rowSeats = result.seats.filter((s) => s.row === row).sort((a, b) => a.col - b.col);
 
         // 왼쪽 파트(SOPRANO, TENOR)의 최대 col 찾기
-        const leftPartSeats = rowSeats.filter(s => s.part === 'SOPRANO' || s.part === 'TENOR');
-        const leftMaxCol = leftPartSeats.length > 0
-          ? Math.max(...leftPartSeats.map(s => s.col))
-          : 0;
+        const leftPartSeats = rowSeats.filter((s) => s.part === 'SOPRANO' || s.part === 'TENOR');
+        const leftMaxCol =
+          leftPartSeats.length > 0 ? Math.max(...leftPartSeats.map((s) => s.col)) : 0;
 
         // 오른쪽 파트(ALTO, BASS)의 최소 col 찾기
-        const rightPartSeats = rowSeats.filter(s => s.part === 'ALTO' || s.part === 'BASS');
-        const rightMinCol = rightPartSeats.length > 0
-          ? Math.min(...rightPartSeats.map(s => s.col))
-          : Infinity;
+        const rightPartSeats = rowSeats.filter((s) => s.part === 'ALTO' || s.part === 'BASS');
+        const rightMinCol =
+          rightPartSeats.length > 0 ? Math.min(...rightPartSeats.map((s) => s.col)) : Infinity;
 
         // 왼쪽 파트가 오른쪽 파트보다 왼쪽에 있어야 함
         if (leftPartSeats.length > 0 && rightPartSeats.length > 0) {
@@ -321,37 +294,29 @@ describe('AI Seat Arrangement Algorithm', () => {
     it('상하 분할: 1-3행은 SOPRANO/ALTO 우선, 4-6행은 TENOR/BASS 우선', () => {
       // 소프라노 33, 알토 22, 테너 14, 베이스 16 = 85명
       const members: Member[] = [
-        ...Array.from({ length: 33 }, (_, i) =>
-          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')
-        ),
-        ...Array.from({ length: 22 }, (_, i) =>
-          createMember(`a${i}`, `알토${i}`, 'ALTO')
-        ),
-        ...Array.from({ length: 14 }, (_, i) =>
-          createMember(`t${i}`, `테너${i}`, 'TENOR')
-        ),
-        ...Array.from({ length: 16 }, (_, i) =>
-          createMember(`b${i}`, `베이스${i}`, 'BASS')
-        ),
+        ...Array.from({ length: 33 }, (_, i) => createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')),
+        ...Array.from({ length: 22 }, (_, i) => createMember(`a${i}`, `알토${i}`, 'ALTO')),
+        ...Array.from({ length: 14 }, (_, i) => createMember(`t${i}`, `테너${i}`, 'TENOR')),
+        ...Array.from({ length: 16 }, (_, i) => createMember(`b${i}`, `베이스${i}`, 'BASS')),
       ];
 
       const result = generateAISeatingArrangement(members);
 
       // SOPRANO와 ALTO가 1-3행에 우선 배치되는지 확인
-      const sopranoSeats = result.seats.filter(s => s.part === 'SOPRANO');
-      const altoSeats = result.seats.filter(s => s.part === 'ALTO');
-      const sopranoInFrontRows = sopranoSeats.filter(s => s.row <= 3).length;
-      const altoInFrontRows = altoSeats.filter(s => s.row <= 3).length;
+      const sopranoSeats = result.seats.filter((s) => s.part === 'SOPRANO');
+      const altoSeats = result.seats.filter((s) => s.part === 'ALTO');
+      const sopranoInFrontRows = sopranoSeats.filter((s) => s.row <= 3).length;
+      const altoInFrontRows = altoSeats.filter((s) => s.row <= 3).length;
 
       // 전체 여성파트의 최소 50% 이상이 1-3행에 있어야 함
       expect(sopranoInFrontRows / sopranoSeats.length).toBeGreaterThanOrEqual(0.4);
       expect(altoInFrontRows / altoSeats.length).toBeGreaterThanOrEqual(0.4);
 
       // TENOR와 BASS가 4-6행에 우선 배치되는지 확인
-      const tenorSeats = result.seats.filter(s => s.part === 'TENOR');
-      const bassSeats = result.seats.filter(s => s.part === 'BASS');
-      const tenorInBackRows = tenorSeats.filter(s => s.row >= 4).length;
-      const bassInBackRows = bassSeats.filter(s => s.row >= 4).length;
+      const tenorSeats = result.seats.filter((s) => s.part === 'TENOR');
+      const bassSeats = result.seats.filter((s) => s.part === 'BASS');
+      const tenorInBackRows = tenorSeats.filter((s) => s.row >= 4).length;
+      const bassInBackRows = bassSeats.filter((s) => s.row >= 4).length;
 
       // 최소 70% 이상이 4-6행에 배치되어야 함
       expect(tenorInBackRows / tenorSeats.length).toBeGreaterThanOrEqual(0.7);
@@ -360,18 +325,10 @@ describe('AI Seat Arrangement Algorithm', () => {
 
     it('불균형 파트 인원에서도 좌우 분할 유지 (소프라노 35, 테너 10)', () => {
       const members: Member[] = [
-        ...Array.from({ length: 35 }, (_, i) =>
-          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')
-        ),
-        ...Array.from({ length: 20 }, (_, i) =>
-          createMember(`a${i}`, `알토${i}`, 'ALTO')
-        ),
-        ...Array.from({ length: 10 }, (_, i) =>
-          createMember(`t${i}`, `테너${i}`, 'TENOR')
-        ),
-        ...Array.from({ length: 14 }, (_, i) =>
-          createMember(`b${i}`, `베이스${i}`, 'BASS')
-        ),
+        ...Array.from({ length: 35 }, (_, i) => createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')),
+        ...Array.from({ length: 20 }, (_, i) => createMember(`a${i}`, `알토${i}`, 'ALTO')),
+        ...Array.from({ length: 10 }, (_, i) => createMember(`t${i}`, `테너${i}`, 'TENOR')),
+        ...Array.from({ length: 14 }, (_, i) => createMember(`b${i}`, `베이스${i}`, 'BASS')),
       ];
 
       const result = generateAISeatingArrangement(members);
@@ -379,10 +336,10 @@ describe('AI Seat Arrangement Algorithm', () => {
       expect(result.metadata.total_members).toBe(79);
 
       // 좌우 분할 확인: 왼쪽(SOPRANO+TENOR), 오른쪽(ALTO+BASS)
-      const sopranoSeats = result.seats.filter(s => s.part === 'SOPRANO');
-      const tenorSeats = result.seats.filter(s => s.part === 'TENOR');
-      const altoSeats = result.seats.filter(s => s.part === 'ALTO');
-      const bassSeats = result.seats.filter(s => s.part === 'BASS');
+      const sopranoSeats = result.seats.filter((s) => s.part === 'SOPRANO');
+      const tenorSeats = result.seats.filter((s) => s.part === 'TENOR');
+      const altoSeats = result.seats.filter((s) => s.part === 'ALTO');
+      const bassSeats = result.seats.filter((s) => s.part === 'BASS');
 
       // 각 파트가 모두 배치되었는지 확인
       expect(sopranoSeats.length).toBe(35);
@@ -403,7 +360,7 @@ describe('AI Seat Arrangement Algorithm', () => {
             member_id: 's1',
             positions: [
               { row: 2, col: 5 },
-              { row: 2, col: 5 },  // 2회만 출석
+              { row: 2, col: 5 }, // 2회만 출석
             ],
           },
         ];
@@ -421,7 +378,7 @@ describe('AI Seat Arrangement Algorithm', () => {
             positions: [
               { row: 2, col: 5 },
               { row: 2, col: 5 },
-              { row: 2, col: 6 },  // 3회 출석
+              { row: 2, col: 6 }, // 3회 출석
             ],
           },
         ];
@@ -431,7 +388,7 @@ describe('AI Seat Arrangement Algorithm', () => {
         expect(result.size).toBe(1);
         const pref = result.get('s1')!;
         expect(pref.member_id).toBe('s1');
-        expect(pref.preferred_row).toBe(2);  // 2행에 3회 모두 앉음
+        expect(pref.preferred_row).toBe(2); // 2행에 3회 모두 앉음
         expect(pref.total_appearances).toBe(3);
       });
 
@@ -444,7 +401,7 @@ describe('AI Seat Arrangement Algorithm', () => {
               { row: 2, col: 5 },
               { row: 2, col: 6 },
               { row: 3, col: 5 },
-              { row: 2, col: 5 },  // 2행 4회, 3행 1회
+              { row: 2, col: 5 }, // 2행 4회, 3행 1회
             ],
           },
         ];
@@ -453,7 +410,7 @@ describe('AI Seat Arrangement Algorithm', () => {
         const pref = result.get('s1')!;
 
         expect(pref.preferred_row).toBe(2);
-        expect(pref.row_consistency).toBe(0.8);  // 4/5 = 80%
+        expect(pref.row_consistency).toBe(0.8); // 4/5 = 80%
       });
 
       it('열 일관성 계산 - ±2열 범위 내 비율', () => {
@@ -463,9 +420,9 @@ describe('AI Seat Arrangement Algorithm', () => {
             positions: [
               { row: 2, col: 5 },
               { row: 2, col: 6 },
-              { row: 2, col: 5 },  // 평균 5.4열
+              { row: 2, col: 5 }, // 평균 5.4열
               { row: 2, col: 6 },
-              { row: 2, col: 10 },  // 범위 벗어남 (10 - 5.4 = 4.6 > 2)
+              { row: 2, col: 10 }, // 범위 벗어남 (10 - 5.4 = 4.6 > 2)
             ],
           },
         ];
@@ -474,7 +431,7 @@ describe('AI Seat Arrangement Algorithm', () => {
         const pref = result.get('s1')!;
 
         // 평균 열: (5+6+5+6+10)/5 = 6.4
-        expect(pref.preferred_col).toBe(6);  // 반올림
+        expect(pref.preferred_col).toBe(6); // 반올림
         // ±2 범위(4.4~8.4): 5, 6, 5, 6 = 4개 / 5 = 80%
         expect(pref.col_consistency).toBe(0.8);
       });
@@ -569,18 +526,10 @@ describe('AI Seat Arrangement Algorithm', () => {
     describe('배치 알고리즘에 고정석 반영', () => {
       it('고정석 이력이 없어도 정상 배치', () => {
         const members: Member[] = [
-          ...Array.from({ length: 10 }, (_, i) =>
-            createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')
-          ),
-          ...Array.from({ length: 8 }, (_, i) =>
-            createMember(`a${i}`, `알토${i}`, 'ALTO')
-          ),
-          ...Array.from({ length: 5 }, (_, i) =>
-            createMember(`t${i}`, `테너${i}`, 'TENOR')
-          ),
-          ...Array.from({ length: 7 }, (_, i) =>
-            createMember(`b${i}`, `베이스${i}`, 'BASS')
-          ),
+          ...Array.from({ length: 10 }, (_, i) => createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')),
+          ...Array.from({ length: 8 }, (_, i) => createMember(`a${i}`, `알토${i}`, 'ALTO')),
+          ...Array.from({ length: 5 }, (_, i) => createMember(`t${i}`, `테너${i}`, 'TENOR')),
+          ...Array.from({ length: 7 }, (_, i) => createMember(`b${i}`, `베이스${i}`, 'BASS')),
         ];
 
         const result = generateAISeatingArrangement(members);
@@ -591,18 +540,10 @@ describe('AI Seat Arrangement Algorithm', () => {
 
       it('seatHistories를 전달하면 선호 좌석 계산 후 배치', () => {
         const members: Member[] = [
-          ...Array.from({ length: 10 }, (_, i) =>
-            createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')
-          ),
-          ...Array.from({ length: 8 }, (_, i) =>
-            createMember(`a${i}`, `알토${i}`, 'ALTO')
-          ),
-          ...Array.from({ length: 5 }, (_, i) =>
-            createMember(`t${i}`, `테너${i}`, 'TENOR')
-          ),
-          ...Array.from({ length: 7 }, (_, i) =>
-            createMember(`b${i}`, `베이스${i}`, 'BASS')
-          ),
+          ...Array.from({ length: 10 }, (_, i) => createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')),
+          ...Array.from({ length: 8 }, (_, i) => createMember(`a${i}`, `알토${i}`, 'ALTO')),
+          ...Array.from({ length: 5 }, (_, i) => createMember(`t${i}`, `테너${i}`, 'TENOR')),
+          ...Array.from({ length: 7 }, (_, i) => createMember(`b${i}`, `베이스${i}`, 'BASS')),
         ];
 
         // 첫 번째 소프라노가 2행 3열을 선호 (100% 일관성)
@@ -624,35 +565,30 @@ describe('AI Seat Arrangement Algorithm', () => {
         expect(result.seats.length).toBe(30);
 
         // s0가 배치됨을 확인
-        const s0Seat = result.seats.find(s => s.member_id === 's0');
+        const s0Seat = result.seats.find((s) => s.member_id === 's0');
         expect(s0Seat).toBeDefined();
       });
 
       it('preferredSeats를 직접 전달하면 해당 정보로 배치', () => {
         const members: Member[] = [
-          ...Array.from({ length: 10 }, (_, i) =>
-            createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')
-          ),
-          ...Array.from({ length: 8 }, (_, i) =>
-            createMember(`a${i}`, `알토${i}`, 'ALTO')
-          ),
-          ...Array.from({ length: 5 }, (_, i) =>
-            createMember(`t${i}`, `테너${i}`, 'TENOR')
-          ),
-          ...Array.from({ length: 7 }, (_, i) =>
-            createMember(`b${i}`, `베이스${i}`, 'BASS')
-          ),
+          ...Array.from({ length: 10 }, (_, i) => createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')),
+          ...Array.from({ length: 8 }, (_, i) => createMember(`a${i}`, `알토${i}`, 'ALTO')),
+          ...Array.from({ length: 5 }, (_, i) => createMember(`t${i}`, `테너${i}`, 'TENOR')),
+          ...Array.from({ length: 7 }, (_, i) => createMember(`b${i}`, `베이스${i}`, 'BASS')),
         ];
 
         const preferredSeats = new Map<string, PreferredSeat>([
-          ['s0', {
-            member_id: 's0',
-            preferred_row: 1,
-            preferred_col: 2,
-            row_consistency: 1.0,
-            col_consistency: 1.0,
-            total_appearances: 20,
-          }],
+          [
+            's0',
+            {
+              member_id: 's0',
+              preferred_row: 1,
+              preferred_col: 2,
+              row_consistency: 1.0,
+              col_consistency: 1.0,
+              total_appearances: 20,
+            },
+          ],
         ]);
 
         const result = generateAISeatingArrangement(members, { preferredSeats });
@@ -660,7 +596,7 @@ describe('AI Seat Arrangement Algorithm', () => {
         expect(result.seats.length).toBe(30);
 
         // s0가 배치됨을 확인
-        const s0Seat = result.seats.find(s => s.member_id === 's0');
+        const s0Seat = result.seats.find((s) => s.member_id === 's0');
         expect(s0Seat).toBeDefined();
       });
     });
@@ -670,23 +606,15 @@ describe('AI Seat Arrangement Algorithm', () => {
     it('모든 좌석이 유효한 row/col 값을 가져야 함 - 실제 비율 기반', () => {
       // 실제 비율: 소프라노 30, 알토 20, 테너 12, 베이스 14 = 76명
       const members: Member[] = [
-        ...Array.from({ length: 30 }, (_, i) =>
-          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')
-        ),
-        ...Array.from({ length: 20 }, (_, i) =>
-          createMember(`a${i}`, `알토${i}`, 'ALTO')
-        ),
-        ...Array.from({ length: 12 }, (_, i) =>
-          createMember(`t${i}`, `테너${i}`, 'TENOR')
-        ),
-        ...Array.from({ length: 14 }, (_, i) =>
-          createMember(`b${i}`, `베이스${i}`, 'BASS')
-        ),
+        ...Array.from({ length: 30 }, (_, i) => createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')),
+        ...Array.from({ length: 20 }, (_, i) => createMember(`a${i}`, `알토${i}`, 'ALTO')),
+        ...Array.from({ length: 12 }, (_, i) => createMember(`t${i}`, `테너${i}`, 'TENOR')),
+        ...Array.from({ length: 14 }, (_, i) => createMember(`b${i}`, `베이스${i}`, 'BASS')),
       ];
 
       const result = generateAISeatingArrangement(members);
 
-      result.seats.forEach(seat => {
+      result.seats.forEach((seat) => {
         // row는 1-based (1 이상, 총 행 수 이하)
         expect(seat.row).toBeGreaterThanOrEqual(1);
         expect(seat.row).toBeLessThanOrEqual(result.grid_layout.rows);
@@ -703,26 +631,18 @@ describe('AI Seat Arrangement Algorithm', () => {
     it('같은 행에 중복된 col이 없어야 함 - 실제 비율 기반', () => {
       // 실제 비율: 소프라노 32, 알토 22, 테너 14, 베이스 15 = 83명
       const members: Member[] = [
-        ...Array.from({ length: 32 }, (_, i) =>
-          createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')
-        ),
-        ...Array.from({ length: 22 }, (_, i) =>
-          createMember(`a${i}`, `알토${i}`, 'ALTO')
-        ),
-        ...Array.from({ length: 14 }, (_, i) =>
-          createMember(`t${i}`, `테너${i}`, 'TENOR')
-        ),
-        ...Array.from({ length: 15 }, (_, i) =>
-          createMember(`b${i}`, `베이스${i}`, 'BASS')
-        ),
+        ...Array.from({ length: 32 }, (_, i) => createMember(`s${i}`, `소프라노${i}`, 'SOPRANO')),
+        ...Array.from({ length: 22 }, (_, i) => createMember(`a${i}`, `알토${i}`, 'ALTO')),
+        ...Array.from({ length: 14 }, (_, i) => createMember(`t${i}`, `테너${i}`, 'TENOR')),
+        ...Array.from({ length: 15 }, (_, i) => createMember(`b${i}`, `베이스${i}`, 'BASS')),
       ];
 
       const result = generateAISeatingArrangement(members);
 
       // 각 행별로 검증
       for (let row = 0; row < result.grid_layout.rows; row++) {
-        const rowSeats = result.seats.filter(s => s.row === row);
-        const cols = rowSeats.map(s => s.col);
+        const rowSeats = result.seats.filter((s) => s.row === row);
+        const cols = rowSeats.map((s) => s.col);
 
         // 중복 제거 후 길이가 같아야 함
         const uniqueCols = Array.from(new Set(cols));

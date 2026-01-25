@@ -1,7 +1,7 @@
 'use client';
 
-import Navigation from './Navigation';
 import BottomNavigation from './BottomNavigation';
+import Navigation from './Navigation';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -17,9 +17,7 @@ export default function AppShell({ children }: AppShellProps) {
   return (
     <>
       <Navigation />
-      <main className="pb-bottom-nav">
-        {children}
-      </main>
+      <main className="pb-bottom-nav">{children}</main>
       <BottomNavigation />
     </>
   );

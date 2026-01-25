@@ -3,11 +3,12 @@
  *
  * 모든 보안 관련 이벤트를 추적하고 기록
  */
-
-import { createAdminClient } from '@/lib/supabase/server';
 import { NextRequest } from 'next/server';
-import { getClientIp } from './rate-limiter';
+
 import { createLogger } from '@/lib/logger';
+import { createAdminClient } from '@/lib/supabase/server';
+
+import { getClientIp } from './rate-limiter';
 
 const logger = createLogger({ prefix: 'AuditLogger' });
 
@@ -80,12 +81,10 @@ export async function logAuditEvent(data: AuditLogData): Promise<void> {
       data.is_suspicious = isSuspiciousEvent(data.event_type);
     }
 
-    const { error } = await supabase
-      .from('audit_logs')
-      .insert({
-        ...data,
-        created_at: new Date().toISOString(),
-      });
+    const { error } = await supabase.from('audit_logs').insert({
+      ...data,
+      created_at: new Date().toISOString(),
+    });
 
     if (error) {
       logger.error('Failed to log audit event:', error);
@@ -152,10 +151,7 @@ function getDefaultSeverity(eventType: AuditEventType): EventSeverity {
  * 의심스러운 이벤트 판별
  */
 function isSuspiciousEvent(eventType: AuditEventType): boolean {
-  const suspiciousEvents: AuditEventType[] = [
-    'unauthorized_access',
-    'suspicious_activity',
-  ];
+  const suspiciousEvents: AuditEventType[] = ['unauthorized_access', 'suspicious_activity'];
 
   return suspiciousEvents.includes(eventType);
 }
@@ -228,10 +224,7 @@ export async function logRateLimitExceeded(
 /**
  * CSP 위반 기록
  */
-export async function logCSPViolation(
-  violationReport: any,
-  request?: NextRequest
-): Promise<void> {
+export async function logCSPViolation(violationReport: any, request?: NextRequest): Promise<void> {
   await logAuditEvent({
     event_type: 'csp_violation',
     event_category: 'security',

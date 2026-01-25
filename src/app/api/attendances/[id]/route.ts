@@ -1,9 +1,12 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import { z } from 'zod';
+
+import { NextRequest, NextResponse } from 'next/server';
+
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
+
+import type { Database } from '@/types/database.types';
 
 const logger = createLogger({ prefix: 'AttendanceDetailAPI' });
 
@@ -26,7 +29,10 @@ async function checkFullDeadline(
 
 // Attendance 수정 스키마
 const updateAttendanceSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식은 YYYY-MM-DD여야 합니다').optional(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식은 YYYY-MM-DD여야 합니다')
+    .optional(),
   is_service_available: z.boolean().optional(),
   is_practice_attended: z.boolean().optional(),
   notes: z.string().nullable().optional(),
@@ -36,10 +42,7 @@ const updateAttendanceSchema = z.object({
  * GET /api/attendances/[id]
  * 특정 출석 기록 조회
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createClient();
@@ -70,10 +73,7 @@ export async function GET(
     return NextResponse.json(data);
   } catch (error) {
     logger.error('Attendance GET error:', error);
-    return NextResponse.json(
-      { error: '출석 기록을 불러오는데 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '출석 기록을 불러오는데 실패했습니다' }, { status: 500 });
   }
 }
 
@@ -82,10 +82,7 @@ export async function GET(
  * 출석 기록 수정
  * 권한: PART_LEADER 이상
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createClient();
@@ -108,10 +105,7 @@ export async function PATCH(
 
     const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER'];
     if (!profile?.role || !allowedRoles.includes(profile.role)) {
-      return NextResponse.json(
-        { error: '출석 기록 수정 권한이 없습니다' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: '출석 기록 수정 권한이 없습니다' }, { status: 403 });
     }
 
     // 마감 검증을 위해 기존 출석 레코드 조회
@@ -124,10 +118,7 @@ export async function PATCH(
     if (existingAttendance) {
       const isFullyClosed = await checkFullDeadline(supabase, existingAttendance.date);
       if (isFullyClosed && !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
-        return NextResponse.json(
-          { error: '전체 마감되어 수정할 수 없습니다.' },
-          { status: 403 }
-        );
+        return NextResponse.json({ error: '전체 마감되어 수정할 수 없습니다.' }, { status: 403 });
       }
     }
 
@@ -156,10 +147,7 @@ export async function PATCH(
     }
 
     logger.error('Attendance PATCH error:', error);
-    return NextResponse.json(
-      { error: '출석 기록 수정에 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '출석 기록 수정에 실패했습니다' }, { status: 500 });
   }
 }
 
@@ -194,10 +182,7 @@ export async function DELETE(
 
     const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER'];
     if (!profile?.role || !allowedRoles.includes(profile.role)) {
-      return NextResponse.json(
-        { error: '출석 기록 삭제 권한이 없습니다' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: '출석 기록 삭제 권한이 없습니다' }, { status: 403 });
     }
 
     // 마감 검증을 위해 기존 출석 레코드 조회
@@ -210,17 +195,11 @@ export async function DELETE(
     if (existingAttendance) {
       const isFullyClosed = await checkFullDeadline(supabase, existingAttendance.date);
       if (isFullyClosed && !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
-        return NextResponse.json(
-          { error: '전체 마감되어 삭제할 수 없습니다.' },
-          { status: 403 }
-        );
+        return NextResponse.json({ error: '전체 마감되어 삭제할 수 없습니다.' }, { status: 403 });
       }
     }
 
-    const { error } = await supabase
-      .from('attendances')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('attendances').delete().eq('id', id);
 
     if (error) {
       logger.error('Supabase error:', error);
@@ -230,9 +209,6 @@ export async function DELETE(
     return NextResponse.json({ message: '출석 기록이 삭제되었습니다' });
   } catch (error) {
     logger.error('Attendance DELETE error:', error);
-    return NextResponse.json(
-      { error: '출석 기록 삭제에 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '출석 기록 삭제에 실패했습니다' }, { status: 500 });
   }
 }

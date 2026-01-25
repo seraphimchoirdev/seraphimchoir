@@ -1,4 +1,4 @@
-import { Tables, Enums } from './database.types';
+import { Enums, Tables } from './database.types';
 
 // Supabase table types
 export type Member = Tables<'members'>;
@@ -21,7 +21,10 @@ export type MemberStatus = Enums<'member_status'>;
  *
  * 주의: 마이그레이션 후 `npx supabase gen types`로 재생성 필요
  */
-export interface MemberPublic extends Omit<Member, 'conductor_notes_auth_tag' | 'conductor_notes_iv' | 'encrypted_conductor_notes'> {
+export interface MemberPublic extends Omit<
+  Member,
+  'conductor_notes_auth_tag' | 'conductor_notes_iv' | 'encrypted_conductor_notes'
+> {
   is_singer: boolean;
   height_cm: number | null;
   regular_member_since: string | null;

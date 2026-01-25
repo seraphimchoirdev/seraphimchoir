@@ -1,26 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { createLogger } from '@/lib/logger';
 
-const logger = createLogger({ prefix: 'ParseScheduleAPI' });
+import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
 import {
+  calculateDynamicYThreshold,
+  detectColumnBoundaries,
+  groupRowIntoColumns,
+  groupWordsIntoRows,
   parseScheduleFromWords,
   toServiceScheduleInsert,
-  groupWordsIntoRows,
-  groupRowIntoColumns,
-  detectColumnBoundaries,
-  calculateDynamicYThreshold,
 } from '@/lib/vision';
+import {
+  type ExtractedWord as ClovaExtractedWord,
+  extractWordsWithClovaOcr,
+  isClovaOcrConfigured,
+} from '@/lib/vision/clovaOcrClient';
 import {
   extractTextFromPdf,
   isPdfTextBased,
   parseScheduleFromPdfText,
 } from '@/lib/vision/pdfParser';
-import {
-  isClovaOcrConfigured,
-  extractWordsWithClovaOcr,
-  type ExtractedWord as ClovaExtractedWord,
-} from '@/lib/vision/clovaOcrClient';
+
+const logger = createLogger({ prefix: 'ParseScheduleAPI' });
 
 export const maxDuration = 60; // 60초 타임아웃
 
@@ -55,10 +56,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: '인증이 필요합니다.' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: '인증이 필요합니다.' }, { status: 401 });
     }
 
     // 권한 확인 (ADMIN, CONDUCTOR, MANAGER, PART_LEADER)
@@ -70,10 +68,7 @@ export async function POST(request: NextRequest) {
 
     const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER'];
     if (!profile?.role || !allowedRoles.includes(profile.role)) {
-      return NextResponse.json(
-        { success: false, error: '권한이 없습니다.' },
-        { status: 403 }
-      );
+      return NextResponse.json({ success: false, error: '권한이 없습니다.' }, { status: 403 });
     }
 
     // FormData 파싱
@@ -94,10 +89,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!file) {
-      return NextResponse.json(
-        { success: false, error: '파일이 필요합니다.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: '파일이 필요합니다.' }, { status: 400 });
     }
 
     // 파일 타입 확인 (이미지 + PDF)
@@ -277,12 +269,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     logger.error('파일 처리 오류:', error);
 
-    const message =
-      error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+    const message = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
 
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

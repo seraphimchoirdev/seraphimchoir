@@ -3,8 +3,9 @@
  * RPC 함수를 서버에서 호출하여 클라이언트에 반환합니다.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'AttendanceStatsHistory' });
 
@@ -42,10 +43,7 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('end_date');
 
     if (!memberId) {
-      return NextResponse.json(
-        { error: '회원 ID는 필수입니다' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '회원 ID는 필수입니다' }, { status: 400 });
     }
 
     const { data, error } = await supabase.rpc('get_member_attendance_history', {
@@ -65,9 +63,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data as MemberAttendanceHistoryResponse[]);
   } catch (error) {
     logger.error('Member attendance history error:', error);
-    return NextResponse.json(
-      { error: '회원 출석 이력 조회에 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '회원 출석 이력 조회에 실패했습니다' }, { status: 500 });
   }
 }

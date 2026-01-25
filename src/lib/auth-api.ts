@@ -4,22 +4,21 @@
  * 이 파일은 브라우저에서 인증 API를 호출하는 편의 함수를 제공합니다.
  * Next.js API Routes를 통해 Supabase Auth와 통신합니다.
  */
+import type {
+  ErrorResponse,
+  GetCurrentUserResponse,
+  LoginRequest,
+  LoginResponse,
+  LogoutResponse,
+  SignupRequest,
+  SignupResponse,
+  UpdateRoleRequest,
+  UpdateRoleResponse,
+} from '@/app/api/auth/types';
 
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'AuthApi' });
-
-import type {
-  SignupRequest,
-  SignupResponse,
-  LoginRequest,
-  LoginResponse,
-  LogoutResponse,
-  GetCurrentUserResponse,
-  UpdateRoleRequest,
-  UpdateRoleResponse,
-  ErrorResponse,
-} from '@/app/api/auth/types';
 
 /**
  * API 응답 타입
@@ -32,10 +31,7 @@ type ApiResponse<T> = {
 /**
  * API 요청 헬퍼
  */
-async function apiRequest<T>(
-  url: string,
-  options?: RequestInit
-): Promise<ApiResponse<T>> {
+async function apiRequest<T>(url: string, options?: RequestInit): Promise<ApiResponse<T>> {
   try {
     const response = await fetch(url, {
       ...options,
@@ -106,9 +102,7 @@ export async function logoutWithApi(): Promise<ApiResponse<LogoutResponse>> {
 /**
  * 현재 사용자 조회
  */
-export async function getCurrentUserWithApi(): Promise<
-  ApiResponse<GetCurrentUserResponse>
-> {
+export async function getCurrentUserWithApi(): Promise<ApiResponse<GetCurrentUserResponse>> {
   return apiRequest<GetCurrentUserResponse>('/api/auth/me', {
     method: 'GET',
   });

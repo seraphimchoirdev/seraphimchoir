@@ -1,4 +1,5 @@
 import Papa from 'papaparse';
+
 import type { TablesInsert } from '@/types/database.types';
 
 /**
@@ -80,7 +81,10 @@ export async function parseAttendanceCSV(file: File): Promise<ParsedAttendance[]
 
             // is_available 확인 및 변환
             let isAvailable = true;
-            const availableValue = (row.is_available as string | undefined)?.toString().toLowerCase().trim();
+            const availableValue = (row.is_available as string | undefined)
+              ?.toString()
+              .toLowerCase()
+              .trim();
 
             if (availableValue === undefined || availableValue === '') {
               errors.push('is_available이 필요합니다');
@@ -229,10 +233,7 @@ export function validateAttendanceData(
  * @param date - 기본 날짜 (선택적)
  * @returns CSV 문자열
  */
-export function generateAttendanceTemplate(
-  members: MemberInfo[],
-  date?: string
-): string {
+export function generateAttendanceTemplate(members: MemberInfo[], date?: string): string {
   const defaultDate = date || new Date().toISOString().split('T')[0];
 
   // CSV 헤더
@@ -252,14 +253,16 @@ export function generateAttendanceTemplate(
   const csvContent = [
     headers.join(','),
     ...rows.map((row) =>
-      row.map((cell) => {
-        // 쉼표나 따옴표가 포함된 경우 따옴표로 감싸기
-        const cellStr = String(cell);
-        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
-          return `"${cellStr.replace(/"/g, '""')}"`;
-        }
-        return cellStr;
-      }).join(',')
+      row
+        .map((cell) => {
+          // 쉼표나 따옴표가 포함된 경우 따옴표로 감싸기
+          const cellStr = String(cell);
+          if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        })
+        .join(',')
     ),
   ].join('\n');
 

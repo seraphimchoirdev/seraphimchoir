@@ -2,14 +2,15 @@
  * 출석 통계 React Query Hooks
  * API Route를 통해 출석 통계 데이터를 조회하는 커스텀 훅
  */
+import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { STALE_TIME } from '@/lib/constants';
+
 import type {
   AttendanceStatistics,
-  PartAttendanceStatistics,
-  MemberAttendanceHistory,
   AttendanceSummaryByDate,
+  MemberAttendanceHistory,
+  PartAttendanceStatistics,
 } from '@/types/attendance-stats.types';
 
 /**

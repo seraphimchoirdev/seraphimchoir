@@ -1,17 +1,24 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useMembers } from '@/hooks/useMembers';
+import { Calendar, CheckCheck, RotateCcw, Send, Users } from 'lucide-react';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+
 import { useBulkCreateAttendances } from '@/hooks/useAttendances';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar, CheckCheck, RotateCcw, Send, Users } from 'lucide-react';
+import { useMembers } from '@/hooks/useMembers';
+
+import { createClient } from '@/lib/supabase/client';
+import { showError, showSuccess } from '@/lib/toast';
+import { getTestAccountPart, isTestAccount } from '@/lib/utils';
+
 import type { TablesInsert } from '@/types/database.types';
 import type { Database } from '@/types/database.types';
-import { createClient } from '@/lib/supabase/client';
-import { isTestAccount, getTestAccountPart } from '@/lib/utils';
+
 import AttendanceChipGrid from './AttendanceChipGrid';
 
 type Part = Database['public']['Enums']['part'];
@@ -35,12 +42,10 @@ export default function BulkAttendanceForm() {
   const [userPart, setUserPart] = useState<Part | null>(null);
   const [isPartLoading, setIsPartLoading] = useState(false);
 
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [attendanceStates, setAttendanceStates] = useState<Map<string, MemberAttendanceState>>(
+    new Map()
   );
-  const [attendanceStates, setAttendanceStates] = useState<
-    Map<string, MemberAttendanceState>
-  >(new Map());
   const [expandedParts, setExpandedParts] = useState<Set<Part>>(
     new Set(PARTS) // 기본적으로 모든 파트 펼침
   );
@@ -86,7 +91,7 @@ export default function BulkAttendanceForm() {
     limit: 100,
     member_status: 'REGULAR',
     is_singer: true, // 등단자만 (지휘자/반주자 제외)
-    sortBy: 'name',   // 가나다순 정렬 (중장년층 UX 개선)
+    sortBy: 'name', // 가나다순 정렬 (중장년층 UX 개선)
     sortOrder: 'asc',
   });
 
@@ -166,38 +171,44 @@ export default function BulkAttendanceForm() {
   }, []);
 
   // 파트별 전체 선택
-  const handleSelectPart = useCallback((part: Part) => {
-    setAttendanceStates((prev) => {
-      const newStates = new Map(prev);
-      membersByPart[part].forEach((member) => {
-        const current = newStates.get(member.id);
-        if (current) {
-          newStates.set(member.id, {
-            ...current,
-            is_service_available: true,
-          });
-        }
+  const handleSelectPart = useCallback(
+    (part: Part) => {
+      setAttendanceStates((prev) => {
+        const newStates = new Map(prev);
+        membersByPart[part].forEach((member) => {
+          const current = newStates.get(member.id);
+          if (current) {
+            newStates.set(member.id, {
+              ...current,
+              is_service_available: true,
+            });
+          }
+        });
+        return newStates;
       });
-      return newStates;
-    });
-  }, [membersByPart]);
+    },
+    [membersByPart]
+  );
 
   // 파트별 전체 해제
-  const handleDeselectPart = useCallback((part: Part) => {
-    setAttendanceStates((prev) => {
-      const newStates = new Map(prev);
-      membersByPart[part].forEach((member) => {
-        const current = newStates.get(member.id);
-        if (current) {
-          newStates.set(member.id, {
-            ...current,
-            is_service_available: false,
-          });
-        }
+  const handleDeselectPart = useCallback(
+    (part: Part) => {
+      setAttendanceStates((prev) => {
+        const newStates = new Map(prev);
+        membersByPart[part].forEach((member) => {
+          const current = newStates.get(member.id);
+          if (current) {
+            newStates.set(member.id, {
+              ...current,
+              is_service_available: false,
+            });
+          }
+        });
+        return newStates;
       });
-      return newStates;
-    });
-  }, [membersByPart]);
+    },
+    [membersByPart]
+  );
 
   // 전체 선택
   const handleSelectAll = useCallback(() => {
@@ -246,13 +257,13 @@ export default function BulkAttendanceForm() {
     setSubmitResult(null);
 
     try {
-      const attendances: TablesInsert<'attendances'>[] = Array.from(
-        attendanceStates.values()
-      ).map((state) => ({
-        member_id: state.member_id,
-        date: selectedDate,
-        is_service_available: state.is_service_available,
-      }));
+      const attendances: TablesInsert<'attendances'>[] = Array.from(attendanceStates.values()).map(
+        (state) => ({
+          member_id: state.member_id,
+          date: selectedDate,
+          is_service_available: state.is_service_available,
+        })
+      );
 
       const chunkSize = 100;
       const chunks: TablesInsert<'attendances'>[][] = [];
@@ -279,13 +290,20 @@ export default function BulkAttendanceForm() {
         }
       }
 
+      const success = totalFailed === 0;
       setSubmitResult({
-        success: totalFailed === 0,
+        success,
         total: attendances.length,
         succeeded: totalSucceeded,
         failed: totalFailed,
         errors: allErrors.length > 0 ? allErrors : undefined,
       });
+
+      if (success) {
+        showSuccess(`${totalSucceeded}건의 출석이 제출되었습니다.`);
+      } else {
+        showError(`${totalFailed}건의 처리가 실패했습니다.`);
+      }
     } catch (error) {
       setSubmitResult({
         success: false,
@@ -294,6 +312,7 @@ export default function BulkAttendanceForm() {
         failed: attendanceStates.size,
         errors: [{ message: error instanceof Error ? error.message : 'Unknown error' }],
       });
+      showError('출석 제출에 실패했습니다.');
     } finally {
       setIsSubmitting(false);
     }
@@ -318,39 +337,37 @@ export default function BulkAttendanceForm() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary-500)]"></div>
+      <div className="flex items-center justify-center py-12">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-[var(--color-primary-500)]"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
+    <div className="mx-auto max-w-4xl space-y-4">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* 상단 컨트롤 카드 */}
         <Card>
           <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               {/* 날짜 선택 */}
               <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-[var(--color-primary-500)]" />
+                <Calendar className="h-5 w-5 text-[var(--color-primary-500)]" />
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-3 py-2 border border-[var(--color-border-default)] rounded-lg
-                    focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-300)]
-                    bg-[var(--color-surface)]"
+                  className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface)] px-3 py-2 focus:ring-2 focus:ring-[var(--color-primary-300)] focus:outline-none"
                   required
                 />
               </div>
 
               {/* 인원 요약 */}
               <div className="flex items-center gap-2 text-sm">
-                <Users className="w-4 h-4 text-[var(--color-text-tertiary)]" />
+                <Users className="h-4 w-4 text-[var(--color-text-tertiary)]" />
                 <span className="text-[var(--color-text-secondary)]">
-                  출석 <strong className="text-[var(--color-success-600)]">{selectedCount}</strong>명
-                  {' / '}
+                  출석 <strong className="text-[var(--color-success-600)]">{selectedCount}</strong>
+                  명{' / '}
                   불참 <strong className="text-[var(--color-error-600)]">{absentCount}</strong>명
                   {' / '}
                   전체 {members.length}명
@@ -366,7 +383,7 @@ export default function BulkAttendanceForm() {
                   onClick={handleSelectAll}
                   className="text-xs"
                 >
-                  <CheckCheck className="w-4 h-4 mr-1" />
+                  <CheckCheck className="mr-1 h-4 w-4" />
                   전체 출석
                 </Button>
                 <Button
@@ -382,7 +399,7 @@ export default function BulkAttendanceForm() {
             </div>
 
             {/* 펼치기/접기 컨트롤 */}
-            <div className="flex gap-2 mt-3 pt-3 border-t border-[var(--color-border-light)]">
+            <div className="mt-3 flex gap-2 border-t border-[var(--color-border-light)] pt-3">
               <button
                 type="button"
                 onClick={handleExpandAll}
@@ -438,11 +455,11 @@ export default function BulkAttendanceForm() {
                   {submitResult.success ? '✓ 제출 완료' : '⚠ 부분 성공'}
                 </p>
                 <p className="text-sm">
-                  전체: {submitResult.total}건 / 성공: {submitResult.succeeded}건 /
-                  실패: {submitResult.failed}건
+                  전체: {submitResult.total}건 / 성공: {submitResult.succeeded}건 / 실패:{' '}
+                  {submitResult.failed}건
                 </p>
                 {submitResult.errors && submitResult.errors.length > 0 && (
-                  <ul className="list-disc list-inside text-sm mt-2">
+                  <ul className="mt-2 list-inside list-disc text-sm">
                     {submitResult.errors.map((error, idx) => (
                       <li key={idx}>{error.error || error.message}</li>
                     ))}
@@ -454,7 +471,7 @@ export default function BulkAttendanceForm() {
         )}
 
         {/* 제출 버튼 */}
-        <div className="flex gap-3 sticky bottom-4 bg-gradient-to-t from-[var(--color-background)] via-[var(--color-background)] to-transparent pt-4">
+        <div className="sticky bottom-4 flex gap-3 bg-gradient-to-t from-[var(--color-background)] via-[var(--color-background)] to-transparent pt-4">
           <Button
             type="submit"
             disabled={isSubmitting || members.length === 0}
@@ -463,12 +480,12 @@ export default function BulkAttendanceForm() {
           >
             {isSubmitting ? (
               <span className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 처리 중...
               </span>
             ) : (
               <span className="flex items-center gap-2">
-                <Send className="w-4 h-4" />
+                <Send className="h-4 w-4" />
                 제출하기
               </span>
             )}
@@ -480,7 +497,7 @@ export default function BulkAttendanceForm() {
             disabled={isSubmitting}
             size="lg"
           >
-            <RotateCcw className="w-4 h-4 mr-2" />
+            <RotateCcw className="mr-2 h-4 w-4" />
             초기화
           </Button>
         </div>

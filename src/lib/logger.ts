@@ -57,7 +57,7 @@ function getTimestamp(): string {
 /**
  * 로그 메시지 포맷
  */
-function formatMessage(level: LogLevel, prefix: string, args: unknown[]): string {
+function formatMessage(level: LogLevel, prefix: string, _args: unknown[]): string {
   const timestamp = getTimestamp();
   const levelTag = `[${level.toUpperCase()}]`;
   const prefixTag = prefix ? `[${prefix}]` : '';
@@ -68,7 +68,7 @@ function formatMessage(level: LogLevel, prefix: string, args: unknown[]): string
 /**
  * 안전하게 값을 문자열로 변환
  */
-function safeStringify(value: unknown): string {
+function _safeStringify(value: unknown): string {
   if (typeof value === 'string') {
     return value;
   }

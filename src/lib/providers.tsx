@@ -1,14 +1,18 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode, useState, useEffect } from 'react';
+
+import { ReactNode, useEffect, useState } from 'react';
+
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import {
-  ServiceWorkerRegistration,
-  PWAInstallPrompt,
   IOSInstallGuide,
   InAppBrowserGuide,
+  PWAInstallPrompt,
+  ServiceWorkerRegistration,
 } from '@/components/pwa';
+import { Toaster } from '@/components/ui/sonner';
+
 import { useArrangementDraftStore } from '@/store/arrangement-draft-store';
 
 /**
@@ -50,6 +54,8 @@ export function Providers({ children }: { children: ReactNode }) {
         <InAppBrowserGuide />
         <PWAInstallPrompt />
         <IOSInstallGuide />
+        {/* Toast 알림 */}
+        <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   );

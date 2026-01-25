@@ -1,15 +1,17 @@
-import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+
+import { ReactNode } from 'react';
+
 import {
-  useAttendances,
   useAttendance,
-  useCreateAttendance,
-  useUpdateAttendance,
-  useDeleteAttendance,
+  useAttendances,
   useBulkCreateAttendances,
   useBulkUpdateAttendances,
+  useCreateAttendance,
+  useDeleteAttendance,
+  useUpdateAttendance,
 } from '../useAttendances';
-import { ReactNode } from 'react';
 
 // fetch 모킹
 global.fetch = jest.fn();
@@ -107,9 +109,7 @@ describe('useAttendances', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('member_id=member-1')
-    );
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('member_id=member-1'));
     expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('date=2024-01-01'));
   });
 });

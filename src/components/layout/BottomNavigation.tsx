@@ -1,29 +1,32 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { useMounted } from '@/hooks/useMounted';
 import {
-  Home,
-  Users,
-  ClipboardCheck,
-  LayoutGrid,
-  MoreHorizontal,
+  Briefcase,
   Calendar,
   CheckCircle,
-  Briefcase,
+  ClipboardCheck,
+  Home,
+  LayoutGrid,
+  MoreHorizontal,
   Settings,
   User,
 } from 'lucide-react';
+
+import { useState } from 'react';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetDescription,
 } from '@/components/ui/sheet';
-import { useState } from 'react';
+
+import { useAuth } from '@/hooks/useAuth';
+import { useMounted } from '@/hooks/useMounted';
 
 type NavItem = {
   href: string;
@@ -53,31 +56,61 @@ export default function BottomNavigation() {
   // 관리자용 메인 메뉴 (4개 + 더보기)
   const managerMainNav: NavItem[] = [
     { href: '/dashboard', label: '홈', icon: <Home className="h-5 w-5" />, show: true },
-    { href: '/attendances', label: '출석', icon: <ClipboardCheck className="h-5 w-5" />, show: true },
+    {
+      href: '/attendances',
+      label: '출석',
+      icon: <ClipboardCheck className="h-5 w-5" />,
+      show: true,
+    },
     { href: '/arrangements', label: '자리', icon: <LayoutGrid className="h-5 w-5" />, show: true },
     { href: '/management', label: '임원', icon: <Briefcase className="h-5 w-5" />, show: true },
   ];
 
   // 관리자용 더보기 메뉴
   const managerMoreNav: NavItem[] = [
-    { href: '/service-schedules', label: '찬양대 일정', icon: <Calendar className="h-5 w-5" />, show: true },
-    { href: '/admin', label: '관리자 페이지', icon: <Settings className="h-5 w-5" />, show: hasRole(['ADMIN']) },
+    {
+      href: '/service-schedules',
+      label: '찬양대 일정',
+      icon: <Calendar className="h-5 w-5" />,
+      show: true,
+    },
+    {
+      href: '/admin',
+      label: '관리자 페이지',
+      icon: <Settings className="h-5 w-5" />,
+      show: hasRole(['ADMIN']),
+    },
     { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: true }, // 모든 로그인 사용자 접근 가능
-  ].filter(item => item.show);
+  ].filter((item) => item.show);
 
   // 일반 대원용 메인 메뉴 (4개 + 더보기)
   const memberMainNav: NavItem[] = [
     { href: '/dashboard', label: '홈', icon: <Home className="h-5 w-5" />, show: true },
-    { href: '/service-schedules', label: '일정', icon: <Calendar className="h-5 w-5" />, show: true },
+    {
+      href: '/service-schedules',
+      label: '일정',
+      icon: <Calendar className="h-5 w-5" />,
+      show: true,
+    },
     { href: '/arrangements', label: '자리', icon: <LayoutGrid className="h-5 w-5" />, show: true },
-    { href: '/my-attendance', label: '내 출석', icon: <CheckCircle className="h-5 w-5" />, show: isMemberLinked() },
-  ].filter(item => item.show);
+    {
+      href: '/my-attendance',
+      label: '내 출석',
+      icon: <CheckCircle className="h-5 w-5" />,
+      show: isMemberLinked(),
+    },
+  ].filter((item) => item.show);
 
   // 일반 대원용 더보기 메뉴
   const memberMoreNav: NavItem[] = [
-    { href: '/management', label: '임원 포털', icon: <Briefcase className="h-5 w-5" />, show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER']) },
+    {
+      href: '/management',
+      label: '임원 포털',
+      icon: <Briefcase className="h-5 w-5" />,
+      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER']),
+    },
     { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: true }, // 모든 로그인 사용자 접근 가능
-  ].filter(item => item.show);
+  ].filter((item) => item.show);
 
   const mainNav = isManager ? managerMainNav : memberMainNav;
   const moreNav = isManager ? managerMoreNav : memberMoreNav;
@@ -98,14 +131,14 @@ export default function BottomNavigation() {
       <Link
         href={item.href}
         onClick={onClick}
-        className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-[64px] transition-colors ${
+        className={`flex min-w-[64px] flex-col items-center justify-center gap-0.5 px-1 py-2 transition-colors ${
           active
             ? 'text-[var(--color-primary-600)]'
             : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
         }`}
       >
         {item.icon}
-        <span className="text-[10px] font-medium leading-tight">{item.label}</span>
+        <span className="text-[10px] leading-tight font-medium">{item.label}</span>
       </Link>
     );
   };
@@ -113,8 +146,8 @@ export default function BottomNavigation() {
   return (
     <>
       {/* 하단 내비게이션 바 - 모바일만 표시 */}
-      <nav className="fixed bottom-0 left-0 right-0 z-[var(--z-fixed)] bg-[var(--color-background-primary)] border-t border-[var(--color-border-default)] lg:hidden safe-area-bottom">
-        <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
+      <nav className="safe-area-bottom fixed right-0 bottom-0 left-0 z-[var(--z-fixed)] border-t border-[var(--color-border-default)] bg-[var(--color-background-primary)] lg:hidden">
+        <div className="mx-auto flex h-16 max-w-lg items-center justify-around">
           {mainNav.map((item) => (
             <NavButton key={item.href} item={item} />
           ))}
@@ -123,14 +156,14 @@ export default function BottomNavigation() {
           {moreNav.length > 0 && (
             <button
               onClick={() => setMoreSheetOpen(true)}
-              className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-[64px] transition-colors ${
+              className={`flex min-w-[64px] flex-col items-center justify-center gap-0.5 px-1 py-2 transition-colors ${
                 moreSheetOpen
                   ? 'text-[var(--color-primary-600)]'
                   : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
               }`}
             >
               <MoreHorizontal className="h-5 w-5" />
-              <span className="text-[10px] font-medium leading-tight">더보기</span>
+              <span className="text-[10px] leading-tight font-medium">더보기</span>
             </button>
           )}
         </div>
@@ -143,7 +176,7 @@ export default function BottomNavigation() {
             <SheetTitle>더보기</SheetTitle>
             <SheetDescription>추가 메뉴를 선택하세요</SheetDescription>
           </SheetHeader>
-          <div className="px-6 pb-6 space-y-1">
+          <div className="space-y-1 px-6 pb-6">
             {moreNav.map((item) => {
               const active = isActive(item.href);
               return (
@@ -151,13 +184,19 @@ export default function BottomNavigation() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMoreSheetOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-[var(--radius-base)] transition-colors ${
+                  className={`flex items-center gap-3 rounded-[var(--radius-base)] px-4 py-3 transition-colors ${
                     active
                       ? 'bg-[var(--color-primary-50)] text-[var(--color-primary-600)]'
-                      : 'hover:bg-[var(--color-background-tertiary)] text-[var(--color-text-primary)]'
+                      : 'text-[var(--color-text-primary)] hover:bg-[var(--color-background-tertiary)]'
                   }`}
                 >
-                  <span className={active ? 'text-[var(--color-primary-600)]' : 'text-[var(--color-text-tertiary)]'}>
+                  <span
+                    className={
+                      active
+                        ? 'text-[var(--color-primary-600)]'
+                        : 'text-[var(--color-text-tertiary)]'
+                    }
+                  >
                     {item.icon}
                   </span>
                   <span className="font-medium">{item.label}</span>

@@ -1,5 +1,7 @@
+import { type VariantProps, cva } from 'class-variance-authority';
+
 import * as React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
+
 import { cn } from '@/lib/utils';
 
 const avatarVariants = cva(
@@ -28,8 +30,7 @@ const avatarVariants = cva(
 );
 
 export interface AvatarProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof avatarVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof avatarVariants> {
   name: string;
   src?: string;
   alt?: string;

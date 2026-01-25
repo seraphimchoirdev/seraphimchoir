@@ -4,28 +4,31 @@
  */
 'use client';
 
-import { useState, useMemo } from 'react';
+import { endOfMonth } from 'date-fns/endOfMonth';
+import { endOfYear } from 'date-fns/endOfYear';
 import { format } from 'date-fns/format';
 import { startOfMonth } from 'date-fns/startOfMonth';
-import { endOfMonth } from 'date-fns/endOfMonth';
-import { subMonths } from 'date-fns/subMonths';
 import { startOfYear } from 'date-fns/startOfYear';
-import { endOfYear } from 'date-fns/endOfYear';
+import { subMonths } from 'date-fns/subMonths';
 import { subYears } from 'date-fns/subYears';
 import {
-  Users,
-  TrendingUp,
-  TrendingDown,
-  Medal,
   ArrowUpDown,
   Calendar,
   Filter,
+  Medal,
+  TrendingDown,
+  TrendingUp,
+  Users,
 } from 'lucide-react';
-import { useMemberAttendanceStats } from '@/hooks/useMemberAttendanceStats';
-import { Card } from '@/components/ui/card';
+
+import { useMemo, useState } from 'react';
+
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+import { useMemberAttendanceStats } from '@/hooks/useMemberAttendanceStats';
 
 // 파트 색상 정의 (악보 스티커 색상 기준 - 자리배치와 통일)
 const PART_COLORS = {
@@ -62,7 +65,13 @@ const PART_COLORS = {
 } as const;
 
 type Part = keyof typeof PART_COLORS;
-type DateRangePreset = 'this_month' | 'last_month' | 'last_3_months' | 'this_year' | 'last_year' | 'custom';
+type DateRangePreset =
+  | 'this_month'
+  | 'last_month'
+  | 'last_3_months'
+  | 'this_year'
+  | 'last_year'
+  | 'custom';
 type SortBy = 'attendance_rate' | 'name' | 'total_records';
 type SortOrder = 'asc' | 'desc';
 
@@ -143,9 +152,7 @@ export default function MemberAttendanceStats() {
     if (!searchQuery.trim()) return members;
 
     const query = searchQuery.toLowerCase();
-    return members.filter((member) =>
-      member.memberName.toLowerCase().includes(query)
-    );
+    return members.filter((member) => member.memberName.toLowerCase().includes(query));
   }, [members, searchQuery]);
 
   // 정렬 토글
@@ -178,13 +185,13 @@ export default function MemberAttendanceStats() {
   // 로딩 상태
   if (isLoading) {
     return (
-      <Card className="p-6 shadow-sm border-none">
+      <Card className="border-none p-6 shadow-sm">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-[var(--color-background-secondary)] rounded w-48"></div>
-          <div className="h-10 bg-[var(--color-background-secondary)] rounded w-full"></div>
+          <div className="h-6 w-48 rounded bg-[var(--color-background-secondary)]"></div>
+          <div className="h-10 w-full rounded bg-[var(--color-background-secondary)]"></div>
           <div className="space-y-2">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-12 bg-[var(--color-background-secondary)] rounded"></div>
+              <div key={i} className="h-12 rounded bg-[var(--color-background-secondary)]"></div>
             ))}
           </div>
         </div>
@@ -195,10 +202,10 @@ export default function MemberAttendanceStats() {
   // 에러 상태
   if (error) {
     return (
-      <Card className="p-6 shadow-sm border-none">
-        <div className="text-center py-8">
-          <div className="text-[var(--color-error-500)] mb-2">통계 조회 실패</div>
-          <p className="text-[var(--color-text-secondary)] text-sm">{error.message}</p>
+      <Card className="border-none p-6 shadow-sm">
+        <div className="py-8 text-center">
+          <div className="mb-2 text-[var(--color-error-500)]">통계 조회 실패</div>
+          <p className="text-sm text-[var(--color-text-secondary)]">{error.message}</p>
           <Button onClick={() => window.location.reload()} className="mt-4">
             다시 시도
           </Button>
@@ -208,16 +215,16 @@ export default function MemberAttendanceStats() {
   }
 
   return (
-    <Card className="p-6 shadow-sm border-none bg-[var(--color-background-primary)]">
+    <Card className="border-none bg-[var(--color-background-primary)] p-6 shadow-sm">
       {/* 헤더 */}
       <div className="mb-6">
-        <h2 className="text-lg font-bold text-[var(--color-text-primary)] flex items-center gap-2 mb-4">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-[var(--color-text-primary)]">
           <Users className="h-5 w-5 text-[var(--color-primary-600)]" />
           대원별 출석 통계
         </h2>
 
         {/* 날짜 범위 선택 */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           {[
             { value: 'this_month', label: '이번 달' },
             { value: 'last_month', label: '지난 달' },
@@ -239,10 +246,10 @@ export default function MemberAttendanceStats() {
 
         {/* 커스텀 날짜 선택 */}
         {dateRangePreset === 'custom' && (
-          <div className="flex flex-wrap items-center gap-3 p-4 bg-[var(--color-background-secondary)] rounded-lg mb-4">
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg bg-[var(--color-background-secondary)] p-4">
             <Calendar className="h-5 w-5 text-[var(--color-text-tertiary)]" />
             <div className="flex items-center gap-2">
-              <Label className="text-sm text-gray-600 whitespace-nowrap">시작일:</Label>
+              <Label className="text-sm whitespace-nowrap text-gray-600">시작일:</Label>
               <Input
                 type="date"
                 value={customStartDate}
@@ -252,7 +259,7 @@ export default function MemberAttendanceStats() {
             </div>
             <span className="text-gray-400">~</span>
             <div className="flex items-center gap-2">
-              <Label className="text-sm text-gray-600 whitespace-nowrap">종료일:</Label>
+              <Label className="text-sm whitespace-nowrap text-gray-600">종료일:</Label>
               <Input
                 type="date"
                 value={customEndDate}
@@ -271,7 +278,7 @@ export default function MemberAttendanceStats() {
             <select
               value={selectedPart}
               onChange={(e) => setSelectedPart(e.target.value as Part | 'ALL')}
-              className="h-9 rounded-md border border-gray-200 bg-white px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="h-9 rounded-md border border-gray-200 bg-white px-3 py-1 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             >
               <option value="ALL">전체 파트</option>
               <option value="SOPRANO">소프라노</option>
@@ -297,7 +304,10 @@ export default function MemberAttendanceStats() {
           기간: {startDate} ~ {endDate}
           {data?.period?.totalServiceDates !== undefined && (
             <span className="ml-4">
-              • 총 예배 횟수: <span className="font-semibold text-[var(--color-text-primary)]">{data.period.totalServiceDates}회</span>
+              • 총 예배 횟수:{' '}
+              <span className="font-semibold text-[var(--color-text-primary)]">
+                {data.period.totalServiceDates}회
+              </span>
             </span>
           )}
           {data?.summary && (
@@ -313,19 +323,15 @@ export default function MemberAttendanceStats() {
 
       {/* 데이터 테이블 */}
       {filteredMembers.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          해당 조건의 출석 기록이 없습니다.
-        </div>
+        <div className="py-12 text-center text-gray-500">해당 조건의 출석 기록이 없습니다.</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">
-                  순위
-                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">순위</th>
                 <th
-                  className="text-left py-3 px-4 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
+                  className="cursor-pointer px-4 py-3 text-left text-sm font-medium text-gray-600 hover:bg-gray-50"
                   onClick={() => handleSortToggle('name')}
                 >
                   <div className="flex items-center gap-1">
@@ -333,11 +339,9 @@ export default function MemberAttendanceStats() {
                     <ArrowUpDown className="h-4 w-4" />
                   </div>
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">
-                  파트
-                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">파트</th>
                 <th
-                  className="text-center py-3 px-4 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
+                  className="cursor-pointer px-4 py-3 text-center text-sm font-medium text-gray-600 hover:bg-gray-50"
                   onClick={() => handleSortToggle('total_records')}
                 >
                   <div className="flex items-center justify-center gap-1">
@@ -345,17 +349,21 @@ export default function MemberAttendanceStats() {
                     <ArrowUpDown className="h-4 w-4" />
                   </div>
                 </th>
-                <th className="text-center py-3 px-4 text-sm font-medium text-gray-600">
-                  등단
-                </th>
-                <th className="text-center py-3 px-4 text-sm font-medium text-gray-600" title="실제 미등단으로 기록된 횟수">
+                <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">등단</th>
+                <th
+                  className="px-4 py-3 text-center text-sm font-medium text-gray-600"
+                  title="실제 미등단으로 기록된 횟수"
+                >
                   미등단
                 </th>
-                <th className="text-center py-3 px-4 text-sm font-medium text-gray-600" title="출석 기록이 없는 날짜 (미입력)">
+                <th
+                  className="px-4 py-3 text-center text-sm font-medium text-gray-600"
+                  title="출석 기록이 없는 날짜 (미입력)"
+                >
                   미입력
                 </th>
                 <th
-                  className="text-center py-3 px-4 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
+                  className="cursor-pointer px-4 py-3 text-center text-sm font-medium text-gray-600 hover:bg-gray-50"
                   onClick={() => handleSortToggle('attendance_rate')}
                 >
                   <div className="flex items-center justify-center gap-1">
@@ -378,55 +386,61 @@ export default function MemberAttendanceStats() {
                 return (
                   <tr
                     key={member.memberId}
-                    className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                    className={`border-b border-gray-100 transition-colors hover:bg-gray-50 ${
                       isTop ? 'bg-yellow-50/50' : isBottom ? 'bg-red-50/30' : ''
                     }`}
                   >
-                    <td className="py-3 px-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {getRankBadge(index)}
                         <span className="text-sm text-gray-600">{index + 1}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="px-4 py-3">
                       <span className="font-medium text-gray-900">{member.memberName}</span>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="px-4 py-3">
                       <span
-                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${partColors.badge}`}
+                        className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${partColors.badge}`}
                       >
                         {member.part}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center text-sm">
-                      <span className={member.totalRecords < member.expectedRecords ? 'text-orange-600' : 'text-gray-600'}>
+                    <td className="px-4 py-3 text-center text-sm">
+                      <span
+                        className={
+                          member.totalRecords < member.expectedRecords
+                            ? 'text-orange-600'
+                            : 'text-gray-600'
+                        }
+                      >
                         {member.totalRecords}/{member.expectedRecords}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center text-sm text-green-600 font-medium">
+                    <td className="px-4 py-3 text-center text-sm font-medium text-green-600">
                       {member.availableCount}
                     </td>
-                    <td className="py-3 px-4 text-center text-sm">
+                    <td className="px-4 py-3 text-center text-sm">
                       {/* 실제 미등단 = 전체 미등단 - 미입력 */}
-                      {(member.unavailableCount - member.missingRecords) > 0 ? (
-                        <span className="text-red-600 font-medium">
+                      {member.unavailableCount - member.missingRecords > 0 ? (
+                        <span className="font-medium text-red-600">
                           {member.unavailableCount - member.missingRecords}
                         </span>
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-center text-sm">
+                    <td className="px-4 py-3 text-center text-sm">
                       {/* 미입력 = 출석 기록이 없는 날짜 */}
                       {member.missingRecords > 0 ? (
-                        <span className="text-orange-500 font-medium">{member.missingRecords}</span>
+                        <span className="font-medium text-orange-500">{member.missingRecords}</span>
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
-                        <div className="w-20 bg-gray-200 rounded-full h-2">
+                        <div className="h-2 w-20 rounded-full bg-gray-200">
                           <div
                             className={`h-2 rounded-full ${
                               member.attendanceRate >= 90
@@ -461,7 +475,7 @@ export default function MemberAttendanceStats() {
 
       {/* 요약 정보 */}
       {data?.summary && (
-        <div className="mt-6 pt-4 border-t border-gray-200">
+        <div className="mt-6 border-t border-gray-200 pt-4">
           <div className="flex flex-wrap gap-6 text-sm text-gray-600">
             <div>
               <span className="font-medium">총 대원:</span> {data.summary.totalMembers}명
@@ -476,10 +490,18 @@ export default function MemberAttendanceStats() {
               </span>
             </div>
           </div>
-          <div className="mt-3 text-xs text-gray-400 space-y-1">
-            <p>* <span className="text-green-600 font-medium">등단</span>: 실제 등단 기록 횟수</p>
-            <p>* <span className="text-red-600 font-medium">미등단</span>: 실제 미등단으로 기록된 횟수</p>
-            <p>* <span className="text-orange-500 font-medium">미입력</span>: 출석 기록이 없는 날짜 (출석률 계산 시 미등단으로 처리)</p>
+          <div className="mt-3 space-y-1 text-xs text-gray-400">
+            <p>
+              * <span className="font-medium text-green-600">등단</span>: 실제 등단 기록 횟수
+            </p>
+            <p>
+              * <span className="font-medium text-red-600">미등단</span>: 실제 미등단으로 기록된
+              횟수
+            </p>
+            <p>
+              * <span className="font-medium text-orange-500">미입력</span>: 출석 기록이 없는 날짜
+              (출석률 계산 시 미등단으로 처리)
+            </p>
             <p>* 출석률 = 등단 / 총 예배 횟수 × 100</p>
           </div>
         </div>

@@ -12,7 +12,6 @@
  * 최적화 적용:
  * - LRU Cache: 최근 계산된 패턴 캐싱 (45-95명 범위, ~50개)
  */
-
 import rowDistributionPatterns from '@/data/row_distribution_patterns.json';
 
 export interface RowDistributionRecommendation {
@@ -291,7 +290,7 @@ function calculate6RowDistribution(
   closestPattern: LearnedPattern
 ): RowDistributionRecommendation {
   const basePerRow = Math.floor(totalMembers / 6);
-  const remainder = totalMembers % 6;
+  const _remainder = totalMembers % 6; // 추후 정밀한 분배 계산에 사용 가능
 
   // 학습된 패턴 (UI 순서): 앞쪽 행이 많고 뒤쪽으로 갈수록 적어짐
   // 역순 패턴: 84명 [15,15,15,15,13,11], 88명 평균 [15,16,17,16,13,11]
@@ -386,10 +385,7 @@ const MAX_CAPACITY_PER_ROW = 16;
  * @param rowCapacities 행별 좌석 수
  * @param partCounts 파트별 인원 (SOPRANO/ALTO 비율 계산용)
  */
-function calculateAltoCapacity(
-  rowCapacities: number[],
-  partCounts?: PartCounts
-): number {
+function calculateAltoCapacity(rowCapacities: number[], partCounts?: PartCounts): number {
   const sopranoCount = partCounts?.SOPRANO || 0;
   const altoCount = partCounts?.ALTO || 0;
   const totalSA = sopranoCount + altoCount;
@@ -486,10 +482,7 @@ function adjustForAltoConstraint(
  * 5-6행에서 좌석 감소 (총 좌석 수 균형)
  * 1-4행에 좌석을 추가한 만큼 5-6행에서 감소
  */
-function rebalanceBackRows(
-  capacities: number[],
-  originalTotal: number
-): number[] {
+function rebalanceBackRows(capacities: number[], originalTotal: number): number[] {
   const adjusted = [...capacities];
   let excess = adjusted.reduce((a, b) => a + b, 0) - originalTotal;
 
@@ -529,11 +522,7 @@ export function adjustRecommendationForPartConstraints(
   const totalMembers = base.rowCapacities.reduce((a, b) => a + b, 0);
 
   // 1-4행 좌석 추가 (partCounts 전달)
-  const { adjusted, added } = adjustForAltoConstraint(
-    base.rowCapacities,
-    altoCount,
-    partCounts
-  );
+  const { adjusted, added } = adjustForAltoConstraint(base.rowCapacities, altoCount, partCounts);
 
   // 5-6행 좌석 감소 (균형)
   const rebalanced = rebalanceBackRows(adjusted, totalMembers);

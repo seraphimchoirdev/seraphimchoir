@@ -1,24 +1,28 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { format } from 'date-fns/format';
-import { startOfMonth } from 'date-fns/startOfMonth';
-import { endOfMonth } from 'date-fns/endOfMonth';
-import { eachDayOfInterval } from 'date-fns/eachDayOfInterval';
-import { isSameMonth } from 'date-fns/isSameMonth';
 import { addMonths } from 'date-fns/addMonths';
-import { subMonths } from 'date-fns/subMonths';
-import { startOfWeek } from 'date-fns/startOfWeek';
+import { eachDayOfInterval } from 'date-fns/eachDayOfInterval';
+import { endOfMonth } from 'date-fns/endOfMonth';
 import { endOfWeek } from 'date-fns/endOfWeek';
+import { format } from 'date-fns/format';
+import { isSameMonth } from 'date-fns/isSameMonth';
 import { ko } from 'date-fns/locale/ko';
+import { startOfMonth } from 'date-fns/startOfMonth';
+import { startOfWeek } from 'date-fns/startOfWeek';
+import { subMonths } from 'date-fns/subMonths';
+import { ChevronLeft, ChevronRight, Music } from 'lucide-react';
+
+import { useMemo, useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+
 import { useAttendances } from '@/hooks/useAttendances';
 import { useMembers } from '@/hooks/useMembers';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
+
 import AttendanceInputModal from './AttendanceInputModal';
 import CalendarDayCell from './CalendarDayCell';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Music } from 'lucide-react';
 
 interface AttendanceCalendarProps {
   memberId?: string; // 특정 찬양대원의 출석만 표시
@@ -123,57 +127,48 @@ export default function AttendanceCalendar({ memberId }: AttendanceCalendarProps
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-12">
+      <div className="flex items-center justify-center py-12">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[var(--color-primary-600)] border-r-transparent"></div>
       </div>
     );
   }
 
   return (
-    <Card className="shadow-[var(--shadow-sm)] border-none overflow-hidden">
+    <Card className="overflow-hidden border-none shadow-[var(--shadow-sm)]">
       {/* 헤더: 월 네비게이션 */}
-      <div className="px-6 py-4 border-b border-[var(--color-border-default)] bg-[var(--color-surface)]">
+      <div className="border-b border-[var(--color-border-default)] bg-[var(--color-surface)] px-6 py-4">
         <div className="flex items-center justify-between">
           <h2 className="heading-3 text-[var(--color-text-primary)]">
             {format(currentMonth, 'yyyy년 M월', { locale: ko })}
           </h2>
           <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={previousMonth}
-              aria-label="이전 달"
-            >
-              <ChevronLeft className="w-5 h-5" />
+            <Button variant="ghost" size="icon" onClick={previousMonth} aria-label="이전 달">
+              <ChevronLeft className="h-5 w-5" />
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToToday}
-            >
+            <Button variant="outline" size="sm" onClick={goToToday}>
               오늘
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={nextMonth}
-              aria-label="다음 달"
-            >
-              <ChevronRight className="w-5 h-5" />
+            <Button variant="ghost" size="icon" onClick={nextMonth} aria-label="다음 달">
+              <ChevronRight className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </div>
 
       {/* 캘린더 그리드 */}
-      <div className="p-6 bg-[var(--color-surface)]">
+      <div className="bg-[var(--color-surface)] p-6">
         {/* 요일 헤더 */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="mb-2 grid grid-cols-7 gap-1">
           {weekDays.map((day, index) => (
             <div
               key={day}
-              className={`text-center text-sm font-medium py-2 ${index === 0 ? 'text-[var(--color-error-600)]' : index === 6 ? 'text-[var(--color-primary-600)]' : 'text-[var(--color-text-secondary)]'
-                }`}
+              className={`py-2 text-center text-sm font-medium ${
+                index === 0
+                  ? 'text-[var(--color-error-600)]'
+                  : index === 6
+                    ? 'text-[var(--color-primary-600)]'
+                    : 'text-[var(--color-text-secondary)]'
+              }`}
             >
               {day}
             </div>
@@ -205,30 +200,30 @@ export default function AttendanceCalendar({ memberId }: AttendanceCalendarProps
       </div>
 
       {/* 범례 */}
-      <div className="px-6 py-4 border-t border-[var(--color-border-default)] bg-[var(--color-background-tertiary)]">
+      <div className="border-t border-[var(--color-border-default)] bg-[var(--color-background-tertiary)] px-6 py-4">
         <div className="flex flex-wrap items-center gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <Music className="w-4 h-4 text-[var(--color-primary-600)]" />
+            <Music className="h-4 w-4 text-[var(--color-primary-600)]" />
             <span className="text-[var(--color-text-secondary)]">예배 일정 있음 (클릭 가능)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-[var(--color-background-tertiary)]/50 border border-[var(--color-border-default)] rounded-[var(--radius-xs)]"></div>
+            <div className="h-4 w-4 rounded-[var(--radius-xs)] border border-[var(--color-border-default)] bg-[var(--color-background-tertiary)]/50"></div>
             <span className="text-[var(--color-text-secondary)]">예배 일정 없음</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-[var(--color-success-50)] border border-[var(--color-success-200)] rounded-[var(--radius-xs)]"></div>
+            <div className="h-4 w-4 rounded-[var(--radius-xs)] border border-[var(--color-success-200)] bg-[var(--color-success-50)]"></div>
             <span className="text-[var(--color-text-secondary)]">출석률 90%+</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-[var(--color-warning-50)] border border-[var(--color-warning-200)] rounded-[var(--radius-xs)]"></div>
+            <div className="h-4 w-4 rounded-[var(--radius-xs)] border border-[var(--color-warning-200)] bg-[var(--color-warning-50)]"></div>
             <span className="text-[var(--color-text-secondary)]">70-90%</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-[var(--color-error-50)] border border-[var(--color-error-200)] rounded-[var(--radius-xs)]"></div>
+            <div className="h-4 w-4 rounded-[var(--radius-xs)] border border-[var(--color-error-200)] bg-[var(--color-error-50)]"></div>
             <span className="text-[var(--color-text-secondary)]">70% 미만</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 ring-2 ring-[var(--color-primary-500)] rounded-[var(--radius-xs)]"></div>
+            <div className="h-4 w-4 rounded-[var(--radius-xs)] ring-2 ring-[var(--color-primary-500)]"></div>
             <span className="text-[var(--color-text-secondary)]">오늘</span>
           </div>
         </div>

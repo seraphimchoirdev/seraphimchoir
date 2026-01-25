@@ -15,7 +15,7 @@ export function Switch({
   onCheckedChange,
   disabled = false,
   className = '',
-  variant = 'default'
+  variant = 'default',
 }: SwitchProps) {
   const handleClick = () => {
     if (!disabled && onCheckedChange) {
@@ -47,24 +47,13 @@ export function Switch({
       aria-checked={checked}
       disabled={disabled}
       onClick={handleClick}
-      className={`
-        relative inline-flex h-6 w-11 items-center rounded-full
-        transition-colors duration-200 ease-in-out
-        focus:outline-none focus:ring-2 focus:ring-offset-2
-        ${checked ? getVariantColor() : 'bg-[var(--color-border-strong)]'}
-        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-        ${className}
-      `}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:ring-2 focus:ring-offset-2 focus:outline-none ${checked ? getVariantColor() : 'bg-[var(--color-border-strong)]'} ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${className} `}
       style={{
         boxShadow: 'var(--shadow-xs)',
       }}
     >
       <span
-        className={`
-          inline-block h-4 w-4 transform rounded-full bg-white
-          transition duration-200 ease-in-out
-          ${checked ? 'translate-x-6' : 'translate-x-1'}
-        `}
+        className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${checked ? 'translate-x-6' : 'translate-x-1'} `}
         style={{
           boxShadow: 'var(--shadow-sm)',
         }}

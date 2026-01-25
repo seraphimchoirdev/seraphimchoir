@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'AuthCallback' });
 
@@ -29,7 +30,10 @@ export async function GET(request: Request) {
     }
 
     // 현재 사용자 정보 가져오기
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
     if (userError || !user) {
       logger.error('사용자 정보 조회 실패:', userError);
@@ -68,7 +72,10 @@ export async function GET(request: Request) {
   // code가 없는 경우: 기존 세션 확인
   logger.warn('OAuth callback에 code 파라미터가 없음. 기존 세션 확인 중...');
 
-  const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: sessionError,
+  } = await supabase.auth.getUser();
 
   // 기존 세션이 유효한 경우 프로필에 따라 리다이렉트
   if (!sessionError && user) {

@@ -3,7 +3,6 @@
  *
  * 프로덕션 환경에서 안전한 인라인 스크립트 실행을 위한 컴포넌트
  */
-
 import { getNonceProps } from '@/lib/security/csp-nonce';
 
 /**
@@ -48,11 +47,7 @@ export async function AnalyticsScript() {
 
   return (
     <>
-      <script
-        {...nonceProps}
-        async
-        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-      />
+      <script {...nonceProps} async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
       <script
         {...nonceProps}
         dangerouslySetInnerHTML={{

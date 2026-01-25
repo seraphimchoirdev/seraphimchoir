@@ -14,5 +14,5 @@ const getServerSnapshot = () => false;
  * React 19의 useSyncExternalStore를 사용하여 SSR/CSR 상태를 안전하게 처리
  */
 export function useMounted() {
-    return useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot);
+  return useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot);
 }

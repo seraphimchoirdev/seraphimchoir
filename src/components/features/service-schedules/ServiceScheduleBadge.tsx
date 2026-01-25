@@ -1,8 +1,10 @@
 'use client';
 
 import { Music } from 'lucide-react';
-import { useServiceScheduleByDate } from '@/hooks/useServiceSchedules';
+
 import { Spinner } from '@/components/ui/spinner';
+
+import { useServiceScheduleByDate } from '@/hooks/useServiceSchedules';
 
 interface ServiceScheduleBadgeProps {
   date: string;
@@ -12,10 +14,7 @@ interface ServiceScheduleBadgeProps {
 /**
  * arrangements 페이지에서 예배 일정 정보를 표시하는 작은 배지
  */
-export default function ServiceScheduleBadge({
-  date,
-  compact = false,
-}: ServiceScheduleBadgeProps) {
+export default function ServiceScheduleBadge({ date, compact = false }: ServiceScheduleBadgeProps) {
   const { data: schedule, isLoading } = useServiceScheduleByDate(date);
 
   if (isLoading) {
@@ -28,7 +27,7 @@ export default function ServiceScheduleBadge({
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 text-xs flex-wrap">
+      <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="text-[var(--color-text-secondary)]">
           {schedule.service_type || '주일예배'}
         </span>
@@ -37,7 +36,7 @@ export default function ServiceScheduleBadge({
             <span className="text-[var(--color-border-default)]">•</span>
             <span className="flex items-center gap-1 text-[var(--color-primary-600)]">
               <Music className="h-3 w-3" />
-              <span className="truncate max-w-[150px]">{schedule.hymn_name}</span>
+              <span className="max-w-[150px] truncate">{schedule.hymn_name}</span>
             </span>
           </>
         )}

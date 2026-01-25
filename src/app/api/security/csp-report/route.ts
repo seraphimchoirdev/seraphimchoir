@@ -3,10 +3,10 @@
  *
  * 브라우저가 CSP 위반을 감지하면 이 엔드포인트로 리포트를 전송합니다.
  */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { logCSPViolation } from '@/lib/security/audit-logger';
+
 import { createLogger } from '@/lib/logger';
+import { logCSPViolation } from '@/lib/security/audit-logger';
 
 const logger = createLogger({ prefix: 'CSPReport' });
 
@@ -21,7 +21,10 @@ export async function POST(request: NextRequest) {
     const contentType = request.headers.get('content-type') || '';
 
     let report;
-    if (contentType.includes('application/csp-report') || contentType.includes('application/json')) {
+    if (
+      contentType.includes('application/csp-report') ||
+      contentType.includes('application/json')
+    ) {
       const body = await request.json();
       report = body['csp-report'] || body;
     } else {
@@ -61,9 +64,10 @@ export async function POST(request: NextRequest) {
       'eval',
     ];
 
-    const shouldIgnore = ignoredPatterns.some(pattern =>
-      normalizedReport.blocked_uri?.includes(pattern) ||
-      normalizedReport.source_file?.includes(pattern)
+    const shouldIgnore = ignoredPatterns.some(
+      (pattern) =>
+        normalizedReport.blocked_uri?.includes(pattern) ||
+        normalizedReport.source_file?.includes(pattern)
     );
 
     if (shouldIgnore) {
@@ -93,7 +97,7 @@ export async function POST(request: NextRequest) {
  *
  * CORS 프리플라이트 요청 처리
  */
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {

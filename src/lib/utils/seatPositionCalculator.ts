@@ -2,8 +2,13 @@
  * Seat Position Calculator
  * 좌석 위치 계산 유틸리티
  */
-
-import { GridLayout, SeatPosition, ZigzagPattern, RowSeatPositions, RowOffsetValue } from '@/types/grid';
+import {
+  GridLayout,
+  RowOffsetValue,
+  RowSeatPositions,
+  SeatPosition,
+  ZigzagPattern,
+} from '@/types/grid';
 
 /**
  * 행 인덱스에 따른 수평 오프셋 계산
@@ -68,9 +73,7 @@ export function getZigzagOffset(
  * @param gridLayout 그리드 레이아웃
  * @returns 모든 좌석 위치 정보 배열
  */
-export function calculateAllSeatPositions(
-  gridLayout: GridLayout
-): SeatPosition[] {
+export function calculateAllSeatPositions(gridLayout: GridLayout): SeatPosition[] {
   const positions: SeatPosition[] = [];
 
   gridLayout.rowCapacities.forEach((capacity, rowIndex) => {
@@ -83,8 +86,8 @@ export function calculateAllSeatPositions(
 
     for (let colIndex = 0; colIndex < capacity; colIndex++) {
       positions.push({
-        row: rowIndex + 1,      // 1-based row index
-        col: colIndex + 1,      // 1-based column index
+        row: rowIndex + 1, // 1-based row index
+        col: colIndex + 1, // 1-based column index
         visualCol: colIndex + offset,
       });
     }
@@ -127,8 +130,8 @@ export function calculateSeatPosition(
   );
 
   return {
-    row,       // Keep 1-based
-    col,       // Keep 1-based
+    row, // Keep 1-based
+    col, // Keep 1-based
     visualCol: colIndex + offset,
   };
 }
@@ -138,9 +141,7 @@ export function calculateSeatPosition(
  * @param gridLayout - 그리드 레이아웃 설정
  * @returns 행별 좌석 위치 배열
  */
-export function calculateSeatsByRow(
-  gridLayout: GridLayout
-): RowSeatPositions[] {
+export function calculateSeatsByRow(gridLayout: GridLayout): RowSeatPositions[] {
   const rowsData: RowSeatPositions[] = [];
 
   // gridLayout 또는 rowCapacities가 없으면 빈 배열 반환
@@ -159,14 +160,14 @@ export function calculateSeatsByRow(
 
     for (let colIndex = 0; colIndex < capacity; colIndex++) {
       seats.push({
-        row: rowIndex + 1,      // 1-based row index
-        col: colIndex + 1,      // 1-based column index
+        row: rowIndex + 1, // 1-based row index
+        col: colIndex + 1, // 1-based column index
         visualCol: colIndex + offset,
       });
     }
 
     rowsData.push({
-      rowIndex: rowIndex + 1,   // 1-based row index for display
+      rowIndex: rowIndex + 1, // 1-based row index for display
       seats,
       capacity,
       offset,

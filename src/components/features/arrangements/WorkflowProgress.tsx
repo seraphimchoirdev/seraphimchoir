@@ -1,8 +1,10 @@
 'use client';
 
-import { useArrangementStore, WORKFLOW_STEPS, WorkflowStep } from '@/store/arrangement-store';
-import { Check, Circle, Lock } from 'lucide-react';
+import { Check, Lock } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
+
+import { WORKFLOW_STEPS, WorkflowStep, useArrangementStore } from '@/store/arrangement-store';
 
 /**
  * 워크플로우 진행 상태 표시 컴포넌트
@@ -23,19 +25,17 @@ export default function WorkflowProgress() {
   return (
     <div className="w-full">
       {/* 모드 표시 */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <span className="text-xs text-[var(--color-text-tertiary)]">
           {isWizardMode ? '가이드 모드' : '자유 편집 모드'}
         </span>
-        <span className="text-xs text-[var(--color-text-tertiary)]">
-          {currentStep} / 7 단계
-        </span>
+        <span className="text-xs text-[var(--color-text-tertiary)]">{currentStep} / 7 단계</span>
       </div>
 
       {/* Progress Bar - 데스크톱 */}
-      <div className="hidden sm:flex items-center justify-between relative">
+      <div className="relative hidden items-center justify-between sm:flex">
         {/* 배경 라인 */}
-        <div className="absolute top-4 left-6 right-6 h-0.5 bg-[var(--color-border-subtle)]" />
+        <div className="absolute top-4 right-6 left-6 h-0.5 bg-[var(--color-border-subtle)]" />
 
         {/* 완료된 구간 라인 */}
         <div
@@ -66,8 +66,8 @@ export default function WorkflowProgress() {
       </div>
 
       {/* Progress Bar - 모바일 (스크롤 가능) */}
-      <div className="sm:hidden overflow-x-auto pb-2 -mx-2 px-2">
-        <div className="flex items-center gap-1 min-w-max relative">
+      <div className="-mx-2 overflow-x-auto px-2 pb-2 sm:hidden">
+        <div className="relative flex min-w-max items-center gap-1">
           {steps.map((stepMeta, index) => {
             const isCompleted = completedSteps.has(stepMeta.step);
             const isCurrent = currentStep === stepMeta.step;
@@ -87,7 +87,7 @@ export default function WorkflowProgress() {
                 {index < steps.length - 1 && (
                   <div
                     className={cn(
-                      'w-4 h-0.5 transition-colors',
+                      'h-0.5 w-4 transition-colors',
                       isCompleted
                         ? 'bg-[var(--color-primary-500)]'
                         : 'bg-[var(--color-border-subtle)]'
@@ -115,22 +115,15 @@ interface StepNodeProps {
   onClick: () => void;
 }
 
-function StepNode({
-  step,
-  title,
-  isCompleted,
-  isCurrent,
-  canAccess,
-  onClick,
-}: StepNodeProps) {
+function StepNode({ step, title, isCompleted, isCurrent, canAccess, onClick }: StepNodeProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={!canAccess}
       className={cn(
-        'flex flex-col items-center gap-1 z-10 transition-all duration-200',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-400)] focus-visible:ring-offset-2 rounded',
+        'z-10 flex flex-col items-center gap-1 transition-all duration-200',
+        'rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-400)] focus-visible:ring-offset-2',
         canAccess ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
       )}
       aria-label={`${step}단계: ${title}${isCompleted ? ' (완료)' : isCurrent ? ' (진행 중)' : ''}`}
@@ -139,35 +132,35 @@ function StepNode({
       {/* 노드 아이콘 */}
       <div
         className={cn(
-          'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
+          'flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200',
           'border-2',
           isCompleted
-            ? 'bg-[var(--color-primary-500)] border-[var(--color-primary-500)] text-white'
+            ? 'border-[var(--color-primary-500)] bg-[var(--color-primary-500)] text-white'
             : isCurrent
-            ? 'bg-white border-[var(--color-primary-500)] text-[var(--color-primary-600)]'
-            : canAccess
-            ? 'bg-white border-[var(--color-border-default)] text-[var(--color-text-tertiary)]'
-            : 'bg-[var(--color-background-secondary)] border-[var(--color-border-subtle)] text-[var(--color-text-quaternary)]'
+              ? 'border-[var(--color-primary-500)] bg-white text-[var(--color-primary-600)]'
+              : canAccess
+                ? 'border-[var(--color-border-default)] bg-white text-[var(--color-text-tertiary)]'
+                : 'border-[var(--color-border-subtle)] bg-[var(--color-background-secondary)] text-[var(--color-text-quaternary)]'
         )}
       >
         {isCompleted ? (
-          <Check className="w-4 h-4" strokeWidth={3} />
+          <Check className="h-4 w-4" strokeWidth={3} />
         ) : canAccess ? (
           <span className="text-xs font-semibold">{step}</span>
         ) : (
-          <Lock className="w-3 h-3" />
+          <Lock className="h-3 w-3" />
         )}
       </div>
 
       {/* 라벨 */}
       <span
         className={cn(
-          'text-[10px] font-medium text-center max-w-[50px] leading-tight',
+          'max-w-[50px] text-center text-[10px] leading-tight font-medium',
           isCurrent
             ? 'text-[var(--color-primary-600)]'
             : isCompleted
-            ? 'text-[var(--color-text-primary)]'
-            : 'text-[var(--color-text-tertiary)]'
+              ? 'text-[var(--color-text-primary)]'
+              : 'text-[var(--color-text-tertiary)]'
         )}
       >
         {title}
@@ -194,7 +187,7 @@ function StepNodeMobile({
       disabled={!canAccess}
       className={cn(
         'flex flex-col items-center gap-0.5 transition-all duration-200',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-400)] rounded',
+        'rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-400)]',
         canAccess ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
       )}
       aria-label={`${step}단계: ${title}${isCompleted ? ' (완료)' : isCurrent ? ' (진행 중)' : ''}`}
@@ -202,19 +195,19 @@ function StepNodeMobile({
       {/* 노드 아이콘 */}
       <div
         className={cn(
-          'w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200',
+          'flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200',
           'border-2',
           isCompleted
-            ? 'bg-[var(--color-primary-500)] border-[var(--color-primary-500)] text-white'
+            ? 'border-[var(--color-primary-500)] bg-[var(--color-primary-500)] text-white'
             : isCurrent
-            ? 'bg-white border-[var(--color-primary-500)] text-[var(--color-primary-600)] ring-2 ring-[var(--color-primary-200)]'
-            : canAccess
-            ? 'bg-white border-[var(--color-border-default)] text-[var(--color-text-tertiary)]'
-            : 'bg-[var(--color-background-secondary)] border-[var(--color-border-subtle)] text-[var(--color-text-quaternary)]'
+              ? 'border-[var(--color-primary-500)] bg-white text-[var(--color-primary-600)] ring-2 ring-[var(--color-primary-200)]'
+              : canAccess
+                ? 'border-[var(--color-border-default)] bg-white text-[var(--color-text-tertiary)]'
+                : 'border-[var(--color-border-subtle)] bg-[var(--color-background-secondary)] text-[var(--color-text-quaternary)]'
         )}
       >
         {isCompleted ? (
-          <Check className="w-3 h-3" strokeWidth={3} />
+          <Check className="h-3 w-3" strokeWidth={3} />
         ) : (
           <span className="text-[10px] font-semibold">{step}</span>
         )}
@@ -222,7 +215,7 @@ function StepNodeMobile({
 
       {/* 라벨 (현재 단계만 표시) */}
       {isCurrent && (
-        <span className="text-[9px] font-medium text-[var(--color-primary-600)] whitespace-nowrap">
+        <span className="text-[9px] font-medium whitespace-nowrap text-[var(--color-primary-600)]">
           {title}
         </span>
       )}

@@ -7,8 +7,8 @@
  * - 대기중인 연결 요청 조회 (관리자용)
  * - 연결 승인/거부
  */
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 
 // 연결 가능한 대원 (아직 연결되지 않은 정대원)
@@ -32,7 +32,7 @@ interface CreateMemberLinkInput {
 interface MemberLinkRequestRaw {
   id: string;
   email: string;
-  name: string;  // 카카오 이름
+  name: string; // 카카오 이름
   linked_member_id: string;
   link_status: 'pending' | 'approved' | 'rejected';
   link_requested_at: string;
@@ -74,7 +74,7 @@ export function useAvailableMembers(searchQuery?: string) {
         .not('linked_member_id', 'is', null)
         .eq('link_status', 'approved');
 
-      const linkedMemberIds = linkedProfiles?.map(p => p.linked_member_id) || [];
+      const linkedMemberIds = linkedProfiles?.map((p) => p.linked_member_id) || [];
 
       // 연결되지 않은 정대원 조회 (is_singer 포함 - 지휘자/반주자 구분용)
       let query = supabase
@@ -94,8 +94,8 @@ export function useAvailableMembers(searchQuery?: string) {
 
       // 이미 연결된 대원 제외
       const availableMembers = (data || [])
-        .filter(m => !linkedMemberIds.includes(m.id))
-        .map(m => ({
+        .filter((m) => !linkedMemberIds.includes(m.id))
+        .map((m) => ({
           id: m.id,
           name: m.name,
           part: m.part,
@@ -144,7 +144,8 @@ export function usePendingLinkRequests(part?: string) {
 
       const { data, error } = await supabase
         .from('user_profiles')
-        .select(`
+        .select(
+          `
           id,
           email,
           name,
@@ -157,7 +158,8 @@ export function usePendingLinkRequests(part?: string) {
             part,
             is_singer
           )
-        `)
+        `
+        )
         .eq('link_status', 'pending')
         .order('link_requested_at', { ascending: false });
 
@@ -165,16 +167,14 @@ export function usePendingLinkRequests(part?: string) {
 
       // member 배열 또는 단일 객체를 처리
       const rawRequests = (data || []) as MemberLinkRequestRaw[];
-      let requests: MemberLinkRequest[] = rawRequests.map(r => ({
+      let requests: MemberLinkRequest[] = rawRequests.map((r) => ({
         ...r,
-        member: r.member
-          ? (Array.isArray(r.member) ? r.member[0] : r.member)
-          : null,
+        member: r.member ? (Array.isArray(r.member) ? r.member[0] : r.member) : null,
       }));
 
       // 파트 필터링 (클라이언트 측)
       if (part && requests.length > 0) {
-        requests = requests.filter(r => r.member?.part === part);
+        requests = requests.filter((r) => r.member?.part === part);
       }
 
       return requests;
@@ -260,12 +260,15 @@ export function useMyLinkStatus() {
     queryFn: async (): Promise<MyLinkStatus | null> => {
       const supabase = createClient();
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return null;
 
       const { data, error } = await supabase
         .from('user_profiles')
-        .select(`
+        .select(
+          `
           linked_member_id,
           link_status,
           link_requested_at,
@@ -274,7 +277,8 @@ export function useMyLinkStatus() {
             name,
             part
           )
-        `)
+        `
+        )
         .eq('id', user.id)
         .single();
 
@@ -283,13 +287,11 @@ export function useMyLinkStatus() {
       // member 배열 또는 단일 객체를 처리
       // PostgREST는 FK 관계에 따라 배열 또는 단일 객체를 반환할 수 있음
       const memberData = data?.member;
-      const member = memberData
-        ? (Array.isArray(memberData) ? memberData[0] : memberData)
-        : null;
+      const member = memberData ? (Array.isArray(memberData) ? memberData[0] : memberData) : null;
 
       return {
         linked_member_id: data?.linked_member_id ?? null,
-        link_status: data?.link_status as MyLinkStatus['link_status'] ?? null,
+        link_status: (data?.link_status as MyLinkStatus['link_status']) ?? null,
         link_requested_at: data?.link_requested_at ?? null,
         member,
       };

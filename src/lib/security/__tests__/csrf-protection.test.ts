@@ -1,10 +1,8 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  generateCSRFToken,
-  validateCSRFToken,
-  csrfProtection
-} from '../csrf-protection';
+
+import { csrfProtection, generateCSRFToken, validateCSRFToken } from '../csrf-protection';
 
 // Mock the modules
 jest.mock('next/headers', () => ({
@@ -175,9 +173,7 @@ describe('CSRF Protection', () => {
         method: 'POST',
       });
 
-      const handler = jest.fn(async () =>
-        NextResponse.json({ success: true }, { status: 200 })
-      );
+      const handler = jest.fn(async () => NextResponse.json({ success: true }, { status: 200 }));
 
       const response = await csrfProtection(request, handler);
 
@@ -200,9 +196,7 @@ describe('CSRF Protection', () => {
         method: 'POST',
       });
 
-      const handler = jest.fn(async () =>
-        NextResponse.json({ success: true })
-      );
+      const handler = jest.fn(async () => NextResponse.json({ success: true }));
 
       const response = await csrfProtection(request, handler);
 
@@ -233,9 +227,7 @@ describe('CSRF Protection', () => {
         method: 'POST',
       });
 
-      const handler = jest.fn(async () =>
-        NextResponse.json({ success: true }, { status: 200 })
-      );
+      const handler = jest.fn(async () => NextResponse.json({ success: true }, { status: 200 }));
 
       const response = await csrfProtection(request, handler);
 

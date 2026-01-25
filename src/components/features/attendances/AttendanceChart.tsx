@@ -5,26 +5,28 @@
 
 'use client';
 
-import { useMemo } from 'react';
 import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
   Bar,
-  LineChart,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
   Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
 } from 'recharts';
+
+import { useMemo } from 'react';
+
 import type {
   AttendanceStatistics,
-  PartAttendanceStatistics,
   AttendanceSummaryByDate,
+  PartAttendanceStatistics,
 } from '@/types/attendance-stats.types';
 
 // 차트 색상 팔레트
@@ -57,8 +59,8 @@ export function DonutChart({ data }: DonutChartProps) {
   // 데이터가 없는 경우
   if (data.total_records === 0) {
     return (
-      <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
-        <p className="text-gray-500 text-sm">데이터가 없습니다</p>
+      <div className="flex h-[300px] items-center justify-center rounded-lg bg-gray-50">
+        <p className="text-sm text-gray-500">데이터가 없습니다</p>
       </div>
     );
   }
@@ -74,9 +76,7 @@ export function DonutChart({ data }: DonutChartProps) {
           outerRadius={100}
           paddingAngle={5}
           dataKey="value"
-          label={({ name, percent }) =>
-            `${name}: ${percent ? (percent * 100).toFixed(1) : 0}%`
-          }
+          label={({ name, percent }) => `${name}: ${percent ? (percent * 100).toFixed(1) : 0}%`}
         >
           {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -134,8 +134,8 @@ export function PartBarChart({ data }: BarChartProps) {
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
-        <p className="text-gray-500 text-sm">데이터가 없습니다</p>
+      <div className="flex h-[300px] items-center justify-center rounded-lg bg-gray-50">
+        <p className="text-sm text-gray-500">데이터가 없습니다</p>
       </div>
     );
   }
@@ -198,8 +198,8 @@ export function TrendLineChart({ data }: TrendLineChartProps) {
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
-        <p className="text-gray-500 text-sm">데이터가 없습니다</p>
+      <div className="flex h-[300px] items-center justify-center rounded-lg bg-gray-50">
+        <p className="text-sm text-gray-500">데이터가 없습니다</p>
       </div>
     );
   }

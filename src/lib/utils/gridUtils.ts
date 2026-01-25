@@ -2,8 +2,7 @@
  * Grid Utilities
  * 가변형 지그재그 계단형 좌석 그리드 시스템을 위한 유틸리티 함수
  */
-
-import { GridLayout, GRID_CONSTRAINTS } from '@/types/grid';
+import { GRID_CONSTRAINTS, GridLayout } from '@/types/grid';
 
 /**
  * 전체 인원을 지정된 줄 수로 균등 분배
@@ -16,10 +15,7 @@ import { GridLayout, GRID_CONSTRAINTS } from '@/types/grid';
  * @example
  * autoDistributeSeats(80, 6) // → [13, 13, 13, 13, 14, 14]
  */
-export function autoDistributeSeats(
-  totalMembers: number,
-  numRows: number
-): number[] {
+export function autoDistributeSeats(totalMembers: number, numRows: number): number[] {
   if (totalMembers <= 0 || numRows <= 0) {
     return Array(numRows).fill(0);
   }
@@ -45,10 +41,7 @@ export function autoDistributeSeats(
  */
 export function validateGridLayout(layout: GridLayout): boolean {
   // 행 수 범위 검사
-  if (
-    layout.rows < GRID_CONSTRAINTS.MIN_ROWS ||
-    layout.rows > GRID_CONSTRAINTS.MAX_ROWS
-  ) {
+  if (layout.rows < GRID_CONSTRAINTS.MIN_ROWS || layout.rows > GRID_CONSTRAINTS.MAX_ROWS) {
     return false;
   }
 
@@ -121,7 +114,7 @@ export function calculateGridLayoutFromSeats(
 
   // 각 행별 최대 열 번호 계산
   const rowMaxCols = new Map<number, number>();
-  seats.forEach(seat => {
+  seats.forEach((seat) => {
     const currentMax = rowMaxCols.get(seat.seat_row) || 0;
     rowMaxCols.set(seat.seat_row, Math.max(currentMax, seat.seat_column));
   });
@@ -130,9 +123,7 @@ export function calculateGridLayoutFromSeats(
   const maxRow = Math.max(...rowMaxCols.keys());
 
   // 각 행의 용량 결정 (빈 행은 0으로 처리)
-  const rowCapacities = Array.from({ length: maxRow }, (_, i) =>
-    rowMaxCols.get(i + 1) || 0
-  );
+  const rowCapacities = Array.from({ length: maxRow }, (_, i) => rowMaxCols.get(i + 1) || 0);
 
   return {
     rows: maxRow,

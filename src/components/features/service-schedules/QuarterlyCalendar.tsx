@@ -1,14 +1,19 @@
 'use client';
 'use memo';
 
-import { useMemo, useState, useCallback, memo } from 'react';
+import { Clock, Edit2, MapPin, Music, PartyPopper, Plus, Star, User } from 'lucide-react';
+
+import { memo, useCallback, useMemo, useState } from 'react';
+
 import dynamic from 'next/dynamic';
-import { Plus, Edit2, Music, User, Star, Clock, MapPin, PartyPopper } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Database } from '@/types/database.types';
+
 import { EVENT_TYPE_LABELS, type EventType } from '@/hooks/useChoirEvents';
+
+import type { Database } from '@/types/database.types';
 
 // 모달 컴포넌트 동적 import (코드 스플리팅)
 const ServiceScheduleDialog = dynamic(() => import('./ServiceScheduleDialog'), {
@@ -22,11 +27,11 @@ const EventDialog = dynamic(() => import('./EventDialog'), {
 
 // 후드 색상별 스타일
 const HOOD_COLOR_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  '백': { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' },
-  '녹': { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
-  '보라': { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-300' },
-  '적': { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300' },
-  '검정': { bg: 'bg-gray-800', text: 'text-white', border: 'border-gray-900' },
+  백: { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' },
+  녹: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
+  보라: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-300' },
+  적: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300' },
+  검정: { bg: 'bg-gray-800', text: 'text-white', border: 'border-gray-900' },
 };
 
 type ServiceScheduleBase = Database['public']['Tables']['service_schedules']['Row'];
@@ -139,29 +144,31 @@ const DateCard = memo(function DateCard({
 
   return (
     <Card
-      className={`
-        transition-all
-        ${isSpecialService ? 'border-l-4 border-l-orange-400 bg-orange-50/30' : ''}
-        ${hasOnlyEvents ? 'border-l-4 border-l-purple-400 bg-purple-50/30' : ''}
-        ${hasSchedules && !isSpecialService ? 'border-[var(--color-primary-200)]' : ''}
-        ${today ? 'ring-2 ring-[var(--color-primary-500)]' : ''}
-        ${past && !hasSchedules && dateEvents.length === 0 ? 'opacity-60' : ''}
-      `}
+      className={`transition-all ${isSpecialService ? 'border-l-4 border-l-orange-400 bg-orange-50/30' : ''} ${hasOnlyEvents ? 'border-l-4 border-l-purple-400 bg-purple-50/30' : ''} ${hasSchedules && !isSpecialService ? 'border-[var(--color-primary-200)]' : ''} ${today ? 'ring-2 ring-[var(--color-primary-500)]' : ''} ${past && !hasSchedules && dateEvents.length === 0 ? 'opacity-60' : ''} `}
     >
-      <CardHeader className="py-3 px-4">
+      <CardHeader className="px-4 py-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base font-medium">
             {formatDate(dateStr)}
             <span className="text-xs text-[var(--color-text-tertiary)]">
-              ({isSpecialService ? getDayName(dateStr) : isSunday(dateStr) ? '주일' : getDayName(dateStr)})
+              (
+              {isSpecialService
+                ? getDayName(dateStr)
+                : isSunday(dateStr)
+                  ? '주일'
+                  : getDayName(dateStr)}
+              )
             </span>
             {today && (
-              <span className="text-xs bg-[var(--color-primary-500)] text-white px-2 py-0.5 rounded-full">
+              <span className="rounded-full bg-[var(--color-primary-500)] px-2 py-0.5 text-xs text-white">
                 오늘
               </span>
             )}
             {isSpecialService && (
-              <Badge variant="outline" className="gap-1 text-orange-600 border-orange-300 bg-orange-50">
+              <Badge
+                variant="outline"
+                className="gap-1 border-orange-300 bg-orange-50 text-orange-600"
+              >
                 <Star className="h-3 w-3" />
                 특별예배
               </Badge>
@@ -193,7 +200,7 @@ const DateCard = memo(function DateCard({
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+              className="gap-1 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
               onClick={() => onCreateEvent(dateStr)}
             >
               <PartyPopper className="h-4 w-4" />
@@ -204,16 +211,18 @@ const DateCard = memo(function DateCard({
 
       {/* 예배 일정 (같은 날짜에 여러 일정 지원) */}
       {dateSchedules.length > 0 && (
-        <CardContent className="pt-0 pb-3 px-4">
+        <CardContent className="px-4 pt-0 pb-3">
           <div className="space-y-4">
             {dateSchedules.map((schedule, idx) => (
               <div
                 key={schedule.id}
-                className={`space-y-1.5 text-sm ${idx > 0 ? 'pt-3 border-t border-[var(--color-border-subtle)]' : ''}`}
+                className={`space-y-1.5 text-sm ${idx > 0 ? 'border-t border-[var(--color-border-subtle)] pt-3' : ''}`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`font-medium ${isSpecialService ? 'text-orange-700' : 'text-[var(--color-text-secondary)]'}`}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`font-medium ${isSpecialService ? 'text-orange-700' : 'text-[var(--color-text-secondary)]'}`}
+                    >
                       {schedule.service_type || '주일예배'}
                     </span>
                     {/* 후드 색상 배지 */}
@@ -240,12 +249,12 @@ const DateCard = memo(function DateCard({
                 </div>
                 {schedule.hymn_name && (
                   <div className="flex items-center gap-2">
-                    <Music className="h-4 w-4 text-[var(--color-primary-500)] flex-shrink-0" />
+                    <Music className="h-4 w-4 flex-shrink-0 text-[var(--color-primary-500)]" />
                     <span>
                       {schedule.hymn_name}
                       {/* 작곡가/편곡자 표시 (괄호 안) */}
                       {schedule.composer && (
-                        <span className="text-[var(--color-text-tertiary)] ml-1">
+                        <span className="ml-1 text-[var(--color-text-tertiary)]">
                           ({schedule.composer})
                         </span>
                       )}
@@ -254,7 +263,7 @@ const DateCard = memo(function DateCard({
                 )}
                 {schedule.offertory_performer && (
                   <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-[var(--color-text-tertiary)] flex-shrink-0" />
+                    <User className="h-4 w-4 flex-shrink-0 text-[var(--color-text-tertiary)]" />
                     <span className="text-[var(--color-text-secondary)]">
                       봉헌송: {schedule.offertory_performer}
                     </span>
@@ -262,7 +271,7 @@ const DateCard = memo(function DateCard({
                 )}
 
                 {schedule.notes && (
-                  <div className="text-[var(--color-text-tertiary)] mt-2 text-xs bg-[var(--color-background-secondary)] p-2 rounded">
+                  <div className="mt-2 rounded bg-[var(--color-background-secondary)] p-2 text-xs text-[var(--color-text-tertiary)]">
                     {schedule.notes}
                   </div>
                 )}
@@ -274,24 +283,29 @@ const DateCard = memo(function DateCard({
 
       {/* 행사 목록 */}
       {dateEvents.length > 0 && (
-        <CardContent className={`${hasSchedules ? 'pt-0' : 'pt-0'} pb-3 px-4`}>
+        <CardContent className={`${hasSchedules ? 'pt-0' : 'pt-0'} px-4 pb-3`}>
           <div className="space-y-2">
-            {hasSchedules && <div className="border-t border-[var(--color-border-subtle)] pt-2 mt-2" />}
+            {hasSchedules && (
+              <div className="mt-2 border-t border-[var(--color-border-subtle)] pt-2" />
+            )}
             {dateEvents.map((event) => (
               <div
                 key={event.id}
-                className="bg-purple-50 border border-purple-200 rounded-lg p-3 cursor-pointer hover:bg-purple-100 transition-colors"
+                className="cursor-pointer rounded-lg border border-purple-200 bg-purple-50 p-3 transition-colors hover:bg-purple-100"
                 onClick={() => onEditEvent(event)}
               >
                 <div className="flex items-center gap-2">
-                  <PartyPopper className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                  <PartyPopper className="h-4 w-4 flex-shrink-0 text-purple-600" />
                   <span className="font-medium text-purple-800">{event.title}</span>
-                  <Badge variant="outline" className="ml-auto text-xs text-purple-600 border-purple-300">
+                  <Badge
+                    variant="outline"
+                    className="ml-auto border-purple-300 text-xs text-purple-600"
+                  >
                     {EVENT_TYPE_LABELS[event.event_type as EventType] || event.event_type}
                   </Badge>
                 </div>
                 {(event.start_time || event.location) && (
-                  <div className="flex items-center gap-4 mt-1 text-xs text-purple-600">
+                  <div className="mt-1 flex items-center gap-4 text-xs text-purple-600">
                     {event.start_time && (
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -325,16 +339,12 @@ export default function QuarterlyCalendar({
   events = [],
   onRefresh,
 }: QuarterlyCalendarProps) {
-  const [editingSchedule, setEditingSchedule] =
-    useState<ServiceSchedule | null>(null);
+  const [editingSchedule, setEditingSchedule] = useState<ServiceSchedule | null>(null);
   const [creatingDate, setCreatingDate] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<ChoirEvent | null>(null);
   const [creatingEventDate, setCreatingEventDate] = useState<string | null>(null);
 
-  const sundays = useMemo(
-    () => getSundaysInQuarter(year, quarter),
-    [year, quarter]
-  );
+  const sundays = useMemo(() => getSundaysInQuarter(year, quarter), [year, quarter]);
 
   // 날짜별 스케줄 맵 (같은 날짜에 여러 예배 유형 지원)
   // 주일 2부 예배(오전 9시)가 오후찬양예배(오후 5시)보다 먼저 표시되도록 정렬
@@ -343,10 +353,10 @@ export default function QuarterlyCalendar({
 
     // 예배 유형별 정렬 우선순위 (낮을수록 먼저)
     const SERVICE_TYPE_ORDER: Record<string, number> = {
-      '주일 2부 예배': 1,    // 오전 9시
-      '오후찬양예배': 2,      // 오후 5시
-      '온세대예배': 3,
-      '절기찬양예배': 4,
+      '주일 2부 예배': 1, // 오전 9시
+      오후찬양예배: 2, // 오후 5시
+      온세대예배: 3,
+      절기찬양예배: 4,
     };
 
     schedules.forEach((s) => {
@@ -381,9 +391,7 @@ export default function QuarterlyCalendar({
 
   // 특별예배 (일요일이 아닌 날짜) 추출
   const specialServiceDates = useMemo(() => {
-    return schedules
-      .filter((s) => !isSunday(s.date))
-      .map((s) => s.date);
+    return schedules.filter((s) => !isSunday(s.date)).map((s) => s.date);
   }, [schedules]);
 
   // 행사 날짜 추출

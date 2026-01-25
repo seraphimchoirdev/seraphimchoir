@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'MemberLinkAction' });
 
@@ -10,22 +11,19 @@ const logger = createLogger({ prefix: 'MemberLinkAction' });
  *
  * Body: { action: 'approve' | 'reject' }
  */
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ userId: string }> }
-) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const supabase = await createClient();
     const { userId } = await params;
 
     // 현재 사용자 확인
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: '인증이 필요합니다.' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
     }
 
     // 현재 사용자 권한 확인
@@ -36,19 +34,13 @@ export async function PATCH(
       .single();
 
     if (profileError || !currentProfile) {
-      return NextResponse.json(
-        { error: '프로필을 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: '프로필을 찾을 수 없습니다.' }, { status: 404 });
     }
 
     // 권한 확인 (PART_LEADER 이상)
     const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER'];
     if (!currentProfile.role || !allowedRoles.includes(currentProfile.role)) {
-      return NextResponse.json(
-        { error: '권한이 없습니다.' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 });
     }
 
     // 요청 본문 파싱
@@ -74,7 +66,8 @@ export async function PATCH(
     // 대상 사용자 프로필 조회 (is_singer 포함)
     const { data: targetProfile, error: targetError } = await supabase
       .from('user_profiles')
-      .select(`
+      .select(
+        `
         id,
         linked_member_id,
         link_status,
@@ -84,23 +77,18 @@ export async function PATCH(
           part,
           is_singer
         )
-      `)
+      `
+      )
       .eq('id', userId)
       .single();
 
     if (targetError || !targetProfile) {
-      return NextResponse.json(
-        { error: '대상 사용자를 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: '대상 사용자를 찾을 수 없습니다.' }, { status: 404 });
     }
 
     // 대기중인 요청만 처리 가능
     if (targetProfile.link_status !== 'pending') {
-      return NextResponse.json(
-        { error: '대기중인 요청만 처리할 수 있습니다.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '대기중인 요청만 처리할 수 있습니다.' }, { status: 400 });
     }
 
     // PART_LEADER는 자기 파트만 승인 가능
@@ -171,10 +159,7 @@ export async function PATCH(
 
       if (updateError) {
         logger.error('승인 처리 실패:', updateError);
-        return NextResponse.json(
-          { error: '승인 처리에 실패했습니다.' },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: '승인 처리에 실패했습니다.' }, { status: 500 });
       }
 
       const assignedRole = updateData.role || currentRole?.role || 'MEMBER';
@@ -197,10 +182,7 @@ export async function PATCH(
 
       if (updateError) {
         logger.error('거부 처리 실패:', updateError);
-        return NextResponse.json(
-          { error: '거부 처리에 실패했습니다.' },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: '거부 처리에 실패했습니다.' }, { status: 500 });
       }
 
       return NextResponse.json({
@@ -210,9 +192,6 @@ export async function PATCH(
     }
   } catch (error) {
     logger.error('Member link action error:', error);
-    return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });
   }
 }

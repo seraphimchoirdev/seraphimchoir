@@ -3,11 +3,12 @@
  *
  * 모든 API 엔드포인트에서 사용할 수 있는 공통 sanitization 유틸리티
  */
+import { z } from 'zod';
 
 import { NextRequest } from 'next/server';
-import { z } from 'zod';
-import { sanitizers } from '@/lib/security/input-sanitizer';
+
 import { createLogger } from '@/lib/logger';
+import { sanitizers } from '@/lib/security/input-sanitizer';
 
 const logger = createLogger({ prefix: 'APISanitization' });
 
@@ -59,7 +60,7 @@ export function sanitizeQueryParams<T extends z.ZodTypeAny>(
   });
 
   // null 값을 undefined로 변환 (Zod 호환성)
-  Object.keys(params).forEach(key => {
+  Object.keys(params).forEach((key) => {
     if (params[key] === null || params[key] === '') {
       params[key] = undefined;
     }
@@ -93,7 +94,7 @@ function deepSanitizeObject(obj: any): any {
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => deepSanitizeObject(item));
+    return obj.map((item) => deepSanitizeObject(item));
   }
 
   if (obj !== null && typeof obj === 'object') {
@@ -114,9 +115,10 @@ function deepSanitizeObject(obj: any): any {
  */
 export const commonSchemas = {
   // 이메일 필드
-  email: z.string()
+  email: z
+    .string()
     .email('올바른 이메일 형식이 아닙니다')
-    .transform(v => {
+    .transform((v) => {
       const sanitized = sanitizers.sanitizeEmail(v);
       if (!sanitized) {
         throw new Error('올바른 이메일 형식이 아닙니다');
@@ -125,32 +127,31 @@ export const commonSchemas = {
     }),
 
   // 이름 필드 (한글/영문만 허용)
-  name: z.string()
+  name: z
+    .string()
     .min(2, '이름은 최소 2자 이상이어야 합니다')
     .max(50, '이름은 최대 50자까지 입력 가능합니다')
     .transform(sanitizers.sanitizeMemberName),
 
   // 전화번호 필드
-  phoneNumber: z.string()
+  phoneNumber: z
+    .string()
     .nullable()
     .optional()
-    .transform(v => v ? sanitizers.sanitizePhoneNumber(v) : null),
+    .transform((v) => (v ? sanitizers.sanitizePhoneNumber(v) : null)),
 
   // 일반 텍스트 필드 (노트, 설명 등)
-  textNote: z.string()
+  textNote: z
+    .string()
     .nullable()
     .optional()
-    .transform(v => v ? sanitizers.sanitizeTextNote(v, 1000) : null),
+    .transform((v) => (v ? sanitizers.sanitizeTextNote(v, 1000) : null)),
 
   // URL 필드
-  url: z.string()
-    .transform(v => sanitizers.sanitizeUrl(v)),
+  url: z.string().transform((v) => sanitizers.sanitizeUrl(v)),
 
   // ID 필드 (UUID 또는 숫자)
-  id: z.union([
-    z.string().uuid(),
-    z.coerce.number().int().positive()
-  ]),
+  id: z.union([z.string().uuid(), z.coerce.number().int().positive()]),
 
   // 페이지네이션
   pagination: z.object({
@@ -191,7 +192,7 @@ export function removeSensitiveFields(
   sensitiveFields: string[] = ['password', 'token', 'secret', 'apiKey']
 ): any {
   if (Array.isArray(data)) {
-    return data.map(item => removeSensitiveFields(item, sensitiveFields));
+    return data.map((item) => removeSensitiveFields(item, sensitiveFields));
   }
 
   if (data !== null && typeof data === 'object') {

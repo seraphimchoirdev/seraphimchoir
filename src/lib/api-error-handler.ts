@@ -1,5 +1,7 @@
-import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+
+import { NextResponse } from 'next/server';
+
 import { logger } from './logger';
 
 /**
@@ -105,10 +107,7 @@ export interface ApiErrorResponse {
  * @param context - 로깅을 위한 컨텍스트 (예: 'GET /api/members')
  * @returns NextResponse with error details
  */
-export function handleApiError(
-  error: unknown,
-  context?: string
-): NextResponse<ApiErrorResponse> {
+export function handleApiError(error: unknown, context?: string): NextResponse<ApiErrorResponse> {
   // ApiError 인스턴스인 경우
   if (error instanceof ApiError) {
     if (error.statusCode >= 500) {

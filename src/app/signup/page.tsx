@@ -1,18 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+
 import { useAuth } from '@/hooks/useAuth';
+
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'SignupPage' });
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Spinner } from '@/components/ui/spinner';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -77,18 +88,18 @@ export default function SignupPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-background-primary)]">
         <div className="text-center">
           <Spinner size="lg" variant="default" />
-          <p className="mt-4 text-[var(--color-text-secondary)] body-base">로딩 중...</p>
+          <p className="body-base mt-4 text-[var(--color-text-secondary)]">로딩 중...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-secondary)] py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md shadow-[var(--shadow-lg)] border-none">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--color-background-secondary)] px-4 py-12 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md border-none shadow-[var(--shadow-lg)]">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="heading-2 text-[var(--color-primary-700)]">회원가입</CardTitle>
           <CardDescription className="body-base text-[var(--color-text-secondary)]">
@@ -107,8 +118,7 @@ export default function SignupPage() {
               <Alert variant="success">
                 <AlertDescription>
                   회원가입이 완료되었습니다! 이메일 인증 후 로그인해주세요.
-                  <br />
-                  곧 로그인 페이지로 이동합니다...
+                  <br />곧 로그인 페이지로 이동합니다...
                 </AlertDescription>
               </Alert>
             )}
@@ -183,15 +193,16 @@ export default function SignupPage() {
           <div className="text-center">
             <p className="text-sm text-[var(--color-text-secondary)]">
               이미 계정이 있으신가요?{' '}
-              <Link href="/login" className="font-medium text-[var(--color-primary-600)] hover:text-[var(--color-primary-500)] hover:underline">
+              <Link
+                href="/login"
+                className="font-medium text-[var(--color-primary-600)] hover:text-[var(--color-primary-500)] hover:underline"
+              >
                 로그인
               </Link>
             </p>
           </div>
           <div className="text-center text-xs text-[var(--color-text-tertiary)]">
-            <p>
-              회원가입 후 관리자가 역할을 부여해야 시스템을 사용할 수 있습니다.
-            </p>
+            <p>회원가입 후 관리자가 역할을 부여해야 시스템을 사용할 수 있습니다.</p>
           </div>
         </CardFooter>
       </Card>

@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
+
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/authStore';
+
 import { createLogger } from '@/lib/logger';
+
+import { useAuthStore } from '@/store/authStore';
 
 const logger = createLogger({ prefix: 'HomePage' });
 
@@ -27,7 +30,5 @@ export default function Home() {
   }, [isAuthenticated, hasHydrated, router]);
 
   // 스플래시 스크린이 표시되는 동안 빈 화면 유지 (스플래시가 덮고 있음)
-  return (
-    <div className="min-h-screen bg-white" suppressHydrationWarning />
-  );
+  return <div className="min-h-screen bg-white" suppressHydrationWarning />;
 }

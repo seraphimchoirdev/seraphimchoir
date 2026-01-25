@@ -1,8 +1,11 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import type { Database } from '@/types/database.types';
+
+import { NextRequest, NextResponse } from 'next/server';
+
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
+
+import type { Database } from '@/types/database.types';
 
 const logger = createLogger({ prefix: 'DeadlinesAPI' });
 
@@ -52,7 +55,7 @@ export async function GET(request: NextRequest) {
     }
 
     // closer 정보 조회 (user_profiles에서)
-    const closerIds = [...new Set(data?.map(d => d.closed_by) || [])];
+    const closerIds = [...new Set(data?.map((d) => d.closed_by) || [])];
     const closerMap: Record<string, { id: string; name: string; email: string }> = {};
 
     if (closerIds.length > 0) {
@@ -61,13 +64,13 @@ export async function GET(request: NextRequest) {
         .select('id, name, email')
         .in('id', closerIds);
 
-      closers?.forEach(c => {
+      closers?.forEach((c) => {
         closerMap[c.id] = c;
       });
     }
 
     // 데이터에 closer 정보 추가
-    const dataWithCloser = data?.map(d => ({
+    const dataWithCloser = data?.map((d) => ({
       ...d,
       closer: closerMap[d.closed_by] || null,
     }));
@@ -98,10 +101,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     logger.error('Deadlines GET error:', error);
-    return NextResponse.json(
-      { error: '마감 상태를 불러오는데 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '마감 상태를 불러오는데 실패했습니다' }, { status: 500 });
   }
 }
 
@@ -137,10 +137,7 @@ export async function POST(request: NextRequest) {
 
     const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER'];
     if (!userRole || !allowedRoles.includes(userRole)) {
-      return NextResponse.json(
-        { error: '마감 처리 권한이 없습니다' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: '마감 처리 권한이 없습니다' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -170,10 +167,7 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (!member || member.part !== validatedData.part) {
-          return NextResponse.json(
-            { error: '자신의 파트만 마감할 수 있습니다' },
-            { status: 403 }
-          );
+          return NextResponse.json({ error: '자신의 파트만 마감할 수 있습니다' }, { status: 403 });
         }
       }
       // MANAGER, CONDUCTOR, ADMIN은 모든 파트 마감 가능
@@ -195,7 +189,9 @@ export async function POST(request: NextRequest) {
       // 중복 에러 처리 (UNIQUE constraint)
       if (error.code === '23505') {
         return NextResponse.json(
-          { error: isFullDeadline ? '이미 전체 마감되었습니다' : '해당 파트가 이미 마감되었습니다' },
+          {
+            error: isFullDeadline ? '이미 전체 마감되었습니다' : '해당 파트가 이미 마감되었습니다',
+          },
           { status: 409 }
         );
       }
@@ -209,9 +205,6 @@ export async function POST(request: NextRequest) {
     }
 
     logger.error('Deadlines POST error:', error);
-    return NextResponse.json(
-      { error: '마감 처리에 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '마감 처리에 실패했습니다' }, { status: 500 });
   }
 }

@@ -1,7 +1,6 @@
 /**
  * Auth 관련 TypeScript 타입 정의
  */
-
 import type { User } from '@supabase/supabase-js';
 
 /**

@@ -10,9 +10,11 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { useAuthStore } from '@/store/authStore';
+
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/client';
+
+import { useAuthStore } from '@/store/authStore';
 
 const logger = createLogger({ prefix: 'AuthProvider' });
 

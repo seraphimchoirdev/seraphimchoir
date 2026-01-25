@@ -1,38 +1,41 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Plus, Search } from 'lucide-react';
+
+import { useEffect, useState } from 'react';
+
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMembers } from '@/hooks/useMembers';
-import { useDebounce } from '@/hooks/useDebounce';
-import { useAuth } from '@/hooks/useAuth';
-import Link from 'next/link';
-import MemberCard from './MemberCard';
-import MemberListItem from './MemberListItem';
-import MemberTable from './MemberTable';
-import MemberForm from './MemberForm';
-import { MemberTableToolbar } from './MemberTableToolbar';
-import { ArrowUpIcon, ArrowDownIcon, Search, X, SlidersHorizontal, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ButtonGroup } from '@/components/ui/button-group';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
-import { Spinner } from '@/components/ui/spinner';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
-import type { Database } from '@/types/database.types';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+
+import { useAuth } from '@/hooks/useAuth';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useMembers } from '@/hooks/useMembers';
+import { useMounted } from '@/hooks/useMounted';
+
 import type { SortByField, SortOrder } from '@/types/api';
+import type { Database } from '@/types/database.types';
+
+import MemberForm from './MemberForm';
+import MemberListItem from './MemberListItem';
+import MemberTable from './MemberTable';
+import { MemberTableToolbar } from './MemberTableToolbar';
 
 type Part = Database['public']['Enums']['part'];
 type MemberStatus = Database['public']['Enums']['member_status'];
 
-const PARTS: { value: Part | 'ALL'; label: string }[] = [
+const _PARTS: { value: Part | 'ALL'; label: string }[] = [
   { value: 'ALL', label: '전체' },
   { value: 'SOPRANO', label: '소프라노' },
   { value: 'ALTO', label: '알토' },
@@ -40,7 +43,7 @@ const PARTS: { value: Part | 'ALL'; label: string }[] = [
   { value: 'BASS', label: '베이스' },
 ];
 
-const MEMBER_STATUSES: { value: MemberStatus | 'ALL'; label: string }[] = [
+const _MEMBER_STATUSES: { value: MemberStatus | 'ALL'; label: string }[] = [
   { value: 'ALL', label: '전체' },
   { value: 'NEW', label: '신입대원' },
   { value: 'REGULAR', label: '정대원' },
@@ -55,14 +58,12 @@ const LIMIT_OPTIONS = [
   { value: 100, label: '100개씩' },
 ];
 
-const SORT_OPTIONS: { value: SortByField; label: string }[] = [
+const _SORT_OPTIONS: { value: SortByField; label: string }[] = [
   { value: 'createdAt', label: '등록일순' },
   { value: 'name', label: '이름순' },
   { value: 'part', label: '파트순' },
   { value: 'experience', label: '경력순' },
 ];
-
-import { useMounted } from '@/hooks/useMounted';
 
 // ... imports
 
@@ -82,12 +83,8 @@ export default function MemberList() {
   const [selectedStatus, setSelectedStatus] = useState<MemberStatus | 'ALL'>(
     (searchParams.get('status') as MemberStatus) || 'ALL'
   );
-  const [searchInput, setSearchInput] = useState(
-    searchParams.get('search') || ''
-  );
-  const [currentPage, setCurrentPage] = useState(
-    Number(searchParams.get('page')) || 1
-  );
+  const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
   const [limit, setLimit] = useState(Number(searchParams.get('limit')) || 20);
   const [sortBy, setSortBy] = useState<SortByField>(
     (searchParams.get('sortBy') as SortByField) || 'createdAt'
@@ -106,7 +103,7 @@ export default function MemberList() {
       ? Number(searchParams.get('absentDaysPractice'))
       : undefined
   );
-  const [showFilters, setShowFilters] = useState(false);
+  const [_showFilters, _setShowFilters] = useState(false); // 추후 필터 UI 확장용
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // 검색어 디바운싱 (300ms)
@@ -202,7 +199,7 @@ export default function MemberList() {
   return (
     <div className="space-y-6">
       {/* 툴바 (검색 + 필터) */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div className="flex-1">
           <MemberTableToolbar
             searchTerm={searchInput}
@@ -232,10 +229,7 @@ export default function MemberList() {
 
         {/* 새 대원 등록 버튼 - 권한이 있는 경우에만 표시 */}
         {canCreateMember && (
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            className="gap-2 shrink-0"
-          >
+          <Button onClick={() => setShowCreateModal(true)} className="shrink-0 gap-2">
             <Plus className="h-4 w-4" />
             <span>새 대원 등록</span>
           </Button>
@@ -244,9 +238,9 @@ export default function MemberList() {
 
       {/* 로딩 상태 */}
       {isLoading && (
-        <div className="text-center py-12">
+        <div className="py-12 text-center">
           <Spinner size="lg" />
-          <p className="mt-4 text-[var(--color-text-secondary)] body-base">로딩 중...</p>
+          <p className="body-base mt-4 text-[var(--color-text-secondary)]">로딩 중...</p>
         </div>
       )}
 
@@ -263,8 +257,8 @@ export default function MemberList() {
       {!isLoading && !error && (
         <>
           {members.length === 0 ? (
-            <div className="text-center py-12 bg-[var(--color-surface)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)]">
-              <div className="mx-auto h-12 w-12 text-[var(--color-text-tertiary)] flex items-center justify-center rounded-full bg-[var(--color-background-tertiary)] mb-4">
+            <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-surface)] py-12 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-background-tertiary)] text-[var(--color-text-tertiary)]">
                 <Search className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-medium text-[var(--color-text-primary)]">
@@ -284,23 +278,21 @@ export default function MemberList() {
               </div>
 
               {/* 모바일/태블릿: 리스트 뷰 */}
-              <div className="lg:hidden flex flex-col gap-2">
+              <div className="flex flex-col gap-2 lg:hidden">
                 {members.map((member) => (
-                  <MemberListItem
-                    key={member.id}
-                    member={member}
-                    onDelete={() => refetch()}
-                  />
+                  <MemberListItem key={member.id} member={member} onDelete={() => refetch()} />
                 ))}
               </div>
 
               {/* 페이지네이션 컨트롤 */}
               {meta.totalPages > 1 && (
-                <Card className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <Card className="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
                   {/* 페이지 정보 */}
                   <div className="text-sm text-[var(--color-text-secondary)]">
-                    <span className="font-medium text-[var(--color-text-primary)]">{meta.page}</span> /{' '}
-                    {meta.totalPages} 페이지
+                    <span className="font-medium text-[var(--color-text-primary)]">
+                      {meta.page}
+                    </span>{' '}
+                    / {meta.totalPages} 페이지
                     <span className="mx-2">•</span>
                     {(meta.page - 1) * meta.limit + 1} -{' '}
                     {Math.min(meta.page * meta.limit, meta.total)}번째 항목
@@ -334,7 +326,7 @@ export default function MemberList() {
                       >
                         <span className="sr-only">First page</span>
                         <svg
-                          className="w-4 h-4"
+                          className="h-4 w-4"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -350,15 +342,13 @@ export default function MemberList() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(1, prev - 1))
-                        }
+                        onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                         disabled={!meta.hasPrev}
                         title="이전 페이지"
                       >
                         <span className="sr-only">Previous page</span>
                         <svg
-                          className="w-4 h-4"
+                          className="h-4 w-4"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -396,16 +386,14 @@ export default function MemberList() {
                         variant="outline"
                         size="icon"
                         onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(meta.totalPages, prev + 1)
-                          )
+                          setCurrentPage((prev) => Math.min(meta.totalPages, prev + 1))
                         }
                         disabled={!meta.hasNext}
                         title="다음 페이지"
                       >
                         <span className="sr-only">Next page</span>
                         <svg
-                          className="w-4 h-4"
+                          className="h-4 w-4"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -427,7 +415,7 @@ export default function MemberList() {
                       >
                         <span className="sr-only">Last page</span>
                         <svg
-                          className="w-4 h-4"
+                          className="h-4 w-4"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -451,7 +439,7 @@ export default function MemberList() {
 
       {/* 대원 등록 모달 */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="heading-3 text-[var(--color-text-primary)]">
               새 대원 등록

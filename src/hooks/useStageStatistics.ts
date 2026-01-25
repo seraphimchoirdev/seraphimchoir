@@ -2,9 +2,10 @@
  * 등단 통계 React Query Hook
  * ml_arrangement_history 테이블 기반의 실제 배치 인원 통계 조회
  */
+import { type UseQueryResult, useQuery } from '@tanstack/react-query';
 
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { STALE_TIME } from '@/lib/constants';
+
 import type { StageStatisticsResponse, StageStatsParams } from '@/types/stage-stats.types';
 
 /**

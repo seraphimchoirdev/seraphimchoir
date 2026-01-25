@@ -1,10 +1,12 @@
 'use client';
 
-import { memo, useState } from 'react';
 import { format } from 'date-fns/format';
 import { isToday as isTodayFn } from 'date-fns/isToday';
-import { cn } from '@/lib/utils';
 import { Music } from 'lucide-react';
+
+import { memo, useState } from 'react';
+
+import { cn } from '@/lib/utils';
 
 interface CalendarDayCellProps {
   date: Date;
@@ -50,7 +52,8 @@ function CalendarDayCell({
     if (!isCurrentMonth) return 'bg-[var(--color-background-tertiary)]';
     // 예배 일정이 없으면 연한 회색 배경
     if (!hasServiceSchedule) return 'bg-[var(--color-background-secondary)]/50';
-    if (!attendanceStats || attendanceStats.total === 0) return 'bg-[var(--color-background-primary)]';
+    if (!attendanceStats || attendanceStats.total === 0)
+      return 'bg-[var(--color-background-primary)]';
 
     if (attendanceRate !== null) {
       if (attendanceRate >= 90) return 'bg-[var(--color-success-50)]';
@@ -66,7 +69,8 @@ function CalendarDayCell({
     if (!isCurrentMonth) return '';
     // 예배 일정이 없으면 호버 효과 없음
     if (!hasServiceSchedule) return '';
-    if (!attendanceStats || attendanceStats.total === 0) return 'hover:bg-[var(--color-background-secondary)]';
+    if (!attendanceStats || attendanceStats.total === 0)
+      return 'hover:bg-[var(--color-background-secondary)]';
 
     if (attendanceRate !== null) {
       if (attendanceRate >= 90) return 'hover:bg-[var(--color-success-100)]';
@@ -94,7 +98,7 @@ function CalendarDayCell({
   return (
     <div
       className={cn(
-        'relative min-h-[100px] border border-[var(--color-border-default)] rounded-lg p-2 transition-all',
+        'relative min-h-[100px] rounded-lg border border-[var(--color-border-default)] p-2 transition-all',
         getBgColor(),
         getHoverBgColor(),
         isToday && hasServiceSchedule && 'ring-2 ring-[var(--color-primary-500)]',
@@ -107,11 +111,9 @@ function CalendarDayCell({
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* 날짜 및 예배 일정 표시 */}
-      <div className="flex justify-between items-start mb-1">
+      <div className="mb-1 flex items-start justify-between">
         <div className="flex items-center gap-1">
-          <span className={cn('text-sm font-medium', getDateColor())}>
-            {format(date, 'd')}
-          </span>
+          <span className={cn('text-sm font-medium', getDateColor())}>{format(date, 'd')}</span>
           {/* 예배 일정이 있으면 아이콘 표시 */}
           {isCurrentMonth && hasServiceSchedule && (
             <Music className="h-3 w-3 text-[var(--color-primary-500)]" />
@@ -125,15 +127,10 @@ function CalendarDayCell({
               e.stopPropagation();
               onClick(date);
             }}
-            className="p-1 bg-[var(--color-primary-600)] text-white rounded-md hover:bg-[var(--color-primary-700)] transition-colors opacity-0 group-hover:opacity-100"
+            className="rounded-md bg-[var(--color-primary-600)] p-1 text-white opacity-0 transition-colors group-hover:opacity-100 hover:bg-[var(--color-primary-700)]"
             aria-label="출석 입력"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -147,7 +144,7 @@ function CalendarDayCell({
 
       {/* 예배 유형 표시 (예배 일정이 있을 때) */}
       {isCurrentMonth && hasServiceSchedule && serviceType && (
-        <div className="text-xs text-[var(--color-primary-600)] font-medium truncate mb-1">
+        <div className="mb-1 truncate text-xs font-medium text-[var(--color-primary-600)]">
           {serviceType}
         </div>
       )}
@@ -156,17 +153,17 @@ function CalendarDayCell({
       {isCurrentMonth && attendanceStats && attendanceStats.total > 0 && (
         <div className="space-y-1">
           {attendanceStats.available > 0 && (
-            <div className="text-xs bg-[var(--color-success-100)] text-[var(--color-success-800)] px-2 py-1 rounded border border-[var(--color-success-200)]">
+            <div className="rounded border border-[var(--color-success-200)] bg-[var(--color-success-100)] px-2 py-1 text-xs text-[var(--color-success-800)]">
               출석: {attendanceStats.available}명
             </div>
           )}
           {attendanceStats.unavailable > 0 && (
-            <div className="text-xs bg-[var(--color-error-100)] text-[var(--color-error-800)] px-2 py-1 rounded border border-[var(--color-error-200)]">
+            <div className="rounded border border-[var(--color-error-200)] bg-[var(--color-error-100)] px-2 py-1 text-xs text-[var(--color-error-800)]">
               불참: {attendanceStats.unavailable}명
             </div>
           )}
           {attendanceRate !== null && (
-            <div className="text-xs text-[var(--color-text-secondary)] font-medium mt-1">
+            <div className="mt-1 text-xs font-medium text-[var(--color-text-secondary)]">
               {attendanceRate}%
             </div>
           )}
@@ -175,7 +172,7 @@ function CalendarDayCell({
 
       {/* 툴팁 (호버 시 표시) */}
       {isCurrentMonth && isHovered && (
-        <div className="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-[var(--color-neutral-900)] text-white text-xs rounded-md shadow-lg whitespace-nowrap pointer-events-none">
+        <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 transform rounded-md bg-[var(--color-neutral-900)] px-3 py-2 text-xs whitespace-nowrap text-white shadow-lg">
           <div className="space-y-1">
             {hasServiceSchedule ? (
               <>
@@ -195,7 +192,7 @@ function CalendarDayCell({
             )}
           </div>
           {/* 툴팁 화살표 */}
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+          <div className="absolute top-full left-1/2 -mt-px -translate-x-1/2 transform">
             <div className="border-4 border-transparent border-t-[var(--color-neutral-900)]"></div>
           </div>
         </div>

@@ -1,7 +1,10 @@
-import { Suspense } from 'react';
-import LoginForm from '@/components/features/auth/LoginForm';
-import { Metadata } from 'next';
 import { Loader2 } from 'lucide-react';
+
+import { Suspense } from 'react';
+
+import { Metadata } from 'next';
+
+import LoginForm from '@/components/features/auth/LoginForm';
 
 export const metadata: Metadata = {
   title: '로그인 - 새로핌On',
@@ -10,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-tertiary)] px-4 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--color-background-tertiary)] px-4 sm:px-6 lg:px-8">
       <Suspense
         fallback={
           <div className="flex items-center justify-center">

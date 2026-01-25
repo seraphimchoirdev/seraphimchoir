@@ -3,12 +3,13 @@
  */
 'use client';
 
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { STALE_TIME } from '@/lib/constants';
 import type {
   MemberAttendanceStats,
   MemberAttendanceStatsResponse,
 } from '@/app/api/attendances/stats/members/route';
+import { type UseQueryResult, useQuery } from '@tanstack/react-query';
+
+import { STALE_TIME } from '@/lib/constants';
 
 export type { MemberAttendanceStats, MemberAttendanceStatsResponse };
 
@@ -63,9 +64,7 @@ export function useMemberAttendanceStats(
         searchParams.set('part', part);
       }
 
-      const response = await fetch(
-        `/api/attendances/stats/members?${searchParams.toString()}`
-      );
+      const response = await fetch(`/api/attendances/stats/members?${searchParams.toString()}`);
 
       if (!response.ok) {
         const error = await response.json();

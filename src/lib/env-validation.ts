@@ -4,7 +4,6 @@
  * 애플리케이션 시작 시 필수 환경변수가 올바르게 설정되었는지 확인합니다.
  * 런타임 오류를 방지하고 명확한 오류 메시지를 제공합니다.
  */
-
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'EnvValidation' });
@@ -92,8 +91,8 @@ export function validateEnvironment(): EnvValidationResult {
     if (!value) {
       errors.push(
         `❌ ${key}가 설정되지 않았습니다.\n` +
-        `   설명: ${config.description}\n` +
-        `   예시: ${config.example}`
+          `   설명: ${config.description}\n` +
+          `   예시: ${config.example}`
       );
     }
   }
@@ -106,24 +105,27 @@ export function validateEnvironment(): EnvValidationResult {
       const value = process.env[key];
 
       // 프로덕션에서 필수인 환경변수 체크
-      if (!value && 'requiredInProduction' in config && config.requiredInProduction && isProduction) {
+      if (
+        !value &&
+        'requiredInProduction' in config &&
+        config.requiredInProduction &&
+        isProduction
+      ) {
         errors.push(
           `❌ ${key}가 설정되지 않았습니다 (프로덕션 필수).\n` +
-          `   설명: ${config.description}\n` +
-          `   필요한 기능: ${config.requiredFor}`
+            `   설명: ${config.description}\n` +
+            `   필요한 기능: ${config.requiredFor}`
         );
       } else if (!value) {
         warnings.push(
           `⚠️ ${key}가 설정되지 않았습니다.\n` +
-          `   설명: ${config.description}\n` +
-          `   필요한 기능: ${config.requiredFor}`
+            `   설명: ${config.description}\n` +
+            `   필요한 기능: ${config.requiredFor}`
         );
       } else if ('validate' in config && config.validate) {
         const validationError = config.validate(value);
         if (validationError) {
-          errors.push(
-            `❌ ${key} 값이 유효하지 않습니다: ${validationError}`
-          );
+          errors.push(`❌ ${key} 값이 유효하지 않습니다: ${validationError}`);
         }
       }
     }
@@ -186,8 +188,7 @@ export function getSupabaseServiceRoleKey(): string {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!key) {
     throw new Error(
-      'SUPABASE_SERVICE_ROLE_KEY가 설정되지 않았습니다. ' +
-      '이 키는 Admin 작업에 필요합니다.'
+      'SUPABASE_SERVICE_ROLE_KEY가 설정되지 않았습니다. ' + '이 키는 Admin 작업에 필요합니다.'
     );
   }
   return key;

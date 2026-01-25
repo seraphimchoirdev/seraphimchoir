@@ -1,9 +1,12 @@
 'use client';
 
-import { useArrangementStore } from '@/store/arrangement-store';
+import { Layers, Wand2 } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
-import { Wand2, Layers } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
+
+import { useArrangementStore } from '@/store/arrangement-store';
 
 /**
  * 워크플로우 모드 토글 버튼
@@ -23,8 +26,8 @@ export default function WorkflowModeToggle() {
       className={cn(
         'gap-2 transition-all',
         isWizardMode
-          ? 'bg-[var(--color-primary-50)] border-[var(--color-primary-300)] text-[var(--color-primary-700)]'
-          : 'bg-[var(--color-background-secondary)] border-[var(--color-border-default)]'
+          ? 'border-[var(--color-primary-300)] bg-[var(--color-primary-50)] text-[var(--color-primary-700)]'
+          : 'border-[var(--color-border-default)] bg-[var(--color-background-secondary)]'
       )}
       title={isWizardMode ? '자유 편집 모드로 전환' : '가이드 모드로 전환'}
     >

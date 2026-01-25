@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+
 import { createLogger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'AttendanceDeadlines' });
 
@@ -49,10 +50,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       .single();
 
     if (!deadline) {
-      return NextResponse.json(
-        { error: '해당 마감 레코드를 찾을 수 없습니다' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: '해당 마감 레코드를 찾을 수 없습니다' }, { status: 404 });
     }
 
     // 해당 날짜에 자리배치표가 존재하는지 확인
@@ -68,17 +66,14 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         {
           error: '자리배치표가 이미 생성되어 마감을 해제할 수 없습니다.',
           details: `배치표: ${arrangement.name}`,
-          hint: '출석 변경이 필요하면 파트장 단톡방에 메시지를 남겨주세요.'
+          hint: '출석 변경이 필요하면 파트장 단톡방에 메시지를 남겨주세요.',
         },
         { status: 409 } // Conflict
       );
     }
 
     // 마감 레코드 삭제
-    const { error } = await supabase
-      .from('attendance_deadlines')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('attendance_deadlines').delete().eq('id', id);
 
     if (error) {
       logger.error('Supabase error:', error);
@@ -88,9 +83,6 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     return NextResponse.json({ success: true, message: '마감이 해제되었습니다' });
   } catch (error) {
     logger.error('Deadline DELETE error:', error);
-    return NextResponse.json(
-      { error: '마감 해제에 실패했습니다' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '마감 해제에 실패했습니다' }, { status: 500 });
   }
 }

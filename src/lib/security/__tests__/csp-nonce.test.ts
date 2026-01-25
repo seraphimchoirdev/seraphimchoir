@@ -1,9 +1,10 @@
-import { describe, it, expect, jest } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
+
 import {
-  generateNonce,
   generateCSPHeader,
   generateFullCSPHeader,
-  getCSPReportUri
+  generateNonce,
+  getCSPReportUri,
 } from '../csp-nonce';
 
 describe('CSP Nonce', () => {

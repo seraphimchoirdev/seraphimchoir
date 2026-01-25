@@ -1,7 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
 import { useRouter } from 'next/navigation';
+
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger({ prefix: 'ConductorNotes' });
@@ -30,6 +34,7 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState(false);
 
   // 오직 CONDUCTOR만 접근 가능 (userRole이 없으면 렌더링하지 않음)
   const shouldRender = userRole === 'CONDUCTOR';
@@ -109,11 +114,14 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
     }
   };
 
+  // 삭제 다이얼로그 열기
+  const handleDeleteClick = () => {
+    setDeleteDialog(true);
+  };
+
   // 메모 삭제
   const handleDelete = async () => {
-    if (!confirm('정말 이 메모를 삭제하시겠습니까?')) {
-      return;
-    }
+    setDeleteDialog(false);
 
     try {
       setIsSaving(true);
@@ -160,9 +168,9 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
   }
 
   return (
-    <div className="border border-amber-300 bg-amber-50 p-4 rounded-lg">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-semibold text-amber-900 flex items-center gap-2">
+    <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-amber-900">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-5 w-5"
@@ -177,29 +185,30 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
           </svg>
           지휘자 전용 메모 (암호화됨)
         </h3>
-        <span className="text-xs text-amber-700 bg-amber-200 px-2 py-1 rounded">
+        <span className="rounded bg-amber-200 px-2 py-1 text-xs text-amber-700">
           {userRole}만 접근 가능
         </span>
       </div>
 
-      <p className="text-sm text-amber-700 mb-4">
-        {memberName}에 대한 민감한 정보를 암호화하여 저장합니다. ADMIN도 DB에서 직접 확인할 수 없습니다.
+      <p className="mb-4 text-sm text-amber-700">
+        {memberName}에 대한 민감한 정보를 암호화하여 저장합니다. ADMIN도 DB에서 직접 확인할 수
+        없습니다.
       </p>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-700" />
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-amber-700" />
         </div>
       ) : (
         <>
           {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded">
+            <div className="mb-4 rounded border border-red-300 bg-red-100 p-3 text-red-700">
               {error}
             </div>
           )}
 
           {successMessage && (
-            <div className="mb-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded">
+            <div className="mb-4 rounded border border-green-300 bg-green-100 p-3 text-green-700">
               {successMessage}
             </div>
           )}
@@ -212,17 +221,17 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
                 if (!isEditing) setIsEditing(true);
               }}
               placeholder="지휘자 전용 메모를 입력하세요..."
-              className="w-full h-32 px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+              className="h-32 w-full resize-none rounded-md border border-amber-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-amber-500 focus:outline-none"
               disabled={isSaving}
             />
           </div>
 
-          <div className="flex gap-2 justify-end">
+          <div className="flex justify-end gap-2">
             {isEditing && (
               <button
                 onClick={handleCancel}
                 disabled={isSaving}
-                className="px-4 py-2 text-sm font-medium text-amber-700 bg-white border border-amber-300 rounded-md hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 취소
               </button>
@@ -230,9 +239,9 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
 
             {notes && (
               <button
-                onClick={handleDelete}
+                onClick={handleDeleteClick}
                 disabled={isSaving}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSaving ? '삭제 중...' : '삭제'}
               </button>
@@ -241,13 +250,24 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
             <button
               onClick={handleSave}
               disabled={isSaving || !isEditing}
-              className="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSaving ? '저장 중...' : '저장'}
             </button>
           </div>
         </>
       )}
+
+      {/* 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        open={deleteDialog}
+        onOpenChange={setDeleteDialog}
+        title="메모 삭제"
+        description="정말 이 메모를 삭제하시겠습니까?"
+        confirmLabel="삭제"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

@@ -1,5 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import { STALE_TIME } from '@/lib/constants';
+
 import type { Tables } from '@/types/database.types';
 
 type Part = 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS' | 'SPECIAL';
@@ -107,28 +109,19 @@ export function useReopenAttendance() {
 /**
  * 마감 상태 헬퍼 함수들
  */
-export function isPartClosed(
-  deadlines: DeadlinesResponse | undefined,
-  part: Part
-): boolean {
+export function isPartClosed(deadlines: DeadlinesResponse | undefined, part: Part): boolean {
   return deadlines?.partDeadlines?.[part] !== null;
 }
 
-export function areAllPartsClosed(
-  deadlines: DeadlinesResponse | undefined
-): boolean {
+export function areAllPartsClosed(deadlines: DeadlinesResponse | undefined): boolean {
   if (!deadlines?.partDeadlines) return false;
 
   const parts: Part[] = ['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'];
   return parts.every((part) => deadlines.partDeadlines[part] !== null);
 }
 
-export function getClosedPartsCount(
-  deadlines: DeadlinesResponse | undefined
-): number {
+export function getClosedPartsCount(deadlines: DeadlinesResponse | undefined): number {
   if (!deadlines?.partDeadlines) return 0;
 
-  return Object.values(deadlines.partDeadlines).filter(
-    (d) => d !== null
-  ).length;
+  return Object.values(deadlines.partDeadlines).filter((d) => d !== null).length;
 }

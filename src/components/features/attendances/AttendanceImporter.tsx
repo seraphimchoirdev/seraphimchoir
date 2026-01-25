@@ -1,17 +1,20 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useMembers } from '@/hooks/useMembers';
+import { useRef, useState } from 'react';
+
 import { useBulkCreateAttendances } from '@/hooks/useAttendances';
+import { useMembers } from '@/hooks/useMembers';
+
 import {
-  parseAttendanceCSV,
-  validateAttendanceData,
+  type ParsedAttendance,
+  type ValidationResult,
   convertToAttendanceInserts,
   downloadCSV,
   generateAttendanceTemplate,
-  type ParsedAttendance,
-  type ValidationResult,
+  parseAttendanceCSV,
+  validateAttendanceData,
 } from '@/lib/attendance';
+import { showError, showWarning } from '@/lib/toast';
 
 /**
  * CSV 파일 업로드를 통한 출석 데이터 일괄 입력 컴포넌트
@@ -21,8 +24,7 @@ export default function AttendanceImporter() {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<ParsedAttendance[]>([]);
-  const [validationResult, setValidationResult] =
-    useState<ValidationResult | null>(null);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadResult, setUploadResult] = useState<{
     success: boolean;
@@ -72,7 +74,7 @@ export default function AttendanceImporter() {
       const validation = validateAttendanceData(parsed, memberInfos);
       setValidationResult(validation);
     } catch (error) {
-      alert(`파일 파싱 실패: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError(`파일 파싱 실패: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setSelectedFile(null);
       setParsedData([]);
       setValidationResult(null);
@@ -109,7 +111,7 @@ export default function AttendanceImporter() {
       if (file.name.endsWith('.csv') || file.type === 'text/csv') {
         handleFileSelect(file);
       } else {
-        alert('CSV 파일만 업로드 가능합니다');
+        showWarning('CSV 파일만 업로드 가능합니다');
       }
     }
   };
@@ -122,7 +124,7 @@ export default function AttendanceImporter() {
   // 업로드 실행
   const handleUpload = async () => {
     if (!validationResult || !validationResult.valid) {
-      alert('유효하지 않은 데이터가 있습니다. 오류를 수정해주세요.');
+      showWarning('유효하지 않은 데이터가 있습니다. 오류를 수정해주세요.');
       return;
     }
 
@@ -134,7 +136,7 @@ export default function AttendanceImporter() {
       const attendances = convertToAttendanceInserts(validationResult.data);
 
       if (attendances.length === 0) {
-        alert('업로드할 데이터가 없습니다.');
+        showWarning('업로드할 데이터가 없습니다.');
         setIsProcessing(false);
         return;
       }
@@ -212,30 +214,26 @@ export default function AttendanceImporter() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       {/* CSV 템플릿 다운로드 */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          CSV 템플릿 다운로드
-        </h3>
-        <p className="text-sm text-gray-600 mb-4">
-          현재 등록된 모든 찬양대원 목록이 포함된 CSV 템플릿을 다운로드합니다.
-          템플릿을 수정하여 출석 정보를 입력한 후 업로드하세요.
+      <div className="rounded-lg bg-white p-6 shadow">
+        <h3 className="mb-3 text-lg font-semibold text-gray-900">CSV 템플릿 다운로드</h3>
+        <p className="mb-4 text-sm text-gray-600">
+          현재 등록된 모든 찬양대원 목록이 포함된 CSV 템플릿을 다운로드합니다. 템플릿을 수정하여
+          출석 정보를 입력한 후 업로드하세요.
         </p>
         <button
           onClick={handleDownloadTemplate}
           disabled={members.length === 0}
-          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
         >
           📥 CSV 템플릿 다운로드
         </button>
       </div>
 
       {/* 파일 업로드 영역 */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          CSV 파일 업로드
-        </h3>
+      <div className="rounded-lg bg-white p-6 shadow">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">CSV 파일 업로드</h3>
 
         <input
           ref={fileInputRef}
@@ -249,33 +247,27 @@ export default function AttendanceImporter() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
-            isDragging
-              ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-300 bg-gray-50'
+          className={`rounded-lg border-2 border-dashed p-12 text-center transition-colors ${
+            isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'
           }`}
         >
           <div className="space-y-4">
             <div className="text-6xl">📄</div>
             <div>
-              <p className="text-lg font-medium text-gray-900 mb-2">
-                파일을 여기에 드래그하거나
-              </p>
+              <p className="mb-2 text-lg font-medium text-gray-900">파일을 여기에 드래그하거나</p>
               <button
                 onClick={handleButtonClick}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
               >
                 파일 선택
               </button>
             </div>
-            <p className="text-sm text-gray-500">
-              CSV 파일만 업로드 가능 (최대 5MB)
-            </p>
+            <p className="text-sm text-gray-500">CSV 파일만 업로드 가능 (최대 5MB)</p>
           </div>
         </div>
 
         {selectedFile && (
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="mt-4 rounded-md border border-blue-200 bg-blue-50 p-3">
             <p className="text-sm text-blue-900">
               선택된 파일: <strong>{selectedFile.name}</strong> (
               {(selectedFile.size / 1024).toFixed(2)} KB)
@@ -286,17 +278,15 @@ export default function AttendanceImporter() {
 
       {/* 미리보기 테이블 */}
       {parsedData.length > 0 && validationResult && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            데이터 미리보기
-          </h3>
+        <div className="rounded-lg bg-white p-6 shadow">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900">데이터 미리보기</h3>
 
           {/* 검증 결과 요약 */}
           <div
-            className={`mb-4 p-4 rounded-lg ${
+            className={`mb-4 rounded-lg p-4 ${
               validationResult.valid
-                ? 'bg-green-50 border border-green-200'
-                : 'bg-yellow-50 border border-yellow-200'
+                ? 'border border-green-200 bg-green-50'
+                : 'border border-yellow-200 bg-yellow-50'
             }`}
           >
             <p
@@ -304,16 +294,13 @@ export default function AttendanceImporter() {
                 validationResult.valid ? 'text-green-900' : 'text-yellow-900'
               }`}
             >
-              {validationResult.valid ? '✓' : '⚠'} 유효:{' '}
-              {parsedData.filter((d) => d.valid).length}건, 오류:{' '}
-              {validationResult.errors.length}건
+              {validationResult.valid ? '✓' : '⚠'} 유효: {parsedData.filter((d) => d.valid).length}
+              건, 오류: {validationResult.errors.length}건
             </p>
             {validationResult.errors.length > 0 && (
               <div className="mt-2">
-                <p className="text-sm font-medium text-red-700 mb-1">
-                  오류 목록:
-                </p>
-                <ul className="list-disc list-inside text-sm text-red-600 space-y-1 max-h-40 overflow-y-auto">
+                <p className="mb-1 text-sm font-medium text-red-700">오류 목록:</p>
+                <ul className="max-h-40 list-inside list-disc space-y-1 overflow-y-auto text-sm text-red-600">
                   {validationResult.errors.slice(0, 10).map((error, idx) => (
                     <li key={idx}>
                       행 {error.row}: {error.message}
@@ -330,49 +317,46 @@ export default function AttendanceImporter() {
           </div>
 
           {/* 테이블 */}
-          <div className="overflow-x-auto max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-x-auto overflow-y-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0">
+              <thead className="sticky top-0 bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     상태
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     이름
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     날짜
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     출석
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
                     비고
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 bg-white">
                 {parsedData.slice(0, 100).map((item, idx) => (
-                  <tr
-                    key={idx}
-                    className={item.valid ? '' : 'bg-red-50'}
-                  >
+                  <tr key={idx} className={item.valid ? '' : 'bg-red-50'}>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {item.valid ? (
-                        <span className="text-green-600 font-bold">✓</span>
+                        <span className="font-bold text-green-600">✓</span>
                       ) : (
-                        <span className="text-red-600 font-bold">✗</span>
+                        <span className="font-bold text-red-600">✗</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-3 text-sm whitespace-nowrap text-gray-900">
                       {item.member_name || item.member_id?.substring(0, 8)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-3 text-sm whitespace-nowrap text-gray-900">
                       {item.date}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <td className="px-4 py-3 text-sm whitespace-nowrap">
                       <span
-                        className={`px-2 py-1 rounded-full ${
+                        className={`rounded-full px-2 py-1 ${
                           item.is_available
                             ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
@@ -384,9 +368,7 @@ export default function AttendanceImporter() {
                     <td className="px-4 py-3 text-sm text-gray-900">
                       {item.notes || '-'}
                       {item.errors && (
-                        <div className="mt-1 text-xs text-red-600">
-                          {item.errors.join(', ')}
-                        </div>
+                        <div className="mt-1 text-xs text-red-600">{item.errors.join(', ')}</div>
                       )}
                     </td>
                   </tr>
@@ -394,7 +376,7 @@ export default function AttendanceImporter() {
               </tbody>
             </table>
             {parsedData.length > 100 && (
-              <p className="text-center text-sm text-gray-500 mt-4">
+              <p className="mt-4 text-center text-sm text-gray-500">
                 ... 외 {parsedData.length - 100}건 (처음 100건만 표시)
               </p>
             )}
@@ -407,12 +389,12 @@ export default function AttendanceImporter() {
         <div
           className={`rounded-lg p-6 ${
             uploadResult.success
-              ? 'bg-green-50 border border-green-200'
-              : 'bg-yellow-50 border border-yellow-200'
+              ? 'border border-green-200 bg-green-50'
+              : 'border border-yellow-200 bg-yellow-50'
           }`}
         >
           <h4
-            className={`text-lg font-semibold mb-2 ${
+            className={`mb-2 text-lg font-semibold ${
               uploadResult.success ? 'text-green-900' : 'text-yellow-900'
             }`}
           >
@@ -420,13 +402,13 @@ export default function AttendanceImporter() {
           </h4>
           <div className="space-y-1 text-sm">
             <p className="text-gray-700">
-              전체: {uploadResult.total}건 / 성공: {uploadResult.succeeded}건 /
-              실패: {uploadResult.failed}건
+              전체: {uploadResult.total}건 / 성공: {uploadResult.succeeded}건 / 실패:{' '}
+              {uploadResult.failed}건
             </p>
             {uploadResult.errors && uploadResult.errors.length > 0 && (
               <div className="mt-3">
                 <p className="font-medium text-red-700">실패 항목:</p>
-                <ul className="list-disc list-inside text-red-600 mt-1 max-h-40 overflow-y-auto">
+                <ul className="mt-1 max-h-40 list-inside list-disc overflow-y-auto text-red-600">
                   {uploadResult.errors.map((error, idx) => (
                     <li key={idx}>{error.error || error.message}</li>
                   ))}
@@ -447,12 +429,12 @@ export default function AttendanceImporter() {
               !validationResult?.valid ||
               parsedData.filter((d) => d.valid).length === 0
             }
-            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 rounded-md bg-blue-600 px-6 py-3 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isProcessing ? (
               <span className="flex items-center justify-center">
                 <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  className="mr-3 -ml-1 h-5 w-5 animate-spin text-white"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -480,7 +462,7 @@ export default function AttendanceImporter() {
           <button
             onClick={handleCancel}
             disabled={isProcessing}
-            className="px-6 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-md bg-gray-600 px-6 py-3 text-white hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           >
             취소
           </button>

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+
 import type { Tables } from '@/types/database.types';
 
 export type UserProfile = Tables<'user_profiles'>;

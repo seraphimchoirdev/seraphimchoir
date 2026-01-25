@@ -6,8 +6,8 @@
  * - 마감 시간 설정/수정
  * - 마감 여부 확인
  */
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 
 interface VoteDeadline {
@@ -80,8 +80,9 @@ export function useUpcomingVoteDeadlines(limit: number = 5) {
     queryFn: async () => {
       const supabase = createClient();
 
-      const { data, error } = await supabase
-        .rpc('get_upcoming_vote_deadlines', { limit_count: limit });
+      const { data, error } = await supabase.rpc('get_upcoming_vote_deadlines', {
+        limit_count: limit,
+      });
 
       if (error) throw error;
 
@@ -97,8 +98,9 @@ export function useIsVoteDeadlinePassed(serviceDate: string) {
     queryFn: async () => {
       const supabase = createClient();
 
-      const { data, error } = await supabase
-        .rpc('is_vote_deadline_passed', { target_date: serviceDate });
+      const { data, error } = await supabase.rpc('is_vote_deadline_passed', {
+        target_date: serviceDate,
+      });
 
       if (error) throw error;
 
@@ -122,17 +124,22 @@ export function useSetVoteDeadline() {
     }) => {
       const supabase = createClient();
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       const { data, error } = await supabase
         .from('attendance_vote_deadlines')
-        .upsert({
-          service_date: serviceDate,
-          deadline_at: deadlineAt,
-          created_by: user?.id,
-        }, {
-          onConflict: 'service_date',
-        })
+        .upsert(
+          {
+            service_date: serviceDate,
+            deadline_at: deadlineAt,
+            created_by: user?.id,
+          },
+          {
+            onConflict: 'service_date',
+          }
+        )
         .select()
         .single();
 

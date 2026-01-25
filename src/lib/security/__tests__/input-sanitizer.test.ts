@@ -1,4 +1,5 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
+
 import { sanitizers } from '../input-sanitizer';
 
 describe('Input Sanitizer', () => {
@@ -140,5 +141,4 @@ describe('Input Sanitizer', () => {
       expect(sanitizers.sanitizeTextNote(text, 100)).toBe('Line 1\nLine 2');
     });
   });
-
 });

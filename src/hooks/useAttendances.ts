@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
 import { Tables, TablesInsert, TablesUpdate } from '@/types/database.types';
 
 // React Query stale time 설정
@@ -129,13 +130,7 @@ export function useUpdateAttendance() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: TablesUpdate<'attendances'>;
-    }) => {
+    mutationFn: async ({ id, data }: { id: string; data: TablesUpdate<'attendances'> }) => {
       const response = await fetch(`/api/attendances/${id}`, {
         method: 'PATCH',
         headers: {

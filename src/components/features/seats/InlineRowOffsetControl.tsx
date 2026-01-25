@@ -1,7 +1,9 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+
 import { RowOffsetValue } from '@/types/grid';
 
 // 오프셋 범위: -2 ~ +2
@@ -73,11 +75,12 @@ export default function InlineRowOffsetControl({
   const atRightLimit = current >= MAX_OFFSET;
 
   // 음수/양수에 따른 색상
-  const valueColor = current < 0
-    ? 'text-blue-600'
-    : current > 0
-      ? 'text-amber-600'
-      : 'text-[var(--color-text-secondary)]';
+  const valueColor =
+    current < 0
+      ? 'text-blue-600'
+      : current > 0
+        ? 'text-amber-600'
+        : 'text-[var(--color-text-secondary)]';
 
   return (
     <div className="flex items-center gap-0.5" data-capture-ignore>
@@ -88,7 +91,7 @@ export default function InlineRowOffsetControl({
         size="icon"
         onClick={handleMoveLeft}
         disabled={disabled || atLeftLimit}
-        className="w-10 h-10 sm:w-8 sm:h-8 p-0 touch-manipulation active:scale-95 transition-transform hover:bg-[var(--color-primary-100)] text-[var(--color-text-secondary)] disabled:opacity-30"
+        className="h-10 w-10 touch-manipulation p-0 text-[var(--color-text-secondary)] transition-transform hover:bg-[var(--color-primary-100)] active:scale-95 disabled:opacity-30 sm:h-8 sm:w-8"
         aria-label={`${rowNumber}줄 왼쪽으로 이동`}
       >
         <ChevronLeft className="h-5 w-5 sm:h-4 sm:w-4" />
@@ -96,7 +99,9 @@ export default function InlineRowOffsetControl({
 
       {/* 현재 값 표시 (0이 아닐 때만) */}
       {current !== 0 && (
-        <span className={`text-[10px] font-medium tabular-nums min-w-[2rem] text-center ${valueColor}`}>
+        <span
+          className={`min-w-[2rem] text-center text-[10px] font-medium tabular-nums ${valueColor}`}
+        >
           {formatOffset(current)}
         </span>
       )}
@@ -108,7 +113,7 @@ export default function InlineRowOffsetControl({
         size="icon"
         onClick={handleMoveRight}
         disabled={disabled || atRightLimit}
-        className="w-10 h-10 sm:w-8 sm:h-8 p-0 touch-manipulation active:scale-95 transition-transform hover:bg-[var(--color-primary-100)] text-[var(--color-text-secondary)] disabled:opacity-30"
+        className="h-10 w-10 touch-manipulation p-0 text-[var(--color-text-secondary)] transition-transform hover:bg-[var(--color-primary-100)] active:scale-95 disabled:opacity-30 sm:h-8 sm:w-8"
         aria-label={`${rowNumber}줄 오른쪽으로 이동`}
       >
         <ChevronRight className="h-5 w-5 sm:h-4 sm:w-4" />

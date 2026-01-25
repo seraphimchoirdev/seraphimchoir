@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 
 interface MonthSelectorProps {
@@ -24,11 +25,7 @@ const monthLabels = [
   '12월',
 ];
 
-export default function MonthSelector({
-  year,
-  month,
-  onChange,
-}: MonthSelectorProps) {
+export default function MonthSelector({ year, month, onChange }: MonthSelectorProps) {
   const handlePrev = () => {
     if (month === 1) {
       onChange(year - 1, 12);
@@ -47,26 +44,16 @@ export default function MonthSelector({
 
   return (
     <div className="flex items-center gap-2 sm:gap-4">
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={handlePrev}
-        aria-label="이전 월"
-      >
+      <Button variant="outline" size="icon" onClick={handlePrev} aria-label="이전 월">
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <div className="text-center min-w-[100px] sm:min-w-[120px]">
-        <div className="text-base sm:text-lg font-bold">{year}년</div>
-        <div className="text-xs sm:text-sm text-[var(--color-text-secondary)]">
+      <div className="min-w-[100px] text-center sm:min-w-[120px]">
+        <div className="text-base font-bold sm:text-lg">{year}년</div>
+        <div className="text-xs text-[var(--color-text-secondary)] sm:text-sm">
           {monthLabels[month - 1]}
         </div>
       </div>
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={handleNext}
-        aria-label="다음 월"
-      >
+      <Button variant="outline" size="icon" onClick={handleNext} aria-label="다음 월">
         <ChevronRight className="h-4 w-4" />
       </Button>
     </div>

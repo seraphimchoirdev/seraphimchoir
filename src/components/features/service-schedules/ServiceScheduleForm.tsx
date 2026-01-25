@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { ChevronDown, ChevronUp, Info, Music } from 'lucide-react';
+
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -13,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronDown, ChevronUp, Music, Info } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+
 import type { Database } from '@/types/database.types';
 
 // 예배 유형 옵션
@@ -41,8 +44,7 @@ function isSpecialService(serviceType: string | null | undefined): boolean {
 }
 
 type ServiceSchedule = Database['public']['Tables']['service_schedules']['Row'];
-type ServiceScheduleInsert =
-  Database['public']['Tables']['service_schedules']['Insert'];
+type ServiceScheduleInsert = Database['public']['Tables']['service_schedules']['Insert'];
 
 interface ServiceScheduleFormProps {
   initialData?: ServiceSchedule | null;
@@ -115,7 +117,7 @@ export default function ServiceScheduleForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="date">예배 날짜</Label>
           <Input
@@ -130,7 +132,7 @@ export default function ServiceScheduleForm({
         <div>
           <Label htmlFor="service_type">예배 유형</Label>
           <Select
-            value={isCustomMode ? '기타' : (formData.service_type || '주일 2부 예배')}
+            value={isCustomMode ? '기타' : formData.service_type || '주일 2부 예배'}
             onValueChange={(value) => {
               if (value === '기타') {
                 setIsCustomMode(true);
@@ -179,9 +181,7 @@ export default function ServiceScheduleForm({
         <Label htmlFor="hood_color">후드 색상</Label>
         <Select
           value={formData.hood_color || ''}
-          onValueChange={(value) =>
-            setFormData({ ...formData, hood_color: value || null })
-          }
+          onValueChange={(value) => setFormData({ ...formData, hood_color: value || null })}
         >
           <SelectTrigger>
             <SelectValue placeholder="후드 색상 선택" />
@@ -201,9 +201,7 @@ export default function ServiceScheduleForm({
         <Input
           id="hymn_name"
           value={formData.hymn_name || ''}
-          onChange={(e) =>
-            setFormData({ ...formData, hymn_name: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, hymn_name: e.target.value })}
           placeholder="예: 나 같은 죄인 살리신"
         />
       </div>
@@ -214,9 +212,7 @@ export default function ServiceScheduleForm({
         <Input
           id="composer"
           value={formData.composer || ''}
-          onChange={(e) =>
-            setFormData({ ...formData, composer: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, composer: e.target.value })}
           placeholder="예: 김영수 편곡"
         />
       </div>
@@ -227,9 +223,7 @@ export default function ServiceScheduleForm({
         <Input
           id="music_source"
           value={formData.music_source || ''}
-          onChange={(e) =>
-            setFormData({ ...formData, music_source: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, music_source: e.target.value })}
           placeholder="예: 성가대곡집 3권 p.45"
         />
       </div>
@@ -239,9 +233,7 @@ export default function ServiceScheduleForm({
         <Input
           id="offertory_performer"
           value={formData.offertory_performer || ''}
-          onChange={(e) =>
-            setFormData({ ...formData, offertory_performer: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, offertory_performer: e.target.value })}
           placeholder="예: 홍길동 (피아노)"
         />
       </div>
@@ -258,22 +250,20 @@ export default function ServiceScheduleForm({
       </div>
 
       {/* 연습 설정 섹션 (접기/펼치기) */}
-      <div className="border border-[var(--color-border-default)] rounded-lg overflow-hidden">
+      <div className="overflow-hidden rounded-lg border border-[var(--color-border-default)]">
         <button
           type="button"
           onClick={() => setShowPracticeSettings(!showPracticeSettings)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-[var(--color-background-secondary)] hover:bg-[var(--color-background-tertiary)] transition-colors"
+          className="flex w-full items-center justify-between bg-[var(--color-background-secondary)] px-4 py-3 transition-colors hover:bg-[var(--color-background-tertiary)]"
         >
           <div className="flex items-center gap-2">
             <Music className="h-4 w-4 text-[var(--color-text-secondary)]" />
-            <span className="font-medium text-[var(--color-text-primary)]">
-              연습 설정
-            </span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-primary-100)] text-[var(--color-primary-700)]">
+            <span className="font-medium text-[var(--color-text-primary)]">연습 설정</span>
+            <span className="rounded-full bg-[var(--color-primary-100)] px-2 py-0.5 text-xs text-[var(--color-primary-700)]">
               예배 전 연습
             </span>
             {formData.has_post_practice && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-success-100)] text-[var(--color-success-700)]">
+              <span className="rounded-full bg-[var(--color-success-100)] px-2 py-0.5 text-xs text-[var(--color-success-700)]">
                 예배 후 연습
               </span>
             )}
@@ -286,11 +276,11 @@ export default function ServiceScheduleForm({
         </button>
 
         {showPracticeSettings && (
-          <div className="p-4 space-y-4 bg-[var(--color-surface)]">
+          <div className="space-y-4 bg-[var(--color-surface)] p-4">
             {/* 예배 전 연습 (모든 예배에서 필수) */}
             <div className="space-y-3">
-              <div className="flex items-center gap-2 p-2 bg-[var(--color-primary-50)] rounded-md">
-                <Info className="h-4 w-4 text-[var(--color-primary-600)] flex-shrink-0" />
+              <div className="flex items-center gap-2 rounded-md bg-[var(--color-primary-50)] p-2">
+                <Info className="h-4 w-4 flex-shrink-0 text-[var(--color-primary-600)]" />
                 <span className="text-sm text-[var(--color-primary-700)]">
                   예배 전 연습은 등단 인원 전원 필수 참석입니다
                 </span>
@@ -319,7 +309,7 @@ export default function ServiceScheduleForm({
             </div>
 
             {/* 예배 후 연습 */}
-            <div className="space-y-3 pt-3 border-t border-[var(--color-border-subtle)]">
+            <div className="space-y-3 border-t border-[var(--color-border-subtle)] pt-3">
               <div className="flex items-center gap-2">
                 <Checkbox
                   id="has_post_practice"
@@ -328,7 +318,7 @@ export default function ServiceScheduleForm({
                     setFormData({ ...formData, has_post_practice: !!checked })
                   }
                 />
-                <Label htmlFor="has_post_practice" className="font-medium cursor-pointer">
+                <Label htmlFor="has_post_practice" className="cursor-pointer font-medium">
                   예배 후 연습
                 </Label>
               </div>
@@ -375,7 +365,7 @@ export default function ServiceScheduleForm({
             </div>
 
             {/* 연습 장소 */}
-            <div className="pt-3 border-t border-[var(--color-border-subtle)] space-y-3">
+            <div className="space-y-3 border-t border-[var(--color-border-subtle)] pt-3">
               <div>
                 <Label htmlFor="pre_practice_location" className="text-sm">
                   예배 전 연습 장소
@@ -408,12 +398,7 @@ export default function ServiceScheduleForm({
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={isLoading}
-        >
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
           취소
         </Button>
         <Button type="submit" disabled={isLoading}>
