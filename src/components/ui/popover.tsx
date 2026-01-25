@@ -60,11 +60,9 @@ export function PopoverTrigger({ asChild, children }: PopoverTriggerProps) {
 
   // Store ref to trigger element for position calculation
   React.useEffect(() => {
-    if (asChild) {
-      // For asChild, we need to find the actual element
-      // This will be set via the cloned element's ref
-    } else if (internalRef.current) {
-      context.triggerRef.current = internalRef.current;
+    if (!asChild && internalRef.current) {
+      const triggerRef = context.triggerRef;
+      triggerRef.current = internalRef.current;
     }
   });
 
@@ -79,13 +77,15 @@ export function PopoverTrigger({ asChild, children }: PopoverTriggerProps) {
         handleClick(e);
       },
       ref: (el: HTMLElement | null) => {
-        context.triggerRef.current = el;
+        const triggerRef = context.triggerRef;
+        triggerRef.current = el;
         // Forward the original ref if it exists
         const originalRef = child.props.ref;
         if (typeof originalRef === 'function') {
           originalRef(el);
         } else if (originalRef && typeof originalRef === 'object') {
-          (originalRef as React.MutableRefObject<HTMLElement | null>).current = el;
+          const mutableRef = originalRef as React.MutableRefObject<HTMLElement | null>;
+          mutableRef.current = el;
         }
       },
     });

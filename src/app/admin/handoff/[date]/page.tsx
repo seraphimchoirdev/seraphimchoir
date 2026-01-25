@@ -85,7 +85,6 @@ function parseMarkdown(markdown: string): { metadata: HandoffMetadata; sections:
 
   let currentSection: Section | null = null;
   let contentBuffer: string[] = [];
-  let inFrontMatter = false;
 
   for (const line of lines) {
     // 메타데이터 파싱

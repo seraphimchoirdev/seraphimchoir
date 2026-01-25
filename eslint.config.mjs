@@ -40,6 +40,8 @@ const eslintConfig = defineConfig([
       "react-hooks/set-state-in-effect": "warn",
       // React Compiler의 수동 메모이제이션 보존 경고 (복잡한 의존성에서 발생)
       "react-hooks/preserve-manual-memoization": "warn",
+      // React Compiler의 불변성 규칙 (ref callback 패턴에서 필요한 수정 허용)
+      "react-hooks/immutability": "warn",
     },
   },
   // 보안/Sentry 관련 파일은 any 허용 (외부 라이브러리 타입 호환성)
