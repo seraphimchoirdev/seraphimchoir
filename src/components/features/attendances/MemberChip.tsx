@@ -51,9 +51,9 @@ function MemberChip({
       onClick={handleClick}
       disabled={disabled}
       className={cn(
-        // 기본 칩 스타일 - 중장년층 친화적 크기
-        "inline-flex items-center gap-2 px-3 py-2",
-        "text-base font-medium rounded-lg border-l-4",
+        // 기본 칩 스타일 - 모바일 3열 레이아웃 + 가독성 균형
+        "inline-flex items-center gap-1.5 px-2 py-1.5",
+        "text-[15px] font-medium rounded-lg border-l-4",
         "transition-all duration-150 ease-out",
         "focus:outline-none focus:ring-2 focus:ring-offset-1",
         // 파트별 좌측 테두리
@@ -81,15 +81,15 @@ function MemberChip({
       aria-disabled={disabled}
       aria-label={`${member.name} ${isAttending ? '출석' : '불참'}${disabled ? ' (수정 불가)' : '. 탭하여 변경'}`}
     >
-      {/* 상태 아이콘 - 중장년층 친화적 크기 */}
+      {/* 상태 아이콘 */}
       {isAttending ? (
-        <Check className="w-4 h-4 flex-shrink-0" />
+        <Check className="w-3.5 h-3.5 flex-shrink-0" />
       ) : (
-        <X className="w-4 h-4 flex-shrink-0" />
+        <X className="w-3.5 h-3.5 flex-shrink-0" />
       )}
 
-      {/* 이름 - 더 넓은 최대 너비 */}
-      <span className="truncate max-w-[80px]">{member.name}</span>
+      {/* 이름 */}
+      <span className="truncate max-w-[70px]">{member.name}</span>
 
       {/* 리더 표시 */}
       {member.is_leader && (
