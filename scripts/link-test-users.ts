@@ -21,10 +21,10 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 });
 
 const links = [
-    { email: 'soprano@example.com', name: '고연주' }, // Soprano
-    { email: 'alto@example.com', name: '강혜선' },   // Alto
-    { email: 'tenor@example.com', name: '권인영' },  // Tenor
-    { email: 'bass@example.com', name: '김대영' },   // Bass
+    { email: 'soprano@test.com', name: '고연주' }, // Soprano
+    { email: 'alto@test.com', name: '강혜선' },   // Alto
+    { email: 'tenor@test.com', name: '권인영' },  // Tenor
+    { email: 'bass@test.com', name: '김대영' },   // Bass
 ];
 
 async function linkTestUsers() {
