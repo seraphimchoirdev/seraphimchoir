@@ -24,7 +24,7 @@ import MemberChip from './MemberChip';
 import AttendanceSummary from './AttendanceSummary';
 import AttendanceFilters from './AttendanceFilters';
 import DeadlineStatusBar from './DeadlineStatusBar';
-import { cn, getPartLabel } from '@/lib/utils';
+import { cn, getPartLabel, isTestAccount, getTestAccountPart } from '@/lib/utils';
 import { ChevronDown, ChevronRight, CheckCheck, XCircle } from 'lucide-react';
 
 interface AttendanceListProps {
@@ -65,6 +65,16 @@ export default function AttendanceList({ date }: AttendanceListProps) {
         async function fetchUserPart() {
             if (profile?.role === 'PART_LEADER' && user?.email) {
                 setIsPartLoading(true);
+
+                // 테스트 계정인 경우 이메일에서 파트 추출
+                if (isTestAccount(user.email)) {
+                    const testPart = getTestAccountPart(user.email);
+                    if (testPart) setUserPart(testPart);
+                    setIsPartLoading(false);
+                    return;
+                }
+
+                // 실제 계정인 경우 members 테이블에서 조회
                 const supabase = createClient();
                 const { data } = await supabase
                     .from('members')

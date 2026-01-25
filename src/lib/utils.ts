@@ -63,3 +63,27 @@ export function formatDateShort(date: Date | string): string {
     day: '2-digit',
   }).format(d);
 }
+
+/**
+ * 테스트 계정 여부 확인
+ * @test.com 도메인을 사용하는 계정은 테스트 계정으로 간주
+ */
+export function isTestAccount(email: string | null | undefined): boolean {
+  return email?.endsWith('@test.com') ?? false;
+}
+
+/**
+ * 테스트 파트장 계정에서 파트 추출
+ * soprano@test.com -> SOPRANO, alto@test.com -> ALTO 등
+ */
+export function getTestAccountPart(email: string): Part | null {
+  const partMap: Record<string, Part> = {
+    'soprano': 'SOPRANO',
+    'alto': 'ALTO',
+    'tenor': 'TENOR',
+    'bass': 'BASS',
+  };
+
+  const prefix = email.split('@')[0].toLowerCase();
+  return partMap[prefix] || null;
+}

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import { createLogger } from '@/lib/logger';
+import { isTestAccount, getTestAccountPart } from '@/lib/utils';
 
 const logger = createLogger({ prefix: 'AttendancesBatch' });
 
@@ -117,19 +118,31 @@ export async function POST(request: NextRequest) {
     // 2. PART_LEADER인 경우, members 테이블에서 본인의 파트 확인
     let leaderPart: string | null = null;
     if (profile.role === 'PART_LEADER') {
-      const { data: member } = await supabase
-        .from('members')
-        .select('part')
-        .eq('email', user.email)
-        .single();
+      // 테스트 계정인 경우 이메일에서 파트 추출
+      if (isTestAccount(user.email)) {
+        leaderPart = getTestAccountPart(user.email);
+        if (!leaderPart) {
+          return NextResponse.json(
+            { error: '테스트 파트장 계정의 파트를 확인할 수 없습니다.' },
+            { status: 403 }
+          );
+        }
+      } else {
+        // 실제 계정인 경우 members 테이블에서 조회
+        const { data: member } = await supabase
+          .from('members')
+          .select('part')
+          .eq('email', user.email)
+          .single();
 
-      if (!member) {
-        return NextResponse.json(
-          { error: '파트장 정보를 찾을 수 없습니다. (멤버 등록 필요)' },
-          { status: 403 }
-        );
+        if (!member) {
+          return NextResponse.json(
+            { error: '파트장 정보를 찾을 수 없습니다. (멤버 등록 필요)' },
+            { status: 403 }
+          );
+        }
+        leaderPart = member.part;
       }
-      leaderPart = member.part;
     }
 
     const body = await request.json();

@@ -11,6 +11,7 @@ import { Calendar, CheckCheck, RotateCcw, Send, Users } from 'lucide-react';
 import type { TablesInsert } from '@/types/database.types';
 import type { Database } from '@/types/database.types';
 import { createClient } from '@/lib/supabase/client';
+import { isTestAccount, getTestAccountPart } from '@/lib/utils';
 import AttendanceChipGrid from './AttendanceChipGrid';
 
 type Part = Database['public']['Enums']['part'];
@@ -57,6 +58,16 @@ export default function BulkAttendanceForm() {
     async function fetchUserPart() {
       if (profile?.role === 'PART_LEADER' && user?.email) {
         setIsPartLoading(true);
+
+        // 테스트 계정인 경우 이메일에서 파트 추출
+        if (isTestAccount(user.email)) {
+          const testPart = getTestAccountPart(user.email);
+          if (testPart) setUserPart(testPart);
+          setIsPartLoading(false);
+          return;
+        }
+
+        // 실제 계정인 경우 members 테이블에서 조회
         const supabase = createClient();
         const { data } = await supabase
           .from('members')
