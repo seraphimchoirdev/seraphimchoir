@@ -73,7 +73,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // HTML로 변환
     const html = await marked(markdown);
 
-    return NextResponse.json({ html, date }, { status: 200 });
+    // raw=true 쿼리 파라미터가 있으면 마크다운 원본도 포함
+    const includeRaw = request.nextUrl.searchParams.get('raw') === 'true';
+
+    return NextResponse.json(
+      {
+        html,
+        date,
+        ...(includeRaw && { markdown }),
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Handoff detail API error:', error);
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
