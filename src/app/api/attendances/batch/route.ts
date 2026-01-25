@@ -8,6 +8,8 @@ import { isTestAccount, getTestAccountPart } from '@/lib/utils';
 
 const logger = createLogger({ prefix: 'AttendancesBatch' });
 
+type Part = 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS' | 'SPECIAL';
+
 /**
  * 전체 마감 여부 확인 헬퍼 함수
  * @returns true if full deadline exists for the date
@@ -27,6 +29,42 @@ async function checkFullDeadline(
 }
 
 /**
+ * 마감된 파트 목록 조회 헬퍼 함수
+ * @returns Set of closed part names
+ */
+async function getClosedParts(
+  supabase: SupabaseClient<Database>,
+  date: string
+): Promise<Set<Part>> {
+  const { data } = await supabase
+    .from('attendance_deadlines')
+    .select('part')
+    .eq('date', date)
+    .not('part', 'is', null);
+
+  if (!data) return new Set();
+  return new Set(data.map(d => d.part as Part));
+}
+
+/**
+ * 멤버 ID 목록에서 각 멤버의 파트 조회
+ * @returns Map of member_id to part
+ */
+async function getMemberParts(
+  supabase: SupabaseClient<Database>,
+  memberIds: string[]
+): Promise<Map<string, Part>> {
+  const { data } = await supabase
+    .from('members')
+    .select('id, part')
+    .in('id', memberIds);
+
+  const map = new Map<string, Part>();
+  data?.forEach(m => map.set(m.id, m.part as Part));
+  return map;
+}
+
+/**
  * 예배 일정 존재 여부 확인 헬퍼 함수
  * @returns true if service schedule exists for the date
  */
@@ -38,6 +76,24 @@ async function checkServiceScheduleExists(
     .from('service_schedules')
     .select('id')
     .eq('date', date)
+    .single();
+
+  return data !== null;
+}
+
+/**
+ * 자리배치표 존재 여부 확인 헬퍼 함수
+ * @returns true if arrangement exists for the date
+ */
+async function checkArrangementExists(
+  supabase: SupabaseClient<Database>,
+  date: string
+): Promise<boolean> {
+  const { data } = await supabase
+    .from('arrangements')
+    .select('id')
+    .eq('date', date)
+    .limit(1)
     .single();
 
   return data !== null;
@@ -171,16 +227,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. PART_LEADER인 경우, 요청된 모든 멤버가 본인 파트인지 검증
-    if (leaderPart) {
-      const memberIds = validatedData.attendances.map(a => a.member_id);
-      const { data: targetMembers } = await supabase
-        .from('members')
-        .select('id, part')
-        .in('id', memberIds);
+    // 5. 자리배치표 존재 확인 (존재하면 ADMIN/CONDUCTOR만 수정 가능)
+    const hasArrangement = await checkArrangementExists(supabase, targetDate);
 
-      const invalidMembers = targetMembers?.filter(m => m.part !== leaderPart);
-      if (invalidMembers && invalidMembers.length > 0) {
+    if (hasArrangement && !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
+      return NextResponse.json(
+        {
+          error: '자리배치표가 이미 생성되어 출석을 수정할 수 없습니다.',
+          hint: '출석 변경이 필요하면 파트장 단톡방에 메시지를 남겨주세요.'
+        },
+        { status: 403 }
+      );
+    }
+
+    // 6. 파트별 마감 확인 및 필터링 (ADMIN/CONDUCTOR는 제외)
+    const memberIds = validatedData.attendances.map(a => a.member_id);
+    const memberParts = await getMemberParts(supabase, memberIds);
+    let attendancesToSave = validatedData.attendances;
+
+    if (!['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
+      const closedParts = await getClosedParts(supabase, targetDate);
+
+      if (closedParts.size > 0) {
+        // 마감된 파트의 대원 필터링
+        attendancesToSave = validatedData.attendances.filter(a => {
+          const part = memberParts.get(a.member_id);
+          return part && !closedParts.has(part);
+        });
+
+        // 모든 대원이 마감된 파트에 속하는 경우 에러
+        if (attendancesToSave.length === 0) {
+          return NextResponse.json(
+            { error: '요청한 모든 대원이 마감된 파트에 속합니다. 저장할 수 없습니다.' },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
+    // 6. PART_LEADER인 경우, 요청된 모든 멤버가 본인 파트인지 검증
+    if (leaderPart) {
+      const invalidMembers = attendancesToSave.filter(a => {
+        const part = memberParts.get(a.member_id);
+        return part !== leaderPart;
+      });
+
+      if (invalidMembers.length > 0) {
         return NextResponse.json(
           { error: '본인 파트의 대원만 출석 체크할 수 있습니다.' },
           { status: 403 }
@@ -191,7 +283,7 @@ export async function POST(request: NextRequest) {
     // Upsert 처리 (onConflict: member_id, date)
     const { data, error } = await supabase
       .from('attendances')
-      .upsert(validatedData.attendances, {
+      .upsert(attendancesToSave, {
         onConflict: 'member_id, date',
         ignoreDuplicates: false, // 업데이트 허용
       })
@@ -208,6 +300,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 파트별 마감으로 스킵된 건수 계산
+    const skippedCount = validatedData.attendances.length - attendancesToSave.length;
+
     // 성공 응답
     return NextResponse.json(
       {
@@ -216,7 +311,8 @@ export async function POST(request: NextRequest) {
         summary: {
           total: validatedData.attendances.length,
           succeeded: data?.length || 0,
-          failed: validatedData.attendances.length - (data?.length || 0),
+          skipped: skippedCount, // 마감된 파트로 인해 스킵된 건수
+          failed: attendancesToSave.length - (data?.length || 0),
         },
       },
       { status: 200 }

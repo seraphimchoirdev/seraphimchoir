@@ -6,7 +6,8 @@ import { createLogger } from '@/lib/logger';
 const logger = createLogger({ prefix: 'AttendanceList' });
 import { useMembers } from '@/hooks/useMembers';
 import { useAttendances } from '@/hooks/useAttendances';
-import { useAttendanceDeadlines } from '@/hooks/useAttendanceDeadlines';
+import { useAttendanceDeadlines, isPartClosed } from '@/hooks/useAttendanceDeadlines';
+import { useArrangements } from '@/hooks/useArrangements';
 import { useAuth } from '@/hooks/useAuth';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,7 @@ import AttendanceSummary from './AttendanceSummary';
 import AttendanceFilters from './AttendanceFilters';
 import DeadlineStatusBar from './DeadlineStatusBar';
 import { cn, getPartLabel, isTestAccount, getTestAccountPart } from '@/lib/utils';
-import { ChevronDown, ChevronRight, CheckCheck, XCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCheck, XCircle, Lock } from 'lucide-react';
 
 interface AttendanceListProps {
     date: Date;
@@ -120,9 +121,29 @@ export default function AttendanceList({ date }: AttendanceListProps) {
         refetch: refetchDeadlines,
     } = useAttendanceDeadlines(dateStr);
 
+    // 해당 날짜의 자리배치표 존재 여부 확인
+    const { data: arrangementsData } = useArrangements({
+        startDate: dateStr,
+        endDate: dateStr,
+        limit: 1,
+    });
+    const hasArrangement = (arrangementsData?.data?.length ?? 0) > 0;
+
     // 전체 마감 여부 (수정 가능 여부에 사용)
     const isFullyClosed = deadlines?.isFullyClosed ?? false;
     const canEditAfterClose = ['ADMIN', 'CONDUCTOR'].includes(profile?.role || '');
+    // 자리배치표가 생성된 경우에도 ADMIN/CONDUCTOR만 수정 가능
+    const isLockedByArrangement = hasArrangement && !canEditAfterClose;
+
+    // 마감된 파트 목록 계산
+    const closedParts = useMemo(() => {
+        if (!deadlines?.partDeadlines) return new Set<Part>();
+        return new Set(
+            (Object.entries(deadlines.partDeadlines) as [Part, unknown][])
+                .filter(([, deadline]) => deadline !== null)
+                .map(([part]) => part)
+        );
+    }, [deadlines]);
 
     const [activeTab, setActiveTab] = useState<'service' | 'practice'>('service');
     const [showAbsentOnly, setShowAbsentOnly] = useState(false);
@@ -270,9 +291,24 @@ export default function AttendanceList({ date }: AttendanceListProps) {
     const handleSubmit = async () => {
         if (Object.keys(pendingChanges).length === 0) return;
 
+        // 마감된 파트의 변경사항 필터링 (ADMIN/CONDUCTOR는 제외)
+        const changesToSubmit = canEditAfterClose
+            ? pendingChanges
+            : Object.fromEntries(
+                Object.entries(pendingChanges).filter(([memberId]) => {
+                    const member = members?.find(m => m.id === memberId);
+                    return member && !closedParts.has(member.part as Part);
+                })
+            );
+
+        if (Object.keys(changesToSubmit).length === 0) {
+            alert('저장할 변경사항이 없습니다. (마감된 파트의 변경사항은 저장할 수 없습니다)');
+            return;
+        }
+
         setIsSubmitting(true);
         try {
-            const payload = Object.entries(pendingChanges).map(([memberId, changes]) => {
+            const payload = Object.entries(changesToSubmit).map(([memberId, changes]) => {
                 const existing = attendances?.find(a => a.member_id === memberId);
 
                 const is_service_available = changes.is_service_available ??
@@ -300,9 +336,16 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                 throw new Error(errorData.error || 'Failed to save attendances');
             }
 
+            // 마감된 파트의 변경사항은 초기화되지 않고 남아있음을 알림
+            const skippedCount = Object.keys(pendingChanges).length - Object.keys(changesToSubmit).length;
             setPendingChanges({});
             queryClient.invalidateQueries({ queryKey: ['attendances'] });
-            alert('저장되었습니다.');
+
+            if (skippedCount > 0) {
+                alert(`저장 완료! (마감된 파트의 ${skippedCount}건은 저장되지 않았습니다)`);
+            } else {
+                alert('저장되었습니다.');
+            }
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
             logger.error('Failed to save attendances:', error);
@@ -320,6 +363,18 @@ export default function AttendanceList({ date }: AttendanceListProps) {
 
     const hasChanges = Object.keys(pendingChanges).length > 0;
 
+    // 변경사항 중 마감된 파트의 대원이 있는지 확인
+    const closedPartChanges = useMemo(() => {
+        if (canEditAfterClose) return []; // ADMIN/CONDUCTOR는 제한 없음
+        return Object.keys(pendingChanges).filter(memberId => {
+            const member = members?.find(m => m.id === memberId);
+            return member && closedParts.has(member.part as Part);
+        });
+    }, [pendingChanges, members, closedParts, canEditAfterClose]);
+
+    const hasClosedPartChanges = closedPartChanges.length > 0;
+    const validChangesCount = Object.keys(pendingChanges).length - closedPartChanges.length;
+
     if (isLoading) {
         return <div className="flex justify-center p-8"><Spinner /></div>;
     }
@@ -331,24 +386,6 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                 <h3 className="text-lg font-semibold">
                     {format(date, 'M월 d일 (E)', { locale: ko })} 출석 체크
                 </h3>
-                <div className="flex gap-2">
-                    {hasChanges && (
-                        <>
-                            <Button variant="outline" size="sm" onClick={handleReset} disabled={isSubmitting}>
-                                <RotateCcw className="w-4 h-4 mr-2" />
-                                취소
-                            </Button>
-                            <Button
-                                size="sm"
-                                onClick={handleSubmit}
-                                disabled={isSubmitting || (isFullyClosed && !canEditAfterClose)}
-                            >
-                                {isSubmitting ? <Spinner size="sm" className="mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                                저장 ({Object.keys(pendingChanges).length})
-                            </Button>
-                        </>
-                    )}
-                </div>
             </div>
 
             {/* 마감 현황 바 */}
@@ -418,6 +455,9 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                             const partAbsentCount = allPartMembers.length - partAttendingCount;
 
                             const isExpanded = openParts[part];
+                            // 파트별 마감 상태
+                            const isPartClosed = closedParts.has(part);
+                            const isPartEditable = canEditAfterClose || !isPartClosed;
 
                             return (
                                 <div key={part} className="rounded-xl overflow-hidden border border-[var(--color-border-default)] bg-[var(--color-background-primary)] shadow-sm">
@@ -444,6 +484,13 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                                             <span className="text-sm text-[var(--color-text-secondary)]">
                                                 {partAttendingCount}/{allPartMembers.length}명
                                             </span>
+                                            {/* 파트 마감 뱃지 */}
+                                            {isPartClosed && !canEditAfterClose && (
+                                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-medium bg-[var(--color-text-tertiary)]/10 text-[var(--color-text-tertiary)] rounded">
+                                                    <Lock className="w-3 h-3" />
+                                                    마감
+                                                </span>
+                                            )}
                                         </div>
 
                                         {partAbsentCount > 0 ? (
@@ -460,8 +507,8 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                                     {/* 펼쳐진 내용 */}
                                     {isExpanded && (
                                         <div className="p-4 space-y-3 bg-[var(--color-background-primary)]">
-                                            {/* 빠른 액션 버튼들 */}
-                                            {!(isFullyClosed && !canEditAfterClose) && (
+                                            {/* 빠른 액션 버튼들 - 파트 마감 시에도 숨김 */}
+                                            {isPartEditable && !(isFullyClosed && !canEditAfterClose) && (
                                                 <div className="flex gap-2 justify-end">
                                                     <button
                                                         type="button"
@@ -492,6 +539,13 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                                                 </div>
                                             )}
 
+                                            {/* 파트 마감 안내 메시지 */}
+                                            {!isPartEditable && (
+                                                <div className="text-center py-2 text-xs text-[var(--color-text-tertiary)] bg-[var(--color-background-secondary)] rounded-lg">
+                                                    이 파트는 마감되어 수정할 수 없습니다. 수정이 필요하면 지휘자에게 문의하세요.
+                                                </div>
+                                            )}
+
                                             {/* 칩 그리드 */}
                                             <div className="flex flex-wrap gap-2">
                                                 {partMembers.map((member) => {
@@ -506,8 +560,8 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                                                     const isAttending = pendingValue !== undefined ? pendingValue : dbValue;
                                                     const isChanged = pendingValue !== undefined && pendingValue !== dbValue;
 
-                                                    // 전체 마감 시 수정 권한 없으면 비활성화
-                                                    const isDisabled = isFullyClosed && !canEditAfterClose;
+                                                    // 전체 마감 또는 파트 마감 시 수정 권한 없으면 비활성화
+                                                    const isDisabled = !isPartEditable || (isFullyClosed && !canEditAfterClose);
 
                                                     return (
                                                         <MemberChip
@@ -562,6 +616,45 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                     </TabsContent>
                 ))}
             </Tabs>
+
+            {/* 하단 고정 플로팅 저장 버튼 */}
+            {hasChanges && (
+                <div className="fixed bottom-20 left-0 right-0 z-40 px-4 lg:bottom-6 animate-in slide-in-from-bottom-4 duration-300">
+                    <div className="max-w-lg mx-auto flex flex-col gap-2 p-3 bg-[var(--color-background-primary)] rounded-xl shadow-lg border border-[var(--color-border-default)]">
+                        {/* 마감된 파트 경고 */}
+                        {hasClosedPartChanges && (
+                            <p className="text-xs text-[var(--color-warning-600)] text-center">
+                                마감된 파트의 {closedPartChanges.length}건은 저장되지 않습니다
+                            </p>
+                        )}
+                        <div className="flex items-center gap-3">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleReset}
+                                disabled={isSubmitting}
+                                className="flex-shrink-0"
+                            >
+                                <RotateCcw className="w-4 h-4 mr-1.5" />
+                                취소
+                            </Button>
+                            <Button
+                                size="sm"
+                                onClick={handleSubmit}
+                                disabled={isSubmitting || (isFullyClosed && !canEditAfterClose) || validChangesCount === 0}
+                                className="flex-1"
+                            >
+                                {isSubmitting ? (
+                                    <Spinner size="sm" className="mr-1.5" />
+                                ) : (
+                                    <Save className="w-4 h-4 mr-1.5" />
+                                )}
+                                저장 ({validChangesCount}건)
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

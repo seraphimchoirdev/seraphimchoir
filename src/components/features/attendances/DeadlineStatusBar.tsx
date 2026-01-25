@@ -85,6 +85,9 @@ export default function DeadlineStatusBar({
       onRefetch?.();
     } catch (error) {
       logger.error('Reopen error:', error);
+      // 자리배치표가 존재하는 경우 등 사용자에게 에러 메시지 표시
+      const errorMessage = error instanceof Error ? error.message : '마감 해제에 실패했습니다';
+      alert(errorMessage);
     }
   };
 
