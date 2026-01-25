@@ -128,20 +128,21 @@ export async function POST(request: NextRequest) {
           );
         }
       } else {
-        // 실제 계정인 경우 members 테이블에서 조회
-        const { data: member } = await supabase
-          .from('members')
-          .select('part')
-          .eq('email', user.email)
+        // 실제 계정인 경우 user_profiles.linked_member_id를 통해 연결된 멤버의 파트 조회
+        const { data: profileWithMember } = await supabase
+          .from('user_profiles')
+          .select('linked_member_id, members:linked_member_id(part)')
+          .eq('id', user.id)
           .single();
 
-        if (!member) {
+        const linkedMember = profileWithMember?.members as { part: string } | null;
+        if (!profileWithMember?.linked_member_id || !linkedMember) {
           return NextResponse.json(
-            { error: '파트장 정보를 찾을 수 없습니다. (멤버 등록 필요)' },
+            { error: '파트장 정보를 찾을 수 없습니다. (대원 연결 필요)' },
             { status: 403 }
           );
         }
-        leaderPart = member.part;
+        leaderPart = linkedMember.part;
       }
     }
 
