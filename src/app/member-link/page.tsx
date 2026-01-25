@@ -7,7 +7,7 @@ import { useAvailableMembers, useRequestMemberLink, useMyLinkStatus } from '@/ho
 import { useDebounce } from '@/hooks/useDebounce';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle, Clock, UserCheck, Search, Info } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, UserCheck, Search, Info, ChevronRight } from 'lucide-react';
 
 const PART_LABELS: Record<string, string> = {
   SOPRANO: '소프라노',
@@ -251,6 +251,13 @@ function MemberLinkContent() {
                   )}
                 </div>
 
+                {/* 검색창 하단 힌트 (검색어가 없을 때) */}
+                {!debouncedSearch.trim() && (
+                  <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
+                    이름을 검색한 후 목록에서 선택하세요
+                  </p>
+                )}
+
                 {/* 검색 결과 */}
                 {debouncedSearch.trim() && (
                   <div className="mt-2 max-h-60 overflow-y-auto border border-[var(--color-border)] rounded-md bg-[var(--color-background-primary)]">
@@ -259,19 +266,31 @@ function MemberLinkContent() {
                         <Loader2 className="h-6 w-6 animate-spin" />
                       </div>
                     ) : filteredMembers.length > 0 ? (
-                      filteredMembers.map((member) => (
-                        <button
-                          key={member.id}
-                          type="button"
-                          onClick={() => handleSelectMember(member)}
-                          className="w-full text-left px-4 py-3 border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-background-secondary)] transition-colors"
-                        >
-                          <span className="font-medium">{member.name}</span>
-                          <span className="ml-2 text-sm text-[var(--color-text-secondary)]">
-                            ({PART_LABELS[member.part] || member.part})
-                          </span>
-                        </button>
-                      ))
+                      <>
+                        {/* 안내 헤더 */}
+                        <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-[var(--color-border)] text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                          <span>👆</span>
+                          <span>아래에서 본인 이름을 선택하세요</span>
+                        </div>
+                        {filteredMembers.map((member) => (
+                          <button
+                            key={member.id}
+                            type="button"
+                            onClick={() => handleSelectMember(member)}
+                            className="w-full text-left px-4 py-3 border-b border-[var(--color-border)] last:border-b-0 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors cursor-pointer group"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{member.name}</span>
+                                <span className="ml-2 text-sm text-[var(--color-text-secondary)]">
+                                  ({PART_LABELS[member.part] || member.part})
+                                </span>
+                              </div>
+                              <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                            </div>
+                          </button>
+                        ))}
+                      </>
                     ) : (
                       <p className="text-center py-4 text-[var(--color-text-secondary)]">
                         검색 결과가 없습니다. 파트장에게 문의해주세요.
