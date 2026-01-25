@@ -89,7 +89,9 @@
       "Bash(find:*)",
       "mcp__plugin_playwright_playwright__browser_handle_dialog",
       "Bash(brew list:*)",
-      "Bash(brew install:*)"
+      "Bash(brew install:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": []
