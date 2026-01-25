@@ -14,6 +14,7 @@ const adminMenuItems = [
   { href: '/admin', label: '대시보드', exact: true },
   { href: '/admin/users', label: '사용자 관리' },
   { href: '/admin/member-links', label: '대원 연결 승인' },
+  { href: '/admin/handoff', label: '핸드오프 문서' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

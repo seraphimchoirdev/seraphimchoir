@@ -9,6 +9,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createClient } from '@/lib/supabase/server';
 
+// GitHub 저장소 정보 (Vercel 환경용 폴백)
+const GITHUB_OWNER = 'seraphimchoirdev';
+const GITHUB_REPO = 'seraphimchoir';
+const GITHUB_BRANCH = 'main';
+
 /**
  * GET /api/admin/handoff/[date]
  *
@@ -44,16 +49,26 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: '잘못된 날짜 형식입니다' }, { status: 400 });
     }
 
-    // 파일 경로 구성
+    let markdown = '';
+
+    // 방법 1: 로컬 파일 시스템에서 직접 읽기 (개발 환경)
     const filePath = path.join(process.cwd(), 'docs', 'handoff', `${date}.md`);
+    if (fs.existsSync(filePath)) {
+      markdown = fs.readFileSync(filePath, 'utf-8');
+    } else {
+      // 방법 2: GitHub raw content에서 가져오기 (Vercel 환경)
+      const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/docs/handoff/${date}.md`;
+      const res = await fetch(rawUrl, { cache: 'no-store' });
 
-    // 파일 존재 확인
-    if (!fs.existsSync(filePath)) {
-      return NextResponse.json({ error: '문서를 찾을 수 없습니다' }, { status: 404 });
+      if (!res.ok) {
+        if (res.status === 404) {
+          return NextResponse.json({ error: '문서를 찾을 수 없습니다' }, { status: 404 });
+        }
+        throw new Error(`GitHub fetch failed: ${res.status}`);
+      }
+
+      markdown = await res.text();
     }
-
-    // 마크다운 파일 읽기
-    const markdown = fs.readFileSync(filePath, 'utf-8');
 
     // HTML로 변환
     const html = await marked(markdown);
