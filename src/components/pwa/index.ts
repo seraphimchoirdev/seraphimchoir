@@ -11,6 +11,10 @@ export {
   useIOSDetection,
 } from './IOSInstallGuide';
 export {
+  InAppBrowserGuide,
+  useInAppBrowserDetection,
+} from './InAppBrowserGuide';
+export {
   PushNotificationPrompt,
   usePushNotification,
 } from './PushNotificationPrompt';

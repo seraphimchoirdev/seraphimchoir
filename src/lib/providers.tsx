@@ -7,6 +7,7 @@ import {
   ServiceWorkerRegistration,
   PWAInstallPrompt,
   IOSInstallGuide,
+  InAppBrowserGuide,
 } from '@/components/pwa';
 import { useArrangementDraftStore } from '@/store/arrangement-draft-store';
 
@@ -46,6 +47,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <DraftCleaner />
         {/* PWA 컴포넌트 */}
         <ServiceWorkerRegistration />
+        <InAppBrowserGuide />
         <PWAInstallPrompt />
         <IOSInstallGuide />
       </AuthProvider>

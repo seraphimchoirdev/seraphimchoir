@@ -81,7 +81,7 @@ export function IOSInstallGuide({ forceShow, onClose }: IOSInstallGuideProps) {
             </div>
             <div>
               <h2 className="font-semibold text-[var(--color-text-primary)]">
-                새로핌On 설치하기
+                새로핌:On 설치하기
               </h2>
               <p className="text-xs text-[var(--color-text-secondary)]">
                 홈 화면에서 바로 실행하세요
