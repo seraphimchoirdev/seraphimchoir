@@ -53,14 +53,13 @@ export default function BottomNavigation() {
   // 관리자용 메인 메뉴 (4개 + 더보기)
   const managerMainNav: NavItem[] = [
     { href: '/dashboard', label: '홈', icon: <Home className="h-5 w-5" />, show: true },
-    { href: '/management/members', label: '대원', icon: <Users className="h-5 w-5" />, show: true },
     { href: '/attendances', label: '출석', icon: <ClipboardCheck className="h-5 w-5" />, show: true },
     { href: '/arrangements', label: '자리', icon: <LayoutGrid className="h-5 w-5" />, show: true },
+    { href: '/management', label: '임원', icon: <Briefcase className="h-5 w-5" />, show: true },
   ];
 
   // 관리자용 더보기 메뉴
   const managerMoreNav: NavItem[] = [
-    { href: '/management', label: '임원 포털', icon: <Briefcase className="h-5 w-5" />, show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER']) },
     { href: '/service-schedules', label: '찬양대 일정', icon: <Calendar className="h-5 w-5" />, show: true },
     { href: '/admin', label: '관리자 페이지', icon: <Settings className="h-5 w-5" />, show: hasRole(['ADMIN']) },
     { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: true }, // 모든 로그인 사용자 접근 가능
