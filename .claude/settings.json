@@ -5,6 +5,11 @@
         "matcher": "Bash",
         "pattern": "git push.*main|git push origin main",
         "command": ".claude/hooks/check-vercel-deployment.sh"
+      },
+      {
+        "matcher": "Bash",
+        "pattern": "git commit",
+        "command": ".claude/hooks/update-completed-docs.sh"
       }
     ]
   }
