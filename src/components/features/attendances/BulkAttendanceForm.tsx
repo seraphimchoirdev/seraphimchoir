@@ -95,7 +95,7 @@ export default function BulkAttendanceForm() {
     sortOrder: 'asc',
   });
 
-  const members = membersResponse?.data || [];
+  const members = useMemo(() => membersResponse?.data || [], [membersResponse?.data]);
 
   // 일괄 출석 생성 훅
   const bulkCreateMutation = useBulkCreateAttendances();

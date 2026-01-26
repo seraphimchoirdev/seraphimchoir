@@ -86,7 +86,7 @@ export function useReopenAttendance() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, date }: { id: string; date: string }) => {
+    mutationFn: async ({ id, date: _date }: { id: string; date: string }) => {
       const response = await fetch(`/api/attendances/deadlines/${id}`, {
         method: 'DELETE',
       });

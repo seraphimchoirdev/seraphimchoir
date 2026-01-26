@@ -174,7 +174,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
     deadlinesLoading ||
     (profile?.role === 'PART_LEADER' && isPartLoading);
 
-  const members = membersData?.data || [];
+  const members = useMemo(() => membersData?.data || [], [membersData?.data]);
 
   // 파트별로 멤버 그룹화
   const membersByPart = useMemo(() => {
@@ -245,7 +245,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
       newOpenParts[part] = hasAbsent;
     });
     setOpenParts(newOpenParts);
-  }, [isLoading, membersByPart, attendances]);
+  }, [isLoading, membersByPart, attendances, getMemberAttendingStatus]);
 
   // 필터링된 멤버
   const filteredMembersByPart = useMemo(() => {

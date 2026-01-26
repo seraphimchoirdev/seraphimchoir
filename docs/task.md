@@ -46,10 +46,6 @@
 
 ### P1 (높음 - 이번 주 완료)
 
-- [ ] **metadataBase 설정**
-  - SEO 최적화를 위한 프로덕션 도메인 설정
-  - 참고 파일: `src/app/layout.tsx`
-
 - [ ] **TypeScript strict 모드 대응**
   - `@typescript-eslint/no-explicit-any` warning 점진적 해결
 
@@ -60,6 +56,12 @@
 
 - [ ] **CLAUDE.md 업데이트**
   - 핸드오프 뷰어 접근 방법 추가
+
+### P3 (낮음 - 여유 있을 때)
+
+- [ ] **metadataBase 설정**
+  - 내부 시스템이라 SEO 불필요, 경고 제거 목적
+  - 참고 파일: `src/app/layout.tsx`
 
 ---
 
