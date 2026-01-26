@@ -437,3 +437,34 @@ git checkout develop
 git merge hotfix/v0.2.1
 git push origin develop
 ```
+
+## 핸드오프 문서화
+
+AI 세션 간 컨텍스트를 보존하기 위한 핸드오프 문서 시스템입니다.
+
+### 도입 배경
+
+LLM 세션은 휘발성이므로 세션이 끝나면 모든 학습 내용과 결정 사항이 사라집니다.
+매번 새 세션에서 "이전에 뭘 했더라?"를 설명하느라 10-15분을 낭비하는 문제를 해결하기 위해 도입했습니다.
+
+핸드오프 문서는 **"작업 일지"가 아닌 "다음 작업자를 위한 가이드"** 관점으로 작성합니다.
+"무엇을 했는가"보다 **"왜 그렇게 했는가"**가 더 중요합니다.
+
+### 사용법
+
+```bash
+/handoff                    # 세션 종료 전 실행하여 문서 생성
+```
+
+### 파일 위치
+
+- **문서**: `docs/handoff/YYYY-MM-DD.md`
+- **뷰어**: `/admin/handoff` (관리자 페이지)
+- **스킬 정의**: `~/.claude/commands/handoff.md`
+
+### 핵심 섹션
+
+1. **Current State Summary** - 현재 상태
+2. **Immediate Next Steps** - 다음 작업
+3. **Decisions Made** - 의사결정 이유
+4. **Blockers & Open Questions** - 막힌 부분

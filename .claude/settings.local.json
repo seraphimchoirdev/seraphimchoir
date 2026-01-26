@@ -95,7 +95,8 @@
       "Bash(~/.claude/hooks/pomodoro-start.sh)",
       "Bash(git stash:*)",
       "Bash(node scripts/generate-handoff-manifest.mjs:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []
