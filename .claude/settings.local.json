@@ -195,11 +195,21 @@
             "timeout": 15
           }
         ]
+      },
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pomodoro-start.sh",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "SessionEnd": [
       {
-        "matcher": "exit|clear|logout|prompt_input_exit",
+        "matcher": "exit|logout|prompt_input_exit",
         "hooks": [
           {
             "type": "command",
@@ -212,6 +222,6 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bash -c 'input=$(cat); MODEL=$(echo \"$input\" | jq -r \".model.display_name\"); DIR=$(echo \"$input\" | jq -r \".workspace.current_dir\"); BRANCH=\"\"; if git rev-parse --git-dir >/dev/null 2>&1; then BRANCH=\" | 🌿 $(git branch --show-current 2>/dev/null)\"; fi; echo \"[$MODEL] 📁 ${DIR##*/}$BRANCH\"'"
+    "command": "bash -c 'input=$(cat); MODEL=$(echo \"$input\" | jq -r \".model.display_name\"); DIR=$(echo \"$input\" | jq -r \".workspace.current_dir\"); BRANCH=\"\"; if git rev-parse --git-dir >/dev/null 2>&1; then BRANCH=\" | 🌿 $(git branch --show-current 2>/dev/null)\"; fi; POMO=\"\"; POMO_STATE=\"$HOME/.claude/pomodoro/state.json\"; POMO_PID=\"$HOME/.claude/pomodoro/pomodoro.pid\"; if [ -f \"$POMO_STATE\" ]; then PHASE=$(jq -r \".phase // \\\"\\\"\" \"$POMO_STATE\" 2>/dev/null); NUM=$(jq -r \".current_pomodoro // 1\" \"$POMO_STATE\" 2>/dev/null); TOTAL=$(jq -r \".total_pomodoros_today // 0\" \"$POMO_STATE\" 2>/dev/null); RUNNING=false; if [ -f \"$POMO_PID\" ] && ps -p $(cat \"$POMO_PID\") >/dev/null 2>&1; then RUNNING=true; fi; if [ \"$RUNNING\" = true ]; then case \"$PHASE\" in work) END=$(jq -r \".phase_end // \\\"\\\"\" \"$POMO_STATE\" 2>/dev/null); if [ -n \"$END\" ]; then END_EPOCH=$(date -j -f \"%Y-%m-%dT%H:%M:%S\" \"${END%%+*}\" \"+%s\" 2>/dev/null); NOW=$(date +%s); REM=$(( (END_EPOCH - NOW) / 60 )); if [ $REM -gt 0 ]; then POMO=\" | 🍅 #${NUM} ${REM}m\"; else POMO=\" | 🍅 #${NUM} 0m\"; fi; else POMO=\" | 🍅 #${NUM}\"; fi;; waiting_for_break) POMO=\" | ⏳ 휴식대기\";; break) POMO=\" | ☕ 휴식중\";; paused) POMO=\" | ⏸️ 일시중지\";; esac; else POMO=\" | 🔴 타이머정지\"; fi; fi; echo \"[$MODEL] 📁 ${DIR##*/}$BRANCH$POMO\"'"
   }
 }
