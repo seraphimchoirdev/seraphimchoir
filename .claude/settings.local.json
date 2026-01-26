@@ -100,7 +100,11 @@
       "Skill(cm:save)",
       "Bash(~/.claude/hooks/pomodoro-break-ready.sh)",
       "Bash(~/.claude/hooks/pomodoro-status.sh)",
-      "Bash(~/.claude/hooks/pomodoro-work.sh)"
+      "Bash(~/.claude/hooks/pomodoro-work.sh)",
+      "Bash(head -10 __NEW_LINE_7d31f1cc2cc92a6f__ echo \"\" echo \"=== 2. pomodoro-restart.sh 메시지 확인 ===\" grep -A2 \"waiting_for_break\\\\|waiting_for_work\" ~/.claude/hooks/pomodoro-restart.sh __NEW_LINE_7d31f1cc2cc92a6f__ echo \"\" echo \"=== 3. pomodoro-break-actions.sh 메시지 확인 ===\" grep \"pomo-reset\" ~/.claude/hooks/pomodoro-break-actions.sh __NEW_LINE_7d31f1cc2cc92a6f__ echo \"\" echo \"=== 4. pomodoro-start.sh 플래그 안내 확인 ===\" grep -A2 \"BREAK_ACTIONS_FLAG\" ~/.claude/hooks/pomodoro-start.sh)",
+      "Bash(~/.claude/hooks/pomodoro-health.sh)",
+      "Bash(~/.claude/hooks/pomodoro-report.sh:*)",
+      "Bash(~/.claude/hooks/pomodoro-pause.sh)"
     ],
     "deny": [],
     "ask": []

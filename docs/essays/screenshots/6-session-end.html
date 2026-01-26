@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>세션 종료 요약</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a1a2e;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Consolas', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .terminal {
+      background: #0d1117;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      width: 520px;
+    }
+    .terminal-header {
+      background: linear-gradient(180deg, #3d3d3d 0%, #2d2d2d 100%);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .terminal-btn { width: 12px; height: 12px; border-radius: 50%; }
+    .terminal-btn.close { background: #ff5f56; }
+    .terminal-btn.minimize { background: #ffbd2e; }
+    .terminal-btn.maximize { background: #27ca40; }
+    .terminal-title { flex: 1; text-align: center; color: #999; font-size: 13px; }
+    .terminal-body {
+      padding: 20px 24px;
+      color: #e6edf3;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .prompt { color: #7ee787; }
+    .command { color: #79c0ff; }
+    .divider { color: #484f58; }
+    .green { color: #7ee787; }
+    .yellow { color: #d29922; }
+    .blue { color: #79c0ff; }
+    .gray { color: #8b949e; }
+    .white { color: #e6edf3; }
+  </style>
+</head>
+<body>
+<div class="terminal">
+  <div class="terminal-header">
+    <div class="terminal-btn close"></div>
+    <div class="terminal-btn minimize"></div>
+    <div class="terminal-btn maximize"></div>
+    <div class="terminal-title">pomo-stop — zsh</div>
+  </div>
+  <div class="terminal-body">
+    <div><span class="prompt">❯</span> <span class="command">pomo-stop</span></div>
+    <br>
+    <div>🍅 <span class="white">오늘의 뽀모도로 종료!</span></div>
+    <div>📊 완료: <span class="green">5개</span></div>
+    <div>⏱️ 총 세션 시간: <span class="blue">2시간 45분</span></div>
+    <div>🏆 <span class="green">오늘 목표 달성!</span> <span class="gray">(4~6개 중 5개)</span></div>
+    <br>
+    <div>☕ <span class="white">휴식 시간 리뷰</span></div>
+    <div class="divider">━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+    <div class="gray">   총 휴식 횟수: <span class="white">5회</span></div>
+    <div class="gray">   계획 휴식: <span class="white">25분</span></div>
+    <div class="gray">   실제 휴식: <span class="yellow">28분</span></div>
+    <div class="gray">   뽀모도로별: #1: 5분, #2: 6분, #3: 5분, #4: 5분, #5: 7분</div>
+    <br>
+    <div><span class="green">✅ 변경사항이 커밋되었습니다.</span></div>
+  </div>
+</div>
+</body>
+</html>
