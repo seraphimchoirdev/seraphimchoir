@@ -2,26 +2,22 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": {
-          "tools": ["Bash"],
-          "pattern": "git push.*main|git push origin main"
-        },
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/check-vercel-deployment.sh"
+            "command": ".claude/hooks/check-vercel-deployment.sh",
+            "when": "command_contains 'git push' && command_contains 'main'"
           }
         ]
       },
       {
-        "matcher": {
-          "tools": ["Bash"],
-          "pattern": "git commit"
-        },
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/update-completed-docs.sh"
+            "command": ".claude/hooks/update-completed-docs.sh",
+            "when": "command_contains 'git commit'"
           }
         ]
       }
