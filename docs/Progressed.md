@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-01-26 | feat(hooks): 핸드오프 자동 로드 훅 추가 |
 | 2026-01-26 | docs: 자동 업데이트 - refactor 커밋 이력 추가 |
 | 2026-01-26 | refactor: TypeScript strict 모드 대응 - any 타입 및 lint 경고 해결 |
 | 2026-01-26 | feat(hooks): Git 커밋 후 문서 자동 업데이트 훅 구현 |

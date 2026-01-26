@@ -43,6 +43,12 @@ if [ -f "$PID_FILE" ]; then
                 waiting_for_break)
                     echo "🍅 뽀모도로 타이머 실행 중 (휴식 대기 - 명령어 실행 필요)"
                     echo "   1. /cm:auto-save → 2. /compact → 3. /clear → 4. pomo-break"
+                    echo "   💡 작업 마무리 필요 시: pomo-defer [분]"
+                    ;;
+                deferred)
+                    CONSECUTIVE=$(jq -r '.consecutive_defers // 0' "$STATE_FILE")
+                    echo "🍅 뽀모도로 타이머 실행 중 (휴식 유예 중 - ${CONSECUTIVE}/2회)"
+                    echo "   작업 완료 후: pomo-break"
                     ;;
                 break)
                     echo "🍅 뽀모도로 타이머 실행 중 (휴식 중)"
