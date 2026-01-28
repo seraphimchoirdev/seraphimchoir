@@ -8,8 +8,9 @@ README.md
 # Training data
 /training_data
 
-# Scripts (개발용)
-/scripts
+# Scripts (개발용, 빌드 스크립트 제외)
+/scripts/*
+!/scripts/generate-handoff-manifest.mjs
 
 # Test files
 __tests__
