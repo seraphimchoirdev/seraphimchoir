@@ -122,6 +122,7 @@ export type Database = {
           is_service_available: boolean
           member_id: string
           notes: string | null
+          practice_status: Database["public"]["Enums"]["practice_attendance_type"] | null
           updated_at: string
         }
         Insert: {
@@ -132,6 +133,7 @@ export type Database = {
           is_service_available?: boolean
           member_id: string
           notes?: string | null
+          practice_status?: Database["public"]["Enums"]["practice_attendance_type"] | null
           updated_at?: string
         }
         Update: {
@@ -142,6 +144,7 @@ export type Database = {
           is_service_available?: boolean
           member_id?: string
           notes?: string | null
+          practice_status?: Database["public"]["Enums"]["practice_attendance_type"] | null
           updated_at?: string
         }
         Relationships: [
@@ -766,6 +769,7 @@ export type Database = {
     Enums: {
       member_status: "REGULAR" | "NEW" | "ON_LEAVE" | "RESIGNED"
       part: "SOPRANO" | "ALTO" | "TENOR" | "BASS" | "SPECIAL"
+      practice_attendance_type: "FULL" | "EARLY_LEAVE" | "LATE_JOIN" | "ABSENT"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -895,9 +899,13 @@ export const Constants = {
     Enums: {
       member_status: ["REGULAR", "NEW", "ON_LEAVE", "RESIGNED"],
       part: ["SOPRANO", "ALTO", "TENOR", "BASS", "SPECIAL"],
+      practice_attendance_type: ["FULL", "EARLY_LEAVE", "LATE_JOIN", "ABSENT"],
     },
   },
 } as const
 
 // 배치표 상태 타입 정의
 export type ArrangementStatus = 'DRAFT' | 'SHARED' | 'CONFIRMED'
+
+// 연습 참석 상태 타입 정의
+export type PracticeAttendanceType = Database["public"]["Enums"]["practice_attendance_type"]

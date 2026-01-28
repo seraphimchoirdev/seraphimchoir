@@ -1,12 +1,28 @@
 {
   "files": [
     {
+      "filename": "2026-01-27.md",
+      "date": "2026-01-27",
+      "title": "AI Context Handoff",
+      "project": "seraphimChoir",
+      "size": 6416,
+      "modifiedAt": "2026-01-27T13:01:13.612Z"
+    },
+    {
+      "filename": "2026-01-26.md",
+      "date": "2026-01-26",
+      "title": "AI Context Handoff",
+      "project": "seraphimChoir",
+      "size": 7378,
+      "modifiedAt": "2026-01-26T14:31:46.110Z"
+    },
+    {
       "filename": "2026-01-25.md",
       "date": "2026-01-25",
       "title": "AI Context Handoff",
       "project": "seraphimChoir (새로핌ON)",
-      "size": 8925,
-      "modifiedAt": "2026-01-25T13:59:07.011Z"
+      "size": 10775,
+      "modifiedAt": "2026-01-25T14:48:26.685Z"
     },
     {
       "filename": "2026-01-24.md",
@@ -166,7 +182,7 @@
       "title": "AI Context Handoff",
       "project": "seraphimChoir (새로핌ON)",
       "size": 4107,
-      "modifiedAt": "2026-01-25T14:13:17.525Z"
+      "modifiedAt": "2026-01-26T00:03:13.617Z"
     },
     {
       "filename": "2025-12-29.md",
@@ -177,6 +193,6 @@
       "modifiedAt": "2026-01-25T14:13:17.525Z"
     }
   ],
-  "generatedAt": "2026-01-25T14:46:01.601Z",
-  "totalCount": 22
+  "generatedAt": "2026-01-28T09:14:49.368Z",
+  "totalCount": 24
 }

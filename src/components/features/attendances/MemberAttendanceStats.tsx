@@ -145,7 +145,7 @@ export default function MemberAttendanceStats() {
   });
 
   // 검색 필터링
-  const members = data?.members ?? [];
+  const members = useMemo(() => data?.members ?? [], [data?.members]);
   const filteredMembers = useMemo(() => {
     if (members.length === 0) return [];
 

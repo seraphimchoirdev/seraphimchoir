@@ -7,12 +7,16 @@ import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'AttendancesAPI' });
 
+// 연습 참석 유형 enum
+const practiceAttendanceTypeSchema = z.enum(['FULL', 'EARLY_LEAVE', 'LATE_JOIN', 'ABSENT']);
+
 // Attendance 생성 스키마
 const createAttendanceSchema = z.object({
   member_id: z.string().uuid('유효한 찬양대원 ID를 입력해주세요'),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식은 YYYY-MM-DD여야 합니다'),
   is_service_available: z.boolean().default(true),
   is_practice_attended: z.boolean().default(true),
+  practice_status: practiceAttendanceTypeSchema.nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
@@ -66,6 +70,7 @@ export async function GET(request: NextRequest) {
       date: string;
       is_service_available: boolean;
       is_practice_attended: boolean;
+      practice_status: 'FULL' | 'EARLY_LEAVE' | 'LATE_JOIN' | 'ABSENT' | null;
       notes: string | null;
       created_at: string;
       updated_at: string;

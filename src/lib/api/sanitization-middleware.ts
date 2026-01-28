@@ -87,7 +87,7 @@ export function sanitizeQueryParams<T extends z.ZodTypeAny>(
  * @param obj - sanitize할 객체
  * @returns sanitize된 객체
  */
-function deepSanitizeObject(obj: any): any {
+function deepSanitizeObject(obj: unknown): unknown {
   if (typeof obj === 'string') {
     // 기본적인 HTML 태그 제거
     return sanitizers.stripHtml(obj);
@@ -98,7 +98,7 @@ function deepSanitizeObject(obj: any): any {
   }
 
   if (obj !== null && typeof obj === 'object') {
-    const sanitized: any = {};
+    const sanitized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       // 키 자체도 sanitize (prototype pollution 방어)
       const sanitizedKey = key.replace(/[^\w.-]/g, '');
@@ -187,16 +187,16 @@ export class ValidationError extends Error {
  * @param sensitiveFields - 제거할 필드 목록
  * @returns 민감한 정보가 제거된 데이터
  */
-export function removeSensitiveFields(
-  data: any,
+export function removeSensitiveFields<T>(
+  data: T,
   sensitiveFields: string[] = ['password', 'token', 'secret', 'apiKey']
-): any {
+): T {
   if (Array.isArray(data)) {
-    return data.map((item) => removeSensitiveFields(item, sensitiveFields));
+    return data.map((item) => removeSensitiveFields(item, sensitiveFields)) as T;
   }
 
   if (data !== null && typeof data === 'object') {
-    const cleaned = { ...data };
+    const cleaned = { ...data } as Record<string, unknown>;
     for (const field of sensitiveFields) {
       if (field in cleaned) {
         delete cleaned[field];
@@ -210,7 +210,7 @@ export function removeSensitiveFields(
       }
     }
 
-    return cleaned;
+    return cleaned as T;
   }
 
   return data;

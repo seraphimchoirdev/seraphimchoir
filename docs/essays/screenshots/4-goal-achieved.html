@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>목표 달성</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a1a2e;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Consolas', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .terminal {
+      background: #0d1117;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      width: 520px;
+    }
+    .terminal-header {
+      background: linear-gradient(180deg, #3d3d3d 0%, #2d2d2d 100%);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .terminal-btn { width: 12px; height: 12px; border-radius: 50%; }
+    .terminal-btn.close { background: #ff5f56; }
+    .terminal-btn.minimize { background: #ffbd2e; }
+    .terminal-btn.maximize { background: #27ca40; }
+    .terminal-title { flex: 1; text-align: center; color: #999; font-size: 13px; }
+    .terminal-body {
+      padding: 20px 24px;
+      color: #e6edf3;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .prompt { color: #7ee787; }
+    .command { color: #79c0ff; }
+    .divider { color: #484f58; }
+    .green { color: #7ee787; }
+    .yellow { color: #d29922; }
+    .blue { color: #79c0ff; }
+    .gray { color: #8b949e; }
+    .white { color: #e6edf3; }
+  </style>
+</head>
+<body>
+<div class="terminal">
+  <div class="terminal-header">
+    <div class="terminal-btn close"></div>
+    <div class="terminal-btn minimize"></div>
+    <div class="terminal-btn maximize"></div>
+    <div class="terminal-title">pomo-status — zsh</div>
+  </div>
+  <div class="terminal-body">
+    <div><span class="prompt">❯</span> <span class="command">pomo-status</span></div>
+    <br>
+    <div>🍅 <span class="white">뽀모도로 상태</span></div>
+    <div class="divider">━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+    <div>⏱️ 상태: 🟢 <span class="green">실행 중</span></div>
+    <div>📍 현재 단계: 🔔 <span class="white">복귀 대기</span></div>
+    <div>🔢 현재 뽀모도로: <span class="blue">#5</span></div>
+    <div>📊 오늘 완료: <span class="green">4</span> 뽀모도로</div>
+    <div>🎯 목표: <span class="green">✅ 달성!</span> <span class="gray">(4/4~6)</span></div>
+    <br>
+    <div>🔔 <span class="green">휴식이 끝났습니다!</span> 복귀 대기 중</div>
+    <div class="gray">   대기 시간: 2분</div>
+    <br>
+    <div class="gray">   다음 뽀모도로 시작: <span class="blue">pomo-work</span></div>
+    <div class="divider">━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+  </div>
+</div>
+</body>
+</html>

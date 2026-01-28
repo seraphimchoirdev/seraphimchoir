@@ -28,7 +28,7 @@ interface HandoffManifest {
  *
  * 핸드오프 문서 목록 반환
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createClient();
 

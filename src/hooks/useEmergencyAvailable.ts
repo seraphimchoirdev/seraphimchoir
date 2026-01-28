@@ -16,7 +16,8 @@ import { createLogger } from '@/lib/logger';
 import { useArrangementStore } from '@/store/arrangement-store';
 
 import type { Database, Json } from '@/types/database.types';
-import type { AvailableProcessMode, CascadeChangeStep } from '@/types/emergency-changes';
+// Types imported for documentation purposes only
+// import type { AvailableProcessMode, CascadeChangeStep } from '@/types/emergency-changes';
 
 const logger = createLogger({ prefix: 'EmergencyAvailable' });
 
@@ -59,7 +60,7 @@ export function useEmergencyAvailable({
 
   // Store actions
   const simulateAutoPlace = useArrangementStore((state) => state.simulateAutoPlace);
-  const setGridLayout = useArrangementStore((state) => state.setGridLayout);
+  const _setGridLayout = useArrangementStore((state) => state.setGridLayout);
   const addEmergencyChange = useArrangementStore((state) => state.addEmergencyChange);
 
   // 출석 데이터 업데이트 mutation (등단 가능으로 변경)
@@ -113,7 +114,7 @@ export function useEmergencyAvailable({
         logger.debug(`[Emergency] 출석 캐시 refetch 완료`);
 
         // 3. Store 상태 업데이트 (assignments + gridLayout)
-        const store = useArrangementStore.getState();
+        const _store = useArrangementStore.getState();
         const newAssignments = simulation.assignments;
 
         // assignments 직접 업데이트

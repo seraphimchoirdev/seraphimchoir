@@ -155,7 +155,7 @@ const MemberSidebar = memo(function MemberSidebar({
   );
 
   // 멤버 리스트 (정대원만)
-  const members = membersData?.data || [];
+  const members = useMemo(() => membersData?.data || [], [membersData?.data]);
 
   // Group members by part
   const groupedMembers = useMemo(() => {

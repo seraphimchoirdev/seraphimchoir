@@ -177,7 +177,7 @@ export function useDeleteVoteDeadline() {
   });
 }
 
-// 기본 마감 시간 계산 (해당 주 금요일 18:00 KST)
+// 기본 마감 시간 계산 (해당 주 금요일 18:00 KST) - 레거시 유지
 export function getDefaultDeadline(serviceDate: string): Date {
   const date = new Date(serviceDate);
   const day = date.getDay(); // 0 = 일요일
@@ -190,6 +190,35 @@ export function getDefaultDeadline(serviceDate: string): Date {
   friday.setHours(18, 0, 0, 0);
 
   return friday;
+}
+
+// 등단 투표 마감 시간 계산 (토요일 15:00 KST)
+export function getServiceDeadline(serviceDate: string): Date {
+  const date = new Date(serviceDate);
+
+  // 토요일 계산 (주일 -1일)
+  const saturday = new Date(date);
+  saturday.setDate(date.getDate() - 1);
+
+  // 15:00 KST 설정
+  saturday.setHours(15, 0, 0, 0);
+
+  return saturday;
+}
+
+// 연습 참석 투표 마감 시간 계산 (주일 09:00 KST)
+export function getPracticeDeadline(serviceDate: string): Date {
+  const date = new Date(serviceDate);
+
+  // 주일 당일 09:00
+  date.setHours(9, 0, 0, 0);
+
+  return date;
+}
+
+// 마감 여부 확인
+export function isDeadlinePassed(deadline: Date): boolean {
+  return new Date() > deadline;
 }
 
 // 마감까지 남은 시간 계산
