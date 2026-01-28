@@ -1,5 +1,6 @@
-# Documentation
-/docs
+# Documentation (핸드오프 문서 제외)
+/docs/*
+!/docs/handoff
 README.md
 
 # ML Service (별도 배포)
@@ -47,6 +48,7 @@ jest.polyfills.ts
 !components.json
 !src/data/*.json
 !public/manifest.json
+!public/handoff-manifest.json
 
 # Supabase local config
 /supabase/config.toml
