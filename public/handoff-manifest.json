@@ -1,6 +1,14 @@
 {
   "files": [
     {
+      "filename": "2026-01-27.md",
+      "date": "2026-01-27",
+      "title": "AI Context Handoff",
+      "project": "seraphimChoir",
+      "size": 6416,
+      "modifiedAt": "2026-01-27T13:01:13.612Z"
+    },
+    {
       "filename": "2026-01-26.md",
       "date": "2026-01-26",
       "title": "AI Context Handoff",
@@ -185,6 +193,6 @@
       "modifiedAt": "2026-01-25T14:13:17.525Z"
     }
   ],
-  "generatedAt": "2026-01-27T12:27:58.583Z",
-  "totalCount": 23
+  "generatedAt": "2026-01-28T09:14:49.368Z",
+  "totalCount": 24
 }

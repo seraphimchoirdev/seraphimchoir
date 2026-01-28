@@ -5,7 +5,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 
-import { STALE_TIME } from '@/lib/constants';
+import { STALE_TIME, TIME_UNITS } from '@/lib/constants';
 import type { ConductorStatusResponse } from '@/app/api/dashboard/conductor-status/route';
 
 /**
@@ -35,8 +35,9 @@ export function useConductorStatus() {
 
       return response.json() as Promise<ConductorStatusResponse>;
     },
-    staleTime: STALE_TIME.MEDIUM, // 2분
-    refetchOnWindowFocus: true,
+    staleTime: STALE_TIME.DEFAULT, // 1분
+    refetchInterval: TIME_UNITS.MINUTE, // 1분 주기 자동 갱신
+    refetchOnWindowFocus: true, // 탭 복귀 시 갱신
   });
 }
 

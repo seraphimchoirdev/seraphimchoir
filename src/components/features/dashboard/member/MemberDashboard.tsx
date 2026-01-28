@@ -90,7 +90,6 @@ export function MemberDashboard() {
       <div>
         <h2 className="heading-2 text-[var(--color-text-primary)]">안녕하세요, {displayName}님!</h2>
         <p className="body-base mt-1 text-[var(--color-text-secondary)]">
-          {myStatus.linkedMemberPart && `${myStatus.linkedMemberPart} 파트 | `}
           오늘도 찬양대와 함께 은혜로운 시간 되세요.
         </p>
       </div>

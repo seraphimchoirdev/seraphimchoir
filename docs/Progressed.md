@@ -218,6 +218,8 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-01-28 | feat(attendance): 연습 부분참석 투표 기능 구현 |
+| 2026-01-27 | feat(dashboard): 역할별 맞춤형 대시보드 구현 |
 | 2026-01-26 | feat(hooks): 핸드오프 자동 로드 훅 추가 |
 | 2026-01-26 | docs: 자동 업데이트 - refactor 커밋 이력 추가 |
 | 2026-01-26 | refactor: TypeScript strict 모드 대응 - any 타입 및 lint 경고 해결 |
