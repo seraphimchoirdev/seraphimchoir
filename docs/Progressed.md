@@ -218,6 +218,13 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-01-29 | fix(seats): SeatsGrid 및 grid 타입 수정 |
+| 2026-01-29 | feat(arrangements): 워크플로우 UI 개선 및 RecommendPreviewModal 제거 |
+| 2026-01-29 | refactor(ui): CompactWorkflowStrip 펼치기 버튼 상단으로 이동 |
+| 2026-01-29 | feat(arrangements): Step 5 줄 정렬 프리셋 UI 추가 |
+| 2026-01-29 | refactor(ui): InlineRowOffsetControl offset 숫자 표시 제거 |
+| 2026-01-29 | fix(ui): AlertDialog Tailwind CSS 4 호환성 수정 |
+| 2026-01-29 | feat: 로컬 Supabase 개발 환경 설정 및 대시보드/배치표 개선 |
 | 2026-01-28 | fix(deploy): 핸드오프 문서 Vercel 배포에 포함 |
 | 2026-01-28 | fix(deploy): Vercel 빌드 시 prebuild 스크립트 포함 |
 | 2026-01-28 | refactor(dashboard): 대시보드 자동 갱신 및 UX 개선 |

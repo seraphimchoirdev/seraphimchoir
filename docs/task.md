@@ -67,6 +67,29 @@
 
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
+### 2026-01-29
+- [x] **fix(seats): SeatsGrid 및 grid 타입 수정**
+  - 커밋: `71f2de4`
+
+- [x] **feat(arrangements): 워크플로우 UI 개선 및 RecommendPreviewModal 제거**
+  - 커밋: `b75e291`
+
+- [x] **refactor(ui): CompactWorkflowStrip 펼치기 버튼 상단으로 이동**
+  - 커밋: `f8043b4`
+
+- [x] **feat(arrangements): Step 5 줄 정렬 프리셋 UI 추가**
+  - 커밋: `804073c`
+
+- [x] **refactor(ui): InlineRowOffsetControl offset 숫자 표시 제거**
+  - 커밋: `8de31ed`
+
+- [x] **fix(ui): AlertDialog Tailwind CSS 4 호환성 수정**
+  - 커밋: `a4154bc`
+
+
+- [x] **feat: 로컬 Supabase 개발 환경 설정 및 대시보드/배치표 개선**
+  - 커밋: `44f3b5b`
+
 ### 2026-01-28
 - [x] **fix(deploy): 핸드오프 문서 Vercel 배포에 포함**
   - 커밋: `8a39fe9`
