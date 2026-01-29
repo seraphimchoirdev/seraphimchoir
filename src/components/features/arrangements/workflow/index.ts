@@ -18,6 +18,8 @@ export { default as WorkflowSection } from '../WorkflowSection';
 export { default as WorkflowModeToggle } from '../WorkflowModeToggle';
 export { default as WorkflowPanel } from '../WorkflowPanel';
 export { default as RowOffsetAdjuster } from '../RowOffsetAdjuster';
+export { default as CompactWorkflowStrip } from '../CompactWorkflowStrip';
+export { default as WorkflowFloatingActionBar } from '../WorkflowFloatingActionBar';
 
 // 타입 및 상수 re-export
 export {

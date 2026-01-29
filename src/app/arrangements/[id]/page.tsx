@@ -1,14 +1,16 @@
 'use client';
 
-import { ChevronDown, ChevronUp, Crown, Settings, Sparkles, Trash2, Zap } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Copy, Crown, Download, Loader2, Settings, Share2, Sparkles, Trash2, Zap } from 'lucide-react';
 
 import { ReactNode, use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import ArrangementHeader from '@/components/features/arrangements/ArrangementHeader';
+import CompactWorkflowStrip from '@/components/features/arrangements/CompactWorkflowStrip';
 import EmergencyChangesBanner from '@/components/features/arrangements/EmergencyChangesBanner';
 import GridSettingsPanel from '@/components/features/arrangements/GridSettingsPanel';
 import RecommendButton from '@/components/features/arrangements/RecommendButton';
 import RestoreDialog from '@/components/features/arrangements/RestoreDialog';
+import WorkflowFloatingActionBar from '@/components/features/arrangements/WorkflowFloatingActionBar';
 import { WorkflowPanel } from '@/components/features/arrangements/workflow';
 import EmergencyUnavailableDialog from '@/components/features/seats/EmergencyUnavailableDialog';
 import MemberSidebar from '@/components/features/seats/MemberSidebar';
@@ -19,6 +21,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 
 import { useArrangement } from '@/hooks/useArrangements';
+import { useImageGeneration } from '@/hooks/useImageGeneration';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useAuth } from '@/hooks/useAuth';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
@@ -30,7 +33,7 @@ import { useWorkflowAutoAdvance } from '@/hooks/useWorkflowAutoAdvance';
 
 import { createLogger } from '@/lib/logger';
 import { recommendRowDistribution } from '@/lib/row-distribution-recommender';
-import { showError, showInfo, showSuccess } from '@/lib/toast';
+import { showError, showInfo, showSuccess, showWarning } from '@/lib/toast';
 import { calculateGridLayoutFromSeats } from '@/lib/utils/gridUtils';
 
 import { WorkflowStep, useArrangementStore } from '@/store/arrangement-store';
@@ -60,6 +63,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     resetWorkflow,
     restoreWorkflowState,
     workflow,
+    goToStep,
+    canAccessStep,
+    completeStep,
     // 줄 정렬 프리셋 (Step 5용)
     applyOffsetPreset,
     // 줄반장 관련 (Step 6용)
@@ -72,9 +78,17 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
   // 키보드 단축키 훅 초기화 (Ctrl+Z/Y for Undo/Redo)
   useUndoRedoShortcuts();
+
+  // 이미지 생성 훅 (7단계 플로팅 바에서 사용)
+  const { isGenerating, downloadAsImage, copyToClipboard, shareImage, canShare, isMobile } =
+    useImageGeneration();
+
   const [showSettingsSheet, setShowSettingsSheet] = useState(false);
-  const [showGridSettings, setShowGridSettings] = useState(true); // 데스크톱 그리드 설정 패널 토글
+  const [panelMode, setPanelMode] = useState<'expanded' | 'compact'>('expanded');
   const [showMobileSidebar, setShowMobileSidebar] = useState(true);
+
+  // 사용자가 수동으로 panelMode를 변경했는지 추적
+  const userOverridePanelRef = useRef(false);
 
   // 긴급 등단 불가 다이얼로그 상태
   const [emergencyDialogOpen, setEmergencyDialogOpen] = useState(false);
@@ -92,6 +106,62 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   // 이미지 캡처를 위한 ref (데스크톱/모바일 각각)
   const desktopCaptureRef = useRef<HTMLDivElement>(null);
   const mobileCaptureRef = useRef<HTMLDivElement>(null);
+
+  // 이미지 내보내기 핸들러 (7단계 플로팅 바용)
+  const getActiveCaptureRef = useCallback(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      return desktopCaptureRef;
+    }
+    return mobileCaptureRef;
+  }, [desktopCaptureRef, mobileCaptureRef]);
+
+  const handleDownloadImage = useCallback(async () => {
+    const captureRef = getActiveCaptureRef();
+    if (!captureRef?.current) {
+      showWarning('캡처할 영역을 찾을 수 없습니다.');
+      return;
+    }
+    try {
+      const filename = `배치표_${arrangement?.date}_${arrangement?.title?.replace(/\s+/g, '_') ?? ''}`;
+      await downloadAsImage(captureRef.current, filename);
+      showSuccess('이미지가 다운로드되었습니다.');
+    } catch (error) {
+      logger.error('이미지 다운로드 실패:', error);
+      showError('이미지 다운로드에 실패했습니다.');
+    }
+  }, [arrangement?.date, arrangement?.title, downloadAsImage, getActiveCaptureRef]);
+
+  const handleCopyToClipboard = useCallback(async () => {
+    const captureRef = getActiveCaptureRef();
+    if (!captureRef?.current) {
+      showWarning('캡처할 영역을 찾을 수 없습니다.');
+      return;
+    }
+    try {
+      await copyToClipboard(captureRef.current);
+      showSuccess('이미지가 클립보드에 복사되었습니다.');
+    } catch (error) {
+      logger.error('클립보드 복사 실패:', error);
+      const message = error instanceof Error ? error.message : '클립보드 복사에 실패했습니다.';
+      showError(message);
+    }
+  }, [copyToClipboard, getActiveCaptureRef]);
+
+  const handleShareImage = useCallback(async () => {
+    const captureRef = getActiveCaptureRef();
+    if (!captureRef?.current) {
+      showWarning('캡처할 영역을 찾을 수 없습니다.');
+      return;
+    }
+    try {
+      const filename = `배치표_${arrangement?.date}_${arrangement?.title?.replace(/\s+/g, '_') ?? ''}`;
+      await shareImage(captureRef.current, filename);
+    } catch (error) {
+      logger.error('이미지 공유 실패:', error);
+      const message = error instanceof Error ? error.message : '이미지 공유에 실패했습니다.';
+      showError(message);
+    }
+  }, [arrangement?.date, arrangement?.title, shareImage, getActiveCaptureRef]);
 
   // 초기 로드 완료 추적 (compactAllRows 중복 실행 방지)
   const initialLoadDoneRef = useRef(false);
@@ -209,8 +279,16 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       showSuccess(
         `AI 추천이 적용되었습니다! (품질 점수: ${(qualityScore * 100).toFixed(0)}%)${gridMessage}`
       );
+
+      // 3단계 자동 완료 및 다음 단계 이동 (위자드 모드일 때)
+      if (workflow.isWizardMode && workflow.currentStep === 3) {
+        setTimeout(() => {
+          completeStep(3);
+          goToStep(4);
+        }, 300);
+      }
     },
-    [setGridLayout, setAssignments]
+    [setGridLayout, setAssignments, workflow.isWizardMode, workflow.currentStep, completeStep, goToStep]
   );
 
   // 긴급 등단 불가 처리 핸들러 (다이얼로그 열기)
@@ -251,7 +329,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     isReadOnly,
   });
 
-  // Step 4 (수동 배치 조정) 진입 시 워크플로우 패널 자동 최소화
+  // Step 4 (수동 배치 조정) 진입 시 워크플로우 패널 자동 Compact
   // 태블릿/폴더블 기기(640px-1023px)에서 MemberSidebar + SeatsGrid 공간 확보
   // ⭐ useRef로 이전 Step을 추적하여 Step 4 "진입" 시에만 실행 (재펼침 가능)
   // 브라우저 창 크기에 반응하는 정당한 useEffect 사용
@@ -262,12 +340,20 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     // Step 4로 "진입"하는 순간에만 실행 (이미 4에 있으면 무시)
     if (workflow.currentStep === 4 && prevStep !== 4) {
       const isTabletRange = window.innerWidth >= 640 && window.innerWidth < 1024;
-      if (isTabletRange) {
+      if (isTabletRange && !userOverridePanelRef.current) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 시스템(창 크기)에 반응
-        setShowGridSettings(false);
+        setPanelMode('compact');
       }
     }
   }, [workflow.currentStep]);
+
+  // 초기 panelMode 설정: 640~1023px에서는 Compact, 1024px+에서는 Expanded
+  useEffect(() => {
+    const width = window.innerWidth;
+    if (width >= 640 && width < 1024) {
+      setPanelMode('compact');
+    }
+  }, []);
 
   // Initialize store with fetched seats and grid layout
   // attendances가 로드된 후에만 좌석을 설정하여 등단 불가능 멤버 필터링
@@ -618,6 +704,239 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     }
   };
 
+  // ============================================
+  // Compact 모드용 플로팅 액션 바 컨텐츠
+  // ============================================
+  const assignmentsCount = Object.keys(assignments).length;
+  const unassignedCount = totalMembers - assignmentsCount;
+
+  const renderFloatingStepContent = (step: WorkflowStep): ReactNode => {
+    switch (step) {
+      case 1:
+        return (
+          <Button
+            onClick={() => {
+              const recommendation = recommendRowDistribution(totalMembers);
+              setGridLayout({
+                rows: recommendation.rows,
+                rowCapacities: recommendation.rowCapacities,
+                zigzagPattern: gridLayout?.zigzagPattern ?? 'even',
+                isAIRecommended: true,
+              });
+            }}
+            className="w-full gap-2"
+            size="sm"
+            disabled={totalMembers === 0}
+          >
+            <Zap className="h-4 w-4" />
+            AI 추천 분배 적용
+          </Button>
+        );
+      case 2:
+        return (
+          <div className="space-y-2">
+            <Button
+              onClick={() => {
+                setPanelMode('expanded');
+                userOverridePanelRef.current = true;
+              }}
+              variant="outline"
+              className="w-full gap-2"
+              size="sm"
+            >
+              <Settings className="h-4 w-4" />
+              줄 구성 설정 열기
+            </Button>
+            {workflow.isWizardMode && !workflow.completedSteps.has(2) && (
+              <Button
+                size="sm"
+                onClick={() => completeStep(2)}
+                className="w-full gap-1"
+              >
+                <Check className="h-4 w-4" />이 단계 완료
+              </Button>
+            )}
+          </div>
+        );
+      case 3:
+        return (
+          !isReadOnly && gridLayout && (
+            <RecommendButton
+              arrangementId={id}
+              gridLayout={gridLayout}
+              onApply={handleApplyRecommendation}
+            />
+          )
+        );
+      case 4:
+        return (
+          <div className="space-y-2">
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              대원을 선택 → 좌석 클릭으로 배치를 조정하세요.
+            </p>
+            {workflow.isWizardMode && !workflow.completedSteps.has(4) && (
+              <Button
+                size="sm"
+                onClick={() => completeStep(4)}
+                disabled={totalMembers === 0 || unassignedCount !== 0}
+                className="w-full gap-1"
+              >
+                <Check className="h-4 w-4" />이 단계 완료
+              </Button>
+            )}
+          </div>
+        );
+      case 5: {
+        const rows = gridLayout?.rows ?? 0;
+        const currentOffsets = gridLayout?.rowOffsets;
+
+        const getActivePresetId = (): string | null => {
+          for (const preset of OFFSET_PRESETS) {
+            const presetOffsets = preset.getOffsets(rows);
+            const presetKeys = Object.keys(presetOffsets);
+            const currentKeys = Object.keys(currentOffsets ?? {});
+            if (presetKeys.length === 0 && currentKeys.length === 0) return preset.id;
+            if (presetKeys.length !== currentKeys.length) continue;
+            const matches = presetKeys.every(
+              (k) => (currentOffsets ?? {})[Number(k)] === presetOffsets[Number(k)]
+            );
+            if (matches) return preset.id;
+          }
+          return null;
+        };
+
+        const activePresetId = getActivePresetId();
+
+        return (
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              {OFFSET_PRESETS.map((preset) => (
+                <Button
+                  key={preset.id}
+                  size="sm"
+                  variant={activePresetId === preset.id ? 'default' : 'outline'}
+                  disabled={isReadOnly}
+                  onClick={() => applyOffsetPreset(preset.id)}
+                  title={preset.description}
+                >
+                  {preset.name}
+                </Button>
+              ))}
+            </div>
+            {workflow.isWizardMode && !workflow.completedSteps.has(5) && (
+              <Button
+                size="sm"
+                onClick={() => completeStep(5)}
+                className="w-full gap-1"
+              >
+                <Check className="h-4 w-4" />이 단계 완료
+              </Button>
+            )}
+          </div>
+        );
+      }
+      case 6:
+        return (
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              {!isReadOnly && Object.keys(assignments).length > 0 && (
+                <>
+                  <Button
+                    size="sm"
+                    variant={rowLeaderMode ? 'default' : 'outline'}
+                    onClick={toggleRowLeaderMode}
+                    className={`gap-1 ${rowLeaderMode ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                  >
+                    <Crown className="h-3 w-3" />
+                    {rowLeaderMode ? '수동 지정 끄기' : '수동 지정'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const candidates = autoAssignRowLeaders();
+                      if (candidates.length > 0) {
+                        showSuccess(`줄반장 ${candidates.length}명이 자동 지정되었습니다.`);
+                      } else {
+                        showInfo('자동 지정할 수 있는 줄반장이 없습니다.');
+                      }
+                    }}
+                    className="gap-1"
+                  >
+                    <Sparkles className="h-3 w-3 text-yellow-500" />
+                    자동 지정
+                  </Button>
+                </>
+              )}
+            </div>
+            {workflow.isWizardMode && !workflow.completedSteps.has(6) && (
+              <Button
+                size="sm"
+                onClick={() => completeStep(6)}
+                className="w-full gap-1"
+              >
+                <Check className="h-4 w-4" />이 단계 완료
+              </Button>
+            )}
+          </div>
+        );
+      case 7: {
+        const noAssignments = Object.keys(assignments).length === 0;
+        return (
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              {canShare && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleShareImage}
+                  disabled={noAssignments || isGenerating}
+                  className="gap-1"
+                >
+                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Share2 className="h-3 w-3" />}
+                  공유하기
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDownloadImage}
+                disabled={noAssignments || isGenerating}
+                className="gap-1"
+              >
+                {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                {isMobile ? '이미지 저장' : 'PNG 다운로드'}
+              </Button>
+              {!isMobile && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyToClipboard}
+                  disabled={noAssignments || isGenerating}
+                  className="gap-1"
+                >
+                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
+                  클립보드 복사
+                </Button>
+              )}
+            </div>
+            {workflow.isWizardMode && !workflow.completedSteps.has(7) && (
+              <Button
+                size="sm"
+                onClick={() => completeStep(7)}
+                className="w-full gap-1"
+              >
+                <Check className="h-4 w-4" />이 단계 완료
+              </Button>
+            )}
+          </div>
+        );
+      }
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="flex h-screen flex-col bg-[var(--color-background-primary)]">
       {/* Draft 복원 다이얼로그 */}
@@ -654,8 +973,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
       {/* 데스크톱: 3패널 가로 배치 (640px 이상 - Z Fold 펼침 대응) */}
       <div className="hidden flex-1 gap-4 overflow-hidden p-4 sm:flex">
-        {/* 워크플로우 패널 - 토글 가능 */}
-        {showGridSettings ? (
+        {/* 워크플로우 패널 - 2단 접기 (Expanded ↔ Compact) */}
+        {panelMode === 'expanded' ? (
           <div className="animate-in slide-in-from-left relative w-80 flex-shrink-0 duration-300">
             <WorkflowPanel
               renderStepContent={renderWorkflowStepContent}
@@ -663,32 +982,31 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
               arrangementStatus={arrangement.status ?? undefined}
               className="h-full overflow-hidden"
             />
-            {/* 접기 버튼 */}
+            {/* 접기 버튼 → Compact 전환 */}
             <Button
-              onClick={() => setShowGridSettings(false)}
+              onClick={() => {
+                setPanelMode('compact');
+                userOverridePanelRef.current = true;
+              }}
               variant="ghost"
               size="sm"
               className="absolute top-4 -right-3 z-10 border border-[var(--color-border-default)] bg-[var(--color-surface)] shadow-md hover:bg-[var(--color-background-secondary)]"
-              title="워크플로우 패널 숨기기"
+              title="워크플로우 패널 접기"
             >
               <ChevronDown className="h-4 w-4 rotate-90" />
             </Button>
           </div>
         ) : (
-          <div className="animate-in slide-in-from-left flex items-start pt-4 duration-300">
-            <Button
-              onClick={() => setShowGridSettings(true)}
-              variant="outline"
-              size="sm"
-              className="h-auto flex-col gap-1 bg-[var(--color-surface)] px-3 py-4"
-              title="워크플로우 패널 열기"
-            >
-              <Settings className="h-5 w-5" />
-              <span className="text-[10px]" style={{ writingMode: 'vertical-rl' }}>
-                워크플로우
-              </span>
-            </Button>
-          </div>
+          <CompactWorkflowStrip
+            currentStep={workflow.currentStep}
+            completedSteps={workflow.completedSteps}
+            canAccessStep={canAccessStep}
+            onStepClick={goToStep}
+            onExpand={() => {
+              setPanelMode('expanded');
+              userOverridePanelRef.current = true;
+            }}
+          />
         )}
 
         {/* Member Sidebar - 수동 배치 조정 단계(4단계)에서만 표시 */}
@@ -717,6 +1035,14 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           workflowStep={workflow.currentStep}
         />
       </div>
+
+      {/* Compact 모드용 플로팅 액션 바 (데스크톱에서만) */}
+      <WorkflowFloatingActionBar
+        currentStep={workflow.currentStep}
+        isVisible={panelMode === 'compact'}
+      >
+        {renderFloatingStepContent(workflow.currentStep)}
+      </WorkflowFloatingActionBar>
 
       {/* 모바일: 상단 그리드 + 하단 대원 목록 (Split View, 640px 미만) */}
       <div className="relative flex flex-1 flex-col overflow-hidden sm:hidden">
