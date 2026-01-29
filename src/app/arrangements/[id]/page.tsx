@@ -36,7 +36,7 @@ import { calculateGridLayoutFromSeats } from '@/lib/utils/gridUtils';
 import { WorkflowStep, useArrangementStore } from '@/store/arrangement-store';
 
 import type { Database } from '@/types/database.types';
-import { DEFAULT_GRID_LAYOUT, GridLayout } from '@/types/grid';
+import { DEFAULT_GRID_LAYOUT, GridLayout, OFFSET_PRESETS } from '@/types/grid';
 
 const logger = createLogger({ prefix: 'ArrangementEditorPage' });
 
@@ -60,6 +60,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     resetWorkflow,
     restoreWorkflowState,
     workflow,
+    // 줄 정렬 프리셋 (Step 5용)
+    applyOffsetPreset,
     // 줄반장 관련 (Step 6용)
     rowLeaderMode,
     toggleRowLeaderMode,
@@ -505,18 +507,56 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             </ul>
           </div>
         );
-      case 5:
-        // 행별 Offset 조정 - 인라인 화살표 컨트롤로 조정
+      case 5: {
+        // 행별 Offset 조정 - 프리셋 + 인라인 화살표 컨트롤
+        const rows = gridLayout?.rows ?? 0;
+        const currentOffsets = gridLayout?.rowOffsets;
+
+        // 현재 적용된 프리셋 감지
+        const getActivePresetId = (): string | null => {
+          for (const preset of OFFSET_PRESETS) {
+            const presetOffsets = preset.getOffsets(rows);
+            const presetKeys = Object.keys(presetOffsets);
+            const currentKeys = Object.keys(currentOffsets ?? {});
+
+            if (presetKeys.length === 0 && currentKeys.length === 0) return preset.id;
+            if (presetKeys.length !== currentKeys.length) continue;
+
+            const matches = presetKeys.every(
+              (k) => (currentOffsets ?? {})[Number(k)] === presetOffsets[Number(k)]
+            );
+            if (matches) return preset.id;
+          }
+          return null;
+        };
+
+        const activePresetId = getActivePresetId();
+
         return (
           <div className="space-y-3">
             <p className="text-sm text-[var(--color-text-secondary)]">
-              좌석 그리드 왼쪽의 화살표 버튼으로 각 행의 시작 위치를 조정합니다.
+              프리셋을 선택하거나, 화살표 버튼으로 각 행을 개별 조정합니다.
             </p>
+            <div className="flex flex-wrap gap-2">
+              {OFFSET_PRESETS.map((preset) => (
+                <Button
+                  key={preset.id}
+                  size="sm"
+                  variant={activePresetId === preset.id ? 'default' : 'outline'}
+                  disabled={isReadOnly}
+                  onClick={() => applyOffsetPreset(preset.id)}
+                  title={preset.description}
+                >
+                  {preset.name}
+                </Button>
+              ))}
+            </div>
             <p className="text-xs text-[var(--color-text-tertiary)]">
-              1행을 기준으로 다른 행들을 왼쪽/오른쪽으로 이동할 수 있습니다.
+              개별 행은 그리드 왼쪽의 화살표 버튼으로 미세 조정할 수 있습니다.
             </p>
           </div>
         );
+      }
       case 6:
         // 줄반장 지정 - 버튼을 Card 내부에 직접 배치
         return (

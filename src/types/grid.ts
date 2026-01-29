@@ -61,8 +61,9 @@ export interface OffsetPreset {
 /**
  * 오프셋 프리셋 목록
  * - straight: 직선 정렬 (모든 행 동일)
- * - mountain: 산 모양 (중앙 행이 가장 왼쪽, 실제 배치표 패턴)
- * - zigzag: 지그재그 (홀수/짝수 행 엇갈림)
+ * - arc: 원호 정렬 (3행 기준 양쪽으로 0.5씩 증가)
+ * - zigzag-even: 지그재그 짝수행 이동
+ * - zigzag-odd: 지그재그 홀수행 이동
  */
 export const OFFSET_PRESETS: OffsetPreset[] = [
   {
@@ -72,42 +73,48 @@ export const OFFSET_PRESETS: OffsetPreset[] = [
     getOffsets: () => ({}),
   },
   {
-    id: 'mountain',
-    name: '산 모양',
-    description: '3행이 가장 왼쪽 (실제 배치표 패턴)',
+    id: 'arc',
+    name: '원호 정렬',
+    description: '3행 기준 양쪽으로 확산',
     getOffsets: (rows: number) => {
-      // 실제 배치표 패턴 (6행 기준):
-      // 1행: 0 (기준)
-      // 2행: -0.25 (왼쪽으로)
-      // 3행: -0.5 (가장 왼쪽, 피크)
-      // 4행: -0.25 (오른쪽으로 회복)
-      // 5행: 0
-      // 6행: 0
+      // 3행(index 2)이 기준(0), 거리에 따라 0.5씩 증가
+      // Row 1: +1.0, Row 2: +0.5, Row 3: 0,
+      // Row 4: +0.5, Row 5: +1.0, Row 6: +1.5, ...
       const offsets: Record<number, RowOffsetValue> = {};
-
-      // 하드코딩된 패턴 (6행 기준)
-      const pattern6 = [0, -0.25, -0.5, -0.25, 0, 0];
+      const centerRow = 3; // 1-based
 
       for (let r = 1; r <= rows; r++) {
-        // 6행 이하: 패턴 직접 적용
-        // 6행 초과: 마지막 값(0) 유지
-        const patternIdx = Math.min(r - 1, pattern6.length - 1);
-        const offset = pattern6[patternIdx];
+        const distance = Math.abs(r - centerRow);
+        const offset = Math.min(distance * 0.5, 2) as RowOffsetValue;
         if (offset !== 0) {
-          offsets[r - 1] = offset as RowOffsetValue;
+          offsets[r - 1] = offset;
         }
       }
       return offsets;
     },
   },
   {
-    id: 'zigzag',
-    name: '지그재그',
-    description: '홀수/짝수 행 엇갈림',
+    id: 'zigzag-even',
+    name: '지그재그(짝수)',
+    description: '짝수 행 +0.5칸 이동',
     getOffsets: (rows: number) => {
       const offsets: Record<number, RowOffsetValue> = {};
       for (let r = 1; r <= rows; r++) {
         if (r % 2 === 0) {
+          offsets[r - 1] = 0.5;
+        }
+      }
+      return offsets;
+    },
+  },
+  {
+    id: 'zigzag-odd',
+    name: '지그재그(홀수)',
+    description: '홀수 행 +0.5칸 이동',
+    getOffsets: (rows: number) => {
+      const offsets: Record<number, RowOffsetValue> = {};
+      for (let r = 1; r <= rows; r++) {
+        if (r % 2 === 1) {
           offsets[r - 1] = 0.5;
         }
       }
