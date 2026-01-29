@@ -18,7 +18,12 @@
     "check:redis": "tsx scripts/check-redis.ts",
     "test:production": "NODE_ENV=production npm run check:redis",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "types:generate": "npx supabase gen types typescript --local > src/types/database.types.ts",
+    "db:start": "npx supabase start",
+    "db:stop": "npx supabase stop",
+    "db:reset": "npx supabase db reset",
+    "db:sync": "node scripts/sync-prod-to-local.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.88",

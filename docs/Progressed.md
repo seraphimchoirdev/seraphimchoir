@@ -218,6 +218,9 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-01-28 | fix(deploy): 핸드오프 문서 Vercel 배포에 포함 |
+| 2026-01-28 | fix(deploy): Vercel 빌드 시 prebuild 스크립트 포함 |
+| 2026-01-28 | refactor(dashboard): 대시보드 자동 갱신 및 UX 개선 |
 | 2026-01-28 | feat(attendance): 연습 부분참석 투표 기능 구현 |
 | 2026-01-27 | feat(dashboard): 역할별 맞춤형 대시보드 구현 |
 | 2026-01-26 | feat(hooks): 핸드오프 자동 로드 훅 추가 |

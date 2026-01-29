@@ -1,0 +1,69 @@
+name: Weekly Schema Validation
+
+on:
+  schedule:
+    - cron: '0 0 * * 1' # 매주 월요일 00:00 UTC (09:00 KST)
+  workflow_dispatch: # 수동 실행도 가능
+
+jobs:
+  schema-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # 1. 로컬 Supabase 시작 + 마이그레이션 적용
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Apply all migrations and seed
+        run: supabase db reset
+
+      # 2. 로컬 스키마 drift 검사 (마이그레이션 파일 vs 실제 DB)
+      - name: Check local schema drift
+        run: |
+          DIFF=$(supabase db diff --local)
+          if [ -n "$DIFF" ]; then
+            echo "::error::Local schema drift detected!"
+            echo "$DIFF"
+            exit 1
+          fi
+
+      # 3. 프로덕션 마이그레이션 상태 확인
+      - name: Check production migration status
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          supabase link --project-ref vdlhfozbvcgomfgdtdvm --password "$SUPABASE_DB_PASSWORD"
+          supabase migration list --linked
+
+      # 4. TypeScript 타입 최신 여부 확인
+      - name: Validate TypeScript types
+        run: |
+          supabase gen types typescript --local > /tmp/database.types.ts
+          if ! diff -q src/types/database.types.ts /tmp/database.types.ts > /dev/null 2>&1; then
+            echo "::warning::TypeScript types are out of date!"
+            diff src/types/database.types.ts /tmp/database.types.ts || true
+          fi
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop --no-backup
+
+      # 5. 실패 시 GitHub Issue 자동 생성
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Weekly Schema Check Failed',
+              body: `스키마 검증 실패: ${new Date().toISOString().split('T')[0]}\n\n[워크플로우 실행 확인](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+              labels: ['schema', 'automated']
+            });

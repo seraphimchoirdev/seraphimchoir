@@ -52,9 +52,9 @@ const nextConfig: NextConfig = {
           "default-src 'self'",
           "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // 개발: Next.js 개발 도구 지원
           "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net", // 개발: Tailwind JIT + 외부 폰트 지원
-          "img-src 'self' data: https://*.supabase.co blob:",
+          "img-src 'self' data: https://*.supabase.co http://127.0.0.1:* blob:",
           "font-src 'self' data:",
-          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.upstash.com",
+          "connect-src 'self' https://*.supabase.co wss://*.supabase.co http://127.0.0.1:* ws://127.0.0.1:* https://*.ingest.sentry.io https://*.upstash.com https://cdn.jsdelivr.net",
           "frame-ancestors 'none'",
           "base-uri 'self'",
           "form-action 'self'",

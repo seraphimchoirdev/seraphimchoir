@@ -131,6 +131,18 @@ export function validateEnvironment(): EnvValidationResult {
     }
   }
 
+  // 개발 환경에서 프로덕션 Supabase URL 사용 경고
+  if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    if (url.includes('supabase.co')) {
+      warnings.push(
+        '⚠️ 개발 환경에서 프로덕션 Supabase를 사용 중입니다!\n' +
+        '   `npx supabase start` 실행 후 .env.local을 로컬 URL로 변경하세요.\n' +
+        '   로컬 URL: http://127.0.0.1:54321'
+      );
+    }
+  }
+
   return {
     isValid: errors.length === 0,
     errors,

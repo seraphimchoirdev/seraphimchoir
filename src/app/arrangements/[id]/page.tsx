@@ -94,6 +94,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   // 초기 로드 완료 추적 (compactAllRows 중복 실행 방지)
   const initialLoadDoneRef = useRef(false);
 
+  // 새 배치표 AI 추천 분배 자동 적용 추적
+  const autoDistributionAppliedRef = useRef(false);
+
   // Step 4 자동 최소화를 위한 이전 Step 추적
   const prevStepRef = useRef<number>(workflow.currentStep);
 
@@ -383,6 +386,34 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     showRestoreDialog,
     skipInitialization,
   ]);
+
+  // 새 배치표: AI 추천 분배 자동 적용
+  useEffect(() => {
+    // 이미 자동 적용됨
+    if (autoDistributionAppliedRef.current) return;
+    // 초기화가 아직 완료되지 않음
+    if (!initialLoadDoneRef.current) return;
+    // DB에 저장된 좌석이 있는 기존 배치표
+    if (dbHasData) return;
+    // 멤버 데이터 로딩 중 (totalMembers가 아직 0)
+    if (totalMembers === 0) return;
+    // 이미 AI 추천이 적용되어 있음
+    if (gridLayout?.isAIRecommended) return;
+
+    // AI 추천 분배 자동 적용
+    autoDistributionAppliedRef.current = true;
+    const recommendation = recommendRowDistribution(totalMembers);
+    setGridLayout({
+      rows: recommendation.rows,
+      rowCapacities: recommendation.rowCapacities,
+      zigzagPattern: gridLayout?.zigzagPattern ?? 'even',
+      isAIRecommended: true,
+    });
+
+    showInfo(
+      `출석 인원 ${totalMembers}명 기반 AI 추천 분배가 자동 적용되었습니다. 줄 구성을 확인 후 다음 단계로 진행하세요.`
+    );
+  }, [totalMembers, dbHasData, gridLayout, setGridLayout]);
 
   if (isLoading || authLoading) {
     return (

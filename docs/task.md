@@ -68,6 +68,15 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-01-28
+- [x] **fix(deploy): 핸드오프 문서 Vercel 배포에 포함**
+  - 커밋: `8a39fe9`
+
+- [x] **fix(deploy): Vercel 빌드 시 prebuild 스크립트 포함**
+  - 커밋: `5f3e079`
+
+- [x] **refactor(dashboard): 대시보드 자동 갱신 및 UX 개선**
+  - 커밋: `0b403ef`
+
 
 - [x] **feat(attendance): 연습 부분참석 투표 기능 구현**
   - 커밋: `bc92588`

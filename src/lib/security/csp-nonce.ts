@@ -56,7 +56,8 @@ export function generateCSPHeader(_nonce?: string): string {
     'style-src': isDevelopment
       ? ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'] // 개발 환경: Tailwind JIT 지원
       : ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'], // 프로덕션: nonce 제거하고 unsafe-inline만 사용
-    'img-src': ["'self'", 'data:', 'https://*.supabase.co', 'blob:'],
+    'img-src': ["'self'", 'data:', 'https://*.supabase.co', 'blob:',
+      ...(isDevelopment ? ['http://127.0.0.1:*'] : [])],
     'font-src': ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
     'connect-src': [
       "'self'",
@@ -67,6 +68,7 @@ export function generateCSPHeader(_nonce?: string): string {
       'https://vitals.vercel-analytics.com', // Vercel Analytics
       'https://*.vercel-insights.com', // Vercel Speed Insights
       'https://cdn.jsdelivr.net', // Pretendard 폰트 소스맵
+      ...(isDevelopment ? ['http://127.0.0.1:*', 'ws://127.0.0.1:*'] : []),
     ],
     'frame-ancestors': ["'none'"],
     'base-uri': ["'self'"],

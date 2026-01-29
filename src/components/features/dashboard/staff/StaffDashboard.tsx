@@ -90,8 +90,8 @@ export function StaffDashboard() {
         />
       )}
 
-      {/* 대원 연결이 안 된 경우 */}
-      {!myStatus?.isLinked ? (
+      {/* 대원 연결이 안 된 경우 (ADMIN은 배너 표시하지 않음) */}
+      {!myStatus?.isLinked && !isAdmin ? (
         <>
           <MemberLinkBanner linkStatus={myStatus?.linkStatus || null} />
 
@@ -113,7 +113,7 @@ export function StaffDashboard() {
           {showVoteCard && context && (
             <VoteActionCard
               timeContext={context.timeContext}
-              nextServiceDate={context.nextServiceDate || myStatus.nextServiceDate}
+              nextServiceDate={context.nextServiceDate || myStatus?.nextServiceDate}
               voteDeadline={context.voteDeadline}
               voteDeadlineDisplay={context.voteDeadlineDisplay}
               hasVoted={hasVoted}
@@ -122,7 +122,7 @@ export function StaffDashboard() {
           )}
 
           {/* 내 좌석 (배치표 공유 후) */}
-          {showSeatCard && myStatus.mySeat && <MySeatCard seat={myStatus.mySeat} />}
+          {showSeatCard && myStatus?.mySeat && <MySeatCard seat={myStatus.mySeat} />}
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* 다음 예배 정보 */}
@@ -138,7 +138,7 @@ export function StaffDashboard() {
             )}
 
             {/* 내 최근 출석 */}
-            {myStatus.recentVotes.length > 0 && <MyRecentVotes votes={myStatus.recentVotes} />}
+            {myStatus?.recentVotes && myStatus.recentVotes.length > 0 && <MyRecentVotes votes={myStatus.recentVotes} />}
           </div>
         </>
       )}
