@@ -60,21 +60,21 @@ export interface OffsetPreset {
 
 /**
  * 오프셋 프리셋 목록
- * - straight: 직선 정렬 (모든 행 동일)
- * - arc: 원호 정렬 (3행 기준 양쪽으로 0.5씩 증가)
+ * - straight: 기본 정렬 (모든 행 동일)
+ * - arc: 부채꼴 정렬 (3행 기준 양쪽으로 0.5씩 증가)
  * - zigzag-even: 지그재그 짝수행 이동
  * - zigzag-odd: 지그재그 홀수행 이동
  */
 export const OFFSET_PRESETS: OffsetPreset[] = [
   {
     id: 'straight',
-    name: '직선 정렬',
+    name: '기본 정렬',
     description: '모든 행 동일 시작점',
     getOffsets: () => ({}),
   },
   {
     id: 'arc',
-    name: '원호 정렬',
+    name: '부채꼴 정렬',
     description: '3행 기준 양쪽으로 확산',
     getOffsets: (rows: number) => {
       // 3행(index 2)이 기준(0), 거리에 따라 0.5씩 증가
