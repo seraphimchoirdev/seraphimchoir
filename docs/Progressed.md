@@ -218,6 +218,9 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-01-31 | feat(auth): 인증 재시도 로직 및 서버 연결 오류 알림 추가 |
+| 2026-01-31 | refactor(ui): HTML 네이티브 요소를 UI 컴포넌트로 교체 |
+| 2026-01-31 | docs: 진행 문서 및 핸드오프 매니페스트 업데이트 |
 | 2026-01-31 | docs: 2026-01-29 핸드오프 문서 추가 |
 | 2026-01-29 | fix(seats): SeatsGrid 및 grid 타입 수정 |
 | 2026-01-29 | feat(arrangements): 워크플로우 UI 개선 및 RecommendPreviewModal 제거 |
