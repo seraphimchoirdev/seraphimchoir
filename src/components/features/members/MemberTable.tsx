@@ -22,6 +22,7 @@ import { memo, useCallback, useMemo, useState } from 'react';
 
 import Link from 'next/link';
 
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -364,15 +365,17 @@ const MemberRow = memo(function MemberRow({
           >
             <Edit2 className="h-4 w-4" />
           </Link>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => onDeleteClick(member.id)}
-            className="inline-flex items-center justify-center rounded-md p-2 text-red-600 transition-colors hover:bg-red-50"
+            className="text-[var(--color-error-600)] hover:bg-[var(--color-error-50)]"
             aria-label="삭제"
             title="삭제"
             disabled={isDeleting}
           >
             <Trash2 className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </td>
     </tr>
@@ -686,20 +689,22 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
               <p className="mb-4 text-sm text-red-600">{deleteMutation.error.message}</p>
             )}
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="secondary"
                 onClick={handleCancelDelete}
-                className="flex-1 rounded-md bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
+                className="flex-1"
                 disabled={deleteMutation.isPending}
               >
                 취소
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="destructive"
                 onClick={() => handleDelete(deleteConfirmId)}
-                className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                className="flex-1"
                 disabled={deleteMutation.isPending}
               >
                 {deleteMutation.isPending ? '삭제 중...' : '삭제'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -837,16 +842,18 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
 
             {/* 액션 버튼 */}
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="secondary"
                 onClick={handleCancelLeave}
-                className="flex-1 rounded-md bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
+                className="flex-1"
                 disabled={updatingStatusId === leaveModalMemberId}
               >
                 취소
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="warning"
                 onClick={() => handleLeaveSubmit(leaveFormData.showDetails)}
-                className="flex-1 rounded-md bg-[var(--color-warning-600)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-warning-700)] disabled:opacity-50"
+                className="flex-1"
                 disabled={updatingStatusId === leaveModalMemberId}
               >
                 {updatingStatusId === leaveModalMemberId ? (
@@ -857,7 +864,7 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
                 ) : (
                   '휴직 처리'
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -970,16 +977,18 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
 
             {/* 액션 버튼 */}
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="secondary"
                 onClick={handleCancelReturn}
-                className="flex-1 rounded-md bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
+                className="flex-1"
                 disabled={updatingStatusId === returnModalInfo.memberId}
               >
                 취소
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="success"
                 onClick={handleReturnFromLeaveConfirm}
-                className="flex-1 rounded-md bg-[var(--color-success-600)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--color-success-700)] disabled:opacity-50"
+                className="flex-1"
                 disabled={updatingStatusId === returnModalInfo.memberId}
               >
                 {updatingStatusId === returnModalInfo.memberId ? (
@@ -990,7 +999,7 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
                 ) : (
                   '복직 처리'
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

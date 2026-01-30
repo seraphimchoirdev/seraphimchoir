@@ -547,28 +547,32 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                       {/* 빠른 액션 버튼들 - 파트 마감 시에도 숨김 */}
                       {isPartEditable && !(isFullyClosed && !canEditAfterClose) && (
                         <div className="flex justify-end gap-2">
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSelectAllPart(part, true);
                             }}
-                            className="inline-flex items-center gap-1 rounded-md bg-[var(--color-success-50)] px-2.5 py-1 text-xs font-medium text-[var(--color-success-600)] transition-colors hover:bg-[var(--color-success-100)]"
+                            className="h-auto px-2.5 py-1 text-xs text-[var(--color-success-600)] hover:bg-[var(--color-success-100)]"
                           >
                             <CheckCheck className="h-3.5 w-3.5" />
                             전체 출석
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSelectAllPart(part, false);
                             }}
-                            className="inline-flex items-center gap-1 rounded-md bg-[var(--color-background-tertiary)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-tertiary)] transition-colors hover:bg-[var(--color-border-subtle)]"
+                            className="h-auto px-2.5 py-1 text-xs text-[var(--color-text-tertiary)] hover:bg-[var(--color-border-subtle)]"
                           >
                             <XCircle className="h-3.5 w-3.5" />
                             전체 불참
-                          </button>
+                          </Button>
                         </div>
                       )}
 

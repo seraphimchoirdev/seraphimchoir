@@ -14,6 +14,8 @@ import {
 
 import { useMemo } from 'react';
 
+import Link from 'next/link';
+
 import AppShell from '@/components/layout/AppShell';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -234,9 +236,9 @@ export default function MyAttendancePage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             먼저 대원 연결이 필요합니다.{' '}
-            <a href="/member-link" className="underline">
+            <Link href="/member-link" className="underline">
               대원 연결 페이지로 이동
-            </a>
+            </Link>
           </AlertDescription>
         </Alert>
       </div>

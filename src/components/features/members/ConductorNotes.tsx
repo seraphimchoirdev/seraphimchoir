@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
+import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 import { createLogger } from '@/lib/logger';
 
@@ -214,46 +216,47 @@ export function ConductorNotes({ memberId, memberName, userRole }: ConductorNote
           )}
 
           <div className="mb-4">
-            <textarea
+            <Textarea
               value={notes}
               onChange={(e) => {
                 setNotes(e.target.value);
                 if (!isEditing) setIsEditing(true);
               }}
               placeholder="지휘자 전용 메모를 입력하세요..."
-              className="h-32 w-full resize-none rounded-md border border-amber-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              className="h-32 resize-none border-amber-300 focus-visible:ring-amber-500"
               disabled={isSaving}
             />
           </div>
 
           <div className="flex justify-end gap-2">
             {isEditing && (
-              <button
+              <Button
+                variant="outline"
                 onClick={handleCancel}
                 disabled={isSaving}
-                className="rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="border-amber-300 text-amber-700 hover:bg-amber-50"
               >
                 취소
-              </button>
+              </Button>
             )}
 
             {notes && (
-              <button
+              <Button
+                variant="destructive"
                 onClick={handleDeleteClick}
                 disabled={isSaving}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSaving ? '삭제 중...' : '삭제'}
-              </button>
+              </Button>
             )}
 
-            <button
+            <Button
+              variant="warning"
               onClick={handleSave}
               disabled={isSaving || !isEditing}
-              className="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSaving ? '저장 중...' : '저장'}
-            </button>
+            </Button>
           </div>
         </>
       )}

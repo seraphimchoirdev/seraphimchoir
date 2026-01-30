@@ -5,6 +5,8 @@
 
 import { Loader2, Sparkles } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
+
 import { type RecommendationResponse, useRecommendSeats } from '@/hooks/useRecommendSeats';
 
 import { createLogger } from '@/lib/logger';
@@ -45,10 +47,10 @@ export default function RecommendButton({
   };
 
   return (
-    <button
+    <Button
       onClick={handleRecommend}
       disabled={disabled || recommendMutation.isPending}
-      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-primary-600)] px-4 py-2 font-medium text-white shadow-lg transition-all duration-200 hover:from-[var(--color-primary-600)] hover:to-[var(--color-primary-700)] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+      className="bg-gradient-to-r from-[var(--color-primary-500)] to-[var(--color-primary-600)] shadow-lg transition-all duration-200 hover:from-[var(--color-primary-600)] hover:to-[var(--color-primary-700)] hover:shadow-xl"
     >
       {recommendMutation.isPending ? (
         <>
@@ -61,6 +63,6 @@ export default function RecommendButton({
           <span>AI 자동 배치</span>
         </>
       )}
-    </button>
+    </Button>
   );
 }
