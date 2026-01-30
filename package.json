@@ -92,7 +92,7 @@
     "mammoth": "^1.11.0",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
-    "supabase": "^1.200.3",
+    "supabase": "^2.74.4",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
