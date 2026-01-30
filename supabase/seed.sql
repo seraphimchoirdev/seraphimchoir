@@ -46,8 +46,8 @@ INSERT INTO auth.identities (
 ) ON CONFLICT (provider_id, provider) DO NOTHING;
 
 -- user_profiles에 ADMIN 역할 설정
--- 프로덕션 데이터 임포트 시 다른 ID로 들어올 수 있으므로 email 기준으로 정리
-DELETE FROM user_profiles WHERE email = 'admin@test.com' AND id != 'a0000000-0000-0000-0000-000000000001';
+-- 프로덕션 데이터 임포트 시 auth.users와 불일치하는 고아 프로필 자동 정리
+DELETE FROM user_profiles WHERE id NOT IN (SELECT id FROM auth.users);
 INSERT INTO user_profiles (id, email, name, role)
 VALUES (
   'a0000000-0000-0000-0000-000000000001',
