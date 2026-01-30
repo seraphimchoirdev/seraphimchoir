@@ -13,6 +13,7 @@ import { useEffect, useRef } from 'react';
 
 import { createLogger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/client';
+import { showWarning } from '@/lib/toast';
 
 import { useAuthStore } from '@/store/authStore';
 
@@ -43,6 +44,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       logger.debug('세션 체크 시작');
       await fetchUser();
       logger.debug('세션 체크 완료');
+
+      // 서버 연결 실패 시 사용자에게 알림
+      const error = useAuthStore.getState().error;
+      if (error?.message?.includes('서버에 연결할 수 없습니다')) {
+        showWarning('서버에 연결할 수 없습니다. 잠시 후 새로고침 해주세요.');
+      }
     };
 
     initAuth();

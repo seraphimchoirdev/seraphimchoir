@@ -282,79 +282,108 @@ export const useAuthStore = create<AuthStore>()(
           const supabase = createClient();
           logger.debug('[fetchUser] 시작');
 
+          const MAX_RETRIES = 2;
+          const RETRY_DELAY_MS = 1000;
+
           try {
             set({ isLoading: true, error: null }, false, 'auth/fetchUser/start');
 
-            logger.debug('[fetchUser] getSession 호출');
-            const {
-              data: { session },
-              error: sessionError,
-            } = await supabase.auth.getSession();
-            logger.debug('[fetchUser] getSession 완료:', { hasSession: !!session, sessionError });
+            let lastError: unknown = null;
 
-            if (sessionError) {
-              throw sessionError;
-            }
+            for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+              try {
+                logger.debug('[fetchUser] getSession 호출');
+                const {
+                  data: { session },
+                  error: sessionError,
+                } = await supabase.auth.getSession();
+                logger.debug('[fetchUser] getSession 완료:', { hasSession: !!session, sessionError });
 
-            if (!session?.user) {
-              logger.debug('[fetchUser] 세션 없음');
-              set(
-                {
-                  user: null,
-                  profile: null,
-                  isAuthenticated: false,
-                  isLoading: false,
-                },
-                false,
-                'auth/fetchUser/noSession'
-              );
-              return;
-            }
-
-            // 프로필 정보 가져오기 (대원 연결 정보 + 연결된 대원 이름 포함)
-            logger.debug('[fetchUser] 프로필 조회 시작:', session.user.id);
-            const { data: profileData, error: profileError } = await supabase
-              .from('user_profiles')
-              .select(
-                'id, email, name, role, linked_member_id, link_status, members:linked_member_id(name)'
-              )
-              .eq('id', session.user.id)
-              .single();
-            logger.debug('[fetchUser] 프로필 조회 완료:', { profileData, profileError });
-
-            // members JOIN 결과를 linked_member로 매핑
-            // Supabase FK 관계 쿼리 결과는 단일 객체 또는 배열일 수 있음
-            const profile = profileData
-              ? {
-                  ...profileData,
-                  linked_member: profileData.members as unknown as { name: string } | null,
+                if (sessionError) {
+                  throw sessionError;
                 }
-              : null;
 
-            if (profileError) {
-              logger.error('[fetchUser] 프로필 로드 에러:', profileError);
+                if (!session?.user) {
+                  logger.debug('[fetchUser] 세션 없음');
+                  set(
+                    {
+                      user: null,
+                      profile: null,
+                      isAuthenticated: false,
+                      isLoading: false,
+                    },
+                    false,
+                    'auth/fetchUser/noSession'
+                  );
+                  return;
+                }
+
+                // 프로필 정보 가져오기 (대원 연결 정보 + 연결된 대원 이름 포함)
+                logger.debug('[fetchUser] 프로필 조회 시작:', session.user.id);
+                const { data: profileData, error: profileError } = await supabase
+                  .from('user_profiles')
+                  .select(
+                    'id, email, name, role, linked_member_id, link_status, members:linked_member_id(name)'
+                  )
+                  .eq('id', session.user.id)
+                  .single();
+                logger.debug('[fetchUser] 프로필 조회 완료:', { profileData, profileError });
+
+                // members JOIN 결과를 linked_member로 매핑
+                // Supabase FK 관계 쿼리 결과는 단일 객체 또는 배열일 수 있음
+                const profile = profileData
+                  ? {
+                      ...profileData,
+                      linked_member: profileData.members as unknown as { name: string } | null,
+                    }
+                  : null;
+
+                if (profileError) {
+                  logger.error('[fetchUser] 프로필 로드 에러:', profileError);
+                }
+
+                set(
+                  {
+                    user: session.user,
+                    profile: profile || null,
+                    isAuthenticated: true,
+                    isLoading: false,
+                  },
+                  false,
+                  'auth/fetchUser/success'
+                );
+                logger.debug('[fetchUser] 완료');
+                return;
+              } catch (error) {
+                lastError = error;
+                const isRetryable = error instanceof Error && error.name === 'AuthRetryableFetchError';
+
+                if (isRetryable && attempt < MAX_RETRIES) {
+                  logger.warn(`[fetchUser] 서버 연결 실패, ${attempt + 1}/${MAX_RETRIES} 재시도...`);
+                  await new Promise(r => setTimeout(r, RETRY_DELAY_MS * (attempt + 1)));
+                  continue;
+                }
+                break;
+              }
             }
 
-            set(
-              {
-                user: session.user,
-                profile: profile || null,
-                isAuthenticated: true,
-                isLoading: false,
-              },
-              false,
-              'auth/fetchUser/success'
-            );
-            logger.debug('[fetchUser] 완료');
+            // 재시도 모두 실패 시
+            throw lastError;
           } catch (error) {
             logger.error('[fetchUser] 예외:', error);
+
+            const isConnectionError = error instanceof Error && error.name === 'AuthRetryableFetchError';
+            const userError = isConnectionError
+              ? new Error('서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.')
+              : (error as Error);
+
             set(
               {
                 user: null,
                 profile: null,
                 isAuthenticated: false,
                 isLoading: false,
-                error: error as Error,
+                error: userError,
               },
               false,
               'auth/fetchUser/catch'
