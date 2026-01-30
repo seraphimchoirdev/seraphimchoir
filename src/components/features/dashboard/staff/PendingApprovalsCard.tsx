@@ -35,10 +35,10 @@ export function PendingApprovalsCard({ approvals }: PendingApprovalsCardProps) {
   const handleApprove = async (userId: string) => {
     setProcessing(userId);
     try {
-      const response = await fetch('/api/admin/member-links/approve', {
-        method: 'POST',
+      const response = await fetch(`/api/member-link/${userId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ action: 'approve' }),
       });
 
       if (!response.ok) {
@@ -57,10 +57,10 @@ export function PendingApprovalsCard({ approvals }: PendingApprovalsCardProps) {
   const handleReject = async (userId: string) => {
     setProcessing(userId);
     try {
-      const response = await fetch('/api/admin/member-links/reject', {
-        method: 'POST',
+      const response = await fetch(`/api/member-link/${userId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ action: 'reject' }),
       });
 
       if (!response.ok) {

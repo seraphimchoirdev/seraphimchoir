@@ -49,7 +49,7 @@ export function MemberLinkBanner({ linkStatus }: MemberLinkBannerProps) {
               정보가 일치하지 않을 수 있습니다. 관리자에게 문의하거나 다시 요청해 주세요.
             </p>
             <Button asChild variant="outline" size="sm" className="mt-3">
-              <Link href="/profile/link-member">다시 요청하기</Link>
+              <Link href="/member-link">다시 요청하기</Link>
             </Button>
           </div>
         </CardContent>
@@ -70,7 +70,7 @@ export function MemberLinkBanner({ linkStatus }: MemberLinkBannerProps) {
             내 출석 투표와 좌석 정보를 확인하려면 찬양대원 정보와 연결이 필요합니다.
           </p>
           <Button asChild size="sm" className="mt-3">
-            <Link href="/profile/link-member">대원 연결 요청하기</Link>
+            <Link href="/member-link">대원 연결 요청하기</Link>
           </Button>
         </div>
       </CardContent>
