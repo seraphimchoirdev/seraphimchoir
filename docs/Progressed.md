@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-01-31 | docs: 2026-01-29 핸드오프 문서 추가 |
 | 2026-01-29 | fix(seats): SeatsGrid 및 grid 타입 수정 |
 | 2026-01-29 | feat(arrangements): 워크플로우 UI 개선 및 RecommendPreviewModal 제거 |
 | 2026-01-29 | refactor(ui): CompactWorkflowStrip 펼치기 버튼 상단으로 이동 |
