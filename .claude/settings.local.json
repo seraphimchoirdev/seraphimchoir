@@ -108,7 +108,11 @@
       "Bash(bash:*)",
       "Bash(killall:*)",
       "Bash(open -a \"Docker Desktop\")",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_fc25632626f0d95dbfb3d65e8f9f4e1df77bbc9a npx supabase db dump:*)",
+      "Bash(npx next build:*)",
+      "Bash(osascript:*)",
+      "Bash(git status:*)"
     ],
     "deny": [],
     "ask": []
