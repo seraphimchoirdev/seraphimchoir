@@ -685,20 +685,51 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             )}
           </div>
         );
-      case 7:
+      case 7: {
         // 배치표 공유
+        const noAssignmentsExpanded = Object.keys(assignments).length === 0;
         return (
           <div className="space-y-3">
             <p className="text-sm text-[var(--color-text-secondary)]">
-              배치표를 저장하고 공유합니다.
+              배치표를 이미지로 내보내거나, 상단 헤더에서 저장/공유할 수 있습니다.
             </p>
             <div className="flex flex-col gap-2">
-              <p className="text-xs text-[var(--color-text-tertiary)]">
-                상단 헤더의 저장/공유 버튼을 이용하세요.
-              </p>
+              {canShare && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleShareImage}
+                  disabled={noAssignmentsExpanded || isGenerating}
+                  className="w-full gap-1"
+                >
+                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Share2 className="h-3 w-3" />}
+                  공유하기
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleDownloadImage}
+                disabled={noAssignmentsExpanded || isGenerating}
+                className="w-full gap-1"
+              >
+                {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                PNG 다운로드
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCopyToClipboard}
+                disabled={noAssignmentsExpanded || isGenerating}
+                className="w-full gap-1"
+              >
+                {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
+                클립보드 복사
+              </Button>
             </div>
           </div>
         );
+      }
       default:
         return null;
     }
