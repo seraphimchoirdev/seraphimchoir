@@ -112,7 +112,15 @@
       "Bash(SUPABASE_ACCESS_TOKEN=sbp_fc25632626f0d95dbfb3d65e8f9f4e1df77bbc9a npx supabase db dump:*)",
       "Bash(npx next build:*)",
       "Bash(osascript:*)",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(PGPASSWORD=postgres psql:*)",
+      "Bash(docker exec:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_6afb1886a07b356b5c41d8b235ae04fdef8fea54 SUPABASE_DB_PASSWORD='#saeropim1981' npx supabase:*)",
+      "Bash(git -C /Users/munseunghyeon/workspace/seraphimChoir status -u)",
+      "Bash(git -C /Users/munseunghyeon/workspace/seraphimChoir diff --stat)",
+      "Bash(git -C /Users/munseunghyeon/workspace/seraphimChoir log --oneline -5)",
+      "Bash(docker rm:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
