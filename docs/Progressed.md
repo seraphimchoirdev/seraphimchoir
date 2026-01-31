@@ -218,6 +218,14 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-01-31 | fix(seats): 좌석 슬롯 이름 표시 시 truncate 대신 줄바꿈 처리 |
+| 2026-01-31 | feat(arrangements): CONFIRMED → SHARED 긴급 수정 복귀 기능 추가 |
+| 2026-01-31 | fix(arrangements): 2부 예배 시간 오류 수정 및 7단계 이미지 내보내기 버튼 추가 |
+| 2026-01-31 | fix(dashboard): 지휘자 대시보드 출석 현황이 실제 데이터와 불일치하는 버그 수정 |
+| 2026-01-31 | feat(dashboard): 파트장 대시보드에 출석/대원 관리 바로가기 추가 |
+| 2026-01-31 | refactor(my-attendance): 개인 출석 투표 마감 기능 비활성화 |
+| 2026-01-31 | refactor(attendances): 출석 마감 기능 프론트엔드 비활성화 및 UX 분석 문서 작성 |
+| 2026-01-31 | docs: 자동 생성 커밋 로그 업데이트 |
 | 2026-01-31 | fix(csp): localhost용 connect-src 추가로 로컬 개발 CSP 차단 해결 |
 | 2026-01-31 | refactor(dashboard): MyRecentVotes 컴포넌트 및 관련 코드 제거 |
 | 2026-01-31 | fix(auth): 모바일 카카오 OAuth 리다이렉션 수정 |

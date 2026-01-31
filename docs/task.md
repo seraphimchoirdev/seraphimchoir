@@ -68,6 +68,30 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-01-31
+- [x] **fix(seats): 좌석 슬롯 이름 표시 시 truncate 대신 줄바꿈 처리**
+  - 커밋: `a16c326`
+
+- [x] **feat(arrangements): CONFIRMED → SHARED 긴급 수정 복귀 기능 추가**
+  - 커밋: `3af651d`
+
+- [x] **fix(arrangements): 2부 예배 시간 오류 수정 및 7단계 이미지 내보내기 버튼 추가**
+  - 커밋: `1119ca6`
+
+- [x] **fix(dashboard): 지휘자 대시보드 출석 현황이 실제 데이터와 불일치하는 버그 수정**
+  - 커밋: `f5968a6`
+
+- [x] **feat(dashboard): 파트장 대시보드에 출석/대원 관리 바로가기 추가**
+  - 커밋: `ba2dbe7`
+
+- [x] **refactor(my-attendance): 개인 출석 투표 마감 기능 비활성화**
+  - 커밋: `88efc3a`
+
+- [x] **refactor(attendances): 출석 마감 기능 프론트엔드 비활성화 및 UX 분석 문서 작성**
+  - 커밋: `965b557`
+
+- [x] **docs: 자동 생성 커밋 로그 업데이트**
+  - 커밋: `845d71c`
+
 - [x] **fix(csp): localhost용 connect-src 추가로 로컬 개발 CSP 차단 해결**
   - 커밋: `a5c7429`
 
