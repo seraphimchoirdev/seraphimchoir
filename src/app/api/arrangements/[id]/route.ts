@@ -34,8 +34,10 @@ const updateArrangementSchema = z.object({
 const isValidStatusTransition = (currentStatus: string | null, newStatus: string): boolean => {
   const current = currentStatus || 'DRAFT';
 
-  // CONFIRMED에서는 어떤 변경도 불가
-  if (current === 'CONFIRMED') return false;
+  // CONFIRMED에서는 SHARED로만 전환 가능 (긴급 수정)
+  if (current === 'CONFIRMED') {
+    return newStatus === 'SHARED';
+  }
 
   // DRAFT → SHARED 또는 DRAFT → CONFIRMED 가능
   if (current === 'DRAFT') {
@@ -99,9 +101,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const currentStatus = currentArrangement?.status || 'DRAFT';
 
-    // CONFIRMED 상태에서는 수정 불가
+    // CONFIRMED 상태에서는 상태 전환(→SHARED)만 허용, 나머지 수정은 차단
     if (currentStatus === 'CONFIRMED') {
-      return NextResponse.json({ error: '확정된 배치표는 수정할 수 없습니다' }, { status: 403 });
+      if (body.status !== 'SHARED') {
+        return NextResponse.json(
+          { error: '확정된 배치표는 수정할 수 없습니다. 먼저 긴급 수정 모드로 전환해주세요.' },
+          { status: 403 }
+        );
+      }
     }
 
     // 상태 변경 요청 시 유효성 검사

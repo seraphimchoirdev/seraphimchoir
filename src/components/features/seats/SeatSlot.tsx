@@ -259,7 +259,14 @@ const GridClickableMember = memo(function GridClickableMember({
       role="presentation"
       aria-label={`${name} - ${part} 파트, ${row}행 ${col}열 배치됨${isRowLeader ? ' (줄반장)' : ''}${changeHighlight ? ` (${changeHighlight === 'ADDED' ? '새로 추가됨' : '이동됨'})` : ''}`}
     >
-      <span className="max-w-full truncate px-0.5 text-center text-xs leading-tight font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] sm:text-sm lg:text-base">
+      <span
+        className="max-w-full px-0.5 text-center text-xs leading-tight font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] sm:text-sm lg:text-base"
+        style={{
+          wordBreak: 'keep-all',
+          overflowWrap: 'break-word',
+          whiteSpace: 'normal',
+        }}
+      >
         {name}
       </span>
       {/* 줄반장 아이콘 표시: 흰색 원형 배경 + 보라 크라운 */}

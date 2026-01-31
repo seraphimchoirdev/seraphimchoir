@@ -34,6 +34,7 @@ import {
 import { Input } from '@/components/ui/input';
 
 import { useUpdateArrangement } from '@/hooks/useArrangements';
+import { useAuth } from '@/hooks/useAuth';
 import { useImageGeneration } from '@/hooks/useImageGeneration';
 import { useUpdateSeats } from '@/hooks/useSeats';
 
@@ -62,6 +63,8 @@ export default function ArrangementHeader({
   mobileCaptureRef,
 }: ArrangementHeaderProps) {
   const router = useRouter();
+  const { hasRole } = useAuth();
+  const canRevertConfirmed = hasRole(['ADMIN', 'CONDUCTOR']);
   const updateArrangement = useUpdateArrangement();
   const updateSeats = useUpdateSeats();
   const { isGenerating, downloadAsImage, copyToClipboard, shareImage, canShare, isMobile } =
@@ -141,6 +144,7 @@ export default function ArrangementHeader({
   const [shareDialog, setShareDialog] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(false);
   const [revertDialog, setRevertDialog] = useState(false);
+  const [revertToSharedDialog, setRevertToSharedDialog] = useState(false);
 
   // 컴포넌트 마운트 상태 추적 (메모리 누수 방지)
   const isMountedRef = useRef(true);
@@ -523,6 +527,35 @@ export default function ArrangementHeader({
     }
   }, [arrangement.id, updateArrangement, router, clearSharedSnapshot]);
 
+  // 확정 해제 (CONFIRMED → SHARED) - 실행
+  const handleRevertToShared = useCallback(async () => {
+    setRevertToSharedDialog(false);
+    setIsSaving(true);
+    try {
+      await updateArrangement.mutateAsync({
+        id: arrangement.id,
+        data: { status: 'SHARED' },
+      });
+
+      // 현 시점 기준 변동 추적 시작
+      saveSharedSnapshot();
+
+      if (isMountedRef.current) {
+        showSuccess('확정이 해제되었습니다. 긴급 수정이 가능합니다.');
+        router.refresh();
+      }
+    } catch (error) {
+      logger.error('확정 해제 실패:', error);
+      if (isMountedRef.current) {
+        showError('확정 해제에 실패했습니다.', handleRevertToShared);
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsSaving(false);
+      }
+    }
+  }, [arrangement.id, updateArrangement, router, saveSharedSnapshot]);
+
   return (
     <div className="flex flex-col items-start justify-between gap-3 border-b border-[var(--color-border-default)] bg-[var(--color-surface)] p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
       <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
@@ -668,10 +701,25 @@ export default function ArrangementHeader({
         )}
         {/* 상태별 버튼 렌더링 */}
         {currentStatus === 'CONFIRMED' ? (
-          <Button disabled className="h-11 gap-2 bg-[var(--color-text-tertiary)] text-sm sm:h-10">
-            <Lock className="h-4 w-4" />
-            확정됨
-          </Button>
+          canRevertConfirmed ? (
+            <Button
+              onClick={() => setRevertToSharedDialog(true)}
+              disabled={isSaving}
+              className="h-11 gap-2 bg-amber-600 text-sm text-white hover:bg-amber-700 sm:h-10"
+            >
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <AlertTriangle className="h-4 w-4" />
+              )}
+              긴급 수정
+            </Button>
+          ) : (
+            <Button disabled className="h-11 gap-2 bg-[var(--color-text-tertiary)] text-sm sm:h-10">
+              <Lock className="h-4 w-4" />
+              확정됨
+            </Button>
+          )
         ) : currentStatus === 'SHARED' ? (
           <>
             <Button onClick={handleSave} disabled={isSaving} className="h-11 gap-2 text-sm sm:h-10">
@@ -763,7 +811,7 @@ export default function ArrangementHeader({
         open={confirmDialog}
         onOpenChange={setConfirmDialog}
         title="배치표 확정"
-        description="배치표를 확정하시겠습니까?\n확정 후에는 더 이상 수정할 수 없습니다."
+        description="배치표를 확정하시겠습니까?\n확정 후에도 관리자/지휘자가 긴급 수정을 위해 되돌릴 수 있습니다."
         confirmLabel="확정"
         variant="warning"
         onConfirm={handleConfirmAction}
@@ -776,6 +824,21 @@ export default function ArrangementHeader({
         description="배치표를 작성중 상태로 되돌리시겠습니까?"
         confirmLabel="되돌리기"
         onConfirm={handleRevertToDraft}
+      />
+
+      <ConfirmDialog
+        open={revertToSharedDialog}
+        onOpenChange={setRevertToSharedDialog}
+        title="확정 해제"
+        description={
+          '확정된 배치표를 긴급 수정 모드로 전환하시겠습니까?\n\n' +
+          '• 긴급 수정 (등단 불가/가능 처리)이 가능합니다\n' +
+          '• AI 자동 분배/배치는 비활성화됩니다\n' +
+          '• 수정 완료 후 다시 확정해야 합니다'
+        }
+        confirmLabel="긴급 수정 전환"
+        variant="warning"
+        onConfirm={handleRevertToShared}
       />
     </div>
   );
