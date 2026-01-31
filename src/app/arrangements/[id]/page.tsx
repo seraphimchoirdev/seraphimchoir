@@ -390,8 +390,18 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           expandedSections: new Set([currentStep as WorkflowStep]),
         });
       } else if (!skipInitialization) {
-        // 워크플로우 상태가 없으면 (새 배치표 또는 레거시) 초기화
-        resetWorkflow();
+        if (arrangement.status === 'CONFIRMED' || arrangement.status === 'SHARED') {
+          // 레거시 배치표: 워크플로우 상태 없지만 이미 확정/공유됨 → 전체 완료로 간주
+          restoreWorkflowState({
+            currentStep: 7 as WorkflowStep,
+            completedSteps: new Set([1, 2, 3, 4, 5, 6, 7] as WorkflowStep[]),
+            isWizardMode: false,
+            expandedSections: new Set([7 as WorkflowStep]),
+          });
+        } else {
+          // 워크플로우 상태가 없으면 (새 배치표 또는 레거시 DRAFT) 초기화
+          resetWorkflow();
+        }
       }
 
       // Load seats (등단 불가능한 멤버 필터링)
