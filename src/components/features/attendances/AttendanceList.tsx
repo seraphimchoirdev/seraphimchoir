@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns/format';
 import { ko } from 'date-fns/locale/ko';
 import { ChevronsDown, ChevronsUp, RotateCcw, Save } from 'lucide-react';
-import { CheckCheck, ChevronDown, ChevronRight, Lock, XCircle } from 'lucide-react';
+import { CheckCheck, ChevronDown, ChevronRight, XCircle } from 'lucide-react';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -14,22 +14,19 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { useArrangements } from '@/hooks/useArrangements';
-import { useAttendanceDeadlines } from '@/hooks/useAttendanceDeadlines';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useAuth } from '@/hooks/useAuth';
 import { useMembers } from '@/hooks/useMembers';
 
 import { createLogger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/client';
-import { showError, showSuccess, showWarning } from '@/lib/toast';
+import { showError, showSuccess } from '@/lib/toast';
 import { cn, getPartLabel, getTestAccountPart, isTestAccount } from '@/lib/utils';
 
 import { Database } from '@/types/database.types';
 
 import AttendanceFilters from './AttendanceFilters';
 import AttendanceSummary from './AttendanceSummary';
-import DeadlineStatusBar from './DeadlineStatusBar';
 import MemberChip from './MemberChip';
 
 const logger = createLogger({ prefix: 'AttendanceList' });
@@ -120,37 +117,6 @@ export default function AttendanceList({ date }: AttendanceListProps) {
     date: dateStr,
   });
 
-  // 마감 상태 조회
-  const {
-    data: deadlines,
-    isLoading: deadlinesLoading,
-    refetch: refetchDeadlines,
-  } = useAttendanceDeadlines(dateStr);
-
-  // 해당 날짜의 자리배치표 존재 여부 확인
-  const { data: arrangementsData } = useArrangements({
-    startDate: dateStr,
-    endDate: dateStr,
-    limit: 1,
-  });
-  const hasArrangement = (arrangementsData?.data?.length ?? 0) > 0;
-
-  // 전체 마감 여부 (수정 가능 여부에 사용)
-  const isFullyClosed = deadlines?.isFullyClosed ?? false;
-  const canEditAfterClose = ['ADMIN', 'CONDUCTOR'].includes(profile?.role || '');
-  // 자리배치표가 생성된 경우에도 ADMIN/CONDUCTOR만 수정 가능
-  const _isLockedByArrangement = hasArrangement && !canEditAfterClose; // UI 피드백용 예비
-
-  // 마감된 파트 목록 계산
-  const closedParts = useMemo(() => {
-    if (!deadlines?.partDeadlines) return new Set<Part>();
-    return new Set(
-      (Object.entries(deadlines.partDeadlines) as [Part, unknown][])
-        .filter(([, deadline]) => deadline !== null)
-        .map(([part]) => part)
-    );
-  }, [deadlines]);
-
   const [activeTab, setActiveTab] = useState<'service' | 'practice'>('service');
   const [showAbsentOnly, setShowAbsentOnly] = useState(false);
 
@@ -171,7 +137,6 @@ export default function AttendanceList({ date }: AttendanceListProps) {
   const isLoading =
     membersLoading ||
     attendancesLoading ||
-    deadlinesLoading ||
     (profile?.role === 'PART_LEADER' && isPartLoading);
 
   const members = useMemo(() => membersData?.data || [], [membersData?.data]);
@@ -314,24 +279,9 @@ export default function AttendanceList({ date }: AttendanceListProps) {
   const handleSubmit = async () => {
     if (Object.keys(pendingChanges).length === 0) return;
 
-    // 마감된 파트의 변경사항 필터링 (ADMIN/CONDUCTOR는 제외)
-    const changesToSubmit = canEditAfterClose
-      ? pendingChanges
-      : Object.fromEntries(
-          Object.entries(pendingChanges).filter(([memberId]) => {
-            const member = members?.find((m) => m.id === memberId);
-            return member && !closedParts.has(member.part as Part);
-          })
-        );
-
-    if (Object.keys(changesToSubmit).length === 0) {
-      showWarning('저장할 변경사항이 없습니다. (마감된 파트의 변경사항은 저장할 수 없습니다)');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      const payload = Object.entries(changesToSubmit).map(([memberId, changes]) => {
+      const payload = Object.entries(pendingChanges).map(([memberId, changes]) => {
         const existing = attendances?.find((a) => a.member_id === memberId);
 
         const is_service_available =
@@ -359,16 +309,9 @@ export default function AttendanceList({ date }: AttendanceListProps) {
         throw new Error(errorData.error || 'Failed to save attendances');
       }
 
-      // 마감된 파트의 변경사항은 초기화되지 않고 남아있음을 알림
-      const skippedCount = Object.keys(pendingChanges).length - Object.keys(changesToSubmit).length;
       setPendingChanges({});
       queryClient.invalidateQueries({ queryKey: ['attendances'] });
-
-      if (skippedCount > 0) {
-        showWarning(`저장 완료! (마감된 파트의 ${skippedCount}건은 저장되지 않았습니다)`);
-      } else {
-        showSuccess('저장되었습니다.');
-      }
+      showSuccess('저장되었습니다.');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       logger.error('Failed to save attendances:', error);
@@ -389,18 +332,6 @@ export default function AttendanceList({ date }: AttendanceListProps) {
 
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
-  // 변경사항 중 마감된 파트의 대원이 있는지 확인
-  const closedPartChanges = useMemo(() => {
-    if (canEditAfterClose) return []; // ADMIN/CONDUCTOR는 제한 없음
-    return Object.keys(pendingChanges).filter((memberId) => {
-      const member = members?.find((m) => m.id === memberId);
-      return member && closedParts.has(member.part as Part);
-    });
-  }, [pendingChanges, members, closedParts, canEditAfterClose]);
-
-  const hasClosedPartChanges = closedPartChanges.length > 0;
-  const validChangesCount = Object.keys(pendingChanges).length - closedPartChanges.length;
-
   if (isLoading) {
     return (
       <div className="flex justify-center p-8">
@@ -417,16 +348,6 @@ export default function AttendanceList({ date }: AttendanceListProps) {
           {format(date, 'M월 d일 (E)', { locale: ko })} 출석 체크
         </h3>
       </div>
-
-      {/* 마감 현황 바 */}
-      <DeadlineStatusBar
-        date={dateStr}
-        deadlines={deadlines}
-        isLoading={deadlinesLoading}
-        userRole={profile?.role ?? undefined}
-        userPart={userPart as Part | null}
-        onRefetch={() => refetchDeadlines()}
-      />
 
       {/* 요약 프로그레스 바 */}
       <AttendanceSummary
@@ -489,9 +410,6 @@ export default function AttendanceList({ date }: AttendanceListProps) {
               const partAbsentCount = allPartMembers.length - partAttendingCount;
 
               const isExpanded = openParts[part];
-              // 파트별 마감 상태
-              const isPartClosed = closedParts.has(part);
-              const isPartEditable = canEditAfterClose || !isPartClosed;
 
               return (
                 <div
@@ -521,13 +439,6 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                       <span className="text-sm text-[var(--color-text-secondary)]">
                         {partAttendingCount}/{allPartMembers.length}명
                       </span>
-                      {/* 파트 마감 뱃지 */}
-                      {isPartClosed && !canEditAfterClose && (
-                        <span className="inline-flex items-center gap-0.5 rounded bg-[var(--color-text-tertiary)]/10 px-1.5 py-0.5 text-xs font-medium text-[var(--color-text-tertiary)]">
-                          <Lock className="h-3 w-3" />
-                          마감
-                        </span>
-                      )}
                     </div>
 
                     {partAbsentCount > 0 ? (
@@ -544,45 +455,35 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                   {/* 펼쳐진 내용 */}
                   {isExpanded && (
                     <div className="space-y-3 bg-[var(--color-background-primary)] p-4">
-                      {/* 빠른 액션 버튼들 - 파트 마감 시에도 숨김 */}
-                      {isPartEditable && !(isFullyClosed && !canEditAfterClose) && (
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectAllPart(part, true);
-                            }}
-                            className="h-auto px-2.5 py-1 text-xs text-[var(--color-success-600)] hover:bg-[var(--color-success-100)]"
-                          >
-                            <CheckCheck className="h-3.5 w-3.5" />
-                            전체 출석
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectAllPart(part, false);
-                            }}
-                            className="h-auto px-2.5 py-1 text-xs text-[var(--color-text-tertiary)] hover:bg-[var(--color-border-subtle)]"
-                          >
-                            <XCircle className="h-3.5 w-3.5" />
-                            전체 불참
-                          </Button>
-                        </div>
-                      )}
-
-                      {/* 파트 마감 안내 메시지 */}
-                      {!isPartEditable && (
-                        <div className="rounded-lg bg-[var(--color-background-secondary)] py-2 text-center text-xs text-[var(--color-text-tertiary)]">
-                          이 파트는 마감되어 수정할 수 없습니다. 수정이 필요하면 지휘자에게
-                          문의하세요.
-                        </div>
-                      )}
+                      {/* 빠른 액션 버튼들 */}
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectAllPart(part, true);
+                          }}
+                          className="h-auto px-2.5 py-1 text-xs text-[var(--color-success-600)] hover:bg-[var(--color-success-100)]"
+                        >
+                          <CheckCheck className="h-3.5 w-3.5" />
+                          전체 출석
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectAllPart(part, false);
+                          }}
+                          className="h-auto px-2.5 py-1 text-xs text-[var(--color-text-tertiary)] hover:bg-[var(--color-border-subtle)]"
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                          전체 불참
+                        </Button>
+                      </div>
 
                       {/* 칩 그리드 */}
                       <div className="flex flex-wrap gap-2">
@@ -600,10 +501,6 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                           const isAttending = pendingValue !== undefined ? pendingValue : dbValue;
                           const isChanged = pendingValue !== undefined && pendingValue !== dbValue;
 
-                          // 전체 마감 또는 파트 마감 시 수정 권한 없으면 비활성화
-                          const isDisabled =
-                            !isPartEditable || (isFullyClosed && !canEditAfterClose);
-
                           return (
                             <MemberChip
                               key={member.id}
@@ -615,7 +512,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                               }}
                               isAttending={isAttending}
                               isChanged={isChanged}
-                              disabled={isDisabled}
+                              disabled={false}
                               onToggle={() => handleToggle(member.id)}
                             />
                           );
@@ -663,12 +560,6 @@ export default function AttendanceList({ date }: AttendanceListProps) {
       {hasChanges && (
         <div className="animate-in slide-in-from-bottom-4 fixed right-0 bottom-20 left-0 z-40 px-4 duration-300 lg:bottom-6">
           <div className="mx-auto flex max-w-lg flex-col gap-2 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-background-primary)] p-3 shadow-lg">
-            {/* 마감된 파트 경고 */}
-            {hasClosedPartChanges && (
-              <p className="text-center text-xs text-[var(--color-warning-600)]">
-                마감된 파트의 {closedPartChanges.length}건은 저장되지 않습니다
-              </p>
-            )}
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
@@ -683,9 +574,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
               <Button
                 size="sm"
                 onClick={handleSubmit}
-                disabled={
-                  isSubmitting || (isFullyClosed && !canEditAfterClose) || validChangesCount === 0
-                }
+                disabled={isSubmitting}
                 className="flex-1"
               >
                 {isSubmitting ? (
@@ -693,7 +582,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                 ) : (
                   <Save className="mr-1.5 h-4 w-4" />
                 )}
-                저장 ({validChangesCount}건)
+                저장 ({Object.keys(pendingChanges).length}건)
               </Button>
             </div>
           </div>

@@ -1,4 +1,3 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -6,26 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createLogger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 
-import type { Database } from '@/types/database.types';
-
 const logger = createLogger({ prefix: 'AttendanceDetailAPI' });
-
-/**
- * 전체 마감 여부 확인 헬퍼 함수
- */
-async function checkFullDeadline(
-  supabase: SupabaseClient<Database>,
-  date: string
-): Promise<boolean> {
-  const { data } = await supabase
-    .from('attendance_deadlines')
-    .select('id')
-    .eq('date', date)
-    .is('part', null)
-    .single();
-
-  return data !== null;
-}
 
 // Attendance 수정 스키마
 const updateAttendanceSchema = z.object({
@@ -108,20 +88,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: '출석 기록 수정 권한이 없습니다' }, { status: 403 });
     }
 
-    // 마감 검증을 위해 기존 출석 레코드 조회
-    const { data: existingAttendance } = await supabase
-      .from('attendances')
-      .select('date')
-      .eq('id', id)
-      .single();
-
-    if (existingAttendance) {
-      const isFullyClosed = await checkFullDeadline(supabase, existingAttendance.date);
-      if (isFullyClosed && !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
-        return NextResponse.json({ error: '전체 마감되어 수정할 수 없습니다.' }, { status: 403 });
-      }
-    }
-
     const body = await request.json();
     const validatedData = updateAttendanceSchema.parse(body);
 
@@ -183,20 +149,6 @@ export async function DELETE(
     const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER'];
     if (!profile?.role || !allowedRoles.includes(profile.role)) {
       return NextResponse.json({ error: '출석 기록 삭제 권한이 없습니다' }, { status: 403 });
-    }
-
-    // 마감 검증을 위해 기존 출석 레코드 조회
-    const { data: existingAttendance } = await supabase
-      .from('attendances')
-      .select('date')
-      .eq('id', id)
-      .single();
-
-    if (existingAttendance) {
-      const isFullyClosed = await checkFullDeadline(supabase, existingAttendance.date);
-      if (isFullyClosed && !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
-        return NextResponse.json({ error: '전체 마감되어 삭제할 수 없습니다.' }, { status: 403 });
-      }
     }
 
     const { error } = await supabase.from('attendances').delete().eq('id', id);
