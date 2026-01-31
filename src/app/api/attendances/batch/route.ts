@@ -14,42 +14,6 @@ const logger = createLogger({ prefix: 'AttendancesBatch' });
 type Part = 'SOPRANO' | 'ALTO' | 'TENOR' | 'BASS' | 'SPECIAL';
 
 /**
- * 전체 마감 여부 확인 헬퍼 함수
- * @returns true if full deadline exists for the date
- */
-async function checkFullDeadline(
-  supabase: SupabaseClient<Database>,
-  date: string
-): Promise<boolean> {
-  const { data } = await supabase
-    .from('attendance_deadlines')
-    .select('id')
-    .eq('date', date)
-    .is('part', null)
-    .single();
-
-  return data !== null;
-}
-
-/**
- * 마감된 파트 목록 조회 헬퍼 함수
- * @returns Set of closed part names
- */
-async function getClosedParts(
-  supabase: SupabaseClient<Database>,
-  date: string
-): Promise<Set<Part>> {
-  const { data } = await supabase
-    .from('attendance_deadlines')
-    .select('part')
-    .eq('date', date)
-    .not('part', 'is', null);
-
-  if (!data) return new Set();
-  return new Set(data.map((d) => d.part as Part));
-}
-
-/**
  * 멤버 ID 목록에서 각 멤버의 파트 조회
  * @returns Map of member_id to part
  */
@@ -210,17 +174,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. 전체 마감 확인 (마감된 경우 ADMIN/CONDUCTOR만 수정 가능)
-    const isFullyClosed = await checkFullDeadline(supabase, targetDate);
-
-    if (isFullyClosed && !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
-      return NextResponse.json(
-        { error: '전체 마감되어 수정할 수 없습니다. CONDUCTOR 또는 ADMIN에게 문의하세요.' },
-        { status: 403 }
-      );
-    }
-
-    // 5. 자리배치표 존재 확인 (존재하면 ADMIN/CONDUCTOR만 수정 가능)
+    // 4. 자리배치표 존재 확인 (존재하면 ADMIN/CONDUCTOR만 수정 가능)
     const hasArrangement = await checkArrangementExists(supabase, targetDate);
 
     if (hasArrangement && !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
@@ -233,32 +187,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. 파트별 마감 확인 및 필터링 (ADMIN/CONDUCTOR는 제외)
+    // 5. PART_LEADER인 경우, 요청된 모든 멤버가 본인 파트인지 검증
     const memberIds = validatedData.attendances.map((a) => a.member_id);
     const memberParts = await getMemberParts(supabase, memberIds);
-    let attendancesToSave = validatedData.attendances;
-
-    if (!['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
-      const closedParts = await getClosedParts(supabase, targetDate);
-
-      if (closedParts.size > 0) {
-        // 마감된 파트의 대원 필터링
-        attendancesToSave = validatedData.attendances.filter((a) => {
-          const part = memberParts.get(a.member_id);
-          return part && !closedParts.has(part);
-        });
-
-        // 모든 대원이 마감된 파트에 속하는 경우 에러
-        if (attendancesToSave.length === 0) {
-          return NextResponse.json(
-            { error: '요청한 모든 대원이 마감된 파트에 속합니다. 저장할 수 없습니다.' },
-            { status: 403 }
-          );
-        }
-      }
-    }
-
-    // 6. PART_LEADER인 경우, 요청된 모든 멤버가 본인 파트인지 검증
+    const attendancesToSave = validatedData.attendances;
     if (leaderPart) {
       const invalidMembers = attendancesToSave.filter((a) => {
         const part = memberParts.get(a.member_id);
@@ -293,9 +225,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 파트별 마감으로 스킵된 건수 계산
-    const skippedCount = validatedData.attendances.length - attendancesToSave.length;
-
     // 성공 응답
     return NextResponse.json(
       {
@@ -304,7 +233,6 @@ export async function POST(request: NextRequest) {
         summary: {
           total: validatedData.attendances.length,
           succeeded: data?.length || 0,
-          skipped: skippedCount, // 마감된 파트로 인해 스킵된 건수
           failed: attendancesToSave.length - (data?.length || 0),
         },
       },
@@ -385,25 +313,6 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = batchUpdateSchema.parse(body);
-
-    // 마감 검증을 위해 기존 출석 레코드 조회
-    const attendanceIds = validatedData.updates.map((u) => u.id);
-    const { data: existingAttendances } = await supabase
-      .from('attendances')
-      .select('id, date')
-      .in('id', attendanceIds);
-
-    // 각 날짜별 전체 마감 확인
-    const uniqueDates = [...new Set(existingAttendances?.map((a) => a.date) || [])];
-    for (const date of uniqueDates) {
-      const isFullyClosed = await checkFullDeadline(supabase, date);
-      if (isFullyClosed && !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
-        return NextResponse.json(
-          { error: `${date} 날짜가 전체 마감되어 수정할 수 없습니다.` },
-          { status: 403 }
-        );
-      }
-    }
 
     // 각 업데이트를 병렬로 처리
     const updatePromises = validatedData.updates.map(async ({ id, ...updateData }) => {

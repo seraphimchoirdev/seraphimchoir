@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-01-31
+- [x] **fix(csp): localhost용 connect-src 추가로 로컬 개발 CSP 차단 해결**
+  - 커밋: `a5c7429`
+
 - [x] **refactor(dashboard): MyRecentVotes 컴포넌트 및 관련 코드 제거**
   - 커밋: `36e6c69`
 
