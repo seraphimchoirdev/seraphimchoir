@@ -125,6 +125,7 @@ const SeatSlot = memo(function SeatSlot({
     >
       <button
         type="button"
+        data-seat-slot
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         className={cn(
