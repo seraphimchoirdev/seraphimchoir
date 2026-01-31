@@ -64,45 +64,51 @@ export function useImageGeneration(
    */
   const captureToBlob = useCallback(
     async (element: HTMLElement): Promise<Blob> => {
-      // html-to-image로 PNG Data URL 생성
-      const dataUrl = await toPng(element, {
-        pixelRatio: scale,
-        backgroundColor,
-        cacheBust: true,
-        // 외부 폰트 및 이미지 처리
-        includeQueryParams: true,
-        // 한글 폰트 렌더링 문제 해결을 위한 시스템 폰트 지정
-        style: {
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Malgun Gothic", "맑은 고딕", sans-serif',
-        },
-        // 외부 폰트 로딩 건너뛰기 (CSP 정책으로 인해 cdn.jsdelivr.net 등 외부 폰트 로딩 차단됨)
-        // 시스템 폰트를 사용하여 렌더링
-        skipFonts: true,
-        // data-capture-ignore 속성을 가진 요소 제외 (인라인 컨트롤 등)
-        filter: (node) => {
-          if (node instanceof HTMLElement && node.dataset.captureIgnore !== undefined) {
-            return false;
-          }
-          return true;
-        },
-      });
+      // 캡처 모드 활성화: CSS로 빈 좌석 테두리 숨김
+      element.classList.add('capture-active');
+      try {
+        // html-to-image로 PNG Data URL 생성
+        const dataUrl = await toPng(element, {
+          pixelRatio: scale,
+          backgroundColor,
+          cacheBust: true,
+          // 외부 폰트 및 이미지 처리
+          includeQueryParams: true,
+          // 한글 폰트 렌더링 문제 해결을 위한 시스템 폰트 지정
+          style: {
+            fontFamily:
+              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Malgun Gothic", "맑은 고딕", sans-serif',
+          },
+          // 외부 폰트 로딩 건너뛰기 (CSP 정책으로 인해 cdn.jsdelivr.net 등 외부 폰트 로딩 차단됨)
+          // 시스템 폰트를 사용하여 렌더링
+          skipFonts: true,
+          // data-capture-ignore 속성을 가진 요소 제외 (인라인 컨트롤 등)
+          filter: (node) => {
+            if (node instanceof HTMLElement && node.dataset.captureIgnore !== undefined) {
+              return false;
+            }
+            return true;
+          },
+        });
 
-      // Data URL을 Blob으로 변환 (fetch 사용 시 CSP connect-src 위반 가능)
-      // Base64 직접 디코딩 방식으로 CSP 우회
-      const base64Data = dataUrl.split(',')[1];
-      const binaryString = atob(base64Data);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
+        // Data URL을 Blob으로 변환 (fetch 사용 시 CSP connect-src 위반 가능)
+        // Base64 직접 디코딩 방식으로 CSP 우회
+        const base64Data = dataUrl.split(',')[1];
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'image/png' });
+
+        if (!blob) {
+          throw new Error('이미지 생성에 실패했습니다');
+        }
+
+        return blob;
+      } finally {
+        element.classList.remove('capture-active');
       }
-      const blob = new Blob([bytes], { type: 'image/png' });
-
-      if (!blob) {
-        throw new Error('이미지 생성에 실패했습니다');
-      }
-
-      return blob;
     },
     [scale, backgroundColor]
   );

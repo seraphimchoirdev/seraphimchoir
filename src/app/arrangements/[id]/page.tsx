@@ -1010,13 +1010,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       />
 
       {/* 긴급 변동 요약 배너 (SHARED 상태에서 변동 있을 때만 표시) */}
-      {isEmergencyMode && <EmergencyChangesBanner />}
+      {isEmergencyMode && <div data-print-hide><EmergencyChangesBanner /></div>}
 
       {/* 데스크톱: 3패널 가로 배치 (640px 이상 - Z Fold 펼침 대응) */}
       <div className="hidden flex-1 gap-4 overflow-hidden p-4 sm:flex">
         {/* 워크플로우 패널 - 2단 접기 (Expanded ↔ Compact) */}
         {panelMode === 'expanded' ? (
-          <div className="animate-in slide-in-from-left relative w-80 flex-shrink-0 duration-300">
+          <div data-print-hide className="animate-in slide-in-from-left relative w-80 flex-shrink-0 duration-300">
             <WorkflowPanel
               renderStepContent={renderWorkflowStepContent}
               totalMembers={totalMembers}
@@ -1038,26 +1038,30 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             </Button>
           </div>
         ) : (
-          <CompactWorkflowStrip
-            currentStep={workflow.currentStep}
-            completedSteps={workflow.completedSteps}
-            canAccessStep={canAccessStep}
-            onStepClick={goToStep}
-            onExpand={() => {
-              setPanelMode('expanded');
-              userOverridePanelRef.current = true;
-            }}
-          />
+          <div data-print-hide>
+            <CompactWorkflowStrip
+              currentStep={workflow.currentStep}
+              completedSteps={workflow.completedSteps}
+              canAccessStep={canAccessStep}
+              onStepClick={goToStep}
+              onExpand={() => {
+                setPanelMode('expanded');
+                userOverridePanelRef.current = true;
+              }}
+            />
+          </div>
         )}
 
         {/* Member Sidebar - 수동 배치 조정 단계(4단계)에서만 표시 */}
         {showMemberSidebar && (
-          <MemberSidebar
-            date={arrangement.date}
-            hidePlaced={true}
-            isEmergencyMode={isEmergencyMode}
-            arrangementId={id}
-          />
+          <div data-print-hide>
+            <MemberSidebar
+              date={arrangement.date}
+              hidePlaced={true}
+              isEmergencyMode={isEmergencyMode}
+              arrangementId={id}
+            />
+          </div>
         )}
 
         {/* Seats Grid */}
@@ -1078,12 +1082,14 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       </div>
 
       {/* Compact 모드용 플로팅 액션 바 (데스크톱에서만) */}
-      <WorkflowFloatingActionBar
-        currentStep={workflow.currentStep}
-        isVisible={panelMode === 'compact'}
-      >
-        {renderFloatingStepContent(workflow.currentStep)}
-      </WorkflowFloatingActionBar>
+      <div data-print-hide>
+        <WorkflowFloatingActionBar
+          currentStep={workflow.currentStep}
+          isVisible={panelMode === 'compact'}
+        >
+          {renderFloatingStepContent(workflow.currentStep)}
+        </WorkflowFloatingActionBar>
+      </div>
 
       {/* 모바일: 상단 그리드 + 하단 대원 목록 (Split View, 640px 미만) */}
       <div className="relative flex flex-1 flex-col overflow-hidden sm:hidden">
@@ -1106,6 +1112,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
           {/* 그리드 설정 버튼 (Floating) */}
           <Button
+            data-print-hide
             onClick={() => setShowSettingsSheet(true)}
             variant="outline"
             size="icon"
@@ -1118,6 +1125,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         {/* 하단: 대원 목록 (Collapsible) - 수동 배치 조정 단계(4단계)에서만 표시 */}
         {showMemberSidebar && (
           <div
+            data-print-hide
             className={`z-20 flex flex-col border-t border-[var(--color-border-default)] bg-[var(--color-surface)] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-all duration-300 ease-in-out ${
               showMobileSidebar ? 'h-[320px]' : 'h-[40px]'
             }`}

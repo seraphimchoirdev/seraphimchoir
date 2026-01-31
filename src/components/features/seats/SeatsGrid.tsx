@@ -100,6 +100,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                   {/* absolute 배치로 좌석 행 이동과 독립적으로 고정 위치 유지 */}
                   {showInlineOffsetControls && (
                     <div
+                      data-print-hide
                       className="absolute z-10 flex items-center"
                       style={{
                         // 컨트롤을 좌석 행 왼쪽에 고정 배치
@@ -115,6 +116,11 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                       />
                     </div>
                   )}
+
+                  {/* 열 라벨 (줄 왼쪽) */}
+                  <div className="mr-1.5 flex w-5 flex-shrink-0 items-center justify-center text-[10px] font-semibold text-[var(--color-text-tertiary)] sm:mr-2 sm:w-7 sm:text-xs">
+                    {rowData.rowIndex}열
+                  </div>
 
                   {/* 좌석 행 */}
                   {/*
@@ -163,12 +169,15 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                     ))}
                   </div>
 
-                  {/* 캡처 모드: 행별 인원수 표시 (오른쪽) */}
-                  {showCaptureInfo && (
-                    <div className="ml-2 text-sm font-medium whitespace-nowrap text-gray-600 sm:ml-3 sm:text-base">
-                      {Object.values(assignments).filter((a) => a.row === rowData.rowIndex).length}
-                    </div>
-                  )}
+                  {/* 행별 배치 인원수 (오른쪽) — 배치된 인원이 있을 때만 표시 */}
+                  {(() => {
+                    const count = Object.values(assignments).filter((a) => a.row === rowData.rowIndex).length;
+                    return count > 0 ? (
+                      <div className="ml-1.5 flex w-5 flex-shrink-0 items-center justify-center text-[10px] font-semibold text-[var(--color-text-tertiary)] sm:ml-2 sm:w-7 sm:text-xs">
+                        {count}
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               ))}
           </div>
@@ -185,7 +194,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
         </div>
 
         {/* 안내 메시지 (캡처 영역 밖) */}
-        <div className="mx-auto mt-2 w-fit space-y-1 px-4 text-center sm:mt-4">
+        <div data-print-hide className="mx-auto mt-2 w-fit space-y-1 px-4 text-center sm:mt-4">
           <p className="text-xs text-[var(--color-text-tertiary)] sm:text-sm">
             * 대원을 클릭하여 선택한 후, 좌석을 클릭하여 배치하세요
           </p>

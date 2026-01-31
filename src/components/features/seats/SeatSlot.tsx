@@ -125,6 +125,7 @@ const SeatSlot = memo(function SeatSlot({
     >
       <button
         type="button"
+        data-seat-slot
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         className={cn(
@@ -152,18 +153,19 @@ const SeatSlot = memo(function SeatSlot({
             'border-solid border-[var(--color-border-default)] bg-[var(--color-background-primary)]'
         )}
         role="button"
-        aria-label={`좌석 ${row}행 ${col}열${assignment ? ` - ${assignment.memberName} 배치됨` : ''}`}
+        aria-label={`${row}열 ${col}번${assignment ? ` - ${assignment.memberName} 배치됨` : ''}`}
         aria-pressed={isSelectedSeat}
       >
         <span
           className={cn(
-            'pointer-events-none absolute top-0.5 left-0.5 text-[9px] sm:top-1 sm:left-1 sm:text-[10px]',
+            'pointer-events-none absolute top-0 left-0.5 z-10 leading-none',
+            'text-[10px] sm:top-0.5 sm:left-1 sm:text-[11px]',
             isOccupied
-              ? 'text-white/60 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]'
-              : 'text-[var(--color-text-secondary)]'
+              ? 'rounded-md bg-black/30 px-1 font-medium text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]'
+              : 'text-[var(--color-text-tertiary)]'
           )}
         >
-          {row}-{col}
+          {col}
         </span>
 
         {assignment ? (
@@ -257,7 +259,7 @@ const GridClickableMember = memo(function GridClickableMember({
             : '더블 클릭하여 제거'
       }
       role="presentation"
-      aria-label={`${name} - ${part} 파트, ${row}행 ${col}열 배치됨${isRowLeader ? ' (줄반장)' : ''}${changeHighlight ? ` (${changeHighlight === 'ADDED' ? '새로 추가됨' : '이동됨'})` : ''}`}
+      aria-label={`${name} - ${part} 파트, ${row}열 ${col}번 배치됨${isRowLeader ? ' (줄반장)' : ''}${changeHighlight ? ` (${changeHighlight === 'ADDED' ? '새로 추가됨' : '이동됨'})` : ''}`}
     >
       <span
         className="max-w-full px-0.5 text-center text-xs leading-tight font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] sm:text-sm lg:text-base"

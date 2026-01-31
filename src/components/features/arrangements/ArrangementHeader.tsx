@@ -9,6 +9,7 @@ import {
   Download,
   Loader2,
   Lock,
+  Printer,
   Redo2,
   RotateCcw,
   Save,
@@ -224,6 +225,16 @@ export default function ArrangementHeader({
       }
     }
   }, [arrangement.date, title, shareImage, getActiveCaptureRef]);
+
+  const handlePrint = useCallback(() => {
+    const captureRef = getActiveCaptureRef();
+    if (!captureRef?.current) return;
+    captureRef.current.classList.add('capture-active');
+    requestAnimationFrame(() => {
+      window.print();
+      captureRef.current?.classList.remove('capture-active');
+    });
+  }, [getActiveCaptureRef]);
 
   // Sync local state if props change (e.g. refetch)
   useEffect(() => {
@@ -557,7 +568,7 @@ export default function ArrangementHeader({
   }, [arrangement.id, updateArrangement, router, saveSharedSnapshot]);
 
   return (
-    <div className="flex flex-col items-start justify-between gap-3 border-b border-[var(--color-border-default)] bg-[var(--color-surface)] p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
+    <div data-print-hide className="flex flex-col items-start justify-between gap-3 border-b border-[var(--color-border-default)] bg-[var(--color-surface)] p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
       <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
         <Button
           variant="ghost"
@@ -696,6 +707,14 @@ export default function ArrangementHeader({
                   클립보드 복사
                 </DropdownMenuItem>
               )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handlePrint}
+                className="cursor-pointer"
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                인쇄하기
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}

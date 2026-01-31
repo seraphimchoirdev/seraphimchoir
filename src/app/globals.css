@@ -464,3 +464,52 @@ body {
     border-left-width: 6px;
   }
 }
+
+/* === 이미지 캡처 모드 === */
+[data-capture-target].capture-active [data-seat-slot] {
+  border-color: transparent !important;
+  background-color: transparent !important;
+}
+
+/* === 인쇄 모드 === */
+@media print {
+  @page {
+    margin: 10mm;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* h-screen 등 화면 레이아웃 제약 해제 */
+  .h-screen {
+    height: auto !important;
+  }
+
+  /* overflow 제약 해제 (그리드가 잘리지 않도록) */
+  .overflow-hidden,
+  .overflow-auto {
+    overflow: visible !important;
+  }
+
+  /* 인쇄 시 숨길 요소 */
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  /* 데스크톱 레이아웃 강제 표시 (인쇄는 항상 데스크톱 그리드 사용) */
+  .sm\:flex {
+    display: flex !important;
+  }
+  .sm\:hidden {
+    display: none !important;
+  }
+
+  /* 좌석 외곽 테두리 숨김 (이미지 캡처와 동일) */
+  [data-capture-target] [data-seat-slot] {
+    border-color: transparent !important;
+    background-color: transparent !important;
+  }
+}
