@@ -14,9 +14,16 @@ const logger = createLogger({ prefix: 'AuthCallback' });
  * 3. 대원 연결 상태에 따라 적절한 페이지로 리다이렉트
  */
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const requestUrl = new URL(request.url);
+  const searchParams = requestUrl.searchParams;
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/dashboard';
+
+  // Next.js가 0.0.0.0으로 바인딩된 경우 request.url의 origin이 http://0.0.0.0:3000이 됨
+  // 실제 클라이언트가 접속한 호스트를 사용하도록 Host 헤더에서 origin 구성
+  const host = request.headers.get('host') ?? requestUrl.host;
+  const protocol = request.headers.get('x-forwarded-proto') ?? requestUrl.protocol.replace(':', '');
+  const origin = `${protocol}://${host}`;
 
   const supabase = await createClient();
 
