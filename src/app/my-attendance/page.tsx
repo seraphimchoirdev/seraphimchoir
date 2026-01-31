@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   Calendar,
   CheckCircle,
-  Clock,
   LogIn,
   LogOut,
   Loader2,
@@ -23,13 +22,6 @@ import { Button } from '@/components/ui/button';
 import { useAttendances, useCreateAttendance, useUpdateAttendance } from '@/hooks/useAttendances';
 import { useAuth } from '@/hooks/useAuth';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
-import {
-  getServiceDeadline,
-  getPracticeDeadline,
-  isDeadlinePassed,
-  getTimeUntilDeadline,
-} from '@/hooks/useVoteDeadlines';
-
 import { createLogger } from '@/lib/logger';
 import { showError } from '@/lib/toast';
 import { PracticeAttendanceType } from '@/types/database.types';
@@ -39,10 +31,6 @@ const logger = createLogger({ prefix: 'MyAttendancePage' });
 interface NextSundayService {
   date: string;
   service_type: string;
-  serviceDeadline: Date;
-  practiceDeadline: Date;
-  isServiceDeadlinePassed: boolean;
-  isPracticeDeadlinePassed: boolean;
   attendance?: {
     id: string;
     is_service_available: boolean;
@@ -134,16 +122,10 @@ export default function MyAttendancePage() {
     if (!nextService) return null;
 
     const attendance = myAttendances?.find((a) => a.date === nextService.date);
-    const serviceDeadline = getServiceDeadline(nextService.date);
-    const practiceDeadline = getPracticeDeadline(nextService.date);
 
     return {
       date: nextService.date,
       service_type: nextService.service_type as string,
-      serviceDeadline,
-      practiceDeadline,
-      isServiceDeadlinePassed: isDeadlinePassed(serviceDeadline),
-      isPracticeDeadlinePassed: isDeadlinePassed(practiceDeadline),
       attendance: attendance
         ? {
             id: attendance.id,
@@ -157,11 +139,6 @@ export default function MyAttendancePage() {
 
   const handleServiceVote = async (value: boolean) => {
     if (!linkedMemberId || !nextSundayService) return;
-
-    if (nextSundayService.isServiceDeadlinePassed) {
-      showError('투표 마감 시간이 지났습니다.');
-      return;
-    }
 
     try {
       if (nextSundayService.attendance) {
@@ -186,11 +163,6 @@ export default function MyAttendancePage() {
 
   const handlePracticeVote = async (status: PracticeAttendanceType) => {
     if (!linkedMemberId || !nextSundayService) return;
-
-    if (nextSundayService.isPracticeDeadlinePassed) {
-      showError('투표 마감 시간이 지났습니다.');
-      return;
-    }
 
     // is_practice_attended는 ABSENT가 아니면 true
     const isPracticeAttended = status !== 'ABSENT';
@@ -247,14 +219,6 @@ export default function MyAttendancePage() {
 
   const isLoading = schedulesLoading || attendancesLoading;
 
-  // 마감 시간 포맷팅 함수
-  const formatDeadline = (deadline: Date) => {
-    const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][deadline.getDay()];
-    const hours = deadline.getHours().toString().padStart(2, '0');
-    const minutes = deadline.getMinutes().toString().padStart(2, '0');
-    return `${dayOfWeek}요일 ${hours}:${minutes}`;
-  };
-
   return (
     <AppShell>
       <div className="min-h-screen bg-[var(--color-background-tertiary)]">
@@ -305,33 +269,6 @@ export default function MyAttendancePage() {
                     </span>
                   </div>
 
-                  <div className="mb-3 flex items-center gap-1 text-sm text-[var(--color-text-tertiary)]">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      마감: {formatDeadline(nextSundayService.serviceDeadline)}
-                      {nextSundayService.isServiceDeadlinePassed && (
-                        <span className="ml-2 text-red-500">(마감됨)</span>
-                      )}
-                    </span>
-                  </div>
-
-                  {!nextSundayService.isServiceDeadlinePassed && (
-                    <div className="mb-3 text-xs text-[var(--color-text-tertiary)]">
-                      {(() => {
-                        const timeUntil = getTimeUntilDeadline(
-                          nextSundayService.serviceDeadline.toISOString()
-                        );
-                        if (timeUntil.isPassed) return null;
-                        return (
-                          <span>
-                            마감까지 {timeUntil.days > 0 && `${timeUntil.days}일 `}
-                            {timeUntil.hours}시간 {timeUntil.minutes}분 남음
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  )}
-
                   <div className="flex gap-2">
                     <Button
                       size="sm"
@@ -342,7 +279,6 @@ export default function MyAttendancePage() {
                       }
                       onClick={() => handleServiceVote(true)}
                       disabled={
-                        nextSundayService.isServiceDeadlinePassed ||
                         createMutation.isPending ||
                         updateMutation.isPending
                       }
@@ -364,7 +300,6 @@ export default function MyAttendancePage() {
                       }
                       onClick={() => handleServiceVote(false)}
                       disabled={
-                        nextSundayService.isServiceDeadlinePassed ||
                         createMutation.isPending ||
                         updateMutation.isPending
                       }
@@ -389,33 +324,6 @@ export default function MyAttendancePage() {
                     </span>
                   </div>
 
-                  <div className="mb-3 flex items-center gap-1 text-sm text-[var(--color-text-tertiary)]">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      마감: {formatDeadline(nextSundayService.practiceDeadline)}
-                      {nextSundayService.isPracticeDeadlinePassed && (
-                        <span className="ml-2 text-red-500">(마감됨)</span>
-                      )}
-                    </span>
-                  </div>
-
-                  {!nextSundayService.isPracticeDeadlinePassed && (
-                    <div className="mb-3 text-xs text-[var(--color-text-tertiary)]">
-                      {(() => {
-                        const timeUntil = getTimeUntilDeadline(
-                          nextSundayService.practiceDeadline.toISOString()
-                        );
-                        if (timeUntil.isPassed) return null;
-                        return (
-                          <span>
-                            마감까지 {timeUntil.days > 0 && `${timeUntil.days}일 `}
-                            {timeUntil.hours}시간 {timeUntil.minutes}분 남음
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  )}
-
                   <div className="grid grid-cols-2 gap-2">
                     {PRACTICE_OPTIONS.map((option) => {
                       // 현재 선택된 상태 확인 (practice_status가 없으면 is_practice_attended로 추정)
@@ -433,7 +341,6 @@ export default function MyAttendancePage() {
                           variant="outline"
                           onClick={() => handlePracticeVote(option.value)}
                           disabled={
-                            nextSundayService.isPracticeDeadlinePassed ||
                             createMutation.isPending ||
                             updateMutation.isPending
                           }
@@ -459,9 +366,8 @@ export default function MyAttendancePage() {
               <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-4">
                 <h3 className="mb-2 font-medium text-[var(--color-text-primary)]">안내</h3>
                 <ul className="space-y-1 text-sm text-[var(--color-text-secondary)]">
-                  <li>• 등단 가능 여부는 토요일 15:00까지 투표해주세요.</li>
-                  <li>• 연습 참석 여부는 주일 09:00까지 투표해주세요.</li>
-                  <li>• 마감 후에는 파트장이나 관리자에게 문의해주세요.</li>
+                  <li>• 등단 가능 여부와 연습 참석 여부를 미리 투표해주세요.</li>
+                  <li>• 변경이 필요하면 언제든 다시 투표할 수 있습니다.</li>
                   <li>• 선택하지 않으면 등단은 &quot;가능&quot;, 연습은 &quot;불참&quot;으로 처리됩니다.</li>
                   <li>• 연습에 부분 참석하는 경우 &quot;앞부분만&quot; 또는 &quot;뒷부분만&quot;을 선택해주세요.</li>
                 </ul>
