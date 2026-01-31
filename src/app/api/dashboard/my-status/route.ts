@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { formatDate, getNextSunday } from '@/lib/dashboard-context';
+import { getNextSunday } from '@/lib/dashboard-context';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import type { ArrangementStatus } from '@/types/database.types';
 
@@ -19,12 +19,6 @@ export interface MySeat {
   isRowLeader: boolean;
 }
 
-export interface RecentVote {
-  date: string;
-  isAvailable: boolean;
-  notes: string | null;
-}
-
 export interface MyDashboardStatusResponse {
   isLinked: boolean;
   linkStatus: 'pending' | 'approved' | 'rejected' | null;
@@ -32,14 +26,13 @@ export interface MyDashboardStatusResponse {
   linkedMemberPart: string | null;
   myVote: MyVote | null;
   mySeat: MySeat | null;
-  recentVotes: RecentVote[];
   nextServiceDate: string;
 }
 
 /**
  * 대원용 대시보드 상태 API
  *
- * 내 투표 여부, 내 좌석 위치, 최근 투표 이력을 반환합니다.
+ * 내 투표 여부, 내 좌석 위치를 반환합니다.
  */
 export async function GET() {
   try {
@@ -78,7 +71,6 @@ export async function GET() {
         linkedMemberPart: null,
         myVote: null,
         mySeat: null,
-        recentVotes: [],
         nextServiceDate: nextSunday,
       };
       return NextResponse.json(response);
@@ -137,21 +129,6 @@ export async function GET() {
       }
     }
 
-    // 3. 최근 투표 이력 (최근 4건)
-    const { data: recentAttendances } = await adminSupabase
-      .from('attendances')
-      .select('date, is_service_available, notes')
-      .eq('member_id', linkedMemberId)
-      .order('date', { ascending: false })
-      .limit(4);
-
-    const recentVotes: RecentVote[] =
-      recentAttendances?.map((a) => ({
-        date: a.date,
-        isAvailable: a.is_service_available,
-        notes: a.notes,
-      })) || [];
-
     const response: MyDashboardStatusResponse = {
       isLinked: true,
       linkStatus,
@@ -159,7 +136,6 @@ export async function GET() {
       linkedMemberPart: member?.part || null,
       myVote,
       mySeat,
-      recentVotes,
       nextServiceDate: nextSunday,
     };
 

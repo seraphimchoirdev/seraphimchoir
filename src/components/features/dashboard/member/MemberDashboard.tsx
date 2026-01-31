@@ -8,7 +8,6 @@ import useMyDashboardStatus from '@/hooks/dashboard/useMyDashboardStatus';
 import UpcomingService from '../common/UpcomingService';
 import MemberLinkBanner from './MemberLinkBanner';
 import MySeatCard from './MySeatCard';
-import MyRecentVotes from './MyRecentVotes';
 import VoteActionCard from './VoteActionCard';
 
 /**
@@ -19,7 +18,6 @@ import VoteActionCard from './VoteActionCard';
  * - 출석 투표 행동 유도
  * - 내 좌석 위치 (배치표 공유 후)
  * - 다음 예배 정보
- * - 내 최근 출석 이력
  */
 export function MemberDashboard() {
   const { profile } = useAuth();
@@ -109,22 +107,17 @@ export function MemberDashboard() {
       {/* 내 좌석 (배치표 공유 후) */}
       {showSeatCard && myStatus.mySeat && <MySeatCard seat={myStatus.mySeat} />}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* 다음 예배 정보 */}
-        {context?.nextServiceInfo && (
-          <UpcomingService
-            date={context.nextServiceInfo.date}
-            serviceType={context.nextServiceInfo.serviceType}
-            hymnName={context.nextServiceInfo.hymnName}
-            hoodColor={context.nextServiceInfo.hoodColor}
-            serviceStartTime={context.nextServiceInfo.serviceStartTime}
-            prePracticeStartTime={context.nextServiceInfo.prePracticeStartTime}
-          />
-        )}
-
-        {/* 내 최근 출석 */}
-        {myStatus.recentVotes.length > 0 && <MyRecentVotes votes={myStatus.recentVotes} />}
-      </div>
+      {/* 다음 예배 정보 */}
+      {context?.nextServiceInfo && (
+        <UpcomingService
+          date={context.nextServiceInfo.date}
+          serviceType={context.nextServiceInfo.serviceType}
+          hymnName={context.nextServiceInfo.hymnName}
+          hoodColor={context.nextServiceInfo.hoodColor}
+          serviceStartTime={context.nextServiceInfo.serviceStartTime}
+          prePracticeStartTime={context.nextServiceInfo.prePracticeStartTime}
+        />
+      )}
     </div>
   );
 }
@@ -133,10 +126,7 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-6">
       <Skeleton className="h-24 rounded-lg" />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Skeleton className="h-56 rounded-lg" />
-        <Skeleton className="h-40 rounded-lg" />
-      </div>
+      <Skeleton className="h-56 rounded-lg" />
     </div>
   );
 }
