@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-01-31 | fix(csp): localhost용 connect-src 추가로 로컬 개발 CSP 차단 해결 |
 | 2026-01-31 | refactor(dashboard): MyRecentVotes 컴포넌트 및 관련 코드 제거 |
 | 2026-01-31 | fix(auth): 모바일 카카오 OAuth 리다이렉션 수정 |
 | 2026-01-31 | docs: 자동 생성 커밋 로그 업데이트 |
