@@ -121,7 +121,6 @@ export async function GET() {
 
     let totalAvailable = 0;
     let totalUnavailable = 0;
-    let totalNoResponse = 0;
 
     activeMembers?.forEach((member) => {
       const part = member.part;
@@ -131,11 +130,13 @@ export async function GET() {
 
       partCounts[part].total++;
 
-      const attendance = attendanceMap.get(member.id);
-      if (attendance === undefined) {
-        partCounts[part].noResponse++;
-        totalNoResponse++;
-      } else if (attendance) {
+      // 레코드 없음 = 기본 출석 (출석 관리 페이지와 동일한 로직)
+      // 파트장이 불참자만 해제하므로 레코드 없는 대원은 출석으로 간주
+      const isAvailable = attendanceMap.has(member.id)
+        ? attendanceMap.get(member.id)
+        : true;
+
+      if (isAvailable) {
         partCounts[part].available++;
         totalAvailable++;
       } else {
@@ -159,7 +160,7 @@ export async function GET() {
         totalMembers: activeMembers?.length || 0,
         availableCount: totalAvailable,
         unavailableCount: totalUnavailable,
-        noResponseCount: totalNoResponse,
+        noResponseCount: 0,
         byPart: parts.map((part) => ({
           part,
           total: partCounts[part]?.total || 0,
