@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-01-31
+- [x] **fix(image-capture): inline style로 좌석 테두리 숨김 방식 변경**
+  - 커밋: `b17d069`
+
 - [x] **fix(hooks): 문서 자동 업데이트 훅 개선 — amend 방식으로 unstaged 잔여물 제거**
   - 커밋: `eddac5d`
 

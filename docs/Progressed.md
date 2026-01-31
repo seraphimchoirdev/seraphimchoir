@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-01-31 | fix(image-capture): inline style로 좌석 테두리 숨김 방식 변경 |
 | 2026-01-31 | fix(hooks): 문서 자동 업데이트 훅 개선 — amend 방식으로 unstaged 잔여물 제거 |
 | 2026-01-31 | docs: 자동 생성 문서 및 핸드오프 매니페스트 업데이트 |
 | 2026-01-31 | feat(arrangements): 인쇄 모드 추가 및 isCaptureMode 버그 수정 |

@@ -227,14 +227,8 @@ export default function ArrangementHeader({
   }, [arrangement.date, title, shareImage, getActiveCaptureRef]);
 
   const handlePrint = useCallback(() => {
-    const captureRef = getActiveCaptureRef();
-    if (!captureRef?.current) return;
-    captureRef.current.classList.add('capture-active');
-    requestAnimationFrame(() => {
-      window.print();
-      captureRef.current?.classList.remove('capture-active');
-    });
-  }, [getActiveCaptureRef]);
+    window.print();
+  }, []);
 
   // Sync local state if props change (e.g. refetch)
   useEffect(() => {
