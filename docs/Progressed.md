@@ -218,6 +218,8 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-01-31 | fix(arrangements): 레거시 CONFIRMED/SHARED 배치표 이미지 내보내기 드롭다운 미표시 수정 |
+| 2026-01-31 | docs: 자동 생성 문서 및 핸드오프 매니페스트 업데이트 |
 | 2026-01-31 | fix(seats): 좌석 슬롯 이름 표시 시 truncate 대신 줄바꿈 처리 |
 | 2026-01-31 | feat(arrangements): CONFIRMED → SHARED 긴급 수정 복귀 기능 추가 |
 | 2026-01-31 | fix(arrangements): 2부 예배 시간 오류 수정 및 7단계 이미지 내보내기 버튼 추가 |
