@@ -68,6 +68,12 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-01-31
+- [x] **feat(arrangements): 인쇄 모드 추가 및 isCaptureMode 버그 수정**
+  - 커밋: `49c39cf`
+
+- [x] **docs: 자동 생성 문서 및 핸드오프 매니페스트 업데이트**
+  - 커밋: `d95d5fb`
+
 - [x] **fix(arrangements): 레거시 CONFIRMED/SHARED 배치표 이미지 내보내기 드롭다운 미표시 수정**
   - 커밋: `c1d1cce`
 
