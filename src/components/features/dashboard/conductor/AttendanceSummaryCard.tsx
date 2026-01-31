@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -41,10 +41,9 @@ const PART_LABELS: Record<string, string> = {
 export function AttendanceSummaryCard({ nextServiceDate, summary }: AttendanceSummaryCardProps) {
   const { totalMembers, availableCount, unavailableCount, noResponseCount, byPart } = summary;
 
-  // 출석률 계산
-  const responseCount = availableCount + unavailableCount;
+  // 출석률 계산 (전체 대원 대비 출석 가능 비율)
   const attendanceRate =
-    responseCount > 0 ? Math.round((availableCount / responseCount) * 100) : 0;
+    totalMembers > 0 ? Math.round((availableCount / totalMembers) * 100) : 0;
 
   return (
     <Card>
@@ -68,21 +67,11 @@ export function AttendanceSummaryCard({ nextServiceDate, summary }: AttendanceSu
           </div>
 
           {/* 상세 통계 */}
-          <div className="mt-3 flex gap-4 text-sm">
-            <div>
-              <span className="text-[var(--color-text-tertiary)]">미응답: </span>
-              <span
-                className={`font-medium ${noResponseCount > 0 ? 'text-amber-600' : 'text-[var(--color-text-secondary)]'}`}
-              >
-                {noResponseCount}명
-              </span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-tertiary)]">불참: </span>
-              <span className="font-medium text-[var(--color-text-secondary)]">
-                {unavailableCount}명
-              </span>
-            </div>
+          <div className="mt-3 text-sm">
+            <span className="text-[var(--color-text-tertiary)]">불참: </span>
+            <span className="font-medium text-[var(--color-text-secondary)]">
+              {unavailableCount}명
+            </span>
           </div>
         </div>
 
@@ -109,16 +98,9 @@ export function AttendanceSummaryCard({ nextServiceDate, summary }: AttendanceSu
         </div>
 
         {/* 액션 버튼 */}
-        <div className="flex gap-2">
-          <Button asChild variant="outline" className="flex-1">
-            <Link href="/attendances">출석 관리</Link>
-          </Button>
-          {noResponseCount > 0 && (
-            <Button variant="outline" size="icon" title="미응답자 알림 보내기">
-              <Bell className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        <Button asChild variant="outline" className="w-full">
+          <Link href="/attendances">출석 관리</Link>
+        </Button>
       </CardContent>
     </Card>
   );
