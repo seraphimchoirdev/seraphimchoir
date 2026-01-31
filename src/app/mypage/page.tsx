@@ -22,9 +22,13 @@ import { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
+import Link from 'next/link';
+
 import AppShell from '@/components/layout/AppShell';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useMyProfile, useUpdateMyProfile } from '@/hooks/useMyProfile';
@@ -116,9 +120,9 @@ export default function MyPage() {
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 먼저 대원 연결이 필요합니다.{' '}
-                <a href="/member-link" className="underline">
+                <Link href="/member-link" className="underline">
                   대원 연결 페이지로 이동
-                </a>
+                </Link>
               </AlertDescription>
             </Alert>
           </div>
@@ -333,12 +337,14 @@ export default function MyPage() {
                       </p>
                     </div>
                   </div>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setShowIOSGuide(false)}
-                    className="rounded-full p-2 transition-colors hover:bg-[var(--color-background-tertiary)]"
+                    className="rounded-full"
                   >
                     ✕
-                  </button>
+                  </Button>
                 </div>
                 <div className="space-y-4 p-4">
                   <div className="flex gap-4">
@@ -409,17 +415,16 @@ export default function MyPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* 키 입력 */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[var(--color-text-primary)]">
+                <Label>
                   키 (cm)
-                </label>
-                <input
+                </Label>
+                <Input
                   type="number"
                   value={heightCm}
                   onChange={(e) => setHeightCm(e.target.value)}
                   placeholder="예: 170"
                   min={100}
                   max={250}
-                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-background-primary)] px-4 py-3 text-[var(--color-text-primary)] focus:border-transparent focus:ring-2 focus:ring-[var(--color-primary)] focus:outline-none"
                 />
                 <div className="flex items-start gap-2 text-xs text-[var(--color-text-tertiary)]">
                   <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
@@ -429,14 +434,13 @@ export default function MyPage() {
 
               {/* 정대원 임명일 입력 */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[var(--color-text-primary)]">
+                <Label>
                   정대원 임명일
-                </label>
-                <input
+                </Label>
+                <Input
                   type="date"
                   value={regularMemberSince}
                   onChange={(e) => setRegularMemberSince(e.target.value)}
-                  className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-background-primary)] px-4 py-3 text-[var(--color-text-primary)] focus:border-transparent focus:ring-2 focus:ring-[var(--color-primary)] focus:outline-none"
                 />
                 <p className="text-xs text-[var(--color-text-tertiary)]">
                   정대원으로 임명된 날짜를 입력해주세요.

@@ -9,7 +9,6 @@ import usePendingApprovals from '@/hooks/dashboard/usePendingApprovals';
 import UpcomingService from '../common/UpcomingService';
 import MemberLinkBanner from '../member/MemberLinkBanner';
 import MySeatCard from '../member/MySeatCard';
-import MyRecentVotes from '../member/MyRecentVotes';
 import VoteActionCard from '../member/VoteActionCard';
 import EmergencyActionCard from './EmergencyActionCard';
 import PendingApprovalsCard from './PendingApprovalsCard';
@@ -90,8 +89,8 @@ export function StaffDashboard() {
         />
       )}
 
-      {/* 대원 연결이 안 된 경우 */}
-      {!myStatus?.isLinked ? (
+      {/* 대원 연결이 안 된 경우 (ADMIN은 배너 표시하지 않음) */}
+      {!myStatus?.isLinked && !isAdmin ? (
         <>
           <MemberLinkBanner linkStatus={myStatus?.linkStatus || null} />
 
@@ -113,7 +112,7 @@ export function StaffDashboard() {
           {showVoteCard && context && (
             <VoteActionCard
               timeContext={context.timeContext}
-              nextServiceDate={context.nextServiceDate || myStatus.nextServiceDate}
+              nextServiceDate={context.nextServiceDate || myStatus?.nextServiceDate}
               voteDeadline={context.voteDeadline}
               voteDeadlineDisplay={context.voteDeadlineDisplay}
               hasVoted={hasVoted}
@@ -122,24 +121,19 @@ export function StaffDashboard() {
           )}
 
           {/* 내 좌석 (배치표 공유 후) */}
-          {showSeatCard && myStatus.mySeat && <MySeatCard seat={myStatus.mySeat} />}
+          {showSeatCard && myStatus?.mySeat && <MySeatCard seat={myStatus.mySeat} />}
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* 다음 예배 정보 */}
-            {context?.nextServiceInfo && (
-              <UpcomingService
-                date={context.nextServiceInfo.date}
-                serviceType={context.nextServiceInfo.serviceType}
-                hymnName={context.nextServiceInfo.hymnName}
-                hoodColor={context.nextServiceInfo.hoodColor}
-                serviceStartTime={context.nextServiceInfo.serviceStartTime}
-                prePracticeStartTime={context.nextServiceInfo.prePracticeStartTime}
-              />
-            )}
-
-            {/* 내 최근 출석 */}
-            {myStatus.recentVotes.length > 0 && <MyRecentVotes votes={myStatus.recentVotes} />}
-          </div>
+          {/* 다음 예배 정보 */}
+          {context?.nextServiceInfo && (
+            <UpcomingService
+              date={context.nextServiceInfo.date}
+              serviceType={context.nextServiceInfo.serviceType}
+              hymnName={context.nextServiceInfo.hymnName}
+              hoodColor={context.nextServiceInfo.hoodColor}
+              serviceStartTime={context.nextServiceInfo.serviceStartTime}
+              prePracticeStartTime={context.nextServiceInfo.prePracticeStartTime}
+            />
+          )}
         </>
       )}
     </div>
@@ -150,10 +144,7 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-6">
       <Skeleton className="h-24 rounded-lg" />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Skeleton className="h-56 rounded-lg" />
-        <Skeleton className="h-40 rounded-lg" />
-      </div>
+      <Skeleton className="h-56 rounded-lg" />
     </div>
   );
 }

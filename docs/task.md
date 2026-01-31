@@ -67,7 +67,83 @@
 
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
+### 2026-01-31
+- [x] **refactor(dashboard): MyRecentVotes 컴포넌트 및 관련 코드 제거**
+  - 커밋: `36e6c69`
+
+- [x] **fix(auth): 모바일 카카오 OAuth 리다이렉션 수정**
+  - 커밋: `3f7c60d`
+
+- [x] **docs: 자동 생성 커밋 로그 업데이트**
+  - 커밋: `0fe691b`
+
+- [x] **feat(auth): 카카오 OAuth 로컬 설정 및 모바일 테스트 환경 구성**
+  - 커밋: `6f6317b`
+
+- [x] **fix: 대원 연결 관련 잘못된 라우트 경로 수정**
+  - 커밋: `ab6a234`
+
+- [x] **docs: 자동 생성 커밋 로그 업데이트**
+  - 커밋: `1df34c0`
+
+- [x] **fix(config): 모바일 개발 접근 및 Vercel 스크립트 CSP 허용**
+  - 커밋: `62305fc`
+
+- [x] **fix(db): SECURITY DEFINER 뷰를 SECURITY INVOKER로 변경 및 seed 관리자 충돌 수정**
+  - 커밋: `7a2c19a`
+
+- [x] **docs: 자동 생성 커밋 로그 최종 업데이트**
+  - 커밋: `7cf1d6b`
+
+- [x] **docs: 자동 생성 커밋 로그 업데이트**
+  - 커밋: `708c947`
+
+- [x] **feat(auth): 인증 재시도 로직 및 서버 연결 오류 알림 추가**
+  - 커밋: `c3beb0d`
+
+- [x] **refactor(ui): HTML 네이티브 요소를 UI 컴포넌트로 교체**
+  - 커밋: `f2ef3f7`
+
+- [x] **docs: 진행 문서 및 핸드오프 매니페스트 업데이트**
+  - 커밋: `30d7fe1`
+
+
+- [x] **docs: 2026-01-29 핸드오프 문서 추가**
+  - 커밋: `7695149`
+
+### 2026-01-29
+- [x] **fix(seats): SeatsGrid 및 grid 타입 수정**
+  - 커밋: `71f2de4`
+
+- [x] **feat(arrangements): 워크플로우 UI 개선 및 RecommendPreviewModal 제거**
+  - 커밋: `b75e291`
+
+- [x] **refactor(ui): CompactWorkflowStrip 펼치기 버튼 상단으로 이동**
+  - 커밋: `f8043b4`
+
+- [x] **feat(arrangements): Step 5 줄 정렬 프리셋 UI 추가**
+  - 커밋: `804073c`
+
+- [x] **refactor(ui): InlineRowOffsetControl offset 숫자 표시 제거**
+  - 커밋: `8de31ed`
+
+- [x] **fix(ui): AlertDialog Tailwind CSS 4 호환성 수정**
+  - 커밋: `a4154bc`
+
+
+- [x] **feat: 로컬 Supabase 개발 환경 설정 및 대시보드/배치표 개선**
+  - 커밋: `44f3b5b`
+
 ### 2026-01-28
+- [x] **fix(deploy): 핸드오프 문서 Vercel 배포에 포함**
+  - 커밋: `8a39fe9`
+
+- [x] **fix(deploy): Vercel 빌드 시 prebuild 스크립트 포함**
+  - 커밋: `5f3e079`
+
+- [x] **refactor(dashboard): 대시보드 자동 갱신 및 UX 개선**
+  - 커밋: `0b403ef`
+
 
 - [x] **feat(attendance): 연습 부분참석 투표 기능 구현**
   - 커밋: `bc92588`

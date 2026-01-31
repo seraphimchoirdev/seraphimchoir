@@ -22,6 +22,9 @@ const nextConfig: NextConfig = {
   // @napi-rs/canvas는 native Node.js 모듈이라 번들링에서 제외
   serverExternalPackages: ['@napi-rs/canvas'],
 
+  // 모바일 디바이스 등 로컬 네트워크에서의 개발 서버 접근 허용
+  allowedDevOrigins: ['192.168.0.96', '127.0.0.1'],
+
   // 트리 쉐이킹 최적화 - barrel export 자동 변환
   experimental: {
     optimizePackageImports: [
@@ -50,11 +53,11 @@ const nextConfig: NextConfig = {
     const cspValue = isDevelopment
       ? [
           "default-src 'self'",
-          "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // 개발: Next.js 개발 도구 지원
+          "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com", // 개발: Next.js 개발 도구 + Vercel Analytics 지원
           "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net", // 개발: Tailwind JIT + 외부 폰트 지원
-          "img-src 'self' data: https://*.supabase.co blob:",
+          "img-src 'self' data: https://*.supabase.co http://127.0.0.1:* http://192.168.0.96:* blob:",
           "font-src 'self' data:",
-          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.upstash.com",
+          "connect-src 'self' https://*.supabase.co wss://*.supabase.co http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* http://192.168.0.96:* ws://192.168.0.96:* https://*.ingest.sentry.io https://*.upstash.com https://cdn.jsdelivr.net",
           "frame-ancestors 'none'",
           "base-uri 'self'",
           "form-action 'self'",

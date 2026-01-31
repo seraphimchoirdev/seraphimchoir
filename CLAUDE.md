@@ -22,6 +22,12 @@
 - 각 작업 완료 후 진행 상황 보고
 - 오류 발생 시 즉시 중단하고 상태 보고
 
+### 뽀모도로 자동 복귀
+
+사용자가 휴식 후 메시지를 보내면(같은 세션 내), `~/.claude/pomodoro/state.json`의 `phase`가 `waiting_for_work`인지 확인하고 자동으로 `bash "$HOME/.claude/hooks/pomodoro-work.sh"`를 실행한다. 별도 세션(`/clear` 후)에서는 SessionStart 훅이 자동 처리한다.
+
+또한 사용자가 `pomo-break`, `pomo-work`, `pomo-status`, `pomo-defer`, `pomo-pause`, `pomo-resume`, `pomo-stop`, `pomo-start`, `pomo-restart` 등 뽀모도로 명령어를 입력하면 대응하는 `~/.claude/hooks/` 스크립트를 즉시 실행한다.
+
 ## 프로젝트 개요
 
 **새로핌ON (SeraphimON)** - 새문안교회 새로핌찬양대를 위한 종합 플랫폼입니다.

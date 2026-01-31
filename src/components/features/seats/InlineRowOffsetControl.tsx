@@ -23,15 +23,6 @@ interface InlineRowOffsetControlProps {
 }
 
 /**
- * 오프셋 값 포맷팅 (부호 포함)
- */
-function formatOffset(value: number): string {
-  if (value === 0) return '0';
-  if (value > 0) return `+${value}`;
-  return String(value);
-}
-
-/**
  * 좌석 그리드 내 인라인 행 오프셋 컨트롤
  *
  * Step 5(행별 Offset 조정)에서 각 행 옆에 표시되어
@@ -74,14 +65,6 @@ export default function InlineRowOffsetControl({
   const atLeftLimit = current <= MIN_OFFSET;
   const atRightLimit = current >= MAX_OFFSET;
 
-  // 음수/양수에 따른 색상
-  const valueColor =
-    current < 0
-      ? 'text-blue-600'
-      : current > 0
-        ? 'text-amber-600'
-        : 'text-[var(--color-text-secondary)]';
-
   return (
     <div className="flex items-center gap-0.5" data-capture-ignore>
       {/* 왼쪽 버튼: 행을 왼쪽으로 이동 */}
@@ -96,15 +79,6 @@ export default function InlineRowOffsetControl({
       >
         <ChevronLeft className="h-5 w-5 sm:h-4 sm:w-4" />
       </Button>
-
-      {/* 현재 값 표시 (0이 아닐 때만) */}
-      {current !== 0 && (
-        <span
-          className={`min-w-[2rem] text-center text-[10px] font-medium tabular-nums ${valueColor}`}
-        >
-          {formatOffset(current)}
-        </span>
-      )}
 
       {/* 오른쪽 버튼: 행을 오른쪽으로 이동 */}
       <Button

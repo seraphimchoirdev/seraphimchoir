@@ -84,7 +84,7 @@ export const WORKFLOW_STEPS: Record<WorkflowStep, WorkflowStepMeta> = {
   5: {
     step: 5,
     title: '줄 정렬 조정',
-    shortTitle: '정렬',
+    shortTitle: '줄 정렬',
     description: '지휘자 시야 확보를 위해 줄 위치를 조정합니다.',
   },
   6: {

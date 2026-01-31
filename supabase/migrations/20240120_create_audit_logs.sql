@@ -46,39 +46,53 @@ CREATE INDEX idx_audit_logs_severity ON public.audit_logs(severity);
 -- RLS 정책 (읽기는 관리자만, 쓰기는 서비스 역할만)
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
--- 관리자만 읽기 가능
-CREATE POLICY "Admin users can view audit logs" ON public.audit_logs
-  FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.user_profiles
-      WHERE user_profiles.id = auth.uid()
-      AND user_profiles.role IN ('ADMIN', 'MANAGER')
-    )
-  );
-
 -- 서비스 역할만 삽입 가능 (API에서 Service Role Key 사용)
 CREATE POLICY "Service role can insert audit logs" ON public.audit_logs
   FOR INSERT
   TO service_role
   WITH CHECK (TRUE);
 
--- 관리자만 업데이트 가능 (리뷰 표시용)
-CREATE POLICY "Admin users can update audit logs" ON public.audit_logs
-  FOR UPDATE
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.user_profiles
-      WHERE user_profiles.id = auth.uid()
-      AND user_profiles.role = 'ADMIN'
-    )
-  )
-  WITH CHECK (
-    -- reviewed_by와 reviewed_at만 업데이트 가능
-    is_reviewed IS NOT NULL AND reviewed_by IS NOT NULL
-  );
+-- user_profiles 참조 정책은 해당 테이블 생성 후 적용
+-- (이 마이그레이션은 initial_schema보다 먼저 실행될 수 있으므로 DO 블록 사용)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user_profiles') THEN
+    -- 관리자만 읽기 가능
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin users can view audit logs') THEN
+      EXECUTE $policy$
+        CREATE POLICY "Admin users can view audit logs" ON public.audit_logs
+          FOR SELECT
+          TO authenticated
+          USING (
+            EXISTS (
+              SELECT 1 FROM public.user_profiles
+              WHERE user_profiles.id = auth.uid()
+              AND user_profiles.role IN ('ADMIN', 'MANAGER')
+            )
+          )
+      $policy$;
+    END IF;
+
+    -- 관리자만 업데이트 가능 (리뷰 표시용)
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin users can update audit logs') THEN
+      EXECUTE $policy$
+        CREATE POLICY "Admin users can update audit logs" ON public.audit_logs
+          FOR UPDATE
+          TO authenticated
+          USING (
+            EXISTS (
+              SELECT 1 FROM public.user_profiles
+              WHERE user_profiles.id = auth.uid()
+              AND user_profiles.role = 'ADMIN'
+            )
+          )
+          WITH CHECK (
+            is_reviewed IS NOT NULL AND reviewed_by IS NOT NULL
+          )
+      $policy$;
+    END IF;
+  END IF;
+END $$;
 
 -- 보안 이벤트 요약 뷰
 CREATE OR REPLACE VIEW public.security_summary AS

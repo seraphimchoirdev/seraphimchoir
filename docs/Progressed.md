@@ -218,6 +218,30 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-01-31 | refactor(dashboard): MyRecentVotes 컴포넌트 및 관련 코드 제거 |
+| 2026-01-31 | fix(auth): 모바일 카카오 OAuth 리다이렉션 수정 |
+| 2026-01-31 | docs: 자동 생성 커밋 로그 업데이트 |
+| 2026-01-31 | feat(auth): 카카오 OAuth 로컬 설정 및 모바일 테스트 환경 구성 |
+| 2026-01-31 | fix: 대원 연결 관련 잘못된 라우트 경로 수정 |
+| 2026-01-31 | docs: 자동 생성 커밋 로그 업데이트 |
+| 2026-01-31 | fix(config): 모바일 개발 접근 및 Vercel 스크립트 CSP 허용 |
+| 2026-01-31 | fix(db): SECURITY DEFINER 뷰를 SECURITY INVOKER로 변경 및 seed 관리자 충돌 수정 |
+| 2026-01-31 | docs: 자동 생성 커밋 로그 최종 업데이트 |
+| 2026-01-31 | docs: 자동 생성 커밋 로그 업데이트 |
+| 2026-01-31 | feat(auth): 인증 재시도 로직 및 서버 연결 오류 알림 추가 |
+| 2026-01-31 | refactor(ui): HTML 네이티브 요소를 UI 컴포넌트로 교체 |
+| 2026-01-31 | docs: 진행 문서 및 핸드오프 매니페스트 업데이트 |
+| 2026-01-31 | docs: 2026-01-29 핸드오프 문서 추가 |
+| 2026-01-29 | fix(seats): SeatsGrid 및 grid 타입 수정 |
+| 2026-01-29 | feat(arrangements): 워크플로우 UI 개선 및 RecommendPreviewModal 제거 |
+| 2026-01-29 | refactor(ui): CompactWorkflowStrip 펼치기 버튼 상단으로 이동 |
+| 2026-01-29 | feat(arrangements): Step 5 줄 정렬 프리셋 UI 추가 |
+| 2026-01-29 | refactor(ui): InlineRowOffsetControl offset 숫자 표시 제거 |
+| 2026-01-29 | fix(ui): AlertDialog Tailwind CSS 4 호환성 수정 |
+| 2026-01-29 | feat: 로컬 Supabase 개발 환경 설정 및 대시보드/배치표 개선 |
+| 2026-01-28 | fix(deploy): 핸드오프 문서 Vercel 배포에 포함 |
+| 2026-01-28 | fix(deploy): Vercel 빌드 시 prebuild 스크립트 포함 |
+| 2026-01-28 | refactor(dashboard): 대시보드 자동 갱신 및 UX 개선 |
 | 2026-01-28 | feat(attendance): 연습 부분참석 투표 기능 구현 |
 | 2026-01-27 | feat(dashboard): 역할별 맞춤형 대시보드 구현 |
 | 2026-01-26 | feat(hooks): 핸드오프 자동 로드 훅 추가 |

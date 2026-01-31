@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 import { useBulkCreateAttendances } from '@/hooks/useAttendances';
 import { useAuth } from '@/hooks/useAuth';
@@ -353,11 +354,10 @@ export default function BulkAttendanceForm() {
               {/* 날짜 선택 */}
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-[var(--color-primary-500)]" />
-                <input
+                <Input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface)] px-3 py-2 focus:ring-2 focus:ring-[var(--color-primary-300)] focus:outline-none"
                   required
                 />
               </div>
@@ -400,21 +400,25 @@ export default function BulkAttendanceForm() {
 
             {/* 펼치기/접기 컨트롤 */}
             <div className="mt-3 flex gap-2 border-t border-[var(--color-border-light)] pt-3">
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 type="button"
                 onClick={handleExpandAll}
-                className="text-xs text-[var(--color-primary-600)] hover:underline"
+                className="h-auto p-0 text-xs"
               >
                 모두 펼치기
-              </button>
+              </Button>
               <span className="text-[var(--color-border-default)]">|</span>
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 type="button"
                 onClick={handleCollapseAll}
-                className="text-xs text-[var(--color-primary-600)] hover:underline"
+                className="h-auto p-0 text-xs"
               >
                 모두 접기
-              </button>
+              </Button>
             </div>
           </CardContent>
         </Card>

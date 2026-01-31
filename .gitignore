@@ -63,3 +63,4 @@ supabase/full_schema_dump.sql
 *.sql.bak
 .claude/settings.local.json
 .claude/settings.local.json
+supabase/prod_data.sql

@@ -143,11 +143,9 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                       // offset 1.0 → 1.0 * 2 = 2 → 2 * zigzag-offset = 1칸
                       const offsetPx = currentRowOffset * 2 * zigzagOffset;
                       // Step 5에서는 기준점(baseMargin)을 설정하고 offset으로 상대 이동
-                      // 기준점: 최대 음수 offset(-2)만큼의 공간 = 4 * zigzagOffset
-                      // offset 0: baseMargin (중앙 기준)
-                      // offset -0.5: baseMargin - 40px (왼쪽 이동)
-                      // offset +0.5: baseMargin + 40px (오른쪽 이동)
-                      const baseMargin = showInlineOffsetControls ? zigzagOffset * 4 : 0;
+                      // 기준점: 3 * zigzagOffset으로 여백 축소 (기존 4배 → 3배)
+                      // offset -1.5까지 점프 없이 안정적, 여백 25% 감소
+                      const baseMargin = showInlineOffsetControls ? zigzagOffset * 3 : 0;
                       return {
                         marginLeft: baseMargin + offsetPx,
                       };
