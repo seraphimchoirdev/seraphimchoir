@@ -55,6 +55,217 @@ VALUES (
 ) ON CONFLICT (id) DO UPDATE SET role = 'ADMIN';
 
 -- -----------------------------------------------------------------------------
+-- 0-1. 지휘자 계정 (conductor@test.com / conductor3586)
+-- -----------------------------------------------------------------------------
+INSERT INTO auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at,
+  confirmation_token, recovery_token,
+  email_change, email_change_token_new, email_change_token_current,
+  email_change_confirm_status,
+  raw_app_meta_data, raw_user_meta_data
+) VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  'a0000000-0000-0000-0000-000000000002',
+  'authenticated', 'authenticated',
+  'conductor@test.com',
+  crypt('conductor3586', gen_salt('bf')),
+  NOW(), NOW(), NOW(), '', '',
+  '', '', '',
+  0,
+  '{"provider":"email","providers":["email"]}',
+  '{"name":"지휘자"}'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO auth.identities (
+  id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+) VALUES (
+  'a0000000-0000-0000-0000-000000000002',
+  'a0000000-0000-0000-0000-000000000002',
+  'conductor@test.com',
+  jsonb_build_object('sub', 'a0000000-0000-0000-0000-000000000002', 'email', 'conductor@test.com'),
+  'email',
+  NOW(), NOW(), NOW()
+) ON CONFLICT (provider_id, provider) DO NOTHING;
+
+INSERT INTO user_profiles (id, email, name, role)
+VALUES (
+  'a0000000-0000-0000-0000-000000000002',
+  'conductor@test.com', '지휘자', 'CONDUCTOR'
+) ON CONFLICT (id) DO UPDATE SET role = 'CONDUCTOR';
+
+-- -----------------------------------------------------------------------------
+-- 0-2. 파트장 계정 4명 (소프라노/알토/테너/베이스)
+-- -----------------------------------------------------------------------------
+-- 소프라노 파트장 (soprano@test.com / soprano3586)
+INSERT INTO auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at,
+  confirmation_token, recovery_token,
+  email_change, email_change_token_new, email_change_token_current,
+  email_change_confirm_status,
+  raw_app_meta_data, raw_user_meta_data
+) VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  'a0000000-0000-0000-0000-000000000011',
+  'authenticated', 'authenticated',
+  'soprano@test.com',
+  crypt('soprano3586', gen_salt('bf')),
+  NOW(), NOW(), NOW(), '', '',
+  '', '', '',
+  0,
+  '{"provider":"email","providers":["email"]}',
+  '{"name":"소프라노파트장"}'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO auth.identities (
+  id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+) VALUES (
+  'a0000000-0000-0000-0000-000000000011',
+  'a0000000-0000-0000-0000-000000000011',
+  'soprano@test.com',
+  jsonb_build_object('sub', 'a0000000-0000-0000-0000-000000000011', 'email', 'soprano@test.com'),
+  'email',
+  NOW(), NOW(), NOW()
+) ON CONFLICT (provider_id, provider) DO NOTHING;
+
+-- 알토 파트장 (alto@test.com / alto3586)
+INSERT INTO auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at,
+  confirmation_token, recovery_token,
+  email_change, email_change_token_new, email_change_token_current,
+  email_change_confirm_status,
+  raw_app_meta_data, raw_user_meta_data
+) VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  'a0000000-0000-0000-0000-000000000012',
+  'authenticated', 'authenticated',
+  'alto@test.com',
+  crypt('alto3586', gen_salt('bf')),
+  NOW(), NOW(), NOW(), '', '',
+  '', '', '',
+  0,
+  '{"provider":"email","providers":["email"]}',
+  '{"name":"알토파트장"}'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO auth.identities (
+  id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+) VALUES (
+  'a0000000-0000-0000-0000-000000000012',
+  'a0000000-0000-0000-0000-000000000012',
+  'alto@test.com',
+  jsonb_build_object('sub', 'a0000000-0000-0000-0000-000000000012', 'email', 'alto@test.com'),
+  'email',
+  NOW(), NOW(), NOW()
+) ON CONFLICT (provider_id, provider) DO NOTHING;
+
+-- 테너 파트장 (tenor@test.com / tenor3586)
+INSERT INTO auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at,
+  confirmation_token, recovery_token,
+  email_change, email_change_token_new, email_change_token_current,
+  email_change_confirm_status,
+  raw_app_meta_data, raw_user_meta_data
+) VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  'a0000000-0000-0000-0000-000000000013',
+  'authenticated', 'authenticated',
+  'tenor@test.com',
+  crypt('tenor3586', gen_salt('bf')),
+  NOW(), NOW(), NOW(), '', '',
+  '', '', '',
+  0,
+  '{"provider":"email","providers":["email"]}',
+  '{"name":"테너파트장"}'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO auth.identities (
+  id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+) VALUES (
+  'a0000000-0000-0000-0000-000000000013',
+  'a0000000-0000-0000-0000-000000000013',
+  'tenor@test.com',
+  jsonb_build_object('sub', 'a0000000-0000-0000-0000-000000000013', 'email', 'tenor@test.com'),
+  'email',
+  NOW(), NOW(), NOW()
+) ON CONFLICT (provider_id, provider) DO NOTHING;
+
+-- 베이스 파트장 (bass@test.com / bass3586)
+INSERT INTO auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at,
+  confirmation_token, recovery_token,
+  email_change, email_change_token_new, email_change_token_current,
+  email_change_confirm_status,
+  raw_app_meta_data, raw_user_meta_data
+) VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  'a0000000-0000-0000-0000-000000000014',
+  'authenticated', 'authenticated',
+  'bass@test.com',
+  crypt('bass3586', gen_salt('bf')),
+  NOW(), NOW(), NOW(), '', '',
+  '', '', '',
+  0,
+  '{"provider":"email","providers":["email"]}',
+  '{"name":"베이스파트장"}'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO auth.identities (
+  id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+) VALUES (
+  'a0000000-0000-0000-0000-000000000014',
+  'a0000000-0000-0000-0000-000000000014',
+  'bass@test.com',
+  jsonb_build_object('sub', 'a0000000-0000-0000-0000-000000000014', 'email', 'bass@test.com'),
+  'email',
+  NOW(), NOW(), NOW()
+) ON CONFLICT (provider_id, provider) DO NOTHING;
+
+-- 파트장 user_profiles 생성 + 대원 연결
+-- 각 파트 첫 번째 대원을 파트장으로 설정하고 계정과 연결
+DO $$
+DECLARE
+  soprano_member_id UUID;
+  alto_member_id UUID;
+  tenor_member_id UUID;
+  bass_member_id UUID;
+BEGIN
+  -- 각 파트 첫 번째 대원 ID 조회
+  SELECT id INTO soprano_member_id FROM members WHERE part = 'SOPRANO' AND member_status = 'REGULAR' ORDER BY name LIMIT 1;
+  SELECT id INTO alto_member_id FROM members WHERE part = 'ALTO' AND member_status = 'REGULAR' ORDER BY name LIMIT 1;
+  SELECT id INTO tenor_member_id FROM members WHERE part = 'TENOR' AND member_status = 'REGULAR' ORDER BY name LIMIT 1;
+  SELECT id INTO bass_member_id FROM members WHERE part = 'BASS' AND member_status = 'REGULAR' ORDER BY name LIMIT 1;
+
+  -- members 테이블: 각 파트장 대원의 email과 is_leader 설정
+  UPDATE members SET email = 'soprano@test.com', is_leader = true WHERE id = soprano_member_id;
+  UPDATE members SET email = 'alto@test.com', is_leader = true WHERE id = alto_member_id;
+  UPDATE members SET email = 'tenor@test.com', is_leader = true WHERE id = tenor_member_id;
+  UPDATE members SET email = 'bass@test.com', is_leader = true WHERE id = bass_member_id;
+
+  -- user_profiles 생성 (linked_member_id + link_status 포함)
+  INSERT INTO user_profiles (id, email, name, role, linked_member_id, link_status)
+  VALUES
+    ('a0000000-0000-0000-0000-000000000011', 'soprano@test.com', '소프라노파트장', 'PART_LEADER', soprano_member_id, 'approved'),
+    ('a0000000-0000-0000-0000-000000000012', 'alto@test.com', '알토파트장', 'PART_LEADER', alto_member_id, 'approved'),
+    ('a0000000-0000-0000-0000-000000000013', 'tenor@test.com', '테너파트장', 'PART_LEADER', tenor_member_id, 'approved'),
+    ('a0000000-0000-0000-0000-000000000014', 'bass@test.com', '베이스파트장', 'PART_LEADER', bass_member_id, 'approved')
+  ON CONFLICT (id) DO UPDATE SET
+    role = EXCLUDED.role,
+    linked_member_id = EXCLUDED.linked_member_id,
+    link_status = EXCLUDED.link_status;
+
+  RAISE NOTICE 'Part leader accounts created:';
+  RAISE NOTICE '  SOPRANO leader (member_id: %)', soprano_member_id;
+  RAISE NOTICE '  ALTO leader (member_id: %)', alto_member_id;
+  RAISE NOTICE '  TENOR leader (member_id: %)', tenor_member_id;
+  RAISE NOTICE '  BASS leader (member_id: %)', bass_member_id;
+END $$;
+
+-- -----------------------------------------------------------------------------
 -- 1. 테스트 출석 데이터 (다음 주일 기준)
 -- -----------------------------------------------------------------------------
 -- 80% 출석률로 랜덤 출석 데이터 생성
