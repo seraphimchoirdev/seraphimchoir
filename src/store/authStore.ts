@@ -7,6 +7,7 @@
  * - DevTools 통합 (개발 환경)
  */
 import type { User } from '@supabase/supabase-js';
+import type { Part } from '@/types';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
@@ -57,6 +58,7 @@ export interface UserProfile {
   // 연결된 대원 정보
   linked_member?: {
     name: string;
+    part: Part | null;
   } | null;
 }
 
@@ -323,7 +325,7 @@ export const useAuthStore = create<AuthStore>()(
                 const { data: profileData, error: profileError } = await supabase
                   .from('user_profiles')
                   .select(
-                    'id, email, name, role, linked_member_id, link_status, members:linked_member_id(name)'
+                    'id, email, name, role, linked_member_id, link_status, members:linked_member_id(name, part)'
                   )
                   .eq('id', session.user.id)
                   .single();
@@ -334,7 +336,7 @@ export const useAuthStore = create<AuthStore>()(
                 const profile = profileData
                   ? {
                       ...profileData,
-                      linked_member: profileData.members as unknown as { name: string } | null,
+                      linked_member: profileData.members as unknown as { name: string; part: Part | null } | null,
                     }
                   : null;
 

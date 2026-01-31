@@ -1,6 +1,11 @@
 'use client';
 
+import { ClipboardList, Users } from 'lucide-react';
+import Link from 'next/link';
+
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getPartLabel } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import useDashboardContext from '@/hooks/dashboard/useDashboardContext';
 import useMyDashboardStatus from '@/hooks/dashboard/useMyDashboardStatus';
@@ -91,6 +96,51 @@ export function MemberDashboard() {
           오늘도 찬양대와 함께 은혜로운 시간 되세요.
         </p>
       </div>
+
+      {/* 파트장 바로가기 */}
+      {profile?.role === 'PART_LEADER' && (
+        <Card className="border-[var(--color-border-default)]">
+          <CardContent className="p-4">
+            <h3 className="mb-3 text-sm font-semibold text-[var(--color-text-secondary)]">
+              {profile.linked_member?.part
+                ? `${getPartLabel(profile.linked_member.part)} 파트장 바로가기`
+                : '파트장 바로가기'}
+            </h3>
+            <div className="flex flex-col gap-2">
+              <Link
+                href="/attendances"
+                className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-[var(--color-background-secondary)]"
+              >
+                <div className="rounded-full bg-[var(--color-primary-100)] p-2">
+                  <ClipboardList className="h-4 w-4 text-[var(--color-primary-600)]" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-[var(--color-text-primary)]">출석 관리</p>
+                  <p className="text-xs text-[var(--color-text-tertiary)]">
+                    내 파트 출석 체크하러 가기
+                  </p>
+                </div>
+                <span className="text-[var(--color-text-tertiary)]">&rarr;</span>
+              </Link>
+              <Link
+                href="/management/members"
+                className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-[var(--color-background-secondary)]"
+              >
+                <div className="rounded-full bg-[var(--color-primary-100)] p-2">
+                  <Users className="h-4 w-4 text-[var(--color-primary-600)]" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-[var(--color-text-primary)]">대원 관리</p>
+                  <p className="text-xs text-[var(--color-text-tertiary)]">
+                    파트 대원 정보 관리하기
+                  </p>
+                </div>
+                <span className="text-[var(--color-text-tertiary)]">&rarr;</span>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 출석 투표 행동 유도 */}
       {showVoteCard && context && (

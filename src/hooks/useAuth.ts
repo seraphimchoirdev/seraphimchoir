@@ -7,6 +7,7 @@
  */
 import { type RolePermissionSet, RolePermissions, type UserRole } from '@/app/api/auth/types';
 import type { User } from '@supabase/supabase-js';
+import type { Part } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { useRouter } from 'next/navigation';
@@ -24,6 +25,7 @@ export interface UserProfile {
   // 연결된 대원 정보
   linked_member?: {
     name: string;
+    part: Part | null;
   } | null;
 }
 
