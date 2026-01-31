@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
           "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net", // 개발: Tailwind JIT + 외부 폰트 지원
           "img-src 'self' data: https://*.supabase.co http://127.0.0.1:* http://192.168.0.96:* blob:",
           "font-src 'self' data:",
-          "connect-src 'self' https://*.supabase.co wss://*.supabase.co http://127.0.0.1:* ws://127.0.0.1:* http://192.168.0.96:* ws://192.168.0.96:* https://*.ingest.sentry.io https://*.upstash.com https://cdn.jsdelivr.net",
+          "connect-src 'self' https://*.supabase.co wss://*.supabase.co http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* http://192.168.0.96:* ws://192.168.0.96:* https://*.ingest.sentry.io https://*.upstash.com https://cdn.jsdelivr.net",
           "frame-ancestors 'none'",
           "base-uri 'self'",
           "form-action 'self'",
