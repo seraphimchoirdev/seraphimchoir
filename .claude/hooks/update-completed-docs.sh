@@ -2,6 +2,16 @@
 # Git 커밋 완료 후 문서 자동 업데이트 훅
 # docs/task.md와 docs/Progressed.md에 완료 작업 이력을 자동으로 추가
 
+# 재진입 방지: amend 시 post-commit이 다시 트리거되므로 lock 파일로 차단
+LOCK_FILE="/tmp/.update-docs-lock-$$"
+GLOBAL_LOCK="/tmp/.update-docs-running"
+
+if [ -f "$GLOBAL_LOCK" ]; then
+  exit 0
+fi
+touch "$GLOBAL_LOCK"
+trap 'rm -f "$GLOBAL_LOCK"' EXIT
+
 # 프로젝트 루트 디렉토리 확인
 PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 if [ -z "$PROJECT_ROOT" ]; then
@@ -113,7 +123,14 @@ awk -v entry="$PROGRESS_ENTRY" '
   { print }
 ' "$PROGRESSED_FILE" > "$PROGRESSED_FILE.tmp" && mv "$PROGRESSED_FILE.tmp" "$PROGRESSED_FILE"
 
-echo "✅ 문서 업데이트 완료!"
+# ============================================
+# 3. 수정된 문서를 현재 커밋에 자동 amend
+# ============================================
+# docs 파일만 stage하고 amend (다른 변경사항은 건드리지 않음)
+git add "$TASK_FILE" "$PROGRESSED_FILE"
+git commit --amend --no-edit --no-verify >/dev/null 2>&1
+
+echo "✅ 문서 업데이트 완료! (커밋에 자동 포함됨)"
 echo "   - docs/task.md"
 echo "   - docs/Progressed.md"
 echo ""
