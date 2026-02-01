@@ -64,8 +64,19 @@ export function useImageGeneration(
    */
   const captureToBlob = useCallback(
     async (element: HTMLElement): Promise<Blob> => {
-      // 캡처 모드 활성화: CSS로 빈 좌석 테두리 숨김
-      element.classList.add('capture-active');
+      // 캡처 모드: data-seat-slot 요소들의 테두리/배경을 inline으로 숨김
+      // html-to-image는 computed style을 inline으로 복사하므로 CSS 클래스로는 불가
+      const seatSlots = element.querySelectorAll<HTMLElement>('[data-seat-slot]');
+      const originalStyles: { borderColor: string; backgroundColor: string }[] = [];
+      seatSlots.forEach((slot) => {
+        originalStyles.push({
+          borderColor: slot.style.borderColor,
+          backgroundColor: slot.style.backgroundColor,
+        });
+        slot.style.borderColor = 'transparent';
+        slot.style.backgroundColor = 'transparent';
+      });
+
       try {
         // html-to-image로 PNG Data URL 생성
         const dataUrl = await toPng(element, {
@@ -107,7 +118,11 @@ export function useImageGeneration(
 
         return blob;
       } finally {
-        element.classList.remove('capture-active');
+        // 원래 스타일 복원
+        seatSlots.forEach((slot, i) => {
+          slot.style.borderColor = originalStyles[i].borderColor;
+          slot.style.backgroundColor = originalStyles[i].backgroundColor;
+        });
       }
     },
     [scale, backgroundColor]

@@ -465,12 +465,6 @@ body {
   }
 }
 
-/* === 이미지 캡처 모드 === */
-[data-capture-target].capture-active [data-seat-slot] {
-  border-color: transparent !important;
-  background-color: transparent !important;
-}
-
 /* === 인쇄 모드 === */
 @media print {
   @page {
