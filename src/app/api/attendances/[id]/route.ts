@@ -15,6 +15,7 @@ const updateAttendanceSchema = z.object({
     .optional(),
   is_service_available: z.boolean().optional(),
   is_practice_attended: z.boolean().optional(),
+  practice_status: z.enum(['FULL', 'EARLY_LEAVE', 'LATE_JOIN', 'ABSENT']).nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 

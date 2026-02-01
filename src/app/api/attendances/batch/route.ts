@@ -174,23 +174,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. 자리배치표 존재 확인 (존재하면 ADMIN/CONDUCTOR만 수정 가능)
+    // 4. 자리배치표 존재 확인
+    // 배치표가 있으면 ADMIN/CONDUCTOR 외에는 is_service_available 변경 차단 (연습 필드는 허용)
     const hasArrangement = await checkArrangementExists(supabase, targetDate);
-
-    if (hasArrangement && !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
-      return NextResponse.json(
-        {
-          error: '자리배치표가 이미 생성되어 출석을 수정할 수 없습니다.',
-          hint: '출석 변경이 필요하면 파트장 단톡방에 메시지를 남겨주세요.',
-        },
-        { status: 403 }
-      );
-    }
 
     // 5. PART_LEADER인 경우, 요청된 모든 멤버가 본인 파트인지 검증
     const memberIds = validatedData.attendances.map((a) => a.member_id);
     const memberParts = await getMemberParts(supabase, memberIds);
-    const attendancesToSave = validatedData.attendances;
+    let attendancesToSave = validatedData.attendances;
+
+    if (hasArrangement && !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
+      // 자리배치표 존재 시, 연습 필드만 업데이트 가능
+      // is_service_available은 기존 DB 값으로 고정하여 배치에 영향을 주지 않음
+      const { data: existingAttendances } = await supabase
+        .from('attendances')
+        .select('member_id, is_service_available')
+        .eq('date', targetDate)
+        .in('member_id', memberIds);
+
+      const existingMap = new Map(
+        existingAttendances?.map((a) => [a.member_id, a.is_service_available]) ?? []
+      );
+
+      attendancesToSave = validatedData.attendances.map((a) => ({
+        ...a,
+        is_service_available: existingMap.get(a.member_id) ?? a.is_service_available,
+      }));
+    }
     if (leaderPart) {
       const invalidMembers = attendancesToSave.filter((a) => {
         const part = memberParts.get(a.member_id);
