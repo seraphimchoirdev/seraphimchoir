@@ -23,7 +23,8 @@
     "db:start": "npx supabase start",
     "db:stop": "npx supabase stop",
     "db:reset": "npx supabase db reset",
-    "db:sync": "node scripts/sync-prod-to-local.mjs"
+    "db:sync": "node scripts/sync-prod-to-local.mjs",
+    "db:generate-seed": "node scripts/generate-seed.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.88",
