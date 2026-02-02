@@ -36,6 +36,12 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // Turbopack 설정
+  turbopack: {
+    // 프로젝트 루트 명시 (여러 lockfile 경고 방지)
+    root: __dirname,
+  },
+
   // modularizeImports - 라이브러리별 개별 임포트 경로 변환
   modularizeImports: {
     // lodash 최적화 (사용 시)
@@ -141,10 +147,16 @@ const sentryConfig = {
   // 프로덕션 환경에서만 소스맵 업로드 (SENTRY_AUTH_TOKEN 필요)
   widenClientFileUpload: true,
   hideSourceMaps: true, // 프로덕션 빌드에서 소스맵 숨김
-  disableLogger: true, // Sentry 로거 비활성화
 
-  // 자동 계측 설정
-  automaticVercelMonitors: true, // Vercel 배포 시 자동 모니터링
+  // Webpack 전용 설정 (Turbopack에서는 미지원)
+  webpack: {
+    // Sentry 로거 비활성화 (디버그 로그 제거)
+    treeshake: {
+      removeDebugLogging: true,
+    },
+    // Vercel 배포 시 자동 모니터링
+    automaticVercelMonitors: true,
+  },
 };
 
 export default withSentryConfig(

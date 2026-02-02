@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-02 | fix(config): Turbopack 호환성 개선 - Sentry 설정 마이그레이션 및 루트 경로 명시 |
 | 2026-02-01 | fix(attendances): 자리배치표 존재 시 연습 출석 수정 허용 및 practice_status 스키마 추가 |
 | 2026-01-31 | fix(image-capture): inline style로 좌석 테두리 숨김 방식 변경 |
 | 2026-01-31 | fix(hooks): 문서 자동 업데이트 훅 개선 — amend 방식으로 unstaged 잔여물 제거 |
