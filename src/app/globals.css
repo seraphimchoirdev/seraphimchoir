@@ -509,4 +509,23 @@ body {
     --tw-ring-shadow: 0 0 #0000 !important;
     --tw-ring-offset-shadow: 0 0 #0000 !important;
   }
+
+  /* 인쇄 시 좌석번호 배지 숨김 — 이름과 겹침 방지 */
+  [data-capture-target] [data-seat-slot] > span:first-child {
+    display: none !important;
+  }
+
+  /* 인쇄 시 줄반장 왕관 아이콘 축소 및 위치 조정 */
+  [data-capture-target] [data-seat-slot] .crown-badge {
+    width: 14px !important;
+    height: 14px !important;
+    top: -4px !important;
+    right: -4px !important;
+    border-width: 1px !important;
+    box-shadow: none !important;
+  }
+  [data-capture-target] [data-seat-slot] .crown-badge svg {
+    width: 9px !important;
+    height: 9px !important;
+  }
 }

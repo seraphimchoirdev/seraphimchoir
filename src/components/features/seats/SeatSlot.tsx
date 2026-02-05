@@ -273,7 +273,7 @@ const GridClickableMember = memo(function GridClickableMember({
       </span>
       {/* 줄반장 아이콘 표시: 흰색 원형 배경 + 보라 크라운 */}
       {isRowLeader && (
-        <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full border-2 border-violet-400 bg-white shadow-lg">
+        <div className="crown-badge absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full border-2 border-violet-400 bg-white shadow-lg">
           <Crown className="h-3.5 w-3.5 fill-violet-300 text-violet-600" />
         </div>
       )}
