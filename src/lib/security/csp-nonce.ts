@@ -65,8 +65,9 @@ export function generateCSPHeader(_nonce?: string): string {
       'wss://*.supabase.co',
       'https://*.ingest.sentry.io',
       'https://*.upstash.com', // Upstash Redis
-      'https://vitals.vercel-analytics.com', // Vercel Analytics
-      'https://*.vercel-insights.com', // Vercel Speed Insights
+      'https://vitals.vercel-analytics.com', // Vercel Analytics (legacy)
+      'https://*.vercel-insights.com', // Vercel Speed Insights (legacy)
+      'https://va.vercel-scripts.com', // Vercel Analytics (새 도메인)
       'https://cdn.jsdelivr.net', // Pretendard 폰트 소스맵
       ...(isDevelopment ? ['http://127.0.0.1:*', 'ws://127.0.0.1:*'] : []),
     ],
