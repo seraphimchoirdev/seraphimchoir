@@ -497,6 +497,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     if (totalMembers === 0) return;
     // 이미 AI 추천이 적용되어 있음
     if (gridLayout?.isAIRecommended) return;
+    // 이미 수동으로 구성된 그리드 (저장 후 refetch 시 race condition 방어)
+    if (gridLayout?.isManuallyConfigured) return;
 
     // AI 추천 분배 자동 적용
     autoDistributionAppliedRef.current = true;

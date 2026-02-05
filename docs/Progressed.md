@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-05 | fix(arrangements): 저장 시 줄 정렬 조정(rowOffsets) 초기화 버그 수정 |
 | 2026-02-05 | fix(seats): 인쇄 시 줄반장 보라 글로우/링 제거 누락 수정 |
 | 2026-02-05 | fix(auth): fetchUser 프로필 쿼리 안정화 - single→maybeSingle 변경 |
 | 2026-02-05 | fix(auth): admin 프로필 로드 에러 및 대시보드 미표시 수정 |

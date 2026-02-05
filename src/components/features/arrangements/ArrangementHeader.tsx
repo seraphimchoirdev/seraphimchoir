@@ -251,17 +251,13 @@ export default function ArrangementHeader({
           }
         : null;
 
-      await updateArrangement.mutateAsync({
-        id: arrangement.id,
-        data: {
-          title,
-          conductor: conductor || null,
-          grid_layout: gridLayoutWithWorkflow as Json,
-          grid_rows: gridLayout?.rows || 6,
-        },
-      });
+      // ⚠️ 순서 중요: seats를 먼저 저장한 후 arrangement를 저장
+      // updateArrangement의 onSuccess가 query를 invalidate하므로,
+      // seats가 아직 DELETE/INSERT 중일 때 refetch되면
+      // seats=[]인 상태를 읽어 AI 자동분배가 재실행되는 race condition 발생
+      // seats를 먼저 완료하면 refetch 시점에 항상 올바른 seats가 존재함
 
-      // 2. Update Seats
+      // 1. Update Seats (먼저)
       const seatsData = Object.values(assignments).map((a) => ({
         memberId: a.memberId,
         row: a.row,
@@ -273,6 +269,17 @@ export default function ArrangementHeader({
       await updateSeats.mutateAsync({
         arrangementId: arrangement.id,
         seats: seatsData,
+      });
+
+      // 2. Update Arrangement metadata (seats 완료 후)
+      await updateArrangement.mutateAsync({
+        id: arrangement.id,
+        data: {
+          title,
+          conductor: conductor || null,
+          grid_layout: gridLayoutWithWorkflow as Json,
+          grid_rows: gridLayout?.rows || 6,
+        },
       });
 
       // 3. 저장 성공 시 draft 삭제
