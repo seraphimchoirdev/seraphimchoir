@@ -4,6 +4,8 @@ import {
   AlertTriangle,
   Calendar,
   CheckCircle,
+  ChevronDown,
+  ChevronRight,
   LogIn,
   LogOut,
   Loader2,
@@ -11,7 +13,7 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import Link from 'next/link';
 
@@ -28,9 +30,12 @@ import { PracticeAttendanceType } from '@/types/database.types';
 
 const logger = createLogger({ prefix: 'MyAttendancePage' });
 
-interface NextSundayService {
+interface UpcomingService {
+  id: string; // service_schedule_id
   date: string;
   service_type: string;
+  service_start_time: string | null;
+  has_post_practice: boolean;
   attendance?: {
     id: string;
     is_service_available: boolean;
@@ -102,54 +107,94 @@ export default function MyAttendancePage() {
 
   const { data: myAttendances, isLoading: attendancesLoading } = useAttendances({
     member_id: linkedMemberId || undefined,
+    start_date: startDate,
+    end_date: endDate,
   });
 
   const createMutation = useCreateAttendance();
   const updateMutation = useUpdateAttendance();
 
-  // 가장 가까운 주일 2부 예배만 필터링
-  const nextSundayService = useMemo<NextSundayService | null>(() => {
-    if (!schedules?.data || !linkedMemberId) return null;
+  // 가장 가까운 주일의 모든 예배를 그룹화
+  const upcomingServices = useMemo<UpcomingService[]>(() => {
+    if (!schedules?.data || !linkedMemberId) return [];
 
     const todayDateOnly = new Date(today.toDateString());
 
-    // 주일 2부 예배 중 가장 가까운 것
-    const nextService = schedules.data
-      .filter((s) => s.service_type === '주일 2부 예배')
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .find((s) => new Date(s.date) >= todayDateOnly);
+    // 오늘 이후의 모든 예배를 날짜순으로 정렬
+    const futureSchedules = schedules.data
+      .filter((s) => new Date(s.date) >= todayDateOnly)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    if (!nextService) return null;
+    if (futureSchedules.length === 0) return [];
 
-    const attendance = myAttendances?.find((a) => a.date === nextService.date);
+    // 가장 가까운 날짜의 모든 예배
+    const nearestDate = futureSchedules[0].date;
+    const nearestServices = futureSchedules.filter((s) => s.date === nearestDate);
 
-    return {
-      date: nextService.date,
-      service_type: nextService.service_type as string,
-      attendance: attendance
-        ? {
-            id: attendance.id,
-            is_service_available: attendance.is_service_available ?? true,
-            is_practice_attended: attendance.is_practice_attended ?? false,
-            practice_status: attendance.practice_status ?? null,
-          }
-        : undefined,
-    };
+    return nearestServices.map((service) => {
+      // service_schedule_id로 매칭 (date 기반 대신)
+      const attendance = myAttendances?.find(
+        (a) => a.service_schedule_id === service.id
+      );
+
+      return {
+        id: service.id,
+        date: service.date,
+        service_type: service.service_type as string,
+        service_start_time: service.service_start_time as string | null,
+        has_post_practice: service.has_post_practice ?? true,
+        attendance: attendance
+          ? {
+              id: attendance.id,
+              is_service_available: attendance.is_service_available ?? true,
+              is_practice_attended: attendance.is_practice_attended ?? false,
+              practice_status: attendance.practice_status ?? null,
+            }
+          : undefined,
+      };
+    });
   }, [schedules, myAttendances, linkedMemberId, today]);
 
-  const handleServiceVote = async (value: boolean) => {
-    if (!linkedMemberId || !nextSundayService) return;
+  // 첫 번째 예배만 기본 펼침
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  // 첫 번째 예배 자동 펼침 (upcomingServices 변경 시)
+  const firstServiceId = upcomingServices[0]?.id;
+  useEffect(() => {
+    if (firstServiceId) {
+      setExpandedIds((prev) => {
+        if (prev.size === 0) return new Set([firstServiceId]);
+        return prev;
+      });
+    }
+  }, [firstServiceId]);
+
+  const toggleExpanded = useCallback((id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleServiceVote = async (service: UpcomingService, value: boolean) => {
+    if (!linkedMemberId) return;
 
     try {
-      if (nextSundayService.attendance) {
+      if (service.attendance) {
         await updateMutation.mutateAsync({
-          id: nextSundayService.attendance.id,
+          id: service.attendance.id,
           data: { is_service_available: value },
         });
       } else {
         await createMutation.mutateAsync({
           member_id: linkedMemberId,
-          date: nextSundayService.date,
+          date: service.date,
+          service_schedule_id: service.id,
           is_service_available: value,
           is_practice_attended: false,
           practice_status: 'ABSENT',
@@ -161,16 +206,16 @@ export default function MyAttendancePage() {
     }
   };
 
-  const handlePracticeVote = async (status: PracticeAttendanceType) => {
-    if (!linkedMemberId || !nextSundayService) return;
+  const handlePracticeVote = async (service: UpcomingService, status: PracticeAttendanceType) => {
+    if (!linkedMemberId) return;
 
     // is_practice_attended는 ABSENT가 아니면 true
     const isPracticeAttended = status !== 'ABSENT';
 
     try {
-      if (nextSundayService.attendance) {
+      if (service.attendance) {
         await updateMutation.mutateAsync({
-          id: nextSundayService.attendance.id,
+          id: service.attendance.id,
           data: {
             practice_status: status,
             is_practice_attended: isPracticeAttended,
@@ -179,7 +224,8 @@ export default function MyAttendancePage() {
       } else {
         await createMutation.mutateAsync({
           member_id: linkedMemberId,
-          date: nextSundayService.date,
+          date: service.date,
+          service_schedule_id: service.id,
           is_service_available: true,
           is_practice_attended: isPracticeAttended,
           practice_status: status,
@@ -236,131 +282,172 @@ export default function MyAttendancePage() {
             <div className="flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
             </div>
-          ) : !nextSundayService ? (
+          ) : upcomingServices.length === 0 ? (
             <div className="py-12 text-center">
               <Calendar className="mx-auto mb-4 h-12 w-12 text-[var(--color-text-tertiary)]" />
               <p className="text-[var(--color-text-secondary)]">다가오는 주일 예배 일정이 없습니다.</p>
             </div>
           ) : (
             <div className="space-y-6">
-              {/* 예배 정보 헤더 */}
-              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-6">
-                <div className="mb-4 text-center">
-                  <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
-                    이번 주일 예배 출석 투표
-                  </h2>
-                  <p className="mt-1 text-xl font-medium text-[var(--color-primary)]">
-                    {new Date(nextSundayService.date).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      weekday: 'long',
-                    })}{' '}
-                    주일 2부예배
-                  </p>
-                </div>
-
-                {/* 등단 가능 여부 */}
-                <div className="mb-6 rounded-lg border border-[var(--color-border)] bg-[var(--color-background-tertiary)] p-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-[var(--color-primary)]" />
-                    <span className="font-medium text-[var(--color-text-primary)]">
-                      예배 등단 가능 여부
-                    </span>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant={
-                        nextSundayService.attendance?.is_service_available !== false
-                          ? 'default'
-                          : 'outline'
-                      }
-                      onClick={() => handleServiceVote(true)}
-                      disabled={
-                        createMutation.isPending ||
-                        updateMutation.isPending
-                      }
-                      className={
-                        nextSundayService.attendance?.is_service_available !== false
-                          ? 'flex-1 bg-green-600 hover:bg-green-700'
-                          : 'flex-1'
-                      }
-                    >
-                      <CheckCircle className="mr-1 h-4 w-4" />
-                      가능
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={
-                        nextSundayService.attendance?.is_service_available === false
-                          ? 'default'
-                          : 'outline'
-                      }
-                      onClick={() => handleServiceVote(false)}
-                      disabled={
-                        createMutation.isPending ||
-                        updateMutation.isPending
-                      }
-                      className={
-                        nextSundayService.attendance?.is_service_available === false
-                          ? 'flex-1 bg-red-600 hover:bg-red-700'
-                          : 'flex-1'
-                      }
-                    >
-                      <XCircle className="mr-1 h-4 w-4" />
-                      불가
-                    </Button>
-                  </div>
-                </div>
-
-                {/* 연습 참석 여부 */}
-                <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-tertiary)] p-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <Music className="h-5 w-5 text-[var(--color-primary)]" />
-                    <span className="font-medium text-[var(--color-text-primary)]">
-                      예배 후 연습 참석 여부
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    {PRACTICE_OPTIONS.map((option) => {
-                      // 현재 선택된 상태 확인 (practice_status가 없으면 is_practice_attended로 추정)
-                      const currentStatus = nextSundayService.attendance?.practice_status;
-                      const isSelected = currentStatus === option.value ||
-                        // practice_status가 없을 때 is_practice_attended로 추정
-                        (currentStatus === null &&
-                          ((option.value === 'ABSENT' && !nextSundayService.attendance?.is_practice_attended) ||
-                           (option.value === 'FULL' && nextSundayService.attendance?.is_practice_attended)));
-
-                      return (
-                        <Button
-                          key={option.value}
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handlePracticeVote(option.value)}
-                          disabled={
-                            createMutation.isPending ||
-                            updateMutation.isPending
-                          }
-                          className={`flex flex-col items-center justify-center gap-1 py-3 ${
-                            isSelected ? option.activeClass : option.colorClass
-                          }`}
-                        >
-                          <span className="flex items-center gap-1">
-                            {option.icon}
-                            {option.label}
-                          </span>
-                          <span className={`text-xs ${isSelected ? 'text-white/80' : 'opacity-70'}`}>
-                            {option.description}
-                          </span>
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
+              {/* 날짜 헤더 */}
+              <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-4 text-center">
+                <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
+                  이번 주일 예배 출석 투표
+                </h2>
+                <p className="mt-1 text-xl font-medium text-[var(--color-primary)]">
+                  {new Date(upcomingServices[0].date).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'long',
+                  })}
+                </p>
               </div>
+
+              {/* 예배별 카드 */}
+              {upcomingServices.map((service) => {
+                const isExpanded = expandedIds.has(service.id);
+                const isMutating = createMutation.isPending || updateMutation.isPending;
+
+                return (
+                  <div
+                    key={service.id}
+                    className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)]"
+                  >
+                    {/* 예배 헤더 (클릭으로 펼침/접힘) */}
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(service.id)}
+                      className="flex w-full items-center justify-between p-4 hover:bg-[var(--color-background-tertiary)] transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        {isExpanded ? (
+                          <ChevronDown className="h-5 w-5 text-[var(--color-text-secondary)]" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 text-[var(--color-text-secondary)]" />
+                        )}
+                        <div className="text-left">
+                          <span className="font-semibold text-[var(--color-text-primary)]">
+                            {service.service_type}
+                          </span>
+                          {service.service_start_time && (
+                            <span className="ml-2 text-sm text-[var(--color-text-secondary)]">
+                              ({String(service.service_start_time).slice(0, 5)})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {/* 투표 상태 뱃지 */}
+                      {service.attendance && (
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          service.attendance.is_service_available
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {service.attendance.is_service_available ? '등단 가능' : '등단 불가'}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* 펼쳐진 내용 */}
+                    {isExpanded && (
+                      <div className="border-t border-[var(--color-border)] p-4 space-y-4">
+                        {/* 등단 가능 여부 */}
+                        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-tertiary)] p-4">
+                          <div className="mb-3 flex items-center gap-2">
+                            <Calendar className="h-5 w-5 text-[var(--color-primary)]" />
+                            <span className="font-medium text-[var(--color-text-primary)]">
+                              예배 등단 가능 여부
+                            </span>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant={
+                                service.attendance?.is_service_available !== false
+                                  ? 'default'
+                                  : 'outline'
+                              }
+                              onClick={() => handleServiceVote(service, true)}
+                              disabled={isMutating}
+                              className={
+                                service.attendance?.is_service_available !== false
+                                  ? 'flex-1 bg-green-600 hover:bg-green-700'
+                                  : 'flex-1'
+                              }
+                            >
+                              <CheckCircle className="mr-1 h-4 w-4" />
+                              가능
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={
+                                service.attendance?.is_service_available === false
+                                  ? 'default'
+                                  : 'outline'
+                              }
+                              onClick={() => handleServiceVote(service, false)}
+                              disabled={isMutating}
+                              className={
+                                service.attendance?.is_service_available === false
+                                  ? 'flex-1 bg-red-600 hover:bg-red-700'
+                                  : 'flex-1'
+                              }
+                            >
+                              <XCircle className="mr-1 h-4 w-4" />
+                              불가
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* 연습 참석 여부 (has_post_practice인 경우에만) */}
+                        {service.has_post_practice && (
+                          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-tertiary)] p-4">
+                            <div className="mb-3 flex items-center gap-2">
+                              <Music className="h-5 w-5 text-[var(--color-primary)]" />
+                              <span className="font-medium text-[var(--color-text-primary)]">
+                                예배 후 연습 참석 여부
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              {PRACTICE_OPTIONS.map((option) => {
+                                const currentStatus = service.attendance?.practice_status;
+                                const isSelected = currentStatus === option.value ||
+                                  (currentStatus === null &&
+                                    ((option.value === 'ABSENT' && !service.attendance?.is_practice_attended) ||
+                                     (option.value === 'FULL' && service.attendance?.is_practice_attended)));
+
+                                return (
+                                  <Button
+                                    key={option.value}
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handlePracticeVote(service, option.value)}
+                                    disabled={isMutating}
+                                    className={`flex flex-col items-center justify-center gap-1 py-3 ${
+                                      isSelected ? option.activeClass : option.colorClass
+                                    }`}
+                                  >
+                                    <span className="flex items-center gap-1">
+                                      {option.icon}
+                                      {option.label}
+                                    </span>
+                                    <span className={`text-xs ${isSelected ? 'text-white/80' : 'opacity-70'}`}>
+                                      {option.description}
+                                    </span>
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
               {/* 안내 문구 */}
               <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-4">

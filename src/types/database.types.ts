@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -25,6 +45,7 @@ export type Database = {
           image_url: string | null
           is_published: boolean
           service_info: string | null
+          service_schedule_id: string | null
           status: string | null
           title: string
           updated_at: string
@@ -39,6 +60,7 @@ export type Database = {
           image_url?: string | null
           is_published?: boolean
           service_info?: string | null
+          service_schedule_id?: string | null
           status?: string | null
           title: string
           updated_at?: string
@@ -53,11 +75,20 @@ export type Database = {
           image_url?: string | null
           is_published?: boolean
           service_info?: string | null
+          service_schedule_id?: string | null
           status?: string | null
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "arrangements_service_schedule_id_fkey"
+            columns: ["service_schedule_id"]
+            isOneToOne: true
+            referencedRelation: "service_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       attendance_deadlines: {
         Row: {
@@ -122,7 +153,10 @@ export type Database = {
           is_service_available: boolean
           member_id: string
           notes: string | null
-          practice_status: Database["public"]["Enums"]["practice_attendance_type"] | null
+          practice_status:
+            | Database["public"]["Enums"]["practice_attendance_type"]
+            | null
+          service_schedule_id: string | null
           updated_at: string
         }
         Insert: {
@@ -133,7 +167,10 @@ export type Database = {
           is_service_available?: boolean
           member_id: string
           notes?: string | null
-          practice_status?: Database["public"]["Enums"]["practice_attendance_type"] | null
+          practice_status?:
+            | Database["public"]["Enums"]["practice_attendance_type"]
+            | null
+          service_schedule_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -144,10 +181,20 @@ export type Database = {
           is_service_available?: boolean
           member_id?: string
           notes?: string | null
-          practice_status?: Database["public"]["Enums"]["practice_attendance_type"] | null
+          practice_status?:
+            | Database["public"]["Enums"]["practice_attendance_type"]
+            | null
+          service_schedule_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "attendances_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_last_attendance"
+            referencedColumns: ["member_id"]
+          },
           {
             foreignKeyName: "attendances_member_id_fkey"
             columns: ["member_id"]
@@ -162,7 +209,90 @@ export type Database = {
             referencedRelation: "members_public"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "attendances_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members_with_attendance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendances_service_schedule_id_fkey"
+            columns: ["service_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "service_schedules"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      audit_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_category: string
+          event_type: string
+          id: string
+          ip_address: unknown
+          is_reviewed: boolean | null
+          is_suspicious: boolean | null
+          metadata: Json | null
+          request_method: string | null
+          request_params: Json | null
+          request_path: string | null
+          response_status: number | null
+          response_time_ms: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          severity: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_category: string
+          event_type: string
+          id?: string
+          ip_address?: unknown
+          is_reviewed?: boolean | null
+          is_suspicious?: boolean | null
+          metadata?: Json | null
+          request_method?: string | null
+          request_params?: Json | null
+          request_path?: string | null
+          response_status?: number | null
+          response_time_ms?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_category?: string
+          event_type?: string
+          id?: string
+          ip_address?: unknown
+          is_reviewed?: boolean | null
+          is_suspicious?: boolean | null
+          metadata?: Json | null
+          request_method?: string | null
+          request_params?: Json | null
+          request_path?: string | null
+          response_status?: number | null
+          response_time_ms?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       choir_events: {
         Row: {
@@ -248,6 +378,75 @@ export type Database = {
         }
         Relationships: []
       }
+      learned_part_placement_rules: {
+        Row: {
+          avg_col: number | null
+          boundary_info: Json | null
+          col_consistency: number | null
+          col_range_by_row: Json | null
+          confidence_score: number | null
+          created_at: string
+          forbidden_rows: number[]
+          front_row_percentage: number
+          id: string
+          last_learned_at: string
+          member_count_range: string
+          overflow_rows: number[]
+          part: string
+          preferred_rows: number[]
+          row_distribution: Json
+          sample_count: number
+          service_type: string
+          side: string
+          side_percentage: number
+          total_seats_analyzed: number
+        }
+        Insert: {
+          avg_col?: number | null
+          boundary_info?: Json | null
+          col_consistency?: number | null
+          col_range_by_row?: Json | null
+          confidence_score?: number | null
+          created_at?: string
+          forbidden_rows?: number[]
+          front_row_percentage: number
+          id?: string
+          last_learned_at?: string
+          member_count_range: string
+          overflow_rows?: number[]
+          part: string
+          preferred_rows: number[]
+          row_distribution: Json
+          sample_count?: number
+          service_type: string
+          side: string
+          side_percentage: number
+          total_seats_analyzed?: number
+        }
+        Update: {
+          avg_col?: number | null
+          boundary_info?: Json | null
+          col_consistency?: number | null
+          col_range_by_row?: Json | null
+          confidence_score?: number | null
+          created_at?: string
+          forbidden_rows?: number[]
+          front_row_percentage?: number
+          id?: string
+          last_learned_at?: string
+          member_count_range?: string
+          overflow_rows?: number[]
+          part?: string
+          preferred_rows?: number[]
+          row_distribution?: Json
+          sample_count?: number
+          service_type?: string
+          side?: string
+          side_percentage?: number
+          total_seats_analyzed?: number
+        }
+        Relationships: []
+      }
       member_seat_statistics: {
         Row: {
           col_consistency: number | null
@@ -302,6 +501,13 @@ export type Database = {
             foreignKeyName: "member_seat_statistics_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: true
+            referencedRelation: "member_last_attendance"
+            referencedColumns: ["member_id"]
+          },
+          {
+            foreignKeyName: "member_seat_statistics_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
             referencedRelation: "members"
             referencedColumns: ["id"]
           },
@@ -310,6 +516,13 @@ export type Database = {
             columns: ["member_id"]
             isOneToOne: true
             referencedRelation: "members_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_seat_statistics_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "members_with_attendance"
             referencedColumns: ["id"]
           },
         ]
@@ -327,8 +540,7 @@ export type Database = {
           id: string
           is_leader: boolean
           is_singer: boolean
-          joined_date: string
-          regular_member_since: string | null
+          joined_date: string | null
           leave_duration_months: number | null
           leave_reason: string | null
           leave_start_date: string | null
@@ -337,7 +549,9 @@ export type Database = {
           notes: string | null
           part: Database["public"]["Enums"]["part"]
           phone_number: string | null
+          regular_member_since: string | null
           updated_at: string
+          version: number
         }
         Insert: {
           conductor_notes_auth_tag?: string | null
@@ -351,8 +565,7 @@ export type Database = {
           id?: string
           is_leader?: boolean
           is_singer?: boolean
-          joined_date: string
-          regular_member_since?: string | null
+          joined_date?: string | null
           leave_duration_months?: number | null
           leave_reason?: string | null
           leave_start_date?: string | null
@@ -361,7 +574,9 @@ export type Database = {
           notes?: string | null
           part: Database["public"]["Enums"]["part"]
           phone_number?: string | null
+          regular_member_since?: string | null
           updated_at?: string
+          version?: number
         }
         Update: {
           conductor_notes_auth_tag?: string | null
@@ -375,8 +590,7 @@ export type Database = {
           id?: string
           is_leader?: boolean
           is_singer?: boolean
-          joined_date?: string
-          regular_member_since?: string | null
+          joined_date?: string | null
           leave_duration_months?: number | null
           leave_reason?: string | null
           leave_start_date?: string | null
@@ -385,7 +599,9 @@ export type Database = {
           notes?: string | null
           part?: Database["public"]["Enums"]["part"]
           phone_number?: string | null
+          regular_member_since?: string | null
           updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -506,6 +722,13 @@ export type Database = {
             foreignKeyName: "seats_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
+            referencedRelation: "member_last_attendance"
+            referencedColumns: ["member_id"]
+          },
+          {
+            foreignKeyName: "seats_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
             referencedRelation: "members"
             referencedColumns: ["id"]
           },
@@ -514,6 +737,13 @@ export type Database = {
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "members_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seats_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members_with_attendance"
             referencedColumns: ["id"]
           },
         ]
@@ -534,6 +764,7 @@ export type Database = {
           post_practice_duration: number | null
           post_practice_location: string | null
           post_practice_start_time: string | null
+          practice_location: string | null
           pre_practice_location: string | null
           pre_practice_minutes_before: number | null
           pre_practice_start_time: string | null
@@ -556,6 +787,7 @@ export type Database = {
           post_practice_duration?: number | null
           post_practice_location?: string | null
           post_practice_start_time?: string | null
+          practice_location?: string | null
           pre_practice_location?: string | null
           pre_practice_minutes_before?: number | null
           pre_practice_start_time?: string | null
@@ -578,6 +810,7 @@ export type Database = {
           post_practice_duration?: number | null
           post_practice_location?: string | null
           post_practice_start_time?: string | null
+          practice_location?: string | null
           pre_practice_location?: string | null
           pre_practice_minutes_before?: number | null
           pre_practice_start_time?: string | null
@@ -599,6 +832,7 @@ export type Database = {
           linked_member_id: string | null
           name: string
           role: string | null
+          title: string | null
           updated_at: string
         }
         Insert: {
@@ -612,6 +846,7 @@ export type Database = {
           linked_member_id?: string | null
           name: string
           role?: string | null
+          title?: string | null
           updated_at?: string
         }
         Update: {
@@ -625,9 +860,17 @@ export type Database = {
           linked_member_id?: string | null
           name?: string
           role?: string | null
+          title?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_profiles_linked_member_id_fkey"
+            columns: ["linked_member_id"]
+            isOneToOne: false
+            referencedRelation: "member_last_attendance"
+            referencedColumns: ["member_id"]
+          },
           {
             foreignKeyName: "user_profiles_linked_member_id_fkey"
             columns: ["linked_member_id"]
@@ -642,10 +885,35 @@ export type Database = {
             referencedRelation: "members_public"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_profiles_linked_member_id_fkey"
+            columns: ["linked_member_id"]
+            isOneToOne: false
+            referencedRelation: "members_with_attendance"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
+      member_last_attendance: {
+        Row: {
+          last_practice_date: string | null
+          last_service_date: string | null
+          member_id: string | null
+        }
+        Insert: {
+          last_practice_date?: never
+          last_service_date?: never
+          member_id?: string | null
+        }
+        Update: {
+          last_practice_date?: never
+          last_service_date?: never
+          member_id?: string | null
+        }
+        Relationships: []
+      }
       members_public: {
         Row: {
           created_at: string | null
@@ -694,9 +962,47 @@ export type Database = {
         }
         Relationships: []
       }
+      members_with_attendance: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          height_cm: number | null
+          id: string | null
+          is_leader: boolean | null
+          is_singer: boolean | null
+          last_practice_date: string | null
+          last_service_date: string | null
+          member_status: Database["public"]["Enums"]["member_status"] | null
+          name: string | null
+          notes: string | null
+          part: Database["public"]["Enums"]["part"] | null
+          phone_number: string | null
+          regular_member_since: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
+      security_summary: {
+        Row: {
+          date: string | null
+          event_category: string | null
+          event_count: number | null
+          event_type: string | null
+          severity: string | null
+          suspicious_count: number | null
+          unique_ips: number | null
+          unique_users: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      cleanup_old_audit_logs: { Args: never; Returns: undefined }
       get_all_document_tags: { Args: never; Returns: string[] }
+      get_arrangement_status: {
+        Args: { arrangement_id: string }
+        Returns: string
+      }
       get_attendance_statistics: {
         Args: { p_end_date: string; p_start_date: string }
         Returns: Json
@@ -712,6 +1018,10 @@ export type Database = {
         }[]
       }
       get_linked_member_id: { Args: never; Returns: string }
+      get_linked_member_part: {
+        Args: never
+        Returns: Database["public"]["Enums"]["part"]
+      }
       get_member_attendance_history: {
         Args: {
           p_end_date?: string
@@ -745,6 +1055,7 @@ export type Database = {
       get_user_role: { Args: never; Returns: string }
       has_role: { Args: { required_roles: string[] }; Returns: boolean }
       is_member_linked: { Args: never; Returns: boolean }
+      is_valid_role: { Args: { check_role: string }; Returns: boolean }
       is_vote_deadline_passed: {
         Args: { target_date: string }
         Returns: boolean
@@ -895,6 +1206,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       member_status: ["REGULAR", "NEW", "ON_LEAVE", "RESIGNED"],
@@ -909,3 +1223,4 @@ export type ArrangementStatus = 'DRAFT' | 'SHARED' | 'CONFIRMED'
 
 // 연습 참석 상태 타입 정의
 export type PracticeAttendanceType = Database["public"]["Enums"]["practice_attendance_type"]
+

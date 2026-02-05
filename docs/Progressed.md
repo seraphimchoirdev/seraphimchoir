@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-05 | feat(attendances): 예배별 개별 출석 체크 (Multi-Service Attendance) |
 | 2026-02-02 | feat(db): 프로덕션 DB → seed.sql 자동 생성 스크립트 추가 |
 | 2026-02-02 | fix(config): Turbopack 호환성 개선 - Sentry 설정 마이그레이션 및 루트 경로 명시 |
 | 2026-02-01 | fix(attendances): 자리배치표 존재 시 연습 출석 수정 허용 및 practice_status 스키마 추가 |

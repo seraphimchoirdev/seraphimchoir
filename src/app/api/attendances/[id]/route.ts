@@ -13,6 +13,7 @@ const updateAttendanceSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식은 YYYY-MM-DD여야 합니다')
     .optional(),
+  service_schedule_id: z.string().uuid().optional(),
   is_service_available: z.boolean().optional(),
   is_practice_attended: z.boolean().optional(),
   practice_status: z.enum(['FULL', 'EARLY_LEAVE', 'LATE_JOIN', 'ABSENT']).nullable().optional(),

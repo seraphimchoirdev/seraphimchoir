@@ -4,7 +4,7 @@ import { Part } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns/format';
 import { ko } from 'date-fns/locale/ko';
-import { ChevronsDown, ChevronsUp, RotateCcw, Save } from 'lucide-react';
+import { ChevronsDown, ChevronsUp, Lock, RotateCcw, Save } from 'lucide-react';
 import { CheckCheck, ChevronDown, ChevronRight, XCircle } from 'lucide-react';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -13,8 +13,10 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 import { useAttendances } from '@/hooks/useAttendances';
+import { useAttendanceMode } from '@/hooks/useAttendanceMode';
 import { useAuth } from '@/hooks/useAuth';
 import { useMembers } from '@/hooks/useMembers';
 
@@ -33,6 +35,7 @@ const logger = createLogger({ prefix: 'AttendanceList' });
 
 interface AttendanceListProps {
   date: Date;
+  serviceScheduleId?: string;
 }
 
 // Supabase Database 타입 사용
@@ -57,12 +60,33 @@ const partAccentColors: Record<Part, string> = {
   SPECIAL: 'text-[var(--color-part-special-700)]',
 };
 
-export default function AttendanceList({ date }: AttendanceListProps) {
+export default function AttendanceList({ date, serviceScheduleId }: AttendanceListProps) {
   const dateStr = format(date, 'yyyy-MM-dd');
   const { profile, user } = useAuth();
   const [userPart, setUserPart] = useState<string | null>(null);
   const [isPartLoading, setIsPartLoading] = useState(false);
   const queryClient = useQueryClient();
+
+  // 해당 예배의 has_post_practice 조회
+  const [hasPostPractice, setHasPostPractice] = useState<boolean>(true);
+  useEffect(() => {
+    if (!serviceScheduleId) {
+      setHasPostPractice(true); // 기본값
+      return;
+    }
+    const supabase = createClient();
+    supabase
+      .from('service_schedules')
+      .select('has_post_practice')
+      .eq('id', serviceScheduleId)
+      .single()
+      .then(({ data }) => {
+        setHasPostPractice(data?.has_post_practice ?? true);
+      });
+  }, [serviceScheduleId]);
+
+  // 출석 관리 모드 및 잠금 상태
+  const { mode, lockStatus, isLoading: isModeLoading } = useAttendanceMode({ date, serviceScheduleId });
 
   // 파트장인 경우 본인 파트 확인
   useEffect(() => {
@@ -115,15 +139,37 @@ export default function AttendanceList({ date }: AttendanceListProps) {
 
   const { data: attendances, isLoading: attendancesLoading } = useAttendances({
     date: dateStr,
+    service_schedule_id: serviceScheduleId,
   });
 
-  const [activeTab, setActiveTab] = useState<'service' | 'practice'>('service');
+  // 활성 탭: 모드에 따라 자동 설정
+  const [activeTab, setActiveTab] = useState<'service' | 'practice'>(() => {
+    if (mode === 'practice') return 'practice';
+    return 'service';
+  });
   const [showAbsentOnly, setShowAbsentOnly] = useState(false);
+
+  // 모드 변경 시 activeTab 자동 조정
+  // 연습이 없는 예배(has_post_practice=false)에서는 practice 탭으로 전환하지 않음
+  useEffect(() => {
+    if (!hasPostPractice && activeTab === 'practice') {
+      setActiveTab('service');
+    } else if (mode === 'service-entry' && activeTab !== 'service') {
+      setActiveTab('service');
+    } else if (mode === 'practice' && hasPostPractice && activeTab !== 'practice') {
+      setActiveTab('practice');
+    }
+  }, [mode, activeTab, hasPostPractice]);
 
   // 변경사항 추적 상태
   const [pendingChanges, setPendingChanges] = useState<Record<string, Partial<Attendance>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetDialog, setResetDialog] = useState(false);
+
+  // serviceScheduleId 변경 시 pending changes 초기화
+  useEffect(() => {
+    setPendingChanges({});
+  }, [serviceScheduleId]);
 
   // 파트별 열림/닫힘 상태
   const [openParts, setOpenParts] = useState<Record<Part, boolean>>({
@@ -137,6 +183,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
   const isLoading =
     membersLoading ||
     attendancesLoading ||
+    isModeLoading ||
     (profile?.role === 'PART_LEADER' && isPartLoading);
 
   const members = useMemo(() => membersData?.data || [], [membersData?.data]);
@@ -293,6 +340,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
         return {
           member_id: memberId,
           date: dateStr,
+          service_schedule_id: serviceScheduleId,
           is_service_available,
           is_practice_attended,
         };
@@ -385,22 +433,72 @@ export default function AttendanceList({ date }: AttendanceListProps) {
         </div>
       </div>
 
+      {/* 모드 안내 메시지 */}
+      {mode !== 'both' && (
+        <Alert className="border-[var(--color-primary-200)] bg-[var(--color-primary-50)]">
+          <AlertDescription className="text-sm text-[var(--color-primary-700)]">
+            {mode === 'service-entry' && (
+              <>
+                <strong>주중 출석 관리 모드</strong>입니다. 예배 등단 출석 현황을 관리하세요.
+                <br />
+                예배 후 연습 출석은 <strong>주일 당일 오전 9시 이후</strong>부터 입력 가능합니다.
+              </>
+            )}
+            {mode === 'practice' && (
+              <>
+                <strong>예배 당일 출석 관리 모드</strong>입니다. 예배 후 연습 참석 현황을 관리하세요.
+              </>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* 잠금 경고 메시지 */}
+      {lockStatus.isServiceEntryLocked && mode === 'both' && (
+        <Alert variant="warning">
+          <Lock className="h-4 w-4" />
+          <AlertDescription>{lockStatus.lockReason}</AlertDescription>
+        </Alert>
+      )}
+
       {/* 탭 */}
       <Tabs
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as 'service' | 'practice')}
         className="w-full"
       >
-        <TabsList className="mb-4 grid w-full grid-cols-2">
-          <TabsTrigger value="service">예배 등단 (주중 파악)</TabsTrigger>
-          <TabsTrigger value="practice">예배 후 연습 (주일 당일)</TabsTrigger>
-        </TabsList>
+        {/* 탭 리스트: both 모드이고 연습이 있을 때만 표시 */}
+        {mode === 'both' && hasPostPractice && (
+          <TabsList className="mb-4 grid w-full grid-cols-2">
+            <TabsTrigger value="service">
+              {lockStatus.isServiceEntryLocked && <Lock className="mr-1.5 h-3.5 w-3.5" />}
+              예배 등단 (주중 파악)
+            </TabsTrigger>
+            <TabsTrigger value="practice">예배 후 연습 (주일 당일)</TabsTrigger>
+          </TabsList>
+        )}
 
-        {['service', 'practice'].map((tabValue) => (
-          <TabsContent key={tabValue} value={tabValue} className="space-y-3">
-            {PARTS.map((part) => {
-              const partMembers = filteredMembersByPart[part] || [];
-              const allPartMembers = membersByPart[part] || [];
+        {['service', 'practice'].map((tabValue) => {
+          // 연습이 없는 예배에서는 practice 탭을 표시하지 않음
+          if (tabValue === 'practice' && !hasPostPractice) return null;
+
+          // 현재 모드에서 이 탭을 표시해야 하는지 체크
+          const shouldShowTab =
+            mode === 'both' ||
+            (mode === 'service-entry' && tabValue === 'service') ||
+            (mode === 'practice' && tabValue === 'practice');
+
+          if (!shouldShowTab) return null;
+
+          // 이 탭이 잠겨있는지 체크
+          const isTabLocked =
+            tabValue === 'service' && lockStatus.isServiceEntryLocked;
+
+          return (
+            <TabsContent key={tabValue} value={tabValue} className="space-y-3">
+              {PARTS.map((part) => {
+                const partMembers = filteredMembersByPart[part] || [];
+                const allPartMembers = membersByPart[part] || [];
 
               if (allPartMembers.length === 0) return null;
 
@@ -465,7 +563,8 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                             e.stopPropagation();
                             handleSelectAllPart(part, true);
                           }}
-                          className="h-auto px-2.5 py-1 text-xs text-[var(--color-success-600)] hover:bg-[var(--color-success-100)]"
+                          disabled={isTabLocked}
+                          className="h-auto px-2.5 py-1 text-xs text-[var(--color-success-600)] hover:bg-[var(--color-success-100)] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <CheckCheck className="h-3.5 w-3.5" />
                           전체 출석
@@ -478,7 +577,8 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                             e.stopPropagation();
                             handleSelectAllPart(part, false);
                           }}
-                          className="h-auto px-2.5 py-1 text-xs text-[var(--color-text-tertiary)] hover:bg-[var(--color-border-subtle)]"
+                          disabled={isTabLocked}
+                          className="h-auto px-2.5 py-1 text-xs text-[var(--color-text-tertiary)] hover:bg-[var(--color-border-subtle)] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <XCircle className="h-3.5 w-3.5" />
                           전체 불참
@@ -512,7 +612,7 @@ export default function AttendanceList({ date }: AttendanceListProps) {
                               }}
                               isAttending={isAttending}
                               isChanged={isChanged}
-                              disabled={false}
+                              disabled={isTabLocked}
                               onToggle={() => handleToggle(member.id)}
                             />
                           );
@@ -546,14 +646,15 @@ export default function AttendanceList({ date }: AttendanceListProps) {
               );
             })}
 
-            {/* 필터 적용 시 결과가 없을 때 */}
-            {showAbsentOnly && absentCount === 0 && (
-              <div className="py-8 text-center text-[var(--color-text-secondary)]">
-                모든 대원이 출석으로 체크되어 있습니다.
-              </div>
-            )}
-          </TabsContent>
-        ))}
+              {/* 필터 적용 시 결과가 없을 때 */}
+              {showAbsentOnly && absentCount === 0 && (
+                <div className="py-8 text-center text-[var(--color-text-secondary)]">
+                  모든 대원이 출석으로 체크되어 있습니다.
+                </div>
+              )}
+            </TabsContent>
+          );
+        })}
       </Tabs>
 
       {/* 하단 고정 플로팅 저장 버튼 */}

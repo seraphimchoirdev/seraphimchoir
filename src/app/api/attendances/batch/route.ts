@@ -30,39 +30,63 @@ async function getMemberParts(
 
 /**
  * 예배 일정 존재 여부 확인 헬퍼 함수
- * @returns true if service schedule exists for the date
+ * service_schedule_id가 주어지면 해당 ID로 직접 조회, 아니면 date로 조회
+ * @returns true if service schedule exists
  */
 async function checkServiceScheduleExists(
   supabase: SupabaseClient<Database>,
-  date: string
+  serviceScheduleId?: string,
+  date?: string
 ): Promise<boolean> {
-  const { data } = await supabase.from('service_schedules').select('id').eq('date', date).single();
-
-  return data !== null;
+  if (serviceScheduleId) {
+    const { data } = await supabase
+      .from('service_schedules')
+      .select('id')
+      .eq('id', serviceScheduleId)
+      .single();
+    return data !== null;
+  }
+  if (date) {
+    const { data } = await supabase.from('service_schedules').select('id').eq('date', date).limit(1);
+    return (data?.length ?? 0) > 0;
+  }
+  return false;
 }
 
 /**
  * 자리배치표 존재 여부 확인 헬퍼 함수
- * @returns true if arrangement exists for the date
+ * service_schedule_id가 주어지면 해당 예배의 배치표 조회, 아니면 date로 조회
+ * @returns true if arrangement exists
  */
 async function checkArrangementExists(
   supabase: SupabaseClient<Database>,
-  date: string
+  serviceScheduleId?: string,
+  date?: string
 ): Promise<boolean> {
-  const { data } = await supabase
-    .from('arrangements')
-    .select('id')
-    .eq('date', date)
-    .limit(1)
-    .single();
-
-  return data !== null;
+  if (serviceScheduleId) {
+    const { data } = await supabase
+      .from('arrangements')
+      .select('id')
+      .eq('service_schedule_id', serviceScheduleId)
+      .limit(1);
+    return (data?.length ?? 0) > 0;
+  }
+  if (date) {
+    const { data } = await supabase
+      .from('arrangements')
+      .select('id')
+      .eq('date', date)
+      .limit(1);
+    return (data?.length ?? 0) > 0;
+  }
+  return false;
 }
 
 // 단일 출석 기록 스키마
 const attendanceItemSchema = z.object({
   member_id: z.string().uuid('유효한 찬양대원 ID를 입력해주세요'),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식은 YYYY-MM-DD여야 합니다'),
+  service_schedule_id: z.string().uuid('유효한 예배 일정 ID를 입력해주세요'),
   is_service_available: z.boolean().default(true),
   is_practice_attended: z.boolean().default(true),
   notes: z.string().nullable().optional(),
@@ -163,20 +187,20 @@ export async function POST(request: NextRequest) {
     const validatedData = batchAttendanceSchema.parse(body);
 
     // 3. 예배 일정 존재 확인
-    // 모든 출석 기록의 날짜가 동일하다고 가정 (BulkAttendanceForm에서 단일 날짜로 제출)
-    const targetDate = validatedData.attendances[0].date;
-    const hasServiceSchedule = await checkServiceScheduleExists(supabase, targetDate);
+    // 모든 출석 기록은 같은 service_schedule_id를 가짐
+    const targetServiceScheduleId = validatedData.attendances[0].service_schedule_id;
+    const hasServiceSchedule = await checkServiceScheduleExists(supabase, targetServiceScheduleId);
 
     if (!hasServiceSchedule) {
       return NextResponse.json(
-        { error: '해당 날짜에 등록된 예배 일정이 없습니다. 먼저 예배 일정을 등록해주세요.' },
+        { error: '해당 예배 일정을 찾을 수 없습니다. 먼저 예배 일정을 등록해주세요.' },
         { status: 400 }
       );
     }
 
-    // 4. 자리배치표 존재 확인
+    // 4. 자리배치표 존재 확인 (해당 예배의 배치표)
     // 배치표가 있으면 ADMIN/CONDUCTOR 외에는 is_service_available 변경 차단 (연습 필드는 허용)
-    const hasArrangement = await checkArrangementExists(supabase, targetDate);
+    const hasArrangement = await checkArrangementExists(supabase, targetServiceScheduleId);
 
     // 5. PART_LEADER인 경우, 요청된 모든 멤버가 본인 파트인지 검증
     const memberIds = validatedData.attendances.map((a) => a.member_id);
@@ -189,7 +213,7 @@ export async function POST(request: NextRequest) {
       const { data: existingAttendances } = await supabase
         .from('attendances')
         .select('member_id, is_service_available')
-        .eq('date', targetDate)
+        .eq('service_schedule_id', targetServiceScheduleId)
         .in('member_id', memberIds);
 
       const existingMap = new Map(
@@ -215,11 +239,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Upsert 처리 (onConflict: member_id, date)
+    // Upsert 처리 (onConflict: member_id, service_schedule_id)
     const { data, error } = await supabase
       .from('attendances')
       .upsert(attendancesToSave, {
-        onConflict: 'member_id, date',
+        onConflict: 'member_id, service_schedule_id',
         ignoreDuplicates: false, // 업데이트 허용
       })
       .select();

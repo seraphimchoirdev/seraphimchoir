@@ -24,6 +24,7 @@ export interface AttendanceFilters {
   date?: string;
   start_date?: string;
   end_date?: string;
+  service_schedule_id?: string;
   is_available?: boolean; // backward compatibility
   is_service_available?: boolean;
   is_practice_attended?: boolean;
@@ -48,6 +49,7 @@ export function useAttendances(filters?: AttendanceFilters) {
       if (apiFilters?.date) params.append('date', apiFilters.date);
       if (apiFilters?.start_date) params.append('start_date', apiFilters.start_date);
       if (apiFilters?.end_date) params.append('end_date', apiFilters.end_date);
+      if (apiFilters?.service_schedule_id) params.append('service_schedule_id', apiFilters.service_schedule_id);
       if (apiFilters?.is_available !== undefined) {
         params.append('is_available', apiFilters.is_available.toString());
       }

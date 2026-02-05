@@ -14,6 +14,7 @@ const practiceAttendanceTypeSchema = z.enum(['FULL', 'EARLY_LEAVE', 'LATE_JOIN',
 const createAttendanceSchema = z.object({
   member_id: z.string().uuid('유효한 찬양대원 ID를 입력해주세요'),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식은 YYYY-MM-DD여야 합니다'),
+  service_schedule_id: z.string().uuid('유효한 예배 일정 ID를 입력해주세요').optional(),
   is_service_available: z.boolean().default(true),
   is_practice_attended: z.boolean().default(true),
   practice_status: practiceAttendanceTypeSchema.nullable().optional(),
@@ -29,6 +30,7 @@ const createAttendanceSchema = z.object({
  * - start_date, end_date: 날짜 범위 필터링
  * - is_service_available: 등단 가능 여부 필터링 (true/false)
  * - is_practice_attended: 연습 참석 여부 필터링 (true/false)
+ * - service_schedule_id: 특정 예배 일정 필터링 (UUID)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -48,6 +50,7 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date');
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
+    const serviceScheduleId = searchParams.get('service_schedule_id');
 
     // is_available은 backward compatibility를 위해 is_service_available로 매핑
     const isAvailable = searchParams.get('is_available');
@@ -56,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     // 필터가 하나도 없으면 빈 배열 반환 (의도치 않은 전체 조회 방지)
     const hasAnyFilter =
-      memberId || date || startDate || endDate || isServiceAvailable || isPracticeAttended;
+      memberId || date || startDate || endDate || isServiceAvailable || isPracticeAttended || serviceScheduleId;
     if (!hasAnyFilter) {
       logger.debug('Attendances: No filters provided, returning empty array');
       return NextResponse.json([]);
@@ -101,6 +104,10 @@ export async function GET(request: NextRequest) {
       // 필터 적용
       if (memberId) {
         query = query.eq('member_id', memberId);
+      }
+
+      if (serviceScheduleId) {
+        query = query.eq('service_schedule_id', serviceScheduleId);
       }
 
       if (date) {
