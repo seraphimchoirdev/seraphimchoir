@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronDown, ChevronUp, Copy, Crown, Download, Loader2, Settings, Share2, Sparkles, Trash2, Zap } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, ChevronUp, Copy, Crown, Download, Loader2, Lock, Settings, Share2, Sparkles, Trash2, Zap } from 'lucide-react';
 
 import { ReactNode, use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -698,46 +698,82 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           </div>
         );
       case 7: {
-        // 배치표 공유
+        // 내보내기 및 확정
         const noAssignmentsExpanded = Object.keys(assignments).length === 0;
+        const currentArrangementStatus = arrangement.status ?? 'DRAFT';
         return (
-          <div className="space-y-3">
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              배치표를 이미지로 내보내거나, 상단 헤더에서 저장/공유할 수 있습니다.
-            </p>
-            <div className="flex flex-col gap-2">
-              {canShare && (
+          <div className="space-y-4">
+            {/* 섹션 1: 이미지 내보내기 */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                이미지 내보내기
+              </p>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                완성된 배치표를 이미지로 내보내세요.
+              </p>
+              <div className="flex flex-col gap-2">
+                {canShare && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleShareImage}
+                    disabled={noAssignmentsExpanded || isGenerating}
+                    className="w-full gap-1"
+                  >
+                    {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Share2 className="h-3 w-3" />}
+                    이미지 공유하기
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={handleShareImage}
+                  onClick={handleDownloadImage}
                   disabled={noAssignmentsExpanded || isGenerating}
                   className="w-full gap-1"
                 >
-                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Share2 className="h-3 w-3" />}
-                  공유하기
+                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                  PNG 다운로드
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyToClipboard}
+                  disabled={noAssignmentsExpanded || isGenerating}
+                  className="w-full gap-1"
+                >
+                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
+                  클립보드 복사
+                </Button>
+              </div>
+            </div>
+
+            {/* 섹션 2: 편집 완료 / 확정 안내 */}
+            <div className="space-y-2 border-t border-[var(--color-border-default)] pt-3">
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                편집 완료
+              </p>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                편집이 완료되면 상단 헤더의 버튼으로 잠그세요.{'\n'}
+                편집 완료 후에도 긴급 수정은 가능합니다.
+              </p>
+              {currentArrangementStatus === 'DRAFT' && (
+                <p className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+                  <CheckCircle2 className="h-3 w-3" />
+                  상단의 &apos;편집 완료&apos; 버튼을 눌러주세요.
+                </p>
               )}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleDownloadImage}
-                disabled={noAssignmentsExpanded || isGenerating}
-                className="w-full gap-1"
-              >
-                {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-                PNG 다운로드
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleCopyToClipboard}
-                disabled={noAssignmentsExpanded || isGenerating}
-                className="w-full gap-1"
-              >
-                {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
-                클립보드 복사
-              </Button>
+              {currentArrangementStatus === 'SHARED' && (
+                <p className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                  <Lock className="h-3 w-3" />
+                  상단의 &apos;확정&apos; 버튼으로 최종 확정할 수 있습니다.
+                </p>
+              )}
+              {currentArrangementStatus === 'CONFIRMED' && (
+                <p className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                  <Lock className="h-3 w-3" />
+                  배치표가 확정되었습니다.
+                </p>
+              )}
             </div>
           </div>
         );
@@ -937,7 +973,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   className="gap-1"
                 >
                   {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Share2 className="h-3 w-3" />}
-                  공유하기
+                  이미지 공유하기
                 </Button>
               )}
               <Button

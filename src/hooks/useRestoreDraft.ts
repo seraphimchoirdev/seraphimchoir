@@ -58,7 +58,7 @@ const STEP_TITLES: Record<WorkflowStep, string> = {
   4: '수동 배치 조정',
   5: '행별 Offset 조정',
   6: '줄반장 지정',
-  7: '배치표 공유',
+  7: '내보내기 및 확정',
 };
 
 /**

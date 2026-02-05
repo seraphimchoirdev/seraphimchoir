@@ -39,7 +39,7 @@ const logger = createLogger({ prefix: 'ArrangementStore' });
  * 4: 수동 배치 조정
  * 5: 행별 Offset 조정
  * 6: 줄반장 지정
- * 7: 자리배치표 공유
+ * 7: 내보내기 및 확정
  */
 export type WorkflowStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
@@ -95,9 +95,9 @@ export const WORKFLOW_STEPS: Record<WorkflowStep, WorkflowStepMeta> = {
   },
   7: {
     step: 7,
-    title: '배치표 공유',
-    shortTitle: '공유',
-    description: '배치표를 저장하고 공유합니다.',
+    title: '내보내기 및 확정',
+    shortTitle: '내보내기',
+    description: '배치표를 이미지로 내보내고 편집을 완료합니다.',
   },
 };
 
@@ -1705,18 +1705,13 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         newExpanded.add(nextStep);
       }
 
-      // 5단계 완료 → 6단계 진입 시 줄반장 자동 지정
+      // 5단계 완료 → 6단계 진입 시 줄반장 자동 지정 (최초 1회만)
       let newAssignments = state.assignments;
-      if (step === 5 && state.gridLayout) {
-        // 1. 기존 줄반장 전체 해제
-        newAssignments = { ...state.assignments };
-        Object.keys(newAssignments).forEach((key) => {
-          if (newAssignments[key].isRowLeader) {
-            newAssignments[key] = { ...newAssignments[key], isRowLeader: false };
-          }
-        });
+      const hasAnyRowLeader = Object.values(state.assignments).some(a => a.isRowLeader);
 
-        // 2. 자동으로 줄반장 지정
+      if (step === 5 && state.gridLayout && !hasAnyRowLeader) {
+        // 1. 자동으로 줄반장 지정
+        newAssignments = { ...state.assignments };
         const candidates = selectRowLeaders(newAssignments, state.gridLayout);
         candidates.forEach(({ row, col }) => {
           const key = `${row}-${col}`;
@@ -1724,7 +1719,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
             newAssignments[key] = { ...newAssignments[key], isRowLeader: true };
           }
         });
-        logger.debug(`6단계 진입: 줄반장 ${candidates.length}명 자동 지정`);
+        logger.debug(`6단계 진입: 줄반장 ${candidates.length}명 자동 지정 (최초)`);
       }
 
       return {

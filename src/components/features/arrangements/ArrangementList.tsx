@@ -35,7 +35,7 @@ const getStatusBadgeConfig = (status: ArrangementStatus | string | null) => {
   switch (status) {
     case 'SHARED':
       return {
-        label: '공유됨',
+        label: '편집완료',
         className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
       };
     case 'CONFIRMED':

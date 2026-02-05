@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-05
+- [x] **refactor(arrangements): 자리배치 저장/공유/확정 UX 용어 재설계**
+  - 커밋: `197ff2c`
+
 - [x] **fix(arrangements): 저장 시 줄 정렬 조정(rowOffsets) 초기화 버그 수정**
   - 커밋: `e6b9ae1`
 

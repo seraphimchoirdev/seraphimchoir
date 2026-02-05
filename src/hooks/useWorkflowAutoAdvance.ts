@@ -133,16 +133,16 @@ export function useWorkflowAutoAdvance(totalMembers: number, arrangementStatus?:
         reason: '수동 완료 필요',
       });
 
-      // 7단계: 공유 (SHARED 또는 CONFIRMED 상태)
+      // 7단계: 편집 완료 (SHARED 또는 CONFIRMED 상태)
       results.push({
         step: 7,
         isCompleted: arrangementStatus === 'SHARED' || arrangementStatus === 'CONFIRMED',
         reason:
           arrangementStatus === 'SHARED'
-            ? '공유됨'
+            ? '편집완료'
             : arrangementStatus === 'CONFIRMED'
               ? '확정됨'
-              : '미공유',
+              : '미완료',
       });
 
       return results;
