@@ -321,17 +321,17 @@ export const useAuthStore = create<AuthStore>()(
                 }
 
                 // 프로필 정보 가져오기
-                logger.debug('[fetchUser] 프로필 조회 시작:', session.user.id);
+                logger.debug('[fetchUser] 프로필 조회 시작, uid:', session.user.id);
                 const { data: profileData, error: profileError } = await supabase
                   .from('user_profiles')
                   .select('id, email, name, role, linked_member_id, link_status')
                   .eq('id', session.user.id)
-                  .single();
-                logger.debug('[fetchUser] 프로필 조회 완료:', { profileData, profileError });
+                  .maybeSingle();
 
                 if (profileError) {
-                  logger.error('[fetchUser] 프로필 로드 에러:', profileError);
+                  logger.error('[fetchUser] 프로필 로드 에러:', profileError.message, profileError.code, profileError);
                 }
+                logger.debug('[fetchUser] 프로필 조회 완료:', { hasProfile: !!profileData, role: profileData?.role });
 
                 // 연결된 대원 정보를 별도 쿼리로 조회 (linked_member_id가 있는 경우만)
                 let linkedMember: { name: string; part: Part | null } | null = null;
