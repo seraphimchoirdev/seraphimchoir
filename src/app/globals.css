@@ -510,6 +510,13 @@ body {
     --tw-ring-offset-shadow: 0 0 #0000 !important;
   }
 
+  /* 인쇄 시 줄반장 보라 글로우/링 제거 (내부 div) */
+  [data-capture-target] [data-seat-slot] > div {
+    box-shadow: none !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+    --tw-ring-offset-shadow: 0 0 #0000 !important;
+  }
+
   /* 인쇄 시 좌석번호 배지 숨김 — 이름과 겹침 방지 */
   [data-capture-target] [data-seat-slot] > span:first-child {
     display: none !important;
