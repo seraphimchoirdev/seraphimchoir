@@ -54,7 +54,7 @@ export function useAttendanceMode({ date, serviceScheduleId }: UseAttendanceMode
       const { data, error } = await query.maybeSingle();
 
       if (error) throw error;
-      return data?.status as 'DRAFT' | 'SHARED' | 'CONFIRMED' | null;
+      return (data?.status as 'DRAFT' | 'SHARED' | 'CONFIRMED' | null) ?? null;
     },
   });
 
