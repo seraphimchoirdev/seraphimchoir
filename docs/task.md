@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-05
+- [x] **fix(auth): admin 프로필 로드 에러 및 대시보드 미표시 수정**
+  - 커밋: `5bcdab2`
+
 
 - [x] **feat(attendances): 예배별 개별 출석 체크 (Multi-Service Attendance)**
   - 커밋: `df65e7a`
