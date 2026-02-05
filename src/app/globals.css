@@ -192,13 +192,13 @@
     --gradient-accent-subtle: linear-gradient(135deg, #fef6f7 0%, #fdecef 100%);
 
     /* Part Colors (악보 스티커 색상 기준) */
-    /* SOPRANO - Orange */
-    --color-part-soprano-50: #fff7ed;
-    --color-part-soprano-100: #ffedd5;
-    --color-part-soprano-200: #fed7aa;
-    --color-part-soprano-500: #f97316;
-    --color-part-soprano-600: #ea580c;
-    --color-part-soprano-700: #c2410c;
+    /* SOPRANO - Red */
+    --color-part-soprano-50: #fef2f2;
+    --color-part-soprano-100: #fee2e2;
+    --color-part-soprano-200: #fecaca;
+    --color-part-soprano-500: #ef4444;
+    --color-part-soprano-600: #dc2626;
+    --color-part-soprano-700: #b91c1c;
 
     /* ALTO - Amber */
     --color-part-alto-50: #fffbeb;
@@ -505,5 +505,8 @@ body {
   [data-capture-target] [data-seat-slot] {
     border-width: 2px !important;
     background-color: transparent !important;
+    box-shadow: none !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+    --tw-ring-offset-shadow: 0 0 #0000 !important;
   }
 }
