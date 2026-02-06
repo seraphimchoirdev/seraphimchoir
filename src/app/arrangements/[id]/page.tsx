@@ -380,15 +380,29 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       // DB에 저장된 워크플로우 상태가 있으면 복원
       const savedLayout = arrangement.grid_layout as unknown as GridLayout;
       if (savedLayout?.workflowState && !skipInitialization) {
-        // DB에서 워크플로우 상태 복원
         const { currentStep, completedSteps, isWizardMode } = savedLayout.workflowState;
-        logger.debug('DB에서 워크플로우 상태 복원:', { currentStep, completedSteps, isWizardMode });
-        restoreWorkflowState({
-          currentStep: currentStep as WorkflowStep,
-          completedSteps: new Set(completedSteps as WorkflowStep[]),
-          isWizardMode,
-          expandedSections: new Set([currentStep as WorkflowStep]),
-        });
+        const isCompletedArrangement =
+          arrangement.status === 'SHARED' || arrangement.status === 'CONFIRMED';
+
+        if (isCompletedArrangement) {
+          // 긴급 수정 모드: 모든 단계 완료로 복원 (DB에 불완전하게 저장된 경우 보정)
+          logger.debug('긴급 수정 모드: 모든 단계 완료로 복원', { status: arrangement.status });
+          restoreWorkflowState({
+            currentStep: currentStep as WorkflowStep,
+            completedSteps: new Set([1, 2, 3, 4, 5, 6, 7] as WorkflowStep[]),
+            isWizardMode,
+            expandedSections: new Set([currentStep as WorkflowStep]),
+          });
+        } else {
+          // DRAFT: DB에서 워크플로우 상태 그대로 복원
+          logger.debug('DB에서 워크플로우 상태 복원:', { currentStep, completedSteps, isWizardMode });
+          restoreWorkflowState({
+            currentStep: currentStep as WorkflowStep,
+            completedSteps: new Set(completedSteps as WorkflowStep[]),
+            isWizardMode,
+            expandedSections: new Set([currentStep as WorkflowStep]),
+          });
+        }
       } else if (!skipInitialization) {
         if (arrangement.status === 'CONFIRMED' || arrangement.status === 'SHARED') {
           // 레거시 배치표: 워크플로우 상태 없지만 이미 확정/공유됨 → 전체 완료로 간주

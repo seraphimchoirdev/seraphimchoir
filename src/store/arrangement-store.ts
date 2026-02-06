@@ -1600,7 +1600,9 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
       const newCompleted = new Set(state.workflow.completedSteps);
 
       // 완료된 단계로 돌아가면 해당 단계를 미완료로 변경
-      if (newCompleted.has(step)) {
+      // 단, 전체 완료 상태(긴급 수정 모드)에서는 완료 해제하지 않음
+      const allStepsCompleted = newCompleted.size === 7;
+      if (newCompleted.has(step) && !allStepsCompleted) {
         newCompleted.delete(step);
         logger.debug(`단계 ${step}로 돌아감 - 완료 상태 해제`);
       }

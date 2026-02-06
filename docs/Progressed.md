@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-06 | fix(arrangements): 긴급 수정 모드에서 워크플로우 체크 표시 해제 버그 수정 |
 | 2026-02-06 | fix(security): CSP connect-src에 Vercel Analytics 새 도메인 추가 |
 | 2026-02-06 | docs: 2026-02-06 핸드오프 문서 생성 |
 | 2026-02-05 | fix: 출석 모드 null 처리 및 알토 줄반장 선택 로직 개선 |

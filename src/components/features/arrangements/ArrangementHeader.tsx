@@ -358,12 +358,13 @@ export default function ArrangementHeader({
     setIsSaving(true);
     try {
       // 먼저 현재 변경사항 저장 (워크플로우 상태 포함)
+      // 편집 완료 시 모든 단계를 강제 완료로 저장 (불완전한 completedSteps 방지)
       const gridLayoutWithWorkflow = gridLayout
         ? {
             ...gridLayout,
             workflowState: {
-              currentStep: workflow.currentStep,
-              completedSteps: Array.from(workflow.completedSteps),
+              currentStep: 7,
+              completedSteps: [1, 2, 3, 4, 5, 6, 7],
               isWizardMode: workflow.isWizardMode,
             },
           }
@@ -437,13 +438,13 @@ export default function ArrangementHeader({
     setConfirmDialog(false);
     setIsSaving(true);
     try {
-      // 워크플로우 상태 포함
+      // 워크플로우 상태 포함 (확정 시 모든 단계 강제 완료)
       const gridLayoutWithWorkflow = gridLayout
         ? {
             ...gridLayout,
             workflowState: {
-              currentStep: workflow.currentStep,
-              completedSteps: Array.from(workflow.completedSteps),
+              currentStep: 7,
+              completedSteps: [1, 2, 3, 4, 5, 6, 7],
               isWizardMode: workflow.isWizardMode,
             },
           }

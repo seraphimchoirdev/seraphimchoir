@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-06
+- [x] **fix(arrangements): 긴급 수정 모드에서 워크플로우 체크 표시 해제 버그 수정**
+  - 커밋: `08d62fd`
+
 - [x] **fix(security): CSP connect-src에 Vercel Analytics 새 도메인 추가**
   - 커밋: `6d5b19a`
 
