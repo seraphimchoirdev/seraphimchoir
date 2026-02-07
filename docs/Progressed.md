@@ -218,6 +218,8 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-07 | fix(arrangements): GridSettingsPanel 디바운스 race condition 버그 수정 |
+| 2026-02-07 | fix(arrangements): GridSettingsPanel 디바운스 race condition 버그 수정 |
 | 2026-02-07 | feat(arrangements): 자리배치 워크플로우 UX 개선 9개 항목 |
 | 2026-02-07 | fix(ui): 데스크탑 토스트 위치를 top-center로 변경 (반응형) |
 | 2026-02-07 | docs: Claude API Structured Outputs 가이드 문서 추가 |

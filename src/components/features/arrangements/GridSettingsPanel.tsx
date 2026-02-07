@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronUp, RotateCcw, Zap } from 'lucide-react';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,58 +42,59 @@ export default function GridSettingsPanel({
   const currentRows = gridLayout?.rows ?? GRID_CONSTRAINTS.DEFAULT_ROWS;
   const currentCapacities =
     gridLayout?.rowCapacities ?? Array(GRID_CONSTRAINTS.DEFAULT_ROWS).fill(8);
+  const currentZigzag = gridLayout?.zigzagPattern ?? 'even';
+  const currentRowOffsets = gridLayout?.rowOffsets ?? {};
 
   // 디바운스: 줄 수 로컬 state
   const [localRows, setLocalRows] = useState(currentRows);
-  const isRowsSyncing = useRef(false);
+  const [localCapacities, setLocalCapacities] = useState(currentCapacities);
 
+  // 외부(AI 추천 등)에서 값이 바뀌면 로컬 state 동기화
+  // currentCapacities는 매 렌더마다 새 참조이므로 값 비교 필수
   useEffect(() => {
-    if (!isRowsSyncing.current) {
-      setLocalRows(currentRows);
-    }
-    isRowsSyncing.current = false;
+    setLocalRows(currentRows);
   }, [currentRows]);
 
   useEffect(() => {
+    setLocalCapacities((prev) => {
+      if (
+        prev.length === currentCapacities.length &&
+        prev.every((v, i) => v === currentCapacities[i])
+      ) {
+        return prev; // 값 동일하면 참조 유지 → 리렌더 방지
+      }
+      return currentCapacities;
+    });
+  });
+
+  // 줄 수 디바운스: 로컬 값이 바뀌면 400ms 후 반영
+  useEffect(() => {
     if (localRows === currentRows) return;
-    isRowsSyncing.current = true;
     const timer = setTimeout(() => {
       handleRowsChange(localRows);
     }, 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localRows]);
+  }, [localRows, currentRows]);
 
-  // 디바운스: 줄별 인원 로컬 state
-  const [localCapacities, setLocalCapacities] = useState(currentCapacities);
-  const isCapacitiesSyncing = useRef(false);
-
+  // 줄별 인원 디바운스: 로컬 값이 바뀌면 400ms 후 한 번에 반영
   useEffect(() => {
-    if (!isCapacitiesSyncing.current) {
-      setLocalCapacities(currentCapacities);
-    }
-    isCapacitiesSyncing.current = false;
-  }, [currentCapacities]);
-
-  useEffect(() => {
-    // 배열 비교
-    const changed = localCapacities.some((v, i) => v !== currentCapacities[i]) ||
+    const changed =
+      localCapacities.some((v, i) => v !== currentCapacities[i]) ||
       localCapacities.length !== currentCapacities.length;
     if (!changed) return;
-    isCapacitiesSyncing.current = true;
     const timer = setTimeout(() => {
-      // 변경된 인덱스 찾아서 반영
-      localCapacities.forEach((val, idx) => {
-        if (val !== currentCapacities[idx]) {
-          handleCapacityChange(idx, String(val));
-        }
+      onChange({
+        rows: currentRows,
+        rowCapacities: localCapacities,
+        zigzagPattern: currentZigzag,
+        rowOffsets: currentRowOffsets,
+        isManuallyConfigured: true,
       });
     }, 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localCapacities]);
-  const currentZigzag = gridLayout?.zigzagPattern ?? 'even';
-  const currentRowOffsets = gridLayout?.rowOffsets ?? {};
+  }, [localCapacities, currentCapacities]);
 
   // 행 수 변경
   const handleRowsChange = (newRows: number) => {

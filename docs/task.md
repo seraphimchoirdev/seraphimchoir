@@ -68,6 +68,12 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-07
+- [x] **fix(arrangements): GridSettingsPanel 디바운스 race condition 버그 수정**
+  - 커밋: `41d6301`
+
+- [x] **fix(arrangements): GridSettingsPanel 디바운스 race condition 버그 수정**
+  - 커밋: `b55595f`
+
 - [x] **feat(arrangements): 자리배치 워크플로우 UX 개선 9개 항목**
   - 커밋: `887d8c0`
 
