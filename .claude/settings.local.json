@@ -57,7 +57,10 @@
       "Bash(git show:*)",
       "Bash(node:*)",
       "Bash(git status:*)",
-      "Bash(git diff:*)"
+      "Bash(git diff:*)",
+      "Bash(bash:*)",
+      "WebSearch",
+      "Bash(npx next build:*)"
     ],
     "deny": [],
     "ask": []
