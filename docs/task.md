@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-07
+- [x] **docs: Claude API Structured Outputs 가이드 문서 추가**
+  - 커밋: `6668af0`
+
 - [x] **fix(config): CSP 및 로컬 개발 환경 localhost 지원 추가**
   - 커밋: `99a385a`
 
