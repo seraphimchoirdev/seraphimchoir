@@ -12,6 +12,7 @@
 import { useEffect, useRef } from 'react';
 
 import { createLogger } from '@/lib/logger';
+import { splashManager } from '@/lib/splash-manager';
 import { createClient } from '@/lib/supabase/client';
 import { showWarning } from '@/lib/toast';
 
@@ -44,6 +45,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       logger.debug('세션 체크 시작');
       await fetchUser();
       logger.debug('세션 체크 완료');
+
+      // Auth 초기화 완료 → 스플래시 해제 트리거
+      splashManager.setAppReady();
 
       // 서버 연결 실패 시 사용자에게 알림
       const error = useAuthStore.getState().error;
