@@ -32,16 +32,15 @@ const logger = createLogger({ prefix: 'ArrangementStore' });
 // ============================================
 
 /**
- * 워크플로우 단계 (1~7)
- * 1: AI 추천 분배
- * 2: 좌석 그리드 수동 조정
- * 3: AI 자동배치
- * 4: 수동 배치 조정
- * 5: 행별 Offset 조정
- * 6: 줄반장 지정
- * 7: 내보내기 및 확정
+ * 워크플로우 단계 (1~6)
+ * 1: 줄 구성 설정
+ * 2: AI 자동배치
+ * 3: 수동 배치 조정
+ * 4: 줄 정렬 조정
+ * 5: 줄반장 지정
+ * 6: 내보내기 및 확정
  */
-export type WorkflowStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type WorkflowStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 /**
  * 워크플로우 단계 메타데이터
@@ -59,42 +58,36 @@ export interface WorkflowStepMeta {
 export const WORKFLOW_STEPS: Record<WorkflowStep, WorkflowStepMeta> = {
   1: {
     step: 1,
-    title: 'AI 추천 분배',
-    shortTitle: 'AI 분배',
-    description: '출석 인원을 기반으로 줄별 인원을 자동 추천합니다.',
-  },
-  2: {
-    step: 2,
     title: '줄 구성 설정',
     shortTitle: '줄 구성',
     description: '줄 수와 줄별 인원을 수동으로 조정합니다.',
   },
-  3: {
-    step: 3,
+  2: {
+    step: 2,
     title: 'AI 자동배치',
     shortTitle: 'AI 배치',
     description: '파트, 키, 경력을 고려하여 좌석을 자동 배치합니다.',
   },
-  4: {
-    step: 4,
+  3: {
+    step: 3,
     title: '수동 배치 조정',
     shortTitle: '수동 조정',
     description: '클릭-클릭 방식으로 좌석을 미세 조정합니다.',
   },
-  5: {
-    step: 5,
+  4: {
+    step: 4,
     title: '줄 정렬 조정',
     shortTitle: '줄 정렬',
     description: '지휘자 시야 확보를 위해 줄 위치를 조정합니다.',
   },
-  6: {
-    step: 6,
+  5: {
+    step: 5,
     title: '줄반장 지정',
     shortTitle: '줄반장',
     description: '각 줄의 대표를 지정합니다.',
   },
-  7: {
-    step: 7,
+  6: {
+    step: 6,
     title: '내보내기 및 확정',
     shortTitle: '내보내기',
     description: '배치표를 이미지로 내보내고 편집을 완료합니다.',
@@ -726,13 +719,12 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
    *
    * | 단계 | 단계명 | 초기화 동작 |
    * |------|--------|------------|
-   * | 1 | AI 분배 | gridLayout을 null로 초기화 |
-   * | 2 | 그리드 조정 | rowCapacities를 기본값(각 행 12명)으로 복원 |
-   * | 3 | AI 자동배치 | assignments 초기화 (gridLayout 유지) |
-   * | 4 | 수동 배치 조정 | assignments 초기화 (gridLayout 유지) |
-   * | 5 | Offset 조정 | rowOffsets 제거 |
-   * | 6 | 줄반장 지정 | 모든 isRowLeader를 false로 |
-   * | 7 | 공유 | 초기화 불필요 |
+   * | 1 | 줄 구성 설정 | rowCapacities를 기본값(각 행 12명)으로 복원 |
+   * | 2 | AI 자동배치 | assignments 초기화 (gridLayout 유지) |
+   * | 3 | 수동 배치 조정 | assignments 초기화 (gridLayout 유지) |
+   * | 4 | Offset 조정 | rowOffsets 제거 |
+   * | 5 | 줄반장 지정 | 모든 isRowLeader를 false로 |
+   * | 6 | 내보내기 | 초기화 불필요 |
    */
   clearCurrentStepOnly: (step: WorkflowStep) => {
     // 해당 단계부터 이후 단계 체크 해제
@@ -742,15 +734,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
       switch (step) {
         case 1:
-          // AI 분배 단계: gridLayout만 초기화
-          return {
-            _history: saveToHistory(state),
-            gridLayout: null,
-            assignments: {},
-          };
-
-        case 2:
-          // 그리드 조정 단계: rowCapacities를 기본값으로 복원 (rows 유지)
+          // 줄 구성 설정 단계: rowCapacities를 기본값으로 복원 (rows 유지)
           if (!state.gridLayout) return state;
           const defaultCapacity = 12;
           return {
@@ -762,15 +746,15 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
             },
           };
 
+        case 2:
         case 3:
-        case 4:
           // AI 자동배치 / 수동 배치 조정: assignments만 초기화 (gridLayout 유지)
           return {
             _history: saveToHistory(state),
             assignments: {},
           };
 
-        case 5:
+        case 4:
           // Offset 조정 단계: rowOffsets만 제거
           if (!state.gridLayout) return state;
           const { rowOffsets: _rowOffsets, ...restGridLayout } = state.gridLayout;
@@ -782,35 +766,35 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
             },
           };
 
-        case 6:
+        case 5:
           // 줄반장 지정 단계: 자동 지정 후 수동 조정
           // 1. 먼저 기존 줄반장 전체 해제
-          const assignmentsForStep6 = { ...state.assignments };
-          Object.keys(assignmentsForStep6).forEach((key) => {
-            if (assignmentsForStep6[key].isRowLeader) {
-              assignmentsForStep6[key] = { ...assignmentsForStep6[key], isRowLeader: false };
+          const assignmentsForStep5 = { ...state.assignments };
+          Object.keys(assignmentsForStep5).forEach((key) => {
+            if (assignmentsForStep5[key].isRowLeader) {
+              assignmentsForStep5[key] = { ...assignmentsForStep5[key], isRowLeader: false };
             }
           });
 
           // 2. gridLayout이 있으면 자동으로 줄반장 지정
           if (state.gridLayout) {
-            const candidates = selectRowLeaders(assignmentsForStep6, state.gridLayout);
+            const candidates = selectRowLeaders(assignmentsForStep5, state.gridLayout);
             candidates.forEach(({ row, col }) => {
               const key = `${row}-${col}`;
-              if (assignmentsForStep6[key]) {
-                assignmentsForStep6[key] = { ...assignmentsForStep6[key], isRowLeader: true };
+              if (assignmentsForStep5[key]) {
+                assignmentsForStep5[key] = { ...assignmentsForStep5[key], isRowLeader: true };
               }
             });
-            logger.debug(`6단계 진입: 줄반장 ${candidates.length}명 자동 지정`);
+            logger.debug(`5단계 진입: 줄반장 ${candidates.length}명 자동 지정`);
           }
 
           return {
             _history: saveToHistory(state),
-            assignments: assignmentsForStep6,
+            assignments: assignmentsForStep5,
           };
 
-        case 7:
-          // 공유 단계: 초기화 불필요
+        case 6:
+          // 내보내기 단계: 초기화 불필요
           return state;
 
         default:
@@ -1644,7 +1628,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
       // 완료된 단계로 돌아가면 해당 단계를 미완료로 변경
       // 단, 전체 완료 상태(긴급 수정 모드)에서는 완료 해제하지 않음
-      const allStepsCompleted = newCompleted.size === 7;
+      const allStepsCompleted = newCompleted.size === 6;
       if (newCompleted.has(step) && !allStepsCompleted) {
         newCompleted.delete(step);
         logger.debug(`단계 ${step}로 돌아감 - 완료 상태 해제`);
@@ -1678,7 +1662,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
   nextStep: () =>
     set((state) => {
       const { currentStep } = state.workflow;
-      if (currentStep >= 7) return state;
+      if (currentStep >= 6) return state;
 
       const nextStep = (currentStep + 1) as WorkflowStep;
       const newExpanded = new Set(state.workflow.expandedSections);
@@ -1740,21 +1724,21 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
       logger.debug(`단계 ${step} 완료 표시`);
 
-      // 마지막 단계(7)가 아니면 다음 단계로 이동
-      const nextStep = step < 7 ? ((step + 1) as WorkflowStep) : step;
+      // 마지막 단계(6)가 아니면 다음 단계로 이동
+      const nextStep = step < 6 ? ((step + 1) as WorkflowStep) : step;
       const newExpanded = new Set(state.workflow.expandedSections);
 
-      if (step < 7 && state.workflow.isWizardMode) {
+      if (step < 6 && state.workflow.isWizardMode) {
         // 위자드 모드: 현재 단계 접고 다음 단계 펼침
         newExpanded.clear();
         newExpanded.add(nextStep);
       }
 
-      // 5단계 완료 → 6단계 진입 시 줄반장 자동 지정 (최초 1회만)
+      // 4단계 완료 → 5단계 진입 시 줄반장 자동 지정 (최초 1회만)
       let newAssignments = state.assignments;
       const hasAnyRowLeader = Object.values(state.assignments).some(a => a.isRowLeader);
 
-      if (step === 5 && state.gridLayout && !hasAnyRowLeader) {
+      if (step === 4 && state.gridLayout && !hasAnyRowLeader) {
         // 1. 자동으로 줄반장 지정
         newAssignments = { ...state.assignments };
         const candidates = selectRowLeaders(newAssignments, state.gridLayout);
@@ -1764,7 +1748,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
             newAssignments[key] = { ...newAssignments[key], isRowLeader: true };
           }
         });
-        logger.debug(`6단계 진입: 줄반장 ${candidates.length}명 자동 지정 (최초)`);
+        logger.debug(`5단계 진입: 줄반장 ${candidates.length}명 자동 지정 (최초)`);
       }
 
       return {
@@ -1802,12 +1786,12 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
   invalidateFromCurrentStep: (reason?: string) =>
     set((state) => {
       const fromStep = state.workflow.currentStep + 1;
-      if (fromStep > 7) return state; // 7단계(마지막)에서는 해제할 것 없음
+      if (fromStep > 6) return state; // 6단계(마지막)에서는 해제할 것 없음
 
       const newCompleted = new Set(state.workflow.completedSteps);
       let changed = false;
 
-      for (let s = fromStep; s <= 7; s++) {
+      for (let s = fromStep; s <= 6; s++) {
         if (newCompleted.has(s as WorkflowStep)) {
           newCompleted.delete(s as WorkflowStep);
           changed = true;
@@ -1816,7 +1800,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
       if (!changed) return state;
 
-      logger.debug(`워크플로우 연쇄 해제: 단계 ${fromStep}~7${reason ? ` (${reason})` : ''}`);
+      logger.debug(`워크플로우 연쇄 해제: 단계 ${fromStep}~6${reason ? ` (${reason})` : ''}`);
       return { workflow: { ...state.workflow, completedSteps: newCompleted } };
     }),
 
@@ -1833,7 +1817,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         newExpanded = new Set<WorkflowStep>([state.workflow.currentStep]);
       } else {
         // 자유 모드 활성화: 모든 섹션 펼침
-        newExpanded = new Set<WorkflowStep>([1, 2, 3, 4, 5, 6, 7]);
+        newExpanded = new Set<WorkflowStep>([1, 2, 3, 4, 5, 6]);
       }
 
       logger.debug(`위자드 모드: ${newIsWizardMode ? '활성화' : '비활성화'}`);
@@ -1875,7 +1859,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
     set((state) => ({
       workflow: {
         ...state.workflow,
-        expandedSections: new Set<WorkflowStep>([1, 2, 3, 4, 5, 6, 7]),
+        expandedSections: new Set<WorkflowStep>([1, 2, 3, 4, 5, 6]),
       },
     })),
 
@@ -1900,17 +1884,27 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
   /**
    * 워크플로우 상태 복원 (Draft에서 복원 시 사용)
+   * 기존 7단계 데이터 호환을 위한 클램프 처리 포함
    */
   restoreWorkflowState: (state) => {
+    // 기존 7단계 데이터 호환 처리: 6 초과 값을 6으로 클램프
+    const clampedStep = Math.min(state.currentStep, 6) as WorkflowStep;
+    const clampedCompleted = new Set(
+      Array.from(state.completedSteps).filter((s) => s <= 6)
+    ) as Set<WorkflowStep>;
+    const clampedExpanded = new Set(
+      Array.from(state.expandedSections).filter((s) => s <= 6)
+    ) as Set<WorkflowStep>;
+
     logger.debug(
-      `워크플로우 상태 복원: step=${state.currentStep}, completed=${Array.from(state.completedSteps).join(',')}`
+      `워크플로우 상태 복원: step=${clampedStep}, completed=${Array.from(clampedCompleted).join(',')}`
     );
     set({
       workflow: {
-        currentStep: state.currentStep,
-        completedSteps: state.completedSteps,
+        currentStep: clampedStep,
+        completedSteps: clampedCompleted,
         isWizardMode: state.isWizardMode,
-        expandedSections: state.expandedSections,
+        expandedSections: clampedExpanded,
       },
     });
   },

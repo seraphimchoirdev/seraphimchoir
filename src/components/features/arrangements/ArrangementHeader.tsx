@@ -316,8 +316,8 @@ export default function ArrangementHeader({
   const handleResetCurrentStepClick = useCallback(() => {
     const currentStep = workflow.currentStep;
 
-    // 7단계(내보내기)는 초기화 불필요
-    if (currentStep === 7) {
+    // 6단계(내보내기)는 초기화 불필요
+    if (currentStep === 6) {
       showInfo('내보내기 단계에서는 초기화할 내용이 없습니다.');
       return;
     }
@@ -363,8 +363,8 @@ export default function ArrangementHeader({
         ? {
             ...gridLayout,
             workflowState: {
-              currentStep: 7,
-              completedSteps: [1, 2, 3, 4, 5, 6, 7],
+              currentStep: 6,
+              completedSteps: [1, 2, 3, 4, 5, 6],
               isWizardMode: workflow.isWizardMode,
             },
           }
@@ -443,8 +443,8 @@ export default function ArrangementHeader({
         ? {
             ...gridLayout,
             workflowState: {
-              currentStep: 7,
-              completedSteps: [1, 2, 3, 4, 5, 6, 7],
+              currentStep: 6,
+              completedSteps: [1, 2, 3, 4, 5, 6],
               isWizardMode: workflow.isWizardMode,
             },
           }
@@ -608,8 +608,8 @@ export default function ArrangementHeader({
 
       <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
         {/* AI 배치/과거 배치/줄반장 버튼은 워크플로우 패널 내부로 이동됨 */}
-        {/* Undo/Redo: Step 2-6 (실제 편집이 일어나는 단계)에서만 표시 */}
-        {!isReadOnly && workflow.currentStep >= 2 && workflow.currentStep <= 6 && (
+        {/* Undo/Redo: Step 1-5 (실제 편집이 일어나는 단계)에서만 표시 */}
+        {!isReadOnly && workflow.currentStep >= 1 && workflow.currentStep <= 5 && (
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
@@ -633,8 +633,8 @@ export default function ArrangementHeader({
             </Button>
           </div>
         )}
-        {/* 초기화 메뉴: Step 1-6에서만 표시 (Step 7은 내보내기 단계이므로 제외) */}
-        {!isReadOnly && workflow.currentStep >= 1 && workflow.currentStep <= 6 && (
+        {/* 초기화 메뉴: Step 1-5에서만 표시 (Step 6은 내보내기 단계이므로 제외) */}
+        {!isReadOnly && workflow.currentStep >= 1 && workflow.currentStep <= 5 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" disabled={isSaving} className="h-11 gap-2 text-sm sm:h-10">
@@ -665,8 +665,8 @@ export default function ArrangementHeader({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        {/* 이미지 메뉴: Step 4 이후 (배치 완료 후 내보내기 가능) */}
-        {workflow.currentStep >= 4 && (
+        {/* 이미지 메뉴: Step 3 이후 (배치 완료 후 내보내기 가능) */}
+        {workflow.currentStep >= 3 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

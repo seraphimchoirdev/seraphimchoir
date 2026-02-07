@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-07
+- [x] **refactor(arrangements): 7단계 → 6단계 워크플로우 리팩토링**
+  - 커밋: `a3bb4ff`
+
 - [x] **fix(arrangements): 배치표 생성 토스트 통합 및 AI 추천 분배 race condition 수정**
   - 커밋: `c94597f`
 

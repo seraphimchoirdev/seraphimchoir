@@ -20,7 +20,7 @@ interface GridSettingsPanelProps {
   gridLayout: GridLayout | null;
   onChange: (layout: GridLayout) => void;
   totalMembers: number;
-  /** 워크플로우 단계 (2단계에서는 AI 추천, 지그재그, 행별 세부 조정 숨김) */
+  /** 워크플로우 단계 (1단계에서는 AI 추천, 지그재그, 행별 세부 조정 숨김) */
   workflowStep?: number;
   /** 워크플로우 패널 내부에 embedded될 때 Card wrapper 제거 */
   embedded?: boolean;
@@ -33,8 +33,8 @@ export default function GridSettingsPanel({
   workflowStep,
   embedded = false,
 }: GridSettingsPanelProps) {
-  // 2단계에서는 기본 설정만 표시 (AI 추천, 지그재그, 행별 세부 조정 숨김)
-  const isStep2 = workflowStep === 2;
+  // 1단계에서는 기본 설정만 표시 (AI 추천, 지그재그, 행별 세부 조정 숨김)
+  const isStep2 = workflowStep === 1;
   // 행별 오프셋 조정 섹션 펼침 상태
   const [isRowOffsetsExpanded, setIsRowOffsetsExpanded] = useState(false);
 
@@ -135,7 +135,7 @@ export default function GridSettingsPanel({
         </div>
       </div>
 
-      {/* AI 추천 분배 버튼 - 2단계에서는 숨김 (1단계에서 이미 실행) */}
+      {/* AI 추천 분배 버튼 - 1단계에서는 숨김 (페이지 초기화에서 자동 실행) */}
       {!isStep2 && (
         <div className="space-y-2">
           <Button
@@ -171,7 +171,7 @@ export default function GridSettingsPanel({
         </div>
       </div>
 
-      {/* 지그재그 패턴 설정 - 2단계에서는 숨김 (5단계 전용) */}
+      {/* 지그재그 패턴 설정 - 1단계에서는 숨김 (4단계 전용) */}
       {!isStep2 && (
         <div className="space-y-2">
           <Label className="text-sm sm:text-base">지그재그 패턴</Label>
@@ -228,7 +228,7 @@ export default function GridSettingsPanel({
         </div>
       )}
 
-      {/* 행별 지그재그 세부 조정 - 2단계에서는 숨김 (5단계 전용) */}
+      {/* 행별 지그재그 세부 조정 - 1단계에서는 숨김 (4단계 전용) */}
       {!isStep2 && (
         <div className="space-y-2">
           <button

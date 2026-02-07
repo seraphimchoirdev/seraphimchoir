@@ -128,7 +128,7 @@ export const OFFSET_PRESETS: OffsetPreset[] = [
  * - Set을 배열로 변환하여 JSON 저장 가능
  */
 export interface SerializableWorkflowState {
-  /** 현재 활성화된 단계 (1~7) */
+  /** 현재 활성화된 단계 (1~6) */
   currentStep: number;
   /** 완료된 단계 목록 (배열) */
   completedSteps: number[];

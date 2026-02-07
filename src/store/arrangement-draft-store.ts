@@ -125,6 +125,13 @@ export const useArrangementDraftStore = create<DraftStore>()(
           return null;
         }
 
+        // 기존 7단계 데이터 호환: 6 초과 값을 클램프
+        if (draft.workflow.currentStep > 6) {
+          draft.workflow.currentStep = 6 as WorkflowStep;
+        }
+        draft.workflow.completedSteps = draft.workflow.completedSteps.filter(s => s <= 6) as WorkflowStep[];
+        draft.workflow.expandedSections = draft.workflow.expandedSections.filter(s => s <= 6) as WorkflowStep[];
+
         return draft;
       },
 
@@ -212,10 +219,15 @@ export function deserializeWorkflowState(serialized: SerializableWorkflowState):
   isWizardMode: boolean;
   expandedSections: Set<WorkflowStep>;
 } {
+  // 기존 7단계 데이터 호환: 6 초과 값을 클램프
+  const clampedStep = Math.min(serialized.currentStep, 6) as WorkflowStep;
+  const clampedCompleted = serialized.completedSteps.filter(s => s <= 6) as WorkflowStep[];
+  const clampedExpanded = serialized.expandedSections.filter(s => s <= 6) as WorkflowStep[];
+
   return {
-    currentStep: serialized.currentStep,
-    completedSteps: new Set(serialized.completedSteps),
+    currentStep: clampedStep,
+    completedSteps: new Set(clampedCompleted),
     isWizardMode: serialized.isWizardMode,
-    expandedSections: new Set(serialized.expandedSections),
+    expandedSections: new Set(clampedExpanded),
   };
 }

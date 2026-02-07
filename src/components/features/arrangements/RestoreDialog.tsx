@@ -83,7 +83,7 @@ export default function RestoreDialog({
               <ArrowRight className="h-4 w-4" />
               <span>진행 단계:</span>
               <span className="font-medium text-[var(--color-text-primary)]">
-                {draftInfo.stepTitle} ({draftInfo.currentStep}/7)
+                {draftInfo.stepTitle} ({draftInfo.currentStep}/6)
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
