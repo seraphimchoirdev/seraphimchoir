@@ -16,16 +16,28 @@
   ],
   "icons": [
     {
+      "src": "/icon-192x192.png?v=3",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.png?v=3",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/icon-maskable-192x192.png?v=3",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     },
     {
       "src": "/icon-maskable-512x512.png?v=3",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
@@ -36,7 +48,7 @@
       "url": "/schedules",
       "icons": [
         {
-          "src": "/icon-maskable-192x192.png?v=3",
+          "src": "/icon-192x192.png?v=3",
           "sizes": "192x192"
         }
       ]
@@ -48,7 +60,7 @@
       "url": "/arrangements",
       "icons": [
         {
-          "src": "/icon-maskable-192x192.png?v=3",
+          "src": "/icon-192x192.png?v=3",
           "sizes": "192x192"
         }
       ]

@@ -1,110 +1,83 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
 
 import { splashManager } from '@/lib/splash-manager';
 
+const FADE_OUT_MS = 500;
+
 export default function SplashScreen() {
   const [isVisible, setIsVisible] = useState(true);
   const [isFading, setIsFading] = useState(false);
-  const [isShowing, setIsShowing] = useState(false); // 페이드 인용
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [isShowing, setIsShowing] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const dismissedRef = useRef(false);
+  const mountTimeRef = useRef(Date.now());
 
   // 페이드 인 애니메이션
   useEffect(() => {
     const showTimer = setTimeout(() => {
       setIsShowing(true);
-    }, 50); // 약간의 딜레이 후 페이드 인 시작
+    }, 50);
 
     return () => clearTimeout(showTimer);
   }, []);
 
+  // 앱 준비 상태 구독 + safety timeout
   useEffect(() => {
     let fadeTimer: NodeJS.Timeout;
 
-    // PWA 환경 감지 (표시 시간 조절용)
     const isPWA =
       window.matchMedia('(display-mode: standalone)').matches ||
       // @ts-expect-error - iOS Safari standalone 속성
       window.navigator.standalone === true ||
       document.referrer.includes('android-app://');
 
-    // PWA는 더 길게, 웹은 기본 시간
-    const minDisplayTime = isPWA ? 2500 : 1500; // PWA: 2.5초, 웹: 1.5초
-    const maxDisplayTime = isPWA ? 4500 : 3000; // PWA: 4.5초, 웹: 3초
+    const minDisplayTime = isPWA ? 800 : 500;
+    const maxDisplayTime = 2500;
 
     const hideSplash = () => {
-      setIsFading(true);
-      fadeTimer = setTimeout(() => {
-        setIsVisible(false);
-        // 스플래시가 숨겨진 후 앱이 준비됨을 알림
-        splashManager.setAppReady();
-      }, 800); // 페이드 아웃 시간 증가 (더 부드러운 전환)
+      if (dismissedRef.current) return;
+      dismissedRef.current = true;
+
+      // 최소 표시 시간 보장
+      const elapsed = Date.now() - mountTimeRef.current;
+      const remaining = Math.max(0, minDisplayTime - elapsed);
+
+      setTimeout(() => {
+        setIsFading(true);
+        fadeTimer = setTimeout(() => {
+          setIsVisible(false);
+          splashManager.setSplashDismissed();
+        }, FADE_OUT_MS);
+      }, remaining);
     };
 
-    // 최소 표시 시간 후 이미지가 로드되었거나 에러가 발생했으면 숨김
-    const minDisplayTimer = setTimeout(() => {
-      if (imageLoaded || imageError) {
-        hideSplash();
-      }
-    }, minDisplayTime);
+    // AuthProvider에서 setAppReady() 호출 시 즉시 반응
+    const unsubscribe = splashManager.onAppReady(hideSplash);
 
-    // 최대 표시 시간 후에는 무조건 숨김 (fallback)
-    const maxDisplayTimer = setTimeout(() => {
-      hideSplash();
-    }, maxDisplayTime);
-
-    // 페이지가 완전히 로드되면 스플래시 숨김
-    const handlePageLoad = () => {
-      if (document.readyState === 'complete') {
-        // 페이지가 완전히 로드되면 즉시 스플래시를 숨김
-        if (imageLoaded || imageError || Date.now() - pageLoadStartTime > 2000) {
-          hideSplash();
-        }
-      }
-    };
-
-    const pageLoadStartTime = Date.now();
-
-    // 이미 페이지가 로드된 경우
-    if (document.readyState === 'complete') {
-      handlePageLoad();
-    } else {
-      window.addEventListener('load', handlePageLoad);
-    }
+    // safety timeout: 앱이 준비되지 않아도 최대 시간 후 숨김
+    const safetyTimer = setTimeout(hideSplash, maxDisplayTime);
 
     return () => {
-      clearTimeout(minDisplayTimer);
-      clearTimeout(maxDisplayTimer);
       clearTimeout(fadeTimer);
-      window.removeEventListener('load', handlePageLoad);
+      clearTimeout(safetyTimer);
+      unsubscribe();
     };
-  }, [imageLoaded, imageError]);
-
-  // 이미지 로드 완료 처리
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-  };
-
-  // 이미지 로드 에러 처리
-  const handleImageError = () => {
-    setImageError(true);
-    console.error('Failed to load splash screen image');
-  };
+  }, []);
 
   if (!isVisible) return null;
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center bg-white transition-all duration-700 ${
+      className={`fixed inset-0 z-[100] flex items-center justify-center bg-white transition-all duration-500 ${
         !isShowing ? 'opacity-0' : isFading ? 'opacity-0' : 'opacity-100'
       }`}
     >
       <div
-        className={`relative flex flex-col items-center transition-transform duration-700 ${
+        className={`relative flex flex-col items-center transition-transform duration-500 ${
           isShowing ? 'scale-100' : 'scale-95'
         }`}
       >
@@ -115,12 +88,10 @@ export default function SplashScreen() {
             width={512}
             height={512}
             className="h-48 w-48 object-contain md:h-64 md:w-64"
-            onLoad={handleImageLoad}
-            onError={handleImageError}
+            onError={() => setImageError(true)}
             unoptimized={process.env.NODE_ENV === 'production'}
           />
         ) : (
-          // Fallback UI when image fails to load
           <div className="text-center">
             <h1 className="mb-2 text-3xl font-bold text-[#4A8FD3]">새로핌:On</h1>
             <p className="text-sm text-gray-500">날마다 새로 피어나는 찬양대</p>
