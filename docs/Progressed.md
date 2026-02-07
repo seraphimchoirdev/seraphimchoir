@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-07 | fix(ui): 데스크탑 토스트 위치를 top-center로 변경 (반응형) |
 | 2026-02-07 | docs: Claude API Structured Outputs 가이드 문서 추가 |
 | 2026-02-07 | fix(config): CSP 및 로컬 개발 환경 localhost 지원 추가 |
 | 2026-02-07 | fix(auth): 프로필 조회 시 .single() → .maybeSingle() 에러 처리 개선 |
