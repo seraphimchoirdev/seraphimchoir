@@ -1135,6 +1135,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             date: arrangement.date,
             title: arrangement.title,
             conductor: arrangement.conductor || undefined,
+            serviceScheduleId: arrangement.service_schedule_id || undefined,
           }}
           showCaptureInfo={true}
           onEmergencyUnavailable={handleEmergencyUnavailable}
@@ -1165,6 +1166,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
               date: arrangement.date,
               title: arrangement.title,
               conductor: arrangement.conductor || undefined,
+              serviceScheduleId: arrangement.service_schedule_id || undefined,
             }}
             showCaptureInfo={true}
             onEmergencyUnavailable={handleEmergencyUnavailable}

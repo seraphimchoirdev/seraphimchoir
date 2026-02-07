@@ -123,6 +123,7 @@ export default function CreateArrangementDialog({
         date: formData.date,
         conductor: formData.conductor || null,
         service_info: formData.serviceInfo || null,
+        service_schedule_id: selectedScheduleId || undefined,
       },
       {
         onSuccess: (data) => {

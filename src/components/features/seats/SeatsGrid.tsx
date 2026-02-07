@@ -22,6 +22,7 @@ interface ArrangementInfo {
   date: string;
   title?: string;
   conductor?: string;
+  serviceScheduleId?: string;
 }
 
 interface EmergencyUnavailableParams {
@@ -86,7 +87,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
         >
           {/* 캡처용 헤더: 예배 정보 (캡처 모드에서만 표시) */}
           {showCaptureInfo && arrangementInfo && (
-            <CaptureHeader date={arrangementInfo.date} title={arrangementInfo.title} />
+            <CaptureHeader date={arrangementInfo.date} title={arrangementInfo.title} serviceScheduleId={arrangementInfo.serviceScheduleId} />
           )}
 
           {/* 좌석 그리드 - Flexbox 왼쪽 정렬 (역순: 6열이 상단, 1열이 하단) */}
