@@ -17,6 +17,7 @@ interface MySeatCardProps {
     column: number;
     isRowLeader: boolean;
   };
+  memberId: string;
 }
 
 /**
@@ -24,7 +25,7 @@ interface MySeatCardProps {
  *
  * 배치표가 공유된 후 내 좌석 위치를 표시합니다.
  */
-export function MySeatCard({ seat }: MySeatCardProps) {
+export function MySeatCard({ seat, memberId }: MySeatCardProps) {
   const displayDate = formatDisplayDate(seat.arrangementDate);
 
   return (
@@ -54,7 +55,7 @@ export function MySeatCard({ seat }: MySeatCardProps) {
 
         {/* 배치표 보기 버튼 */}
         <Button asChild variant="outline" className="w-full">
-          <Link href={`/arrangements/${seat.arrangementId}`}>배치표 전체 보기</Link>
+          <Link href={`/arrangements/${seat.arrangementId}?highlight=${memberId}`}>내 자리 확인하기</Link>
         </Button>
       </CardContent>
     </Card>
