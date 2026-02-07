@@ -35,12 +35,12 @@ export default function CaptureHeader({ date, title: _title, serviceType, hymnNa
   return (
     <div className="mb-6 border-b-2 border-[var(--color-border-default)] pb-6 text-center">
       {/* 1행: 제목 - 새로핌찬양대 등단 자리표 */}
-      <div className="text-2xl font-bold text-[var(--color-primary-600)]">
+      <div className="whitespace-nowrap text-2xl font-bold text-[var(--color-primary-600)]">
         새로핌찬양대 등단 자리표
       </div>
 
       {/* 2행: 부제 - 날짜 + 예배유형 */}
-      <div className="mt-1 text-lg text-[var(--color-text-primary)]">
+      <div className="mt-1 whitespace-nowrap text-lg text-[var(--color-text-primary)]">
         {formattedDate} {serviceType || '주일예배'}
       </div>
 

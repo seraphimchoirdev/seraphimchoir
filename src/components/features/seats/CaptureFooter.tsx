@@ -51,9 +51,9 @@ export default function CaptureFooter({ assignments }: CaptureFooterProps) {
   return (
     <div className="mt-6 border-t-2 border-gray-300 pt-6 text-center">
       {/* 파트별 인원수 */}
-      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-lg">
+      <div className="flex items-center justify-center gap-x-6 whitespace-nowrap text-lg">
         {PART_ORDER.map((part) => (
-          <span key={part} className="whitespace-nowrap text-gray-700">
+          <span key={part} className="text-gray-700">
             <span className="font-bold">{PART_ABBR[part]}</span>
             <span className="text-gray-600">: {partCounts[part]}명</span>
           </span>
@@ -61,7 +61,7 @@ export default function CaptureFooter({ assignments }: CaptureFooterProps) {
       </div>
 
       {/* 총 등단 인원수 */}
-      <div className="mt-3 text-xl font-bold text-gray-800">총 등단 인원: {totalCount}명</div>
+      <div className="mt-3 whitespace-nowrap text-xl font-bold text-gray-800">총 등단 인원: {totalCount}명</div>
     </div>
   );
 }
