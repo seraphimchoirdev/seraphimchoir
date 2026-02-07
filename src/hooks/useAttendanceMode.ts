@@ -82,6 +82,22 @@ export function useAttendanceMode({ date, serviceScheduleId }: UseAttendanceMode
     return 'service-entry';
   }, [date, dateStr, hasRole]);
 
+  // 시간 기반 기본 탭 (모든 역할 공통)
+  const defaultTab = useMemo((): 'service' | 'practice' => {
+    const now = new Date();
+    const targetDateStart = new Date(date);
+    targetDateStart.setHours(9, 0, 0, 0);
+
+    if (
+      isSunday(now) &&
+      format(now, 'yyyy-MM-dd') === dateStr &&
+      now >= targetDateStart
+    ) {
+      return 'practice';
+    }
+    return 'service';
+  }, [date, dateStr]);
+
   // 잠금 상태 계산
   const lockStatus = useMemo((): AttendanceLockStatus => {
     const isConfirmed = arrangementStatus === 'CONFIRMED';
@@ -97,6 +113,7 @@ export function useAttendanceMode({ date, serviceScheduleId }: UseAttendanceMode
 
   return {
     mode,
+    defaultTab,
     lockStatus,
     isLoading,
   };
