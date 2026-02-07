@@ -86,7 +86,7 @@ export default function AttendanceList({ date, serviceScheduleId }: AttendanceLi
   }, [serviceScheduleId]);
 
   // 출석 관리 모드 및 잠금 상태
-  const { mode, lockStatus, isLoading: isModeLoading } = useAttendanceMode({ date, serviceScheduleId });
+  const { mode, defaultTab, lockStatus, isLoading: isModeLoading } = useAttendanceMode({ date, serviceScheduleId });
 
   // 파트장인 경우 본인 파트 확인
   useEffect(() => {
@@ -142,8 +142,9 @@ export default function AttendanceList({ date, serviceScheduleId }: AttendanceLi
     service_schedule_id: serviceScheduleId,
   });
 
-  // 활성 탭: 모드에 따라 자동 설정
+  // 활성 탭: 모드에 따라 자동 설정 (both 모드에서는 시간 기반 defaultTab 사용)
   const [activeTab, setActiveTab] = useState<'service' | 'practice'>(() => {
+    if (mode === 'both') return defaultTab;
     if (mode === 'practice') return 'practice';
     return 'service';
   });
@@ -151,15 +152,18 @@ export default function AttendanceList({ date, serviceScheduleId }: AttendanceLi
 
   // 모드 변경 시 activeTab 자동 조정
   // 연습이 없는 예배(has_post_practice=false)에서는 practice 탭으로 전환하지 않음
+  // deps에서 activeTab 제거: 무한 루프 방지 (setActiveTab → 리렌더 → effect 재실행 방지)
   useEffect(() => {
-    if (!hasPostPractice && activeTab === 'practice') {
+    if (!hasPostPractice) {
       setActiveTab('service');
-    } else if (mode === 'service-entry' && activeTab !== 'service') {
+    } else if (mode === 'both') {
+      setActiveTab(defaultTab);
+    } else if (mode === 'service-entry') {
       setActiveTab('service');
-    } else if (mode === 'practice' && hasPostPractice && activeTab !== 'practice') {
+    } else if (mode === 'practice' && hasPostPractice) {
       setActiveTab('practice');
     }
-  }, [mode, activeTab, hasPostPractice]);
+  }, [mode, defaultTab, hasPostPractice]);
 
   // 변경사항 추적 상태
   const [pendingChanges, setPendingChanges] = useState<Record<string, Partial<Attendance>>>({});

@@ -47,11 +47,18 @@ export async function GET() {
     const nextSunday = getNextSunday();
 
     // 1. 다음 예배 정보 조회 (service_schedules)
-    const { data: serviceSchedule } = await adminSupabase
+    // 같은 날짜에 여러 예배가 있을 수 있으므로 배열로 조회 후 대표 예배 선택
+    const { data: serviceSchedules } = await adminSupabase
       .from('service_schedules')
       .select('*')
       .eq('date', nextSunday)
-      .maybeSingle();
+      .order('service_start_time', { ascending: true, nullsFirst: false });
+
+    // 대표 예배 선택: "주일 2부 예배" 우선, 없으면 시간이 가장 이른 예배
+    const serviceSchedule =
+      serviceSchedules?.find((s) => s.service_type === '주일 2부 예배') ??
+      serviceSchedules?.[0] ??
+      null;
 
     // 2. 투표 마감 정보 조회
     const { data: voteDeadline } = await adminSupabase
