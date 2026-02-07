@@ -33,6 +33,34 @@ const PART_LABELS: Record<string, string> = {
   BASS: 'B',
 };
 
+/** 파트별 색상 매핑 (globals.css의 CSS 변수 활용) */
+const PART_CARD_COLORS: Record<string, { bg: string; border: string; label: string; count: string }> = {
+  SOPRANO: {
+    bg: 'bg-[var(--color-part-soprano-50)]',
+    border: 'border-[var(--color-part-soprano-200)]',
+    label: 'text-[var(--color-part-soprano-600)]',
+    count: 'text-[var(--color-part-soprano-700)]',
+  },
+  ALTO: {
+    bg: 'bg-[var(--color-part-alto-50)]',
+    border: 'border-[var(--color-part-alto-200)]',
+    label: 'text-[var(--color-part-alto-600)]',
+    count: 'text-[var(--color-part-alto-700)]',
+  },
+  TENOR: {
+    bg: 'bg-[var(--color-part-tenor-50)]',
+    border: 'border-[var(--color-part-tenor-200)]',
+    label: 'text-[var(--color-part-tenor-600)]',
+    count: 'text-[var(--color-part-tenor-700)]',
+  },
+  BASS: {
+    bg: 'bg-[var(--color-part-bass-50)]',
+    border: 'border-[var(--color-part-bass-200)]',
+    label: 'text-[var(--color-part-bass-600)]',
+    count: 'text-[var(--color-part-bass-700)]',
+  },
+};
+
 /**
  * 출석 현황 요약 카드 (지휘자용)
  *
@@ -79,22 +107,25 @@ export function AttendanceSummaryCard({ nextServiceDate, summary }: AttendanceSu
         <div className="grid grid-cols-4 gap-2">
           {byPart
             .filter((p) => PART_LABELS[p.part]) // SPECIAL 제외
-            .map((part) => (
-              <div
-                key={part.part}
-                className="rounded-md border border-[var(--color-border-subtle)] p-2 text-center"
-              >
-                <div className="text-xs font-medium text-[var(--color-text-tertiary)]">
-                  {PART_LABELS[part.part]}
+            .map((part) => {
+              const colors = PART_CARD_COLORS[part.part];
+              return (
+                <div
+                  key={part.part}
+                  className={`rounded-md border p-2 text-center ${colors?.bg ?? ''} ${colors?.border ?? 'border-[var(--color-border-subtle)]'}`}
+                >
+                  <div className={`text-xs font-semibold ${colors?.label ?? 'text-[var(--color-text-tertiary)]'}`}>
+                    {PART_LABELS[part.part]}
+                  </div>
+                  <div className={`mt-1 text-lg font-semibold ${colors?.count ?? 'text-[var(--color-text-primary)]'}`}>
+                    {part.available}
+                    <span className="text-sm font-normal text-[var(--color-text-tertiary)]">
+                      /{part.total}
+                    </span>
+                  </div>
                 </div>
-                <div className="mt-1 text-lg font-semibold text-[var(--color-text-primary)]">
-                  {part.available}
-                  <span className="text-sm font-normal text-[var(--color-text-tertiary)]">
-                    /{part.total}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
         </div>
 
         {/* 액션 버튼 */}
