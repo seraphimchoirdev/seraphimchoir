@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-07 | feat(arrangements): 데이터 변경 시 워크플로우 이후 단계 체크 자동 해제 |
 | 2026-02-07 | docs: 2026-02-07 핸드오프 문서 생성 |
 | 2026-02-06 | fix(arrangements): 긴급 수정 모드에서 워크플로우 체크 표시 해제 버그 수정 |
 | 2026-02-06 | fix(security): CSP connect-src에 Vercel Analytics 새 도메인 추가 |

@@ -437,7 +437,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           logger.info(`등단 불가능 멤버 ${filteredCount}명이 좌석에서 제외됨`);
         }
 
-        setAssignments(formattedSeats);
+        setAssignments(formattedSeats, { silent: true });
       }
 
       // Load grid layout with fallback to calculated or default
@@ -474,13 +474,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           layout = DEFAULT_GRID_LAYOUT;
         }
 
-        setGridLayout(layout);
+        setGridLayout(layout, { silent: true });
       }
 
       // 로드 후 빈 좌석 자동 컴팩션 (등단 불가 멤버 필터링으로 생긴 빈 자리 정리)
       // 약간의 지연 후 실행하여 gridLayout 설정이 반영되도록 함
       setTimeout(() => {
-        compactAllRows();
+        compactAllRows({ silent: true });
         clearHistory(); // 컴팩션 후 히스토리 클리어
       }, 0);
     }
@@ -522,7 +522,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       rowCapacities: recommendation.rowCapacities,
       zigzagPattern: gridLayout?.zigzagPattern ?? 'even',
       isAIRecommended: true,
-    });
+    }, { silent: true });
 
     showInfo(
       `출석 인원 ${totalMembers}명 기반 AI 추천 분배가 자동 적용되었습니다. 줄 구성을 확인 후 다음 단계로 진행하세요.`

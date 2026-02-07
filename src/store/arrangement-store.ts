@@ -215,25 +215,25 @@ interface ArrangementState {
   workflow: WorkflowState;
 
   // Actions
-  setAssignments: (assignments: SeatAssignment[]) => void;
-  setGridLayout: (layout: GridLayout | null) => void;
-  setGridLayoutAndCompact: (layout: GridLayout) => void;
+  setAssignments: (assignments: SeatAssignment[], options?: { silent?: boolean }) => void;
+  setGridLayout: (layout: GridLayout | null, options?: { silent?: boolean }) => void;
+  setGridLayoutAndCompact: (layout: GridLayout, options?: { silent?: boolean }) => void;
 
   // 그리드 설정 유지 옵션이 있는 레이아웃 설정
-  setGridLayoutPreserveManual: (layout: GridLayout, preserveManual: boolean) => void;
+  setGridLayoutPreserveManual: (layout: GridLayout, preserveManual: boolean, options?: { silent?: boolean }) => void;
   // 행별 오프셋 설정
-  setRowOffset: (row: number, offset: RowOffsetValue) => void;
+  setRowOffset: (row: number, offset: RowOffsetValue, options?: { silent?: boolean }) => void;
   // 그리드를 수동 설정으로 마킹
   markGridAsManual: () => void;
   // 모든 행별 오프셋 초기화
-  clearRowOffsets: () => void;
+  clearRowOffsets: (options?: { silent?: boolean }) => void;
   // 지그재그 토글 (none ↔ even)
-  applyZigzagToggle: () => void;
+  applyZigzagToggle: (options?: { silent?: boolean }) => void;
   // 오프셋 프리셋 적용
-  applyOffsetPreset: (presetId: string) => void;
-  placeMember: (member: Omit<SeatAssignment, 'row' | 'col'>, row: number, col: number) => void;
-  removeMember: (row: number, col: number) => void;
-  moveMember: (fromRow: number, fromCol: number, toRow: number, toCol: number) => void;
+  applyOffsetPreset: (presetId: string, options?: { silent?: boolean }) => void;
+  placeMember: (member: Omit<SeatAssignment, 'row' | 'col'>, row: number, col: number, options?: { silent?: boolean }) => void;
+  removeMember: (row: number, col: number, options?: { silent?: boolean }) => void;
+  moveMember: (fromRow: number, fromCol: number, toRow: number, toCol: number, options?: { silent?: boolean }) => void;
   clearArrangement: () => void;
   clearCurrentStepOnly: (step: WorkflowStep) => void;
 
@@ -245,11 +245,11 @@ interface ArrangementState {
 
   // Row leader actions
   toggleRowLeaderMode: () => void;
-  toggleRowLeader: (row: number, col: number) => void;
+  toggleRowLeader: (row: number, col: number, options?: { silent?: boolean }) => void;
 
   // 줄반장 자동 지정/해제 액션
-  autoAssignRowLeaders: () => RowLeaderCandidate[];
-  clearAllRowLeaders: () => void;
+  autoAssignRowLeaders: (options?: { silent?: boolean }) => RowLeaderCandidate[];
+  clearAllRowLeaders: (options?: { silent?: boolean }) => void;
 
   // History actions for undo/redo
   undo: () => void;
@@ -272,6 +272,8 @@ interface ArrangementState {
   completeStep: (step: WorkflowStep) => void;
   /** 특정 단계를 미완료로 표시 */
   uncompleteStep: (step: WorkflowStep) => void;
+  /** 현재 단계 이후 완료 체크를 연쇄 해제 */
+  invalidateFromCurrentStep: (reason?: string) => void;
   /** 위자드 모드 토글 */
   toggleWizardMode: () => void;
   /** 섹션 펼침/접힘 토글 */
@@ -299,7 +301,8 @@ interface ArrangementState {
     removedPosition: { row: number; col: number },
     newLayout: GridLayout,
     partZones?: Map<Part, PartZone>,
-    preferences?: Map<string, MemberSeatPreference>
+    preferences?: Map<string, MemberSeatPreference>,
+    options?: { silent?: boolean }
   ) => MinimalReassignmentResult;
 
   // 빈 좌석 탐색
@@ -309,7 +312,8 @@ interface ArrangementState {
   autoPlaceUnassignedMembers: (
     unassignedMembers: UnassignedMember[],
     partZones?: Map<Part, PartZone>,
-    enableFallback?: boolean
+    enableFallback?: boolean,
+    options?: { silent?: boolean }
   ) => AutoPlacementResult;
 
   // === 새로운 긴급 등단 불가 처리 함수들 (파트 영역 고려) ===
@@ -320,14 +324,14 @@ interface ArrangementState {
    * @param emptyCol 빈 자리 열 (1-based)
    * @param targetPart 당길 대상 파트 (같은 파트만 당김)
    */
-  pullSamePartMembersLeft: (emptyRow: number, emptyCol: number, targetPart: Part) => void;
+  pullSamePartMembersLeft: (emptyRow: number, emptyCol: number, targetPart: Part, options?: { silent?: boolean }) => void;
 
   /**
    * 특정 행의 용량을 파트 side에 따라 조정
    * @param row 행 번호 (1-based)
    * @param side 축소할 방향 ('left' | 'right')
    */
-  shrinkRowFromSide: (row: number, side: 'left' | 'right') => void;
+  shrinkRowFromSide: (row: number, side: 'left' | 'right', options?: { silent?: boolean }) => void;
 
   /**
    * 뒷줄에서 앞줄로 같은 파트 멤버 1명 이동
@@ -336,7 +340,7 @@ interface ArrangementState {
    * @param part 이동할 파트
    * @returns 이동 성공 여부
    */
-  crossRowFillFromBack: (frontRow: number, emptyCol: number, part: Part) => boolean;
+  crossRowFillFromBack: (frontRow: number, emptyCol: number, part: Part, options?: { silent?: boolean }) => boolean;
 
   /**
    * 특정 행에서 파트의 마지막 빈 열 찾기 (당기기 후 빈 자리)
@@ -361,7 +365,7 @@ interface ArrangementState {
    * - 왼쪽 파트(SOPRANO/TENOR): 왼쪽으로 당김
    * - 오른쪽 파트(ALTO/BASS): 왼쪽으로 당김 (오른쪽 끝에서 빈 자리 생김)
    */
-  compactAllRows: () => void;
+  compactAllRows: (options?: { silent?: boolean }) => void;
 
   // ============================================
   // 긴급 변동 추적 시스템 (Emergency Changes Tracking)
@@ -459,7 +463,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
   workflow: createInitialWorkflowState(),
   emergencyChanges: createInitialEmergencyChangesState(),
 
-  setAssignments: (assignmentsList) => {
+  setAssignments: (assignmentsList, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('배치 전체 변경');
     const newAssignments: Record<string, SeatAssignment> = {};
     assignmentsList.forEach((a) => {
       newAssignments[`${a.row}-${a.col}`] = a;
@@ -470,14 +475,18 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
     }));
   },
 
-  setGridLayout: (layout) => set({ gridLayout: layout }),
+  setGridLayout: (layout, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('gridLayout 변경');
+    set({ gridLayout: layout });
+  },
 
   /**
    * 그리드 레이아웃 설정 (수동 설정 보존 옵션)
    * @param layout 새 그리드 레이아웃
    * @param preserveManual true면 현재 그리드의 rowCapacities 유지, false면 새 레이아웃 적용
    */
-  setGridLayoutPreserveManual: (layout, preserveManual) =>
+  setGridLayoutPreserveManual: (layout, preserveManual, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('줄 구성 수동 조정');
     set((state) => {
       if (preserveManual && state.gridLayout) {
         // 수동 설정 보존: 현재 rowCapacities 유지, 다른 속성만 업데이트
@@ -493,14 +502,16 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
       }
       // 새 레이아웃 적용
       return { gridLayout: layout };
-    }),
+    });
+  },
 
   /**
    * 행별 오프셋 설정
    * @param row 행 번호 (1-based)
    * @param offset 오프셋 값 (null = 기본 패턴 따름)
    */
-  setRowOffset: (row, offset) =>
+  setRowOffset: (row, offset, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('줄 오프셋 조정');
     set((state) => {
       if (!state.gridLayout) return state;
 
@@ -523,7 +534,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
           isManuallyConfigured: true,
         },
       };
-    }),
+    });
+  },
 
   /**
    * 그리드를 수동 설정으로 마킹
@@ -542,7 +554,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
   /**
    * 모든 행별 오프셋 초기화
    */
-  clearRowOffsets: () =>
+  clearRowOffsets: (options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('오프셋 초기화');
     set((state) => {
       if (!state.gridLayout) return state;
       const { rowOffsets: _, ...rest } = state.gridLayout;
@@ -552,14 +565,16 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
           rowOffsets: undefined,
         },
       };
-    }),
+    });
+  },
 
   /**
    * 지그재그 패턴 토글 (none ↔ even)
    * - 지그재그 적용 시 개별 rowOffsets는 초기화됨
    * - 지휘자 시야 확보가 필요한 경우에만 활성화
    */
-  applyZigzagToggle: () =>
+  applyZigzagToggle: (options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('지그재그 토글');
     set((state) => {
       if (!state.gridLayout) return state;
 
@@ -576,13 +591,15 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
           rowOffsets: undefined,
         },
       };
-    }),
+    });
+  },
 
   /**
    * 오프셋 프리셋 적용
    * @param presetId 프리셋 ID (straight, mountain, zigzag)
    */
-  applyOffsetPreset: (presetId: string) =>
+  applyOffsetPreset: (presetId: string, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('오프셋 프리셋');
     set((state) => {
       if (!state.gridLayout) return state;
 
@@ -602,7 +619,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
           rowOffsets: Object.keys(offsets).length > 0 ? offsets : undefined,
         },
       };
-    }),
+    });
+  },
 
   /**
    * 그리드 레이아웃 변경 (자동 재배치 없음)
@@ -610,7 +628,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
    * - 경계 밖 대원은 미배치 상태가 됨 (MemberSidebar에 표시)
    * - 사용자가 수동으로 재배치
    */
-  setGridLayoutAndCompact: (layout) =>
+  setGridLayoutAndCompact: (layout, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('줄 구성 변경 및 컴팩트');
     set((state) => {
       const { rowCapacities } = layout;
       const currentAssignments = { ...state.assignments };
@@ -634,9 +653,11 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         gridLayout: layout,
         assignments: newAssignments,
       };
-    }),
+    });
+  },
 
-  placeMember: (member, row, col) =>
+  placeMember: (member, row, col, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('수동 배치');
     set((state) => {
       const key = `${row}-${col}`;
       // If seat is occupied, we overwrite it (or could swap, but overwrite is simpler for now)
@@ -647,9 +668,11 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
           [key]: { ...member, row, col },
         },
       };
-    }),
+    });
+  },
 
-  removeMember: (row, col) =>
+  removeMember: (row, col, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('좌석에서 제거');
     set((state) => {
       const key = `${row}-${col}`;
       const { [key]: _removed, ...rest } = state.assignments;
@@ -657,9 +680,11 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         _history: saveToHistory(state),
         assignments: rest,
       };
-    }),
+    });
+  },
 
-  moveMember: (fromRow, fromCol, toRow, toCol) =>
+  moveMember: (fromRow, fromCol, toRow, toCol, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('좌석 이동');
     set((state) => {
       const fromKey = `${fromRow}-${fromCol}`;
       const toKey = `${toRow}-${toCol}`;
@@ -685,7 +710,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         _history: saveToHistory(state),
         assignments: newAssignments,
       };
-    }),
+    });
+  },
 
   clearArrangement: () =>
     set((state) => ({
@@ -708,7 +734,9 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
    * | 6 | 줄반장 지정 | 모든 isRowLeader를 false로 |
    * | 7 | 공유 | 초기화 불필요 |
    */
-  clearCurrentStepOnly: (step: WorkflowStep) =>
+  clearCurrentStepOnly: (step: WorkflowStep) => {
+    // 해당 단계부터 이후 단계 체크 해제
+    get().invalidateFromCurrentStep(`단계 ${step} 초기화`);
     set((state) => {
       logger.debug(`단계 ${step}만 초기화`);
 
@@ -788,7 +816,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         default:
           return state;
       }
-    }),
+    });
+  },
 
   // Click-click interaction methods
   selectMemberFromSidebar: (memberId, memberName, part) =>
@@ -946,7 +975,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
     })),
 
   // Toggle row leader status for a specific seat
-  toggleRowLeader: (row, col) =>
+  toggleRowLeader: (row, col, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('줄반장 토글');
     set((state) => {
       const key = `${row}-${col}`;
       const assignment = state.assignments[key];
@@ -963,7 +993,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
           },
         },
       };
-    }),
+    });
+  },
 
   /**
    * 줄반장 자동 지정
@@ -974,7 +1005,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
    *
    * @returns 지정된 줄반장 후보 배열
    */
-  autoAssignRowLeaders: () => {
+  autoAssignRowLeaders: (options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('줄반장 자동 지정');
     const state = get();
     const { gridLayout, assignments } = state;
 
@@ -1015,7 +1047,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
   /**
    * 모든 줄반장 해제
    */
-  clearAllRowLeaders: () =>
+  clearAllRowLeaders: (options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('줄반장 전체 해제');
     set((state) => {
       const newAssignments = { ...state.assignments };
       let clearedCount = 0;
@@ -1033,7 +1066,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         _history: saveToHistory(state),
         assignments: newAssignments,
       };
-    }),
+    });
+  },
 
   // Undo action - restore previous state
   undo: () =>
@@ -1093,7 +1127,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
   clearHistory: () => set({ _history: { past: [], future: [] } }),
 
   // Minimal reassignment: 긴급 등단 불가 시 최소 변동 재배치
-  applyMinimalReassignment: (removedPosition, newLayout, partZones, preferences) => {
+  applyMinimalReassignment: (removedPosition, newLayout, partZones, preferences, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('최소 재배치');
     const state = get();
 
     // 파트 영역이 제공되지 않으면 기본값 사용
@@ -1157,7 +1192,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
   },
 
   // 미배치 멤버 자동 배치
-  autoPlaceUnassignedMembers: (unassignedMembers, partZones, enableFallback = false) => {
+  autoPlaceUnassignedMembers: (unassignedMembers, partZones, enableFallback = false, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('미배치 자동 배치');
     const state = get();
     const { gridLayout, assignments } = state;
 
@@ -1258,7 +1294,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
    * 2. 같은 파트 멤버를 만나면 왼쪽으로 1칸 이동
    * 3. 다른 파트 멤버를 만나면 즉시 중단 (파트 경계 보호)
    */
-  pullSamePartMembersLeft: (emptyRow, emptyCol, targetPart) =>
+  pullSamePartMembersLeft: (emptyRow, emptyCol, targetPart, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('긴급 재배치');
     set((state) => {
       const { gridLayout, assignments } = state;
       if (!gridLayout) return state;
@@ -1298,7 +1335,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         _history: saveToHistory(state),
         assignments: newAssignments,
       };
-    }),
+    });
+  },
 
   /**
    * 특정 행의 용량을 파트 side에 따라 조정
@@ -1307,7 +1345,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
    * - 'right': 행 끝(오른쪽)에서 1칸 축소 (단순히 용량 -1)
    * - 'left': 왼쪽에서 축소 (모든 멤버를 오른쪽으로 1칸 이동 후 용량 -1)
    */
-  shrinkRowFromSide: (row, side) =>
+  shrinkRowFromSide: (row, side, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('줄 축소');
     set((state) => {
       const { gridLayout, assignments } = state;
       if (!gridLayout) return state;
@@ -1379,14 +1418,16 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         },
         assignments: newAssignments,
       };
-    }),
+    });
+  },
 
   /**
    * 뒷줄에서 앞줄로 같은 파트 멤버 1명 이동
    *
    * @returns 이동 성공 여부
    */
-  crossRowFillFromBack: (frontRow, emptyCol, part) => {
+  crossRowFillFromBack: (frontRow, emptyCol, part, options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('교차 줄 이동');
     const state = get();
     const { gridLayout, assignments } = state;
 
@@ -1530,7 +1571,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
    * 2. 빈 좌석 오른쪽의 멤버들을 왼쪽으로 당기기
    * 3. 파트 경계 무시하고 모든 멤버 당기기 (로드 시에는 이미 저장된 배치이므로)
    */
-  compactAllRows: () =>
+  compactAllRows: (options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('빈 좌석 정리');
     set((state) => {
       const { gridLayout, assignments } = state;
       if (!gridLayout) return state;
@@ -1585,7 +1627,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
       }
 
       return { assignments: newAssignments };
-    }),
+    });
+  },
 
   // ============================================
   // Workflow Actions (Progressive Disclosure)
@@ -1749,6 +1792,32 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
           completedSteps: newCompleted,
         },
       };
+    }),
+
+  /**
+   * 현재 단계 이후의 모든 완료 체크를 해제합니다.
+   * 데이터 변경 시 호출하여 이후 단계의 재검토를 유도합니다.
+   * @param reason 디버그 로그용 사유
+   */
+  invalidateFromCurrentStep: (reason?: string) =>
+    set((state) => {
+      const fromStep = state.workflow.currentStep + 1;
+      if (fromStep > 7) return state; // 7단계(마지막)에서는 해제할 것 없음
+
+      const newCompleted = new Set(state.workflow.completedSteps);
+      let changed = false;
+
+      for (let s = fromStep; s <= 7; s++) {
+        if (newCompleted.has(s as WorkflowStep)) {
+          newCompleted.delete(s as WorkflowStep);
+          changed = true;
+        }
+      }
+
+      if (!changed) return state;
+
+      logger.debug(`워크플로우 연쇄 해제: 단계 ${fromStep}~7${reason ? ` (${reason})` : ''}`);
+      return { workflow: { ...state.workflow, completedSteps: newCompleted } };
     }),
 
   /**
