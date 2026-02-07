@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useMemo } from 'react';
+import { forwardRef, useEffect, useMemo } from 'react';
 
 import { useZigzagOffset } from '@/hooks/useZigzagOffset';
 
@@ -45,6 +45,8 @@ interface SeatsGridProps {
   isEmergencyMode?: boolean;
   /** 현재 워크플로우 단계 (5단계에서 인라인 오프셋 컨트롤 표시) */
   workflowStep?: number;
+  /** 하이라이트 대상 멤버 ID (대시보드에서 "내 자리 확인하기" 클릭 시) */
+  highlightMemberId?: string | null;
 }
 
 const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
@@ -56,6 +58,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
     isReadOnly = false,
     isEmergencyMode = false,
     workflowStep,
+    highlightMemberId,
   },
   ref
 ) {
@@ -77,6 +80,18 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
 
   // 행별로 그룹화된 좌석 데이터
   const seatsByRow = useMemo(() => calculateSeatsByRow(layout), [layout]);
+
+  // 하이라이트 대상 좌석으로 자동 스크롤
+  useEffect(() => {
+    if (!highlightMemberId) return;
+    const timer = setTimeout(() => {
+      const el = document.querySelector('[data-highlight-seat]');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [highlightMemberId]);
 
   return (
     <div className="flex-1 overflow-auto bg-[var(--color-background-secondary)]">
@@ -162,16 +177,22 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                       };
                     })()}
                   >
-                    {rowData.seats.map((seat) => (
-                      <SeatSlot
-                        key={`${seat.row}-${seat.col}`}
-                        row={seat.row}
-                        col={seat.col}
-                        onEmergencyUnavailable={onEmergencyUnavailable}
-                        isReadOnly={isReadOnly}
-                        isEmergencyMode={isEmergencyMode}
-                      />
-                    ))}
+                    {rowData.seats.map((seat) => {
+                      const seatKey = `${seat.row}-${seat.col}`;
+                      const seatAssignment = assignments[seatKey];
+                      const isHighlighted = !!(highlightMemberId && seatAssignment?.memberId === highlightMemberId);
+                      return (
+                        <SeatSlot
+                          key={seatKey}
+                          row={seat.row}
+                          col={seat.col}
+                          onEmergencyUnavailable={onEmergencyUnavailable}
+                          isReadOnly={isReadOnly}
+                          isEmergencyMode={isEmergencyMode}
+                          isHighlighted={isHighlighted}
+                        />
+                      );
+                    })}
                   </div>
 
                   {/* 행별 배치 인원수 (오른쪽) — 배치된 인원이 있을 때만 표시 */}

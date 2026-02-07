@@ -2,6 +2,7 @@
 
 import { Check, CheckCircle2, ChevronDown, ChevronUp, Copy, Crown, Download, Loader2, Lock, Settings, Share2, Sparkles, Trash2 } from 'lucide-react';
 
+import { useSearchParams } from 'next/navigation';
 import { ReactNode, use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import ArrangementHeader from '@/components/features/arrangements/ArrangementHeader';
@@ -48,6 +49,10 @@ type Part = Database['public']['Enums']['part'];
 
 export default function ArrangementEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const { hasRole, isLoading: authLoading } = useAuth();
+
+  // 하이라이트 대상 멤버 (대시보드에서 "내 자리 확인하기" 클릭 시)
+  const searchParams = useSearchParams();
+  const highlightMemberId = searchParams.get('highlight');
 
   // 편집 권한: ADMIN, CONDUCTOR만
   const canEdit = hasRole(['ADMIN', 'CONDUCTOR']);
@@ -1147,6 +1152,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           isReadOnly={isReadOnly}
           isEmergencyMode={isEmergencyMode}
           workflowStep={workflow.currentStep}
+          highlightMemberId={highlightMemberId}
         />
       </div>
 
@@ -1180,6 +1186,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             isReadOnly={isReadOnly}
             isEmergencyMode={isEmergencyMode}
             workflowStep={workflow.currentStep}
+            highlightMemberId={highlightMemberId}
           />
 
           {/* 그리드 설정 버튼 (Floating) */}

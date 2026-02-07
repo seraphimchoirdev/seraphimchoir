@@ -4,7 +4,7 @@
 import { ArrowRight, Crown, UserPlus } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -30,6 +30,8 @@ interface SeatSlotProps {
   isReadOnly?: boolean;
   /** 긴급 수정 모드 (SHARED 상태에서만 true) - 컨텍스트 메뉴 표시 조건 */
   isEmergencyMode?: boolean;
+  /** 대시보드에서 "내 자리 확인하기" 클릭 시 하이라이트 표시 */
+  isHighlighted?: boolean;
 }
 
 // 메모이제이션된 SeatSlot 컴포넌트
@@ -39,8 +41,19 @@ const SeatSlot = memo(function SeatSlot({
   onEmergencyUnavailable,
   isReadOnly = false,
   isEmergencyMode = false,
+  isHighlighted = false,
 }: SeatSlotProps) {
   const seatKey = `${row}-${col}`;
+
+  // 하이라이트 표시 (3초 후 자동 해제)
+  const [showHighlight, setShowHighlight] = useState(false);
+  useEffect(() => {
+    if (isHighlighted) {
+      setShowHighlight(true);
+      const timer = setTimeout(() => setShowHighlight(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isHighlighted]);
 
   // 선택적 상태 구독 - 이 좌석과 관련된 상태만 구독
   const assignment = useArrangementStore((state) => state.assignments[seatKey]);
@@ -126,6 +139,7 @@ const SeatSlot = memo(function SeatSlot({
       <button
         type="button"
         data-seat-slot
+        {...(isHighlighted ? { 'data-highlight-seat': true } : {})}
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
         className={cn(
@@ -150,7 +164,9 @@ const SeatSlot = memo(function SeatSlot({
           // Normal occupied seat
           isOccupied &&
             !hasSelection &&
-            'border-2 border-solid border-[var(--color-border-strong)] bg-[var(--color-background-primary)]'
+            'border-2 border-solid border-[var(--color-border-strong)] bg-[var(--color-background-primary)]',
+          // 내 자리 하이라이트 (대시보드에서 진입 시)
+          showHighlight && 'animate-seat-highlight ring-4 ring-[var(--color-primary-400)] z-20'
         )}
         role="button"
         aria-label={`${row}열 ${col}번${assignment ? ` - ${assignment.memberName} 배치됨` : ''}`}

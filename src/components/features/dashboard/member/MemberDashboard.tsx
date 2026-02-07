@@ -155,7 +155,9 @@ export function MemberDashboard() {
       )}
 
       {/* 내 좌석 (배치표 공유 후) */}
-      {showSeatCard && myStatus.mySeat && <MySeatCard seat={myStatus.mySeat} />}
+      {showSeatCard && myStatus.mySeat && profile?.linked_member_id && (
+        <MySeatCard seat={myStatus.mySeat} memberId={profile.linked_member_id} />
+      )}
 
       {/* 다음 예배 정보 */}
       {context?.nextServiceInfo && (

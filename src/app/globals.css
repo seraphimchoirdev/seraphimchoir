@@ -465,6 +465,28 @@ body {
   }
 }
 
+/* === 내 자리 하이라이트 애니메이션 === */
+@keyframes seat-highlight {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(74, 143, 211, 0.4);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 20px 6px rgba(74, 143, 211, 0.5);
+  }
+}
+
+.animate-seat-highlight {
+  animation: seat-highlight 1s ease-in-out 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-seat-highlight {
+    animation: none;
+  }
+}
+
 /* === 이미지 캡처 모드 (lg 기준 고정 해상도) === */
 
 /* 캡처 영역 패딩: sm:px-8 기준 */
