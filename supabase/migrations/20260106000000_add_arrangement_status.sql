@@ -24,7 +24,7 @@ UPDATE service_schedules
 SET service_start_time = CASE
   WHEN service_type LIKE '%1부%' THEN '09:00'::TIME
   WHEN service_type LIKE '%2부%' THEN '11:00'::TIME
-  WHEN service_type LIKE '%오후%' OR service_type LIKE '%찬양%' THEN '14:00'::TIME
+  WHEN service_type LIKE '%오후%' OR service_type LIKE '%찬양%' THEN '17:00'::TIME
   WHEN service_type LIKE '%수요%' THEN '19:30'::TIME
   WHEN service_type LIKE '%금요%' THEN '20:00'::TIME
   ELSE '11:00'::TIME
