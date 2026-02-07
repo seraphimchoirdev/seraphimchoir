@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-07 | fix(config): CSP 및 로컬 개발 환경 localhost 지원 추가 |
 | 2026-02-07 | fix(auth): 프로필 조회 시 .single() → .maybeSingle() 에러 처리 개선 |
 | 2026-02-07 | refactor(arrangements): 7단계 → 6단계 워크플로우 리팩토링 |
 | 2026-02-07 | fix(arrangements): 배치표 생성 토스트 통합 및 AI 추천 분배 race condition 수정 |

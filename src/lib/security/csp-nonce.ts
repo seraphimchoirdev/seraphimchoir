@@ -69,7 +69,7 @@ export function generateCSPHeader(_nonce?: string): string {
       'https://*.vercel-insights.com', // Vercel Speed Insights (legacy)
       'https://va.vercel-scripts.com', // Vercel Analytics (새 도메인)
       'https://cdn.jsdelivr.net', // Pretendard 폰트 소스맵
-      ...(isDevelopment ? ['http://127.0.0.1:*', 'ws://127.0.0.1:*'] : []),
+      ...(isDevelopment ? ['http://localhost:*', 'ws://localhost:*', 'http://127.0.0.1:*', 'ws://127.0.0.1:*'] : []),
     ],
     'frame-ancestors': ["'none'"],
     'base-uri': ["'self'"],
