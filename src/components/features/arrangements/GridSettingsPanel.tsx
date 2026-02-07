@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronUp, RotateCcw, Zap } from 'lucide-react';
+import { ChevronDown, ChevronUp, Minus, Plus, RotateCcw, Zap } from 'lucide-react';
 
 import { useEffect, useState } from 'react';
 
@@ -55,6 +55,8 @@ export default function GridSettingsPanel({
     setLocalRows(currentRows);
   }, [currentRows]);
 
+  // currentCapacities는 매 렌더마다 새 배열 참조이므로, JSON 직렬화로 값 기반 비교
+  const capacitiesKey = JSON.stringify(currentCapacities);
   useEffect(() => {
     setLocalCapacities((prev) => {
       if (
@@ -65,7 +67,8 @@ export default function GridSettingsPanel({
       }
       return currentCapacities;
     });
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capacitiesKey]);
 
   // 줄 수 디바운스: 로컬 값이 바뀌면 400ms 후 반영
   useEffect(() => {
@@ -208,18 +211,69 @@ export default function GridSettingsPanel({
           {localCapacities.map((capacity, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <span className="w-12 text-sm font-medium sm:w-14">{idx + 1}줄:</span>
-              <Input
-                type="number"
-                min={0}
-                max={GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW}
-                value={capacity}
-                onChange={(e) => {
-                  const newCapacities = [...localCapacities];
-                  newCapacities[idx] = parseInt(e.target.value) || 0;
-                  setLocalCapacities(newCapacities);
-                }}
-                className="h-11 w-20 text-base"
-              />
+              <div className="flex h-11 items-stretch overflow-hidden rounded-md border border-[var(--color-border)] focus-within:ring-2 focus-within:ring-[var(--color-primary-500)] focus-within:ring-offset-1">
+                <button
+                  type="button"
+                  aria-label={`${idx + 1}줄 인원 감소`}
+                  disabled={capacity <= 0}
+                  onClick={() => {
+                    const newCapacities = [...localCapacities];
+                    newCapacities[idx] = Math.max(0, capacity - 1);
+                    setLocalCapacities(newCapacities);
+                  }}
+                  className="flex w-10 items-center justify-center border-r border-[var(--color-border)] bg-[var(--color-background-tertiary)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-border-default)] hover:text-[var(--color-text-primary)] active:bg-[var(--color-border-strong)] active:text-[var(--color-text-primary)] disabled:pointer-events-none disabled:opacity-40"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  aria-label={`${idx + 1}줄 인원 수`}
+                  value={capacity}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === '') {
+                      const newCapacities = [...localCapacities];
+                      newCapacities[idx] = 0;
+                      setLocalCapacities(newCapacities);
+                      return;
+                    }
+                    if (!/^\d+$/.test(raw)) return;
+                    const newCapacities = [...localCapacities];
+                    newCapacities[idx] = parseInt(raw, 10);
+                    setLocalCapacities(newCapacities);
+                  }}
+                  onBlur={(e) => {
+                    const num = parseInt(e.target.value, 10) || 0;
+                    const clamped = Math.min(
+                      GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW,
+                      Math.max(0, num)
+                    );
+                    if (clamped !== capacity) {
+                      const newCapacities = [...localCapacities];
+                      newCapacities[idx] = clamped;
+                      setLocalCapacities(newCapacities);
+                    }
+                  }}
+                  className="w-12 bg-transparent text-center text-base font-medium tabular-nums outline-none"
+                />
+                <button
+                  type="button"
+                  aria-label={`${idx + 1}줄 인원 증가`}
+                  disabled={capacity >= GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW}
+                  onClick={() => {
+                    const newCapacities = [...localCapacities];
+                    newCapacities[idx] = Math.min(
+                      GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW,
+                      capacity + 1
+                    );
+                    setLocalCapacities(newCapacities);
+                  }}
+                  className="flex w-10 items-center justify-center border-l border-[var(--color-border)] bg-[var(--color-primary-50)] text-[var(--color-primary-600)] transition-colors hover:bg-[var(--color-primary-100)] hover:text-[var(--color-primary-700)] active:bg-[var(--color-primary-200)] active:text-[var(--color-primary-700)] disabled:pointer-events-none disabled:opacity-40"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
               <span className="text-xs text-[var(--color-text-tertiary)] sm:text-sm">명</span>
             </div>
           ))}

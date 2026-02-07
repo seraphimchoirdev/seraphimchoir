@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-07
+- [x] **feat(arrangements): 줄별 인원 수 stepper UI 개선 및 동기화 버그 수정**
+  - 커밋: `5479c5c`
+
 - [x] **fix(arrangements): GridSettingsPanel 디바운스 race condition 버그 수정**
   - 커밋: `41d6301`
 
