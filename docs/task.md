@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-07
+- [x] **fix(auth): 프로필 조회 시 .single() → .maybeSingle() 에러 처리 개선**
+  - 커밋: `be652ec`
+
 - [x] **refactor(arrangements): 7단계 → 6단계 워크플로우 리팩토링**
   - 커밋: `a3bb4ff`
 
