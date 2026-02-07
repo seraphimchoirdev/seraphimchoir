@@ -34,7 +34,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCreateArrangement } from '@/hooks/useArrangements';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
 
-import { showError, showSuccess } from '@/lib/toast';
+import { showError } from '@/lib/toast';
 
 import type { Database } from '@/types/database.types';
 
@@ -126,7 +126,6 @@ export default function CreateArrangementDialog({
       },
       {
         onSuccess: (data) => {
-          showSuccess('배치표가 생성되었습니다.');
           onOpenChange(false);
           setSelectedScheduleId('');
           setFormData({ title: '', date: '', conductor: '', serviceInfo: '' });
