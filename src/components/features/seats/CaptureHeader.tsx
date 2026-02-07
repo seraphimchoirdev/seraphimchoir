@@ -2,11 +2,12 @@
 
 import { Music } from 'lucide-react';
 
-import { useServiceScheduleByDate } from '@/hooks/useServiceSchedules';
+import { useServiceSchedule, useServiceScheduleByDate } from '@/hooks/useServiceSchedules';
 
 interface CaptureHeaderProps {
   date: string;
   title?: string;
+  serviceScheduleId?: string;
 }
 
 /**
@@ -25,8 +26,11 @@ function formatDateKorean(dateStr: string): string {
  * 3행: 찬양곡명 (선택)
  * 4행: 봉헌송 연주자 (선택)
  */
-export default function CaptureHeader({ date, title: _title }: CaptureHeaderProps) {
-  const { data: schedule } = useServiceScheduleByDate(date);
+export default function CaptureHeader({ date, title: _title, serviceScheduleId }: CaptureHeaderProps) {
+  // serviceScheduleId가 있으면 정확한 ID로 조회, 없으면 날짜 기반 폴백 (레거시 배치표 호환)
+  const { data: scheduleById } = useServiceSchedule(serviceScheduleId);
+  const { data: scheduleByDate } = useServiceScheduleByDate(!serviceScheduleId ? date : undefined);
+  const schedule = scheduleById ?? scheduleByDate;
   const formattedDate = formatDateKorean(date);
 
   return (
