@@ -52,11 +52,16 @@ export async function GET(request: Request) {
       .from('user_profiles')
       .select('linked_member_id, link_status, role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
+      // 실제 DB 에러 (RLS 위반, 연결 오류 등)
       logger.error('프로필 조회 실패:', profileError);
-      // 프로필이 없으면 대원 연결 페이지로
+      return NextResponse.redirect(`${origin}/login?error=profile_fetch_failed`);
+    }
+
+    if (!profile) {
+      // 프로필이 존재하지 않음 → 대원 연결 페이지로
       return NextResponse.redirect(`${origin}/member-link`);
     }
 
@@ -92,9 +97,14 @@ export async function GET(request: Request) {
       .from('user_profiles')
       .select('linked_member_id, link_status, role')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (!profileError && profile) {
+    if (profileError) {
+      logger.error('프로필 조회 실패 (기존 세션):', profileError);
+      return NextResponse.redirect(`${origin}/login?error=profile_fetch_failed`);
+    }
+
+    if (profile) {
       // 대원 연결 상태에 따라 리다이렉트
       if (profile.role) {
         return NextResponse.redirect(`${origin}${next}`);

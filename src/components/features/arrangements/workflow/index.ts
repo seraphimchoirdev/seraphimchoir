@@ -10,7 +10,7 @@
  * 4. 수동 배치 조정 - Click-to-click 미세 조정
  * 5. 행별 Offset 조정 - 지휘자 시야 확보를 위한 줄 위치 조정
  * 6. 줄반장 지정 - 각 줄 대표 지정
- * 7. 자리배치표 공유 - 저장 및 공유
+ * 7. 내보내기 및 확정 - 이미지 내보내기 및 편집 완료
  */
 
 export { default as WorkflowProgress } from '../WorkflowProgress';

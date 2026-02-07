@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['@napi-rs/canvas'],
 
   // 모바일 디바이스 등 로컬 네트워크에서의 개발 서버 접근 허용
-  allowedDevOrigins: ['192.168.0.96', '127.0.0.1'],
+  allowedDevOrigins: ['localhost', '192.168.0.96', '127.0.0.1'],
 
   // 트리 쉐이킹 최적화 - barrel export 자동 변환
   experimental: {
@@ -36,6 +36,12 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // Turbopack 설정
+  turbopack: {
+    // 프로젝트 루트 명시 (여러 lockfile 경고 방지)
+    root: __dirname,
+  },
+
   // modularizeImports - 라이브러리별 개별 임포트 경로 변환
   modularizeImports: {
     // lodash 최적화 (사용 시)
@@ -46,23 +52,10 @@ const nextConfig: NextConfig = {
 
   // 보안 헤더 설정
   async headers() {
-    // 개발 환경과 프로덕션 환경에서 다른 CSP 정책 적용
-    const isDevelopment = process.env.NODE_ENV === 'development';
-
-    // CSP 헤더 생성 (프로덕션에서는 미들웨어에서 nonce 추가)
-    const cspValue = isDevelopment
-      ? [
-          "default-src 'self'",
-          "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com", // 개발: Next.js 개발 도구 + Vercel Analytics 지원
-          "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net", // 개발: Tailwind JIT + 외부 폰트 지원
-          "img-src 'self' data: https://*.supabase.co http://127.0.0.1:* http://192.168.0.96:* blob:",
-          "font-src 'self' data:",
-          "connect-src 'self' https://*.supabase.co wss://*.supabase.co http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* http://192.168.0.96:* ws://192.168.0.96:* https://*.ingest.sentry.io https://*.upstash.com https://cdn.jsdelivr.net",
-          "frame-ancestors 'none'",
-          "base-uri 'self'",
-          "form-action 'self'",
-        ].join('; ')
-      : ''; // 프로덕션: 미들웨어에서 nonce와 함께 설정
+    // CSP는 프로덕션 미들웨어(middleware.ts)에서 nonce와 함께 적용
+    // next.config.ts headers()에서는 CSP를 설정하지 않음:
+    // - 개발 환경: 로컬 Supabase(54321), HMR 등 다양한 포트 충돌 방지
+    // - 프로덕션: 미들웨어에서 nonce 기반 CSP를 동적으로 생성
 
     const headers = [
       // XSS 공격 방어: 콘텐츠 타입 스니핑 차단
@@ -112,13 +105,7 @@ const nextConfig: NextConfig = {
       },
     ];
 
-    // 개발 환경에서만 CSP 헤더 추가 (프로덕션은 미들웨어에서 처리)
-    if (isDevelopment && cspValue) {
-      headers.push({
-        key: 'Content-Security-Policy',
-        value: cspValue,
-      });
-    }
+    // CSP는 프로덕션 미들웨어(middleware.ts)에서만 적용 — 여기서는 설정하지 않음
 
     return [
       {
@@ -141,10 +128,16 @@ const sentryConfig = {
   // 프로덕션 환경에서만 소스맵 업로드 (SENTRY_AUTH_TOKEN 필요)
   widenClientFileUpload: true,
   hideSourceMaps: true, // 프로덕션 빌드에서 소스맵 숨김
-  disableLogger: true, // Sentry 로거 비활성화
 
-  // 자동 계측 설정
-  automaticVercelMonitors: true, // Vercel 배포 시 자동 모니터링
+  // Webpack 전용 설정 (Turbopack에서는 미지원)
+  webpack: {
+    // Sentry 로거 비활성화 (디버그 로그 제거)
+    treeshake: {
+      removeDebugLogging: true,
+    },
+    // Vercel 배포 시 자동 모니터링
+    automaticVercelMonitors: true,
+  },
 };
 
 export default withSentryConfig(

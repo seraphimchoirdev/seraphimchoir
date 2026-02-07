@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 import { Toaster as Sonner, toast } from 'sonner';
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
@@ -12,26 +14,35 @@ type ToasterProps = React.ComponentProps<typeof Sonner>;
  * - 에러 Toast는 aria-live="assertive"로 즉시 알림
  * - 키보드: Escape로 dismiss, Tab으로 액션 버튼 포커스
  *
- * 모바일 UX:
- * - position="bottom-center": 엄지 영역에서 접근 용이
- * - offset={80}: 하단 네비게이션(64px) + 여유(16px)
- * - swipeToDismiss: 터치로 닫기
- * - expand={false}: 여러 Toast 스택 시 공간 절약
+ * 반응형 위치:
+ * - 데스크탑(sm+): top-center — F-pattern 시선 흐름, 편집 작업 방해 최소
+ * - 모바일: bottom-center — 엄지 접근성, 하단 네비 회피(offset 80px)
  *
  * 애니메이션:
- * - duration 조정: 성공(3초), 에러/액션(8초)
+ * - duration 조정: 성공(4초), 에러/액션(8초)
  * - prefers-reduced-motion 자동 지원 (Sonner 내장)
  */
 const Toaster = ({ ...props }: ToasterProps) => {
+  // 모바일 기본값으로 시작 (SSR/hydration 안전)
+  const [isMobile, setIsMobile] = useState(true);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 639px)');
+    setIsMobile(mql.matches);
+
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+
   return (
     <Sonner
       className="toaster group"
-      position="bottom-center"
-      offset={80}
+      position={isMobile ? 'bottom-center' : 'top-center'}
+      offset={isMobile ? 80 : 16}
       // 접근성: 포커스 가능, 키보드 네비게이션
       closeButton
-      // 모바일 UX: 스와이프로 닫기
-      // expand={false}: 여러 알림 스택 시 compact하게
+      // 여러 알림 스택 시 compact하게
       expand={false}
       // 화면에 동시 표시할 최대 Toast 수
       visibleToasts={3}

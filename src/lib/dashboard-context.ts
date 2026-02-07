@@ -8,7 +8,7 @@ export type TimeContext =
   | 'VOTE_NEEDED' // 투표 마감 전 & 미투표
   | 'VOTE_COMPLETED' // 투표 마감 전 & 투표 완료
   | 'VOTE_CLOSED' // 투표 마감됨
-  | 'ARRANGEMENT_SHARED' // 배치표 공유됨
+  | 'ARRANGEMENT_SHARED' // 배치표 편집완료
   | 'SERVICE_DAY' // 주일 당일
   | 'NO_UPCOMING_SERVICE'; // 예정된 예배 없음
 

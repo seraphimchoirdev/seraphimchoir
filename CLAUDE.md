@@ -50,7 +50,7 @@
 
 ## 개발 명령어
 
-모든 명령어는 `choir-seat-app/` 디렉토리에서 실행해야 합니다:
+모든 명령어는 프로젝트 루트(`seraphimChoir/`)에서 실행합니다:
 
 ```bash
 # 개발 서버 (http://localhost:3000 에서 실행)
@@ -135,7 +135,7 @@ npx supabase gen types typescript --local > src/types/database.types.ts
 ### 프로젝트 구조
 
 ```
-choir-seat-app/
+seraphimChoir/
 ├── src/
 │   ├── app/                    # Next.js App Router 페이지 및 API 라우트
 │   ├── components/
@@ -214,7 +214,7 @@ choir-seat-app/
 
 5. **TypeScript 타입**: `src/types/database.types.ts`에는 Supabase 데이터베이스 스키마에서 자동 생성된 타입이 포함되어 있습니다. 스키마 변경 시 `npx supabase gen types`로 재생성하세요.
 
-6. **한국어**: 이 프로젝트는 한국어 프로젝트입니다. UI 텍스트, 주석, 문서가 한국어로 작성될 수 있습니다
+6. **한국어**: 이 프로젝트는 한국어 프로젝트입니다. Claude는 한국어로 출력하고 한국어로 설명해야 합니다. UI 텍스트, 주석, 문서, 커밋 메시지 모두 한국어로 작성합니다
 
 7. **알림/피드백 시스템**: 사용자 피드백 UI를 구현할 때는 `docs/NOTIFICATION_SYSTEM_ANALYSIS.md`를 참고하세요.
    - **Toast**: 순수 정보 전달 (저장 완료, 복사 완료 등) → `showSuccess()`, `showError()`, `showWarning()`, `showInfo()`

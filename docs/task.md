@@ -67,6 +67,89 @@
 
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
+### 2026-02-07
+- [x] **feat(arrangements): 줄별 인원 수 stepper UI 개선 및 동기화 버그 수정**
+  - 커밋: `5479c5c`
+
+- [x] **fix(arrangements): GridSettingsPanel 디바운스 race condition 버그 수정**
+  - 커밋: `41d6301`
+
+- [x] **fix(arrangements): GridSettingsPanel 디바운스 race condition 버그 수정**
+  - 커밋: `b55595f`
+
+- [x] **feat(arrangements): 자리배치 워크플로우 UX 개선 9개 항목**
+  - 커밋: `887d8c0`
+
+- [x] **fix(ui): 데스크탑 토스트 위치를 top-center로 변경 (반응형)**
+  - 커밋: `6446ccc`
+
+- [x] **docs: Claude API Structured Outputs 가이드 문서 추가**
+  - 커밋: `6668af0`
+
+- [x] **fix(config): CSP 및 로컬 개발 환경 localhost 지원 추가**
+  - 커밋: `99a385a`
+
+- [x] **fix(auth): 프로필 조회 시 .single() → .maybeSingle() 에러 처리 개선**
+  - 커밋: `be652ec`
+
+- [x] **refactor(arrangements): 7단계 → 6단계 워크플로우 리팩토링**
+  - 커밋: `a3bb4ff`
+
+- [x] **fix(arrangements): 배치표 생성 토스트 통합 및 AI 추천 분배 race condition 수정**
+  - 커밋: `c94597f`
+
+- [x] **feat(arrangements): 데이터 변경 시 워크플로우 이후 단계 체크 자동 해제**
+  - 커밋: `3087c9a`
+
+
+- [x] **docs: 2026-02-07 핸드오프 문서 생성**
+  - 커밋: `b7a27e2`
+
+### 2026-02-06
+- [x] **fix(arrangements): 긴급 수정 모드에서 워크플로우 체크 표시 해제 버그 수정**
+  - 커밋: `08d62fd`
+
+- [x] **fix(security): CSP connect-src에 Vercel Analytics 새 도메인 추가**
+  - 커밋: `6d5b19a`
+
+
+- [x] **docs: 2026-02-06 핸드오프 문서 생성**
+  - 커밋: `e048b61`
+
+### 2026-02-05
+- [x] **fix: 출석 모드 null 처리 및 알토 줄반장 선택 로직 개선**
+  - 커밋: `942d961`
+
+- [x] **docs: 핸드오프 문서 추가 (01/31, 02/01, 02/02, 02/04)**
+  - 커밋: `12fe52f`
+
+- [x] **refactor(arrangements): 자리배치 저장/공유/확정 UX 용어 재설계**
+  - 커밋: `197ff2c`
+
+- [x] **fix(arrangements): 저장 시 줄 정렬 조정(rowOffsets) 초기화 버그 수정**
+  - 커밋: `e6b9ae1`
+
+- [x] **fix(seats): 인쇄 시 줄반장 보라 글로우/링 제거 누락 수정**
+  - 커밋: `078f050`
+
+- [x] **fix(auth): fetchUser 프로필 쿼리 안정화 - single→maybeSingle 변경**
+  - 커밋: `ef2a680`
+
+- [x] **fix(auth): admin 프로필 로드 에러 및 대시보드 미표시 수정**
+  - 커밋: `5bcdab2`
+
+
+- [x] **feat(attendances): 예배별 개별 출석 체크 (Multi-Service Attendance)**
+  - 커밋: `df65e7a`
+
+### 2026-02-02
+- [x] **feat(db): 프로덕션 DB → seed.sql 자동 생성 스크립트 추가**
+  - 커밋: `39f3d33`
+
+
+- [x] **fix(config): Turbopack 호환성 개선 - Sentry 설정 마이그레이션 및 루트 경로 명시**
+  - 커밋: `5cdcda9`
+
 ### 2026-02-01
 
 - [x] **fix(attendances): 자리배치표 존재 시 연습 출석 수정 허용 및 practice_status 스키마 추가**

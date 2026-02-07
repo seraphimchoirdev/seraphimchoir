@@ -23,7 +23,8 @@
     "db:start": "npx supabase start",
     "db:stop": "npx supabase stop",
     "db:reset": "npx supabase db reset",
-    "db:sync": "node scripts/sync-prod-to-local.mjs"
+    "db:sync": "node scripts/sync-prod-to-local.mjs",
+    "db:generate-seed": "node scripts/generate-seed.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.88",
@@ -41,6 +42,7 @@
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.6",
     "@tanstack/react-query": "^5.90.10",
+    "@tanstack/react-virtual": "^3.13.18",
     "@types/papaparse": "^5.5.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.1",

@@ -22,6 +22,7 @@ const createArrangementSchema = z.object({
     .max(200, '제목은 최대 200자까지 입력 가능합니다')
     .transform(sanitizers.stripHtml), // XSS 방어
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '유효한 날짜 형식이 아닙니다'),
+  service_schedule_id: z.string().uuid('유효한 예배 일정 ID를 입력해주세요').optional(),
   conductor: z
     .string()
     .max(10, '지휘자명은 최대 10자까지 입력 가능합니다')
@@ -200,6 +201,7 @@ export async function GET(request: NextRequest) {
       service_type: schedule?.service_type || a.service_info || null,
       hymn_name: schedule?.hymn_name || null,
       offertory_performer: schedule?.offertory_performer || null,
+      // service_schedule_id는 이미 a에 포함됨 (DB 컬럼)
       seat_count: composition.total,
       part_composition: {
         SOPRANO: composition.SOPRANO,
@@ -247,18 +249,36 @@ export async function POST(request: NextRequest) {
     const json = await request.json();
     const body = createArrangementSchema.parse(json);
 
-    // 해당 날짜에 예배 일정이 있는지 확인
-    const { data: schedule } = await supabase
-      .from('service_schedules')
-      .select('id')
-      .eq('date', body.date)
-      .single();
+    // 예배 일정 확인: service_schedule_id가 있으면 직접 조회, 없으면 date로 조회
+    let scheduleId = body.service_schedule_id;
+    if (scheduleId) {
+      const { data: schedule } = await supabase
+        .from('service_schedules')
+        .select('id')
+        .eq('id', scheduleId)
+        .single();
 
-    if (!schedule) {
-      return NextResponse.json(
-        { error: '해당 날짜에 등록된 예배 일정이 없습니다. 먼저 예배 일정을 등록해주세요.' },
-        { status: 400 }
-      );
+      if (!schedule) {
+        return NextResponse.json(
+          { error: '해당 예배 일정을 찾을 수 없습니다.' },
+          { status: 400 }
+        );
+      }
+    } else {
+      // date로 조회 (하위 호환)
+      const { data: schedules } = await supabase
+        .from('service_schedules')
+        .select('id')
+        .eq('date', body.date)
+        .limit(1);
+
+      if (!schedules || schedules.length === 0) {
+        return NextResponse.json(
+          { error: '해당 날짜에 등록된 예배 일정이 없습니다. 먼저 예배 일정을 등록해주세요.' },
+          { status: 400 }
+        );
+      }
+      scheduleId = schedules[0].id;
     }
 
     const { data, error } = await supabase
@@ -268,6 +288,7 @@ export async function POST(request: NextRequest) {
         date: body.date,
         conductor: body.conductor,
         service_info: body.service_info,
+        service_schedule_id: scheduleId,
       })
       .select()
       .single();

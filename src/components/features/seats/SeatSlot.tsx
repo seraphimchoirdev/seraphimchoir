@@ -135,7 +135,7 @@ const SeatSlot = memo(function SeatSlot({
           // Empty seat, no selection
           !isOccupied &&
             !hasSelection &&
-            'border-dashed border-[var(--color-border-default)] bg-[var(--color-background-primary)]',
+            'border-dashed border-[var(--color-border-strong)] bg-[var(--color-background-secondary)]',
           // Empty seat, with selection (valid target)
           !isOccupied &&
             hasSelection &&
@@ -150,7 +150,7 @@ const SeatSlot = memo(function SeatSlot({
           // Normal occupied seat
           isOccupied &&
             !hasSelection &&
-            'border-solid border-[var(--color-border-default)] bg-[var(--color-background-primary)]'
+            'border-2 border-solid border-[var(--color-border-strong)] bg-[var(--color-background-primary)]'
         )}
         role="button"
         aria-label={`${row}열 ${col}번${assignment ? ` - ${assignment.memberName} 배치됨` : ''}`}
@@ -158,11 +158,11 @@ const SeatSlot = memo(function SeatSlot({
       >
         <span
           className={cn(
-            'pointer-events-none absolute top-0 left-0.5 z-10 leading-none',
-            'text-[10px] sm:top-0.5 sm:left-1 sm:text-[11px]',
+            'pointer-events-none absolute top-px left-px z-10 leading-none',
+            'text-[9px] sm:top-0.5 sm:left-0.5 sm:text-[10px] lg:text-[11px]',
             isOccupied
-              ? 'rounded-md bg-black/30 px-1 font-medium text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]'
-              : 'text-[var(--color-text-tertiary)]'
+              ? 'rounded-sm bg-white/80 px-0.5 font-semibold text-[var(--color-text-secondary)]'
+              : 'font-medium text-[var(--color-text-secondary)]'
           )}
         >
           {col}
@@ -179,7 +179,7 @@ const SeatSlot = memo(function SeatSlot({
             changeHighlight={changeHighlight}
           />
         ) : (
-          <div className="pointer-events-none text-[10px] text-[var(--color-text-disabled)] sm:text-xs">
+          <div className="pointer-events-none text-[10px] text-[var(--color-text-tertiary)] sm:text-xs">
             빈 좌석
           </div>
         )}
@@ -208,19 +208,19 @@ const GridClickableMember = memo(function GridClickableMember({
   rowLeaderMode?: boolean;
   changeHighlight?: ChangeHighlight;
 }) {
-  // Part color mapping - 악보 스티커 색상 기준 (CSS 변수 사용)
+  // Part color mapping - 파스텔 배경 + 검정 텍스트 (흑백 인쇄 가독성)
   const getPartColor = (p: Part) => {
     switch (p) {
       case 'SOPRANO':
-        return 'bg-[var(--color-part-soprano-600)] text-white border-[var(--color-part-soprano-700)]';
+        return 'bg-[var(--color-part-soprano-200)] text-[var(--color-text-primary)] border-[var(--color-part-soprano-500)]';
       case 'ALTO':
-        return 'bg-[var(--color-part-alto-500)] text-white border-[var(--color-part-alto-600)]';
+        return 'bg-[var(--color-part-alto-200)] text-[var(--color-text-primary)] border-[var(--color-part-alto-500)]';
       case 'TENOR':
-        return 'bg-[var(--color-part-tenor-600)] text-white border-[var(--color-part-tenor-700)]';
+        return 'bg-[var(--color-part-tenor-200)] text-[var(--color-text-primary)] border-[var(--color-part-tenor-500)]';
       case 'BASS':
-        return 'bg-[var(--color-part-bass-600)] text-white border-[var(--color-part-bass-700)]';
+        return 'bg-[var(--color-part-bass-200)] text-[var(--color-text-primary)] border-[var(--color-part-bass-500)]';
       default:
-        return 'bg-[var(--color-part-special-500)] text-white border-[var(--color-part-special-600)]';
+        return 'bg-[var(--color-part-special-200)] text-[var(--color-text-primary)] border-[var(--color-part-special-500)]';
     }
   };
 
@@ -245,9 +245,9 @@ const GridClickableMember = memo(function GridClickableMember({
         getPartColor(part),
         // 긴급 변동 하이라이트 (줄반장보다 우선)
         !isRowLeader && changeHighlight && getHighlightStyle(),
-        // 줄반장 표시: 보라 글로우 + 흰색 링 (모든 파트와 대비)
+        // 줄반장 표시: 보라 글로우 + 보라 링 (밝은 파스텔 배경과 대비)
         isRowLeader &&
-          'shadow-[0_0_10px_3px_rgba(139,92,246,0.5)] ring-[3px] ring-white ring-offset-2 ring-offset-violet-500',
+          'shadow-[0_0_10px_3px_rgba(139,92,246,0.5)] ring-[3px] ring-violet-400 ring-offset-2 ring-offset-white',
         // 줄반장 지정 모드일 때 호버 효과
         rowLeaderMode && 'cursor-pointer'
       )}
@@ -262,7 +262,7 @@ const GridClickableMember = memo(function GridClickableMember({
       aria-label={`${name} - ${part} 파트, ${row}열 ${col}번 배치됨${isRowLeader ? ' (줄반장)' : ''}${changeHighlight ? ` (${changeHighlight === 'ADDED' ? '새로 추가됨' : '이동됨'})` : ''}`}
     >
       <span
-        className="max-w-full px-0.5 text-center text-xs leading-tight font-bold drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] sm:text-sm lg:text-base"
+        className="max-w-full px-0.5 text-center text-xs leading-tight font-bold sm:text-sm lg:text-base"
         style={{
           wordBreak: 'keep-all',
           overflowWrap: 'break-word',
@@ -273,7 +273,7 @@ const GridClickableMember = memo(function GridClickableMember({
       </span>
       {/* 줄반장 아이콘 표시: 흰색 원형 배경 + 보라 크라운 */}
       {isRowLeader && (
-        <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full border-2 border-violet-400 bg-white shadow-lg">
+        <div className="crown-badge absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full border-2 border-violet-400 bg-white shadow-lg">
           <Crown className="h-3.5 w-3.5 fill-violet-300 text-violet-600" />
         </div>
       )}

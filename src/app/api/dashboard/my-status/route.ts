@@ -51,23 +51,42 @@ export async function GET() {
     // 프로필 정보 조회
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('linked_member_id, link_status')
+      .select('linked_member_id, link_status, role')
       .eq('id', user.id)
       .single();
 
     const linkedMemberId = profile?.linked_member_id;
     const linkStatus = profile?.link_status as 'pending' | 'approved' | 'rejected' | null;
+    const userRole = profile?.role;
     const isLinked = !!linkedMemberId && linkStatus === 'approved';
+
+    // 역할 보유자(ADMIN, CONDUCTOR 등)는 대원 연결 없이도 서비스 접근 가능
+    const hasStaffRole = !!userRole && ['ADMIN', 'CONDUCTOR', 'MANAGER'].includes(userRole);
 
     const adminSupabase = await createAdminClient();
     const nextSunday = getNextSunday();
 
-    // 연결된 대원이 없는 경우 기본 응답
-    if (!isLinked || !linkedMemberId) {
+    // 연결된 대원이 없고, 역할도 없는 경우 기본 응답
+    if (!isLinked && !hasStaffRole) {
       const response: MyDashboardStatusResponse = {
         isLinked: false,
         linkStatus,
         linkedMemberName: null,
+        linkedMemberPart: null,
+        myVote: null,
+        mySeat: null,
+        nextServiceDate: nextSunday,
+      };
+      return NextResponse.json(response);
+    }
+
+    // 역할 보유자이지만 대원 연결이 없는 경우 (ADMIN 등)
+    // 대원 관련 정보 없이 isLinked: true로 반환하여 대시보드 기능 활성화
+    if (!linkedMemberId) {
+      const response: MyDashboardStatusResponse = {
+        isLinked: true,
+        linkStatus,
+        linkedMemberName: profile?.role || null,
         linkedMemberPart: null,
         myVote: null,
         mySeat: null,

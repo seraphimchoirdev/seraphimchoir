@@ -52,6 +52,7 @@ export function useServiceSchedules(filters?: ServiceScheduleFilters) {
 
 /**
  * 특정 날짜의 예배 일정 조회 (arrangements 연동용)
+ * @deprecated 같은 날짜에 여러 예배가 있을 수 있으므로 useServiceSchedulesByDate 사용 권장
  */
 export function useServiceScheduleByDate(date: string | undefined) {
   return useQuery({
@@ -68,6 +69,31 @@ export function useServiceScheduleByDate(date: string | undefined) {
 
       const result = (await response.json()) as ServiceSchedulesResponse;
       return result.data[0] || null; // 단일 날짜이므로 첫 번째 결과
+    },
+    enabled: !!date,
+    staleTime: STALE_TIME.EXTRA_LONG, // 10분
+  });
+}
+
+/**
+ * 특정 날짜의 모든 예배 일정 조회 (배열 반환)
+ * 같은 날짜에 여러 예배(주일 2부, 오후찬양예배 등)가 있을 수 있음
+ */
+export function useServiceSchedulesByDate(date: string | undefined) {
+  return useQuery({
+    queryKey: ['service-schedules', 'all-by-date', date],
+    queryFn: async () => {
+      if (!date) return [];
+
+      const response = await fetch(`/api/service-schedules?date=${date}`);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '예배 일정을 불러오는데 실패했습니다');
+      }
+
+      const result = (await response.json()) as ServiceSchedulesResponse;
+      return result.data || [];
     },
     enabled: !!date,
     staleTime: STALE_TIME.EXTRA_LONG, // 10분

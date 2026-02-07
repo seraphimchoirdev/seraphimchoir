@@ -64,16 +64,14 @@ export function useImageGeneration(
    */
   const captureToBlob = useCallback(
     async (element: HTMLElement): Promise<Blob> => {
-      // 캡처 모드: data-seat-slot 요소들의 테두리/배경을 inline으로 숨김
+      // 캡처 모드: data-seat-slot 요소들의 배경만 투명화 (테두리는 유지)
       // html-to-image는 computed style을 inline으로 복사하므로 CSS 클래스로는 불가
       const seatSlots = element.querySelectorAll<HTMLElement>('[data-seat-slot]');
-      const originalStyles: { borderColor: string; backgroundColor: string }[] = [];
+      const originalStyles: { backgroundColor: string }[] = [];
       seatSlots.forEach((slot) => {
         originalStyles.push({
-          borderColor: slot.style.borderColor,
           backgroundColor: slot.style.backgroundColor,
         });
-        slot.style.borderColor = 'transparent';
         slot.style.backgroundColor = 'transparent';
       });
 
@@ -120,7 +118,6 @@ export function useImageGeneration(
       } finally {
         // 원래 스타일 복원
         seatSlots.forEach((slot, i) => {
-          slot.style.borderColor = originalStyles[i].borderColor;
           slot.style.backgroundColor = originalStyles[i].backgroundColor;
         });
       }

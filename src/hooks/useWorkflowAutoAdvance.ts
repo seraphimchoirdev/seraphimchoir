@@ -24,13 +24,12 @@ interface StepCompletionResult {
  * 위자드 모드에서는 다음 단계로 자동 이동도 수행합니다.
  *
  * 완료 조건:
- * - 1단계 (AI 추천 분배): AI가 추천하면 자동 완료
- * - 2단계 (그리드 조정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
- * - 3단계 (AI 자동배치): 멤버가 배치되면 자동 완료
- * - 4단계 (수동 배치 조정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
- * - 5단계 (Offset 조정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
- * - 6단계 (줄반장 지정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
- * - 7단계 (공유): 공유/확정 시 자동 완료
+ * - 1단계 (줄 구성 설정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
+ * - 2단계 (AI 자동배치): 멤버가 배치되면 자동 완료
+ * - 3단계 (수동 배치 조정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
+ * - 4단계 (줄 정렬 조정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
+ * - 5단계 (줄반장 지정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
+ * - 6단계 (내보내기): 공유/확정 시 자동 완료
  *
  * @param totalMembers - 총 멤버 수 (미배치 계산용)
  * @param arrangementStatus - 현재 배치표 상태
@@ -87,29 +86,30 @@ export function useWorkflowAutoAdvance(totalMembers: number, arrangementStatus?:
     const evaluateSteps = (): StepCompletionResult[] => {
       const results: StepCompletionResult[] = [];
 
-      // 1단계: AI 추천 분배 (AI가 실제로 추천한 경우에만 완료)
-      results.push({
-        step: 1,
-        isCompleted: !!gridLayout && gridLayout.isAIRecommended === true,
-        reason: 'AI 추천으로 그리드 설정됨',
-      });
-
-      // 2단계: 그리드 수동 조정 (수동 완료 전용 - 자동 완료 비활성화)
+      // 1단계: 줄 구성 설정 (수동 완료 전용 - 자동 완료 비활성화)
       // 사용자가 "이 단계 완료" 버튼을 눌러야만 완료됨
       results.push({
-        step: 2,
+        step: 1,
         isCompleted: false,
         reason: '수동 완료 필요',
       });
 
-      // 3단계: AI 자동배치 (멤버가 배치됨)
+      // 2단계: AI 자동배치 (멤버가 배치됨)
       results.push({
-        step: 3,
+        step: 2,
         isCompleted: assignmentsCount > 0,
         reason: `${assignmentsCount}명 배치됨`,
       });
 
-      // 4단계: 수동 배치 조정 (수동 완료 전용 - 자동 완료 비활성화)
+      // 3단계: 수동 배치 조정 (수동 완료 전용 - 자동 완료 비활성화)
+      // 사용자가 "이 단계 완료" 버튼을 눌러야만 완료됨
+      results.push({
+        step: 3,
+        isCompleted: false,
+        reason: '수동 완료 필요',
+      });
+
+      // 4단계: 줄 정렬 조정 (수동 완료 전용 - 자동 완료 비활성화)
       // 사용자가 "이 단계 완료" 버튼을 눌러야만 완료됨
       results.push({
         step: 4,
@@ -117,7 +117,7 @@ export function useWorkflowAutoAdvance(totalMembers: number, arrangementStatus?:
         reason: '수동 완료 필요',
       });
 
-      // 5단계: Offset 조정 (수동 완료 전용 - 자동 완료 비활성화)
+      // 5단계: 줄반장 지정 (수동 완료 전용 - 자동 완료 비활성화)
       // 사용자가 "이 단계 완료" 버튼을 눌러야만 완료됨
       results.push({
         step: 5,
@@ -125,24 +125,16 @@ export function useWorkflowAutoAdvance(totalMembers: number, arrangementStatus?:
         reason: '수동 완료 필요',
       });
 
-      // 6단계: 줄반장 지정 (수동 완료 전용 - 자동 완료 비활성화)
-      // 사용자가 "이 단계 완료" 버튼을 눌러야만 완료됨
+      // 6단계: 편집 완료 (SHARED 또는 CONFIRMED 상태)
       results.push({
         step: 6,
-        isCompleted: false,
-        reason: '수동 완료 필요',
-      });
-
-      // 7단계: 공유 (SHARED 또는 CONFIRMED 상태)
-      results.push({
-        step: 7,
         isCompleted: arrangementStatus === 'SHARED' || arrangementStatus === 'CONFIRMED',
         reason:
           arrangementStatus === 'SHARED'
-            ? '공유됨'
+            ? '편집완료'
             : arrangementStatus === 'CONFIRMED'
               ? '확정됨'
-              : '미공유',
+              : '미완료',
       });
 
       return results;
@@ -162,7 +154,7 @@ export function useWorkflowAutoAdvance(totalMembers: number, arrangementStatus?:
     const currentStepResult = results.find((r) => r.step === workflow.currentStep);
     if (
       currentStepResult?.isCompleted &&
-      workflow.currentStep < 7 &&
+      workflow.currentStep < 6 &&
       !workflow.completedSteps.has(workflow.currentStep)
     ) {
       // 다음 단계로 이동은 completeStep 후에 수행
@@ -194,7 +186,7 @@ export function useCompleteCurrentStep() {
 
   const complete = () => {
     completeStep(workflow.currentStep);
-    if (workflow.currentStep < 7) {
+    if (workflow.currentStep < 6) {
       setTimeout(() => nextStep(), 300);
     }
   };
@@ -210,7 +202,7 @@ export function useSkipStep() {
 
   const skip = (step: WorkflowStep) => {
     completeStep(step);
-    if (workflow.currentStep === step && step < 7) {
+    if (workflow.currentStep === step && step < 6) {
       setTimeout(() => nextStep(), 300);
     }
   };

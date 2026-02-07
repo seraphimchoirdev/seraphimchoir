@@ -61,7 +61,7 @@ export function ArrangementActionCard({ arrangement, nextServiceDate }: Arrangem
       icon: Edit,
     },
     SHARED: {
-      label: '공유됨',
+      label: '편집완료',
       color: 'bg-blue-100 text-blue-700',
       icon: CheckCircle2,
     },

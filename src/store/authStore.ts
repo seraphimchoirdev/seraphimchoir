@@ -320,29 +320,36 @@ export const useAuthStore = create<AuthStore>()(
                   return;
                 }
 
-                // 프로필 정보 가져오기 (대원 연결 정보 + 연결된 대원 이름 포함)
-                logger.debug('[fetchUser] 프로필 조회 시작:', session.user.id);
+                // 프로필 정보 가져오기
+                logger.debug('[fetchUser] 프로필 조회 시작, uid:', session.user.id);
                 const { data: profileData, error: profileError } = await supabase
                   .from('user_profiles')
-                  .select(
-                    'id, email, name, role, linked_member_id, link_status, members:linked_member_id(name, part)'
-                  )
+                  .select('id, email, name, role, linked_member_id, link_status')
                   .eq('id', session.user.id)
-                  .single();
-                logger.debug('[fetchUser] 프로필 조회 완료:', { profileData, profileError });
+                  .maybeSingle();
 
-                // members JOIN 결과를 linked_member로 매핑
-                // Supabase FK 관계 쿼리 결과는 단일 객체 또는 배열일 수 있음
+                if (profileError) {
+                  logger.error('[fetchUser] 프로필 로드 에러:', profileError.message, profileError.code, profileError);
+                }
+                logger.debug('[fetchUser] 프로필 조회 완료:', { hasProfile: !!profileData, role: profileData?.role });
+
+                // 연결된 대원 정보를 별도 쿼리로 조회 (linked_member_id가 있는 경우만)
+                let linkedMember: { name: string; part: Part | null } | null = null;
+                if (profileData?.linked_member_id) {
+                  const { data: memberData } = await supabase
+                    .from('members')
+                    .select('name, part')
+                    .eq('id', profileData.linked_member_id)
+                    .single();
+                  linkedMember = memberData as { name: string; part: Part | null } | null;
+                }
+
                 const profile = profileData
                   ? {
                       ...profileData,
-                      linked_member: profileData.members as unknown as { name: string; part: Part | null } | null,
+                      linked_member: linkedMember,
                     }
                   : null;
-
-                if (profileError) {
-                  logger.error('[fetchUser] 프로필 로드 에러:', profileError);
-                }
 
                 set(
                   {

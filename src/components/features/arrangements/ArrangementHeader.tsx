@@ -9,6 +9,7 @@ import {
   Download,
   Loader2,
   Lock,
+  Pencil,
   Printer,
   Redo2,
   RotateCcw,
@@ -106,7 +107,7 @@ export default function ArrangementHeader({
       case 'SHARED':
         return {
           variant: 'default' as const,
-          label: '공유됨',
+          label: '편집완료',
           className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
         };
       case 'CONFIRMED':
@@ -251,17 +252,13 @@ export default function ArrangementHeader({
           }
         : null;
 
-      await updateArrangement.mutateAsync({
-        id: arrangement.id,
-        data: {
-          title,
-          conductor: conductor || null,
-          grid_layout: gridLayoutWithWorkflow as Json,
-          grid_rows: gridLayout?.rows || 6,
-        },
-      });
+      // ⚠️ 순서 중요: seats를 먼저 저장한 후 arrangement를 저장
+      // updateArrangement의 onSuccess가 query를 invalidate하므로,
+      // seats가 아직 DELETE/INSERT 중일 때 refetch되면
+      // seats=[]인 상태를 읽어 AI 자동분배가 재실행되는 race condition 발생
+      // seats를 먼저 완료하면 refetch 시점에 항상 올바른 seats가 존재함
 
-      // 2. Update Seats
+      // 1. Update Seats (먼저)
       const seatsData = Object.values(assignments).map((a) => ({
         memberId: a.memberId,
         row: a.row,
@@ -273,6 +270,17 @@ export default function ArrangementHeader({
       await updateSeats.mutateAsync({
         arrangementId: arrangement.id,
         seats: seatsData,
+      });
+
+      // 2. Update Arrangement metadata (seats 완료 후)
+      await updateArrangement.mutateAsync({
+        id: arrangement.id,
+        data: {
+          title,
+          conductor: conductor || null,
+          grid_layout: gridLayoutWithWorkflow as Json,
+          grid_rows: gridLayout?.rows || 6,
+        },
       });
 
       // 3. 저장 성공 시 draft 삭제
@@ -308,9 +316,9 @@ export default function ArrangementHeader({
   const handleResetCurrentStepClick = useCallback(() => {
     const currentStep = workflow.currentStep;
 
-    // 7단계(공유)는 초기화 불필요
-    if (currentStep === 7) {
-      showInfo('공유 단계에서는 초기화할 내용이 없습니다.');
+    // 6단계(내보내기)는 초기화 불필요
+    if (currentStep === 6) {
+      showInfo('내보내기 단계에서는 초기화할 내용이 없습니다.');
       return;
     }
 
@@ -339,23 +347,24 @@ export default function ArrangementHeader({
     setResetAllDialog(false);
   }, [clearArrangement, resetWorkflow]);
 
-  // 공유하기 - 다이얼로그 열기
+  // 편집 완료 - 다이얼로그 열기
   const handleShareClick = useCallback(() => {
     setShareDialog(true);
   }, []);
 
-  // 공유하기 (DRAFT → SHARED) - 실행
+  // 편집 완료 (DRAFT → SHARED) - 실행
   const handleShare = useCallback(async () => {
     setShareDialog(false);
     setIsSaving(true);
     try {
       // 먼저 현재 변경사항 저장 (워크플로우 상태 포함)
+      // 편집 완료 시 모든 단계를 강제 완료로 저장 (불완전한 completedSteps 방지)
       const gridLayoutWithWorkflow = gridLayout
         ? {
             ...gridLayout,
             workflowState: {
-              currentStep: workflow.currentStep,
-              completedSteps: Array.from(workflow.completedSteps),
+              currentStep: 6,
+              completedSteps: [1, 2, 3, 4, 5, 6],
               isWizardMode: workflow.isWizardMode,
             },
           }
@@ -385,20 +394,20 @@ export default function ArrangementHeader({
         seats: seatsData,
       });
 
-      // 공유 성공 시 draft 삭제
+      // 편집 완료 성공 시 draft 삭제
       deleteDraft(arrangement.id);
 
-      // 공유 시점 스냅샷 저장 (긴급 변동 추적용)
+      // 편집 완료 시점 스냅샷 저장 (긴급 변동 추적용)
       saveSharedSnapshot();
 
       if (isMountedRef.current) {
-        showSuccess('자리배치표가 공유되었습니다. 긴급 수정이 필요하면 언제든 수정할 수 있습니다.');
+        showSuccess('편집이 완료되었습니다. 긴급 수정이 필요하면 언제든 수정할 수 있습니다.');
         router.refresh();
       }
     } catch (error) {
-      logger.error('공유 실패:', error);
+      logger.error('편집 완료 처리 실패:', error);
       if (isMountedRef.current) {
-        showError('공유에 실패했습니다.', handleShare);
+        showError('편집 완료 처리에 실패했습니다.', handleShare);
       }
     } finally {
       if (isMountedRef.current) {
@@ -429,13 +438,13 @@ export default function ArrangementHeader({
     setConfirmDialog(false);
     setIsSaving(true);
     try {
-      // 워크플로우 상태 포함
+      // 워크플로우 상태 포함 (확정 시 모든 단계 강제 완료)
       const gridLayoutWithWorkflow = gridLayout
         ? {
             ...gridLayout,
             workflowState: {
-              currentStep: workflow.currentStep,
-              completedSteps: Array.from(workflow.completedSteps),
+              currentStep: 6,
+              completedSteps: [1, 2, 3, 4, 5, 6],
               isWizardMode: workflow.isWizardMode,
             },
           }
@@ -517,7 +526,7 @@ export default function ArrangementHeader({
       clearSharedSnapshot();
 
       if (isMountedRef.current) {
-        showSuccess('작성중 상태로 되돌렸습니다.');
+        showSuccess('편집 모드로 전환되었습니다.');
         router.refresh();
       }
     } catch (error) {
@@ -599,8 +608,8 @@ export default function ArrangementHeader({
 
       <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
         {/* AI 배치/과거 배치/줄반장 버튼은 워크플로우 패널 내부로 이동됨 */}
-        {/* Undo/Redo: Step 2-6 (실제 편집이 일어나는 단계)에서만 표시 */}
-        {!isReadOnly && workflow.currentStep >= 2 && workflow.currentStep <= 6 && (
+        {/* Undo/Redo: Step 1-5 (실제 편집이 일어나는 단계)에서만 표시 */}
+        {!isReadOnly && workflow.currentStep >= 1 && workflow.currentStep <= 5 && (
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
@@ -624,8 +633,8 @@ export default function ArrangementHeader({
             </Button>
           </div>
         )}
-        {/* 초기화 메뉴: Step 1-6에서만 표시 (Step 7은 공유 단계이므로 제외) */}
-        {!isReadOnly && workflow.currentStep >= 1 && workflow.currentStep <= 6 && (
+        {/* 초기화 메뉴: Step 1-5에서만 표시 (Step 6은 내보내기 단계이므로 제외) */}
+        {!isReadOnly && workflow.currentStep >= 1 && workflow.currentStep <= 5 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" disabled={isSaving} className="h-11 gap-2 text-sm sm:h-10">
@@ -656,8 +665,8 @@ export default function ArrangementHeader({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        {/* 이미지 메뉴: Step 4 이후 (배치 완료 후 내보내기 가능) */}
-        {workflow.currentStep >= 4 && (
+        {/* 이미지 메뉴: Step 3 이후 (배치 완료 후 내보내기 가능) */}
+        {workflow.currentStep >= 3 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -670,7 +679,7 @@ export default function ArrangementHeader({
                 ) : (
                   <Download className="h-4 w-4" />
                 )}
-                <span className="hidden sm:inline">이미지</span>
+                <span className="hidden sm:inline">내보내기</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -681,7 +690,7 @@ export default function ArrangementHeader({
                   className={isGenerating ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
                 >
                   <Share2 className="mr-2 h-4 w-4" />
-                  공유하기
+                  이미지 공유하기
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
@@ -749,8 +758,8 @@ export default function ArrangementHeader({
               disabled={isSaving}
               className="h-11 gap-2 text-sm sm:h-10"
             >
-              <Undo2 className="h-4 w-4" />
-              <span className="hidden sm:inline">작성중으로</span>
+              <Pencil className="h-4 w-4" />
+              <span className="hidden sm:inline">수정하기</span>
             </Button>
             <Button
               onClick={handleConfirmClick}
@@ -762,7 +771,7 @@ export default function ArrangementHeader({
               ) : (
                 <CheckCircle2 className="h-4 w-4" />
               )}
-              확정
+              최종 확정
             </Button>
           </>
         ) : (
@@ -783,9 +792,9 @@ export default function ArrangementHeader({
               {isSaving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Share2 className="h-4 w-4" />
+                <CheckCircle2 className="h-4 w-4" />
               )}
-              공유
+              편집 완료
             </Button>
           </>
         )}
@@ -796,7 +805,13 @@ export default function ArrangementHeader({
         open={resetCurrentStepDialog}
         onOpenChange={setResetCurrentStepDialog}
         title="현재 단계 초기화"
-        description={`"${WORKFLOW_STEPS[workflow.currentStep].title}" 단계의 작업만 초기화하시겠습니까?\n이전 단계의 설정은 유지됩니다.`}
+        description={
+          <>
+            &quot;{WORKFLOW_STEPS[workflow.currentStep].title}&quot; 단계의 작업만 초기화하시겠습니까?
+            <br />
+            이전 단계의 설정은 유지됩니다.
+          </>
+        }
         confirmLabel="초기화"
         onConfirm={handleResetCurrentStep}
       />
@@ -805,7 +820,15 @@ export default function ArrangementHeader({
         open={resetAllDialog}
         onOpenChange={setResetAllDialog}
         title="전체 초기화"
-        description="모든 자리 배치와 그리드 설정을 초기화하시겠습니까?\n1단계부터 다시 시작합니다.\n저장하지 않은 변경사항은 복구할 수 없습니다."
+        description={
+          <>
+            모든 자리 배치와 그리드 설정을 초기화하시겠습니까?
+            <br />
+            1단계부터 다시 시작합니다.
+            <br />
+            저장하지 않은 변경사항은 복구할 수 없습니다.
+          </>
+        }
         confirmLabel="초기화"
         variant="destructive"
         onConfirm={handleResetAll}
@@ -814,9 +837,17 @@ export default function ArrangementHeader({
       <ConfirmDialog
         open={shareDialog}
         onOpenChange={setShareDialog}
-        title="배치표 공유"
-        description="배치표를 공유하시겠습니까?\n공유 후에도 긴급 수정은 가능합니다."
-        confirmLabel="공유"
+        title="편집 완료"
+        description={
+          <>
+            배치표 편집을 완료하시겠습니까?
+            <br />
+            편집 완료 후에도 긴급 수정은 가능합니다.
+            <br /><br />
+            💡 이미지 내보내기는 상단 &apos;내보내기&apos; 버튼을 이용하세요.
+          </>
+        }
+        confirmLabel="편집 완료"
         onConfirm={handleShare}
       />
 
@@ -824,8 +855,14 @@ export default function ArrangementHeader({
         open={confirmDialog}
         onOpenChange={setConfirmDialog}
         title="배치표 확정"
-        description="배치표를 확정하시겠습니까?\n확정 후에도 관리자/지휘자가 긴급 수정을 위해 되돌릴 수 있습니다."
-        confirmLabel="확정"
+        description={
+          <>
+            배치표를 최종 확정하시겠습니까?
+            <br />
+            확정 후에도 관리자/지휘자가 긴급 수정을 위해 되돌릴 수 있습니다.
+          </>
+        }
+        confirmLabel="최종 확정"
         variant="warning"
         onConfirm={handleConfirmAction}
       />
@@ -833,9 +870,9 @@ export default function ArrangementHeader({
       <ConfirmDialog
         open={revertDialog}
         onOpenChange={setRevertDialog}
-        title="작성중으로 되돌리기"
-        description="배치표를 작성중 상태로 되돌리시겠습니까?"
-        confirmLabel="되돌리기"
+        title="편집 모드로 전환"
+        description="배치표를 다시 편집할 수 있도록 전환하시겠습니까?"
+        confirmLabel="수정하기"
         onConfirm={handleRevertToDraft}
       />
 
@@ -844,10 +881,15 @@ export default function ArrangementHeader({
         onOpenChange={setRevertToSharedDialog}
         title="확정 해제"
         description={
-          '확정된 배치표를 긴급 수정 모드로 전환하시겠습니까?\n\n' +
-          '• 긴급 수정 (등단 불가/가능 처리)이 가능합니다\n' +
-          '• AI 자동 분배/배치는 비활성화됩니다\n' +
-          '• 수정 완료 후 다시 확정해야 합니다'
+          <>
+            확정된 배치표를 긴급 수정 모드로 전환하시겠습니까?
+            <br /><br />
+            • 긴급 수정 (등단 불가/가능 처리)이 가능합니다
+            <br />
+            • AI 자동 분배/배치는 비활성화됩니다
+            <br />
+            • 수정 완료 후 다시 확정해야 합니다
+          </>
         }
         confirmLabel="긴급 수정 전환"
         variant="warning"

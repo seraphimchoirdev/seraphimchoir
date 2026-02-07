@@ -83,7 +83,7 @@ export default function RestoreDialog({
               <ArrowRight className="h-4 w-4" />
               <span>진행 단계:</span>
               <span className="font-medium text-[var(--color-text-primary)]">
-                {draftInfo.stepTitle} ({draftInfo.currentStep}/7)
+                {draftInfo.stepTitle} ({draftInfo.currentStep}/6)
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
@@ -108,33 +108,48 @@ export default function RestoreDialog({
           )}
         </div>
 
-        <DialogFooter className="flex-col gap-2 sm:flex-row">
-          {/* 새로 시작 버튼 */}
-          <Button
-            variant="outline"
-            onClick={() => onChoice('startFresh')}
-            className="w-full sm:w-auto"
-          >
-            새로 시작
-          </Button>
+        <DialogFooter className="flex-col gap-3">
+          {/* 복원 버튼 (강조) */}
+          <div className="w-full">
+            <Button onClick={() => onChoice('restore')} className="w-full">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              이어서 작업
+            </Button>
+            <p className="mt-1 text-center text-xs text-[var(--color-text-tertiary)]">
+              임시 저장본에서 이어서 작업합니다
+            </p>
+          </div>
 
           {/* DB 데이터가 있을 때 추가 옵션 */}
           {hasDbData && (
-            <Button
-              variant="outline"
-              onClick={() => onChoice('useDb')}
-              className="w-full sm:w-auto"
-            >
-              <Database className="mr-2 h-4 w-4" />
-              저장된 데이터 사용
-            </Button>
+            <div className="w-full">
+              <Button
+                variant="outline"
+                onClick={() => onChoice('useDb')}
+                className="w-full"
+              >
+                <Database className="mr-2 h-4 w-4" />
+                서버 데이터 사용
+              </Button>
+              <p className="mt-1 text-center text-xs text-[var(--color-text-tertiary)]">
+                서버에 마지막으로 저장된 상태로 시작합니다
+              </p>
+            </div>
           )}
 
-          {/* 복원 버튼 (강조) */}
-          <Button onClick={() => onChoice('restore')} className="w-full sm:w-auto">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            복원하기
-          </Button>
+          {/* 새로 시작 버튼 */}
+          <div className="w-full">
+            <Button
+              variant="outline"
+              onClick={() => onChoice('startFresh')}
+              className="w-full"
+            >
+              새로 시작
+            </Button>
+            <p className="mt-1 text-center text-xs text-[var(--color-text-tertiary)]">
+              임시 저장본을 삭제하고 처음부터 시작합니다
+            </p>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

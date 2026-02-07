@@ -218,6 +218,31 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-07 | feat(arrangements): 줄별 인원 수 stepper UI 개선 및 동기화 버그 수정 |
+| 2026-02-07 | fix(arrangements): GridSettingsPanel 디바운스 race condition 버그 수정 |
+| 2026-02-07 | fix(arrangements): GridSettingsPanel 디바운스 race condition 버그 수정 |
+| 2026-02-07 | feat(arrangements): 자리배치 워크플로우 UX 개선 9개 항목 |
+| 2026-02-07 | fix(ui): 데스크탑 토스트 위치를 top-center로 변경 (반응형) |
+| 2026-02-07 | docs: Claude API Structured Outputs 가이드 문서 추가 |
+| 2026-02-07 | fix(config): CSP 및 로컬 개발 환경 localhost 지원 추가 |
+| 2026-02-07 | fix(auth): 프로필 조회 시 .single() → .maybeSingle() 에러 처리 개선 |
+| 2026-02-07 | refactor(arrangements): 7단계 → 6단계 워크플로우 리팩토링 |
+| 2026-02-07 | fix(arrangements): 배치표 생성 토스트 통합 및 AI 추천 분배 race condition 수정 |
+| 2026-02-07 | feat(arrangements): 데이터 변경 시 워크플로우 이후 단계 체크 자동 해제 |
+| 2026-02-07 | docs: 2026-02-07 핸드오프 문서 생성 |
+| 2026-02-06 | fix(arrangements): 긴급 수정 모드에서 워크플로우 체크 표시 해제 버그 수정 |
+| 2026-02-06 | fix(security): CSP connect-src에 Vercel Analytics 새 도메인 추가 |
+| 2026-02-06 | docs: 2026-02-06 핸드오프 문서 생성 |
+| 2026-02-05 | fix: 출석 모드 null 처리 및 알토 줄반장 선택 로직 개선 |
+| 2026-02-05 | docs: 핸드오프 문서 추가 (01/31, 02/01, 02/02, 02/04) |
+| 2026-02-05 | refactor(arrangements): 자리배치 저장/공유/확정 UX 용어 재설계 |
+| 2026-02-05 | fix(arrangements): 저장 시 줄 정렬 조정(rowOffsets) 초기화 버그 수정 |
+| 2026-02-05 | fix(seats): 인쇄 시 줄반장 보라 글로우/링 제거 누락 수정 |
+| 2026-02-05 | fix(auth): fetchUser 프로필 쿼리 안정화 - single→maybeSingle 변경 |
+| 2026-02-05 | fix(auth): admin 프로필 로드 에러 및 대시보드 미표시 수정 |
+| 2026-02-05 | feat(attendances): 예배별 개별 출석 체크 (Multi-Service Attendance) |
+| 2026-02-02 | feat(db): 프로덕션 DB → seed.sql 자동 생성 스크립트 추가 |
+| 2026-02-02 | fix(config): Turbopack 호환성 개선 - Sentry 설정 마이그레이션 및 루트 경로 명시 |
 | 2026-02-01 | fix(attendances): 자리배치표 존재 시 연습 출석 수정 허용 및 practice_status 스키마 추가 |
 | 2026-01-31 | fix(image-capture): inline style로 좌석 테두리 숨김 방식 변경 |
 | 2026-01-31 | fix(hooks): 문서 자동 업데이트 훅 개선 — amend 방식으로 unstaged 잔여물 제거 |

@@ -241,18 +241,32 @@ export function selectRowLeaders(
     }
   }
 
-  // 2. 1~3행 알토 인원의 중간 위치
+  // 2. 1~3행 알토의 13번째 (0-indexed: 12), 없으면 마지막 알토
   const altoPositions = collectPartPositions(assignments, 'ALTO', [1, 2, 3], rowCapacities);
   if (altoPositions.length > 0) {
-    const middleIndex = Math.ceil(altoPositions.length / 2) - 1;
-    const middleAlto = altoPositions[middleIndex];
+    const targetIndex = altoPositions.length >= 13 ? 12 : altoPositions.length - 1;
+    const candidate = altoPositions[targetIndex];
+    const candidateKey = `${candidate.row}-${candidate.col}`;
 
-    const key = `${middleAlto.row}-${middleAlto.col}`;
-    if (!selectedKeys.has(key)) {
-      selectedKeys.add(key);
+    if (selectedKeys.has(candidateKey) && targetIndex + 1 < altoPositions.length) {
+      // 13번째가 이미 선택됨(1행 경계 알토) → 14번째로 대체
+      const fallback = altoPositions[targetIndex + 1];
+      const fallbackKey = `${fallback.row}-${fallback.col}`;
+      if (!selectedKeys.has(fallbackKey)) {
+        selectedKeys.add(fallbackKey);
+        candidates.push({
+          row: fallback.row,
+          col: fallback.col,
+          part: 'ALTO',
+          side: 'right',
+          role: 'middle',
+        });
+      }
+    } else if (!selectedKeys.has(candidateKey)) {
+      selectedKeys.add(candidateKey);
       candidates.push({
-        row: middleAlto.row,
-        col: middleAlto.col,
+        row: candidate.row,
+        col: candidate.col,
         part: 'ALTO',
         side: 'right',
         role: 'middle',

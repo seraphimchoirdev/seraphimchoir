@@ -9,11 +9,11 @@ import { WORKFLOW_STEPS, WorkflowStep, useArrangementStore } from '@/store/arran
 /**
  * 워크플로우 진행 상태 표시 컴포넌트
  *
- * 7단계 워크플로우의 진행 상태를 시각화합니다.
+ * 6단계 워크플로우의 진행 상태를 시각화합니다.
  *
  * ```
- * [✓]───[●]───[○]───[○]───[○]───[○]───[○]
- *  1     2     3     4     5     6     7
+ * [✓]───[●]───[○]───[○]───[○]───[○]
+ *  1     2     3     4     5     6
  * ```
  */
 export default function WorkflowProgress() {
@@ -29,7 +29,7 @@ export default function WorkflowProgress() {
         <span className="text-xs text-[var(--color-text-tertiary)]">
           {isWizardMode ? '가이드 모드' : '자유 편집 모드'}
         </span>
-        <span className="text-xs text-[var(--color-text-tertiary)]">{currentStep} / 7 단계</span>
+        <span className="text-xs text-[var(--color-text-tertiary)]">{currentStep} / 6 단계</span>
       </div>
 
       {/* Progress Bar - 데스크톱 */}
@@ -41,7 +41,7 @@ export default function WorkflowProgress() {
         <div
           className="absolute top-4 left-6 h-0.5 bg-[var(--color-primary-500)] transition-all duration-300"
           style={{
-            width: `${((currentStep - 1) / 6) * (100 - (12 * 100) / 100)}%`,
+            width: `${((currentStep - 1) / 5) * (100 - (12 * 100) / 100)}%`,
           }}
         />
 

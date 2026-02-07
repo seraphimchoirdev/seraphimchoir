@@ -1,8 +1,8 @@
 'use client';
 
-import { ChevronDown, ChevronUp, RotateCcw, Zap } from 'lucide-react';
+import { ChevronDown, ChevronUp, Minus, Plus, RotateCcw, Zap } from 'lucide-react';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +20,7 @@ interface GridSettingsPanelProps {
   gridLayout: GridLayout | null;
   onChange: (layout: GridLayout) => void;
   totalMembers: number;
-  /** 워크플로우 단계 (2단계에서는 AI 추천, 지그재그, 행별 세부 조정 숨김) */
+  /** 워크플로우 단계 (1단계에서는 AI 추천, 지그재그, 행별 세부 조정 숨김) */
   workflowStep?: number;
   /** 워크플로우 패널 내부에 embedded될 때 Card wrapper 제거 */
   embedded?: boolean;
@@ -33,8 +33,8 @@ export default function GridSettingsPanel({
   workflowStep,
   embedded = false,
 }: GridSettingsPanelProps) {
-  // 2단계에서는 기본 설정만 표시 (AI 추천, 지그재그, 행별 세부 조정 숨김)
-  const isStep2 = workflowStep === 2;
+  // 1단계에서는 기본 설정만 표시 (AI 추천, 지그재그, 행별 세부 조정 숨김)
+  const isStep2 = workflowStep === 1;
   // 행별 오프셋 조정 섹션 펼침 상태
   const [isRowOffsetsExpanded, setIsRowOffsetsExpanded] = useState(false);
 
@@ -44,6 +44,60 @@ export default function GridSettingsPanel({
     gridLayout?.rowCapacities ?? Array(GRID_CONSTRAINTS.DEFAULT_ROWS).fill(8);
   const currentZigzag = gridLayout?.zigzagPattern ?? 'even';
   const currentRowOffsets = gridLayout?.rowOffsets ?? {};
+
+  // 디바운스: 줄 수 로컬 state
+  const [localRows, setLocalRows] = useState(currentRows);
+  const [localCapacities, setLocalCapacities] = useState(currentCapacities);
+
+  // 외부(AI 추천 등)에서 값이 바뀌면 로컬 state 동기화
+  // currentCapacities는 매 렌더마다 새 참조이므로 값 비교 필수
+  useEffect(() => {
+    setLocalRows(currentRows);
+  }, [currentRows]);
+
+  // currentCapacities는 매 렌더마다 새 배열 참조이므로, JSON 직렬화로 값 기반 비교
+  const capacitiesKey = JSON.stringify(currentCapacities);
+  useEffect(() => {
+    setLocalCapacities((prev) => {
+      if (
+        prev.length === currentCapacities.length &&
+        prev.every((v, i) => v === currentCapacities[i])
+      ) {
+        return prev; // 값 동일하면 참조 유지 → 리렌더 방지
+      }
+      return currentCapacities;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capacitiesKey]);
+
+  // 줄 수 디바운스: 로컬 값이 바뀌면 400ms 후 반영
+  useEffect(() => {
+    if (localRows === currentRows) return;
+    const timer = setTimeout(() => {
+      handleRowsChange(localRows);
+    }, 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localRows, currentRows]);
+
+  // 줄별 인원 디바운스: 로컬 값이 바뀌면 400ms 후 한 번에 반영
+  useEffect(() => {
+    const changed =
+      localCapacities.some((v, i) => v !== currentCapacities[i]) ||
+      localCapacities.length !== currentCapacities.length;
+    if (!changed) return;
+    const timer = setTimeout(() => {
+      onChange({
+        rows: currentRows,
+        rowCapacities: localCapacities,
+        zigzagPattern: currentZigzag,
+        rowOffsets: currentRowOffsets,
+        isManuallyConfigured: true,
+      });
+    }, 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localCapacities, currentCapacities]);
 
   // 행 수 변경
   const handleRowsChange = (newRows: number) => {
@@ -123,9 +177,9 @@ export default function GridSettingsPanel({
             type="number"
             min={GRID_CONSTRAINTS.MIN_ROWS}
             max={GRID_CONSTRAINTS.MAX_ROWS}
-            value={currentRows}
+            value={localRows}
             onChange={(e) =>
-              handleRowsChange(parseInt(e.target.value) || GRID_CONSTRAINTS.DEFAULT_ROWS)
+              setLocalRows(parseInt(e.target.value) || GRID_CONSTRAINTS.DEFAULT_ROWS)
             }
             className="h-11 w-20 text-base"
           />
@@ -135,7 +189,7 @@ export default function GridSettingsPanel({
         </div>
       </div>
 
-      {/* AI 추천 분배 버튼 - 2단계에서는 숨김 (1단계에서 이미 실행) */}
+      {/* AI 추천 분배 버튼 - 1단계에서는 숨김 (페이지 초기화에서 자동 실행) */}
       {!isStep2 && (
         <div className="space-y-2">
           <Button
@@ -154,24 +208,79 @@ export default function GridSettingsPanel({
       <div className="space-y-2">
         <Label className="text-sm sm:text-base">줄별 인원 수</Label>
         <div className="space-y-2">
-          {currentCapacities.map((capacity, idx) => (
+          {localCapacities.map((capacity, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <span className="w-12 text-sm font-medium sm:w-14">{idx + 1}줄:</span>
-              <Input
-                type="number"
-                min={0}
-                max={GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW}
-                value={capacity}
-                onChange={(e) => handleCapacityChange(idx, e.target.value)}
-                className="h-11 w-20 text-base"
-              />
+              <div className="flex h-11 items-stretch overflow-hidden rounded-md border border-[var(--color-border)] focus-within:ring-2 focus-within:ring-[var(--color-primary-500)] focus-within:ring-offset-1">
+                <button
+                  type="button"
+                  aria-label={`${idx + 1}줄 인원 감소`}
+                  disabled={capacity <= 0}
+                  onClick={() => {
+                    const newCapacities = [...localCapacities];
+                    newCapacities[idx] = Math.max(0, capacity - 1);
+                    setLocalCapacities(newCapacities);
+                  }}
+                  className="flex w-10 items-center justify-center border-r border-[var(--color-border)] bg-[var(--color-background-tertiary)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-border-default)] hover:text-[var(--color-text-primary)] active:bg-[var(--color-border-strong)] active:text-[var(--color-text-primary)] disabled:pointer-events-none disabled:opacity-40"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  aria-label={`${idx + 1}줄 인원 수`}
+                  value={capacity}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === '') {
+                      const newCapacities = [...localCapacities];
+                      newCapacities[idx] = 0;
+                      setLocalCapacities(newCapacities);
+                      return;
+                    }
+                    if (!/^\d+$/.test(raw)) return;
+                    const newCapacities = [...localCapacities];
+                    newCapacities[idx] = parseInt(raw, 10);
+                    setLocalCapacities(newCapacities);
+                  }}
+                  onBlur={(e) => {
+                    const num = parseInt(e.target.value, 10) || 0;
+                    const clamped = Math.min(
+                      GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW,
+                      Math.max(0, num)
+                    );
+                    if (clamped !== capacity) {
+                      const newCapacities = [...localCapacities];
+                      newCapacities[idx] = clamped;
+                      setLocalCapacities(newCapacities);
+                    }
+                  }}
+                  className="w-12 bg-transparent text-center text-base font-medium tabular-nums outline-none"
+                />
+                <button
+                  type="button"
+                  aria-label={`${idx + 1}줄 인원 증가`}
+                  disabled={capacity >= GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW}
+                  onClick={() => {
+                    const newCapacities = [...localCapacities];
+                    newCapacities[idx] = Math.min(
+                      GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW,
+                      capacity + 1
+                    );
+                    setLocalCapacities(newCapacities);
+                  }}
+                  className="flex w-10 items-center justify-center border-l border-[var(--color-border)] bg-[var(--color-primary-50)] text-[var(--color-primary-600)] transition-colors hover:bg-[var(--color-primary-100)] hover:text-[var(--color-primary-700)] active:bg-[var(--color-primary-200)] active:text-[var(--color-primary-700)] disabled:pointer-events-none disabled:opacity-40"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
               <span className="text-xs text-[var(--color-text-tertiary)] sm:text-sm">명</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* 지그재그 패턴 설정 - 2단계에서는 숨김 (5단계 전용) */}
+      {/* 지그재그 패턴 설정 - 1단계에서는 숨김 (4단계 전용) */}
       {!isStep2 && (
         <div className="space-y-2">
           <Label className="text-sm sm:text-base">지그재그 패턴</Label>
@@ -228,7 +337,7 @@ export default function GridSettingsPanel({
         </div>
       )}
 
-      {/* 행별 지그재그 세부 조정 - 2단계에서는 숨김 (5단계 전용) */}
+      {/* 행별 지그재그 세부 조정 - 1단계에서는 숨김 (4단계 전용) */}
       {!isStep2 && (
         <div className="space-y-2">
           <button
