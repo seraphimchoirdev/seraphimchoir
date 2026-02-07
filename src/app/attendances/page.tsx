@@ -7,7 +7,7 @@ import { isSunday } from 'date-fns/isSunday';
 import { nextSunday } from 'date-fns/nextSunday';
 import { subMonths } from 'date-fns/subMonths';
 import { subWeeks } from 'date-fns/subWeeks';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Music } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Info, Music } from 'lucide-react';
 
 import { useMemo, useState } from 'react';
 
@@ -69,16 +69,26 @@ export default function AttendancesPage() {
   // 선택한 날짜의 모든 예배 일정
   const { data: schedulesForDate } = useServiceSchedulesByDate(dateStr);
 
-  // 실제 사용되는 serviceScheduleId: 수동 선택값이 유효하면 사용, 아니면 첫 번째 자동 선택
+  // 시간순 정렬된 예배 목록 (service_start_time 기준 오름차순)
+  const sortedSchedules = useMemo(() => {
+    if (!schedulesForDate || schedulesForDate.length === 0) return [];
+    return [...schedulesForDate].sort((a, b) => {
+      const timeA = a.service_start_time || '99:99';
+      const timeB = b.service_start_time || '99:99';
+      return String(timeA).localeCompare(String(timeB));
+    });
+  }, [schedulesForDate]);
+
+  // 실제 사용되는 serviceScheduleId: 수동 선택값이 유효하면 사용, 아니면 시간이 가장 빠른 예배 자동 선택
   const selectedServiceScheduleId = useMemo(() => {
-    if (!schedulesForDate || schedulesForDate.length === 0) return undefined;
+    if (sortedSchedules.length === 0) return undefined;
     // 수동 선택값이 현재 날짜의 schedules에 있으면 사용
-    if (manualServiceScheduleId && schedulesForDate.some(s => s.id === manualServiceScheduleId)) {
+    if (manualServiceScheduleId && sortedSchedules.some(s => s.id === manualServiceScheduleId)) {
       return manualServiceScheduleId;
     }
-    // 없으면 첫 번째 자동 선택
-    return schedulesForDate[0].id;
-  }, [schedulesForDate, manualServiceScheduleId]);
+    // 없으면 시간이 가장 빠른 예배 자동 선택
+    return sortedSchedules[0].id;
+  }, [sortedSchedules, manualServiceScheduleId]);
 
   // 예배 일정이 있는 날짜들의 Set (O(1) 조회)
   const serviceScheduleDates = useMemo(() => {
@@ -93,9 +103,9 @@ export default function AttendancesPage() {
 
   // 현재 선택된 예배 일정 정보
   const selectedSchedule = useMemo(() => {
-    if (!schedulesForDate || !selectedServiceScheduleId) return null;
-    return schedulesForDate.find((s) => s.id === selectedServiceScheduleId) ?? null;
-  }, [schedulesForDate, selectedServiceScheduleId]);
+    if (sortedSchedules.length === 0 || !selectedServiceScheduleId) return null;
+    return sortedSchedules.find((s) => s.id === selectedServiceScheduleId) ?? null;
+  }, [sortedSchedules, selectedServiceScheduleId]);
 
   // 예배 일정이 없는 날짜는 비활성화
   const isDateDisabled = (date: Date) => {
@@ -103,7 +113,7 @@ export default function AttendancesPage() {
     return !serviceScheduleDates.has(d);
   };
 
-  const hasMultipleServices = (schedulesForDate?.length ?? 0) > 1;
+  const hasMultipleServices = sortedSchedules.length > 1;
 
   if (authLoading) {
     return (
@@ -203,27 +213,37 @@ export default function AttendancesPage() {
               </div>
 
               {/* 예배 선택 드롭다운 (2개 이상일 때만 표시) */}
-              {hasMultipleServices && schedulesForDate && (
-                <div className="mt-4 flex items-center gap-3 border-t border-[var(--color-border-subtle)] pt-4">
-                  <span className="text-sm font-medium text-[var(--color-text-secondary)]">예배:</span>
-                  <Select
-                    value={selectedServiceScheduleId}
-                    onValueChange={setManualServiceScheduleId}
-                  >
-                    <SelectTrigger className="w-[240px]">
-                      <SelectValue placeholder="예배를 선택하세요" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {schedulesForDate.map((schedule) => (
-                        <SelectItem key={schedule.id} value={schedule.id}>
-                          {schedule.service_type || '예배'}
-                          {schedule.service_start_time
-                            ? ` (${String(schedule.service_start_time).slice(0, 5)})`
-                            : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {hasMultipleServices && (
+                <div className="mt-4 border-t border-[var(--color-border-subtle)] pt-4 space-y-3">
+                  {/* 다중 예배 안내 문구 */}
+                  <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700">
+                    <Info className="h-4 w-4 shrink-0" />
+                    <span>
+                      이 날짜에 예배가 {sortedSchedules.length}개 등록되어 있습니다. 아래에서 예배를 선택해주세요.
+                    </span>
+                  </div>
+                  {/* 예배 선택 드롭다운 */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-[var(--color-text-secondary)]">예배:</span>
+                    <Select
+                      value={selectedServiceScheduleId}
+                      onValueChange={setManualServiceScheduleId}
+                    >
+                      <SelectTrigger className="w-[240px]">
+                        <SelectValue placeholder="예배를 선택하세요" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortedSchedules.map((schedule) => (
+                          <SelectItem key={schedule.id} value={schedule.id}>
+                            {schedule.service_type || '예배'}
+                            {schedule.service_start_time
+                              ? ` (${String(schedule.service_start_time).slice(0, 5)})`
+                              : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               )}
             </div>
