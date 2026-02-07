@@ -135,7 +135,7 @@ const SeatSlot = memo(function SeatSlot({
           // Empty seat, no selection
           !isOccupied &&
             !hasSelection &&
-            'border-dashed border-[var(--color-border-default)] bg-[var(--color-background-primary)]',
+            'border-dashed border-[var(--color-border-strong)] bg-[var(--color-background-secondary)]',
           // Empty seat, with selection (valid target)
           !isOccupied &&
             hasSelection &&
@@ -162,7 +162,7 @@ const SeatSlot = memo(function SeatSlot({
             'text-[9px] sm:top-0.5 sm:left-0.5 sm:text-[10px] lg:text-[11px]',
             isOccupied
               ? 'rounded-sm bg-white/80 px-0.5 font-semibold text-[var(--color-text-secondary)]'
-              : 'text-[var(--color-text-tertiary)]'
+              : 'font-medium text-[var(--color-text-secondary)]'
           )}
         >
           {col}
@@ -179,7 +179,7 @@ const SeatSlot = memo(function SeatSlot({
             changeHighlight={changeHighlight}
           />
         ) : (
-          <div className="pointer-events-none text-[10px] text-[var(--color-text-disabled)] sm:text-xs">
+          <div className="pointer-events-none text-[10px] text-[var(--color-text-tertiary)] sm:text-xs">
             빈 좌석
           </div>
         )}
