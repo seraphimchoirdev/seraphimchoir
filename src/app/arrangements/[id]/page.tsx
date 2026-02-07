@@ -23,6 +23,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useArrangement } from '@/hooks/useArrangements';
 import { useImageGeneration } from '@/hooks/useImageGeneration';
 import { useAttendances } from '@/hooks/useAttendances';
+import { useServiceSchedule } from '@/hooks/useServiceSchedules';
 import { useAuth } from '@/hooks/useAuth';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
 import { useMembers } from '@/hooks/useMembers';
@@ -54,6 +55,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   const canEmergencyEdit = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
   const { id } = use(params);
   const { data: arrangement, isLoading, error } = useArrangement(id);
+  // 예배 일정 조회 (CaptureHeader용 — 페이지 레벨에서 한 번만 조회)
+  const { data: serviceSchedule } = useServiceSchedule(arrangement?.service_schedule_id || undefined);
   const {
     setAssignments,
     setGridLayout,
@@ -1135,7 +1138,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             date: arrangement.date,
             title: arrangement.title,
             conductor: arrangement.conductor || undefined,
-            serviceScheduleId: arrangement.service_schedule_id || undefined,
+            serviceType: serviceSchedule?.service_type || undefined,
+            hymnName: serviceSchedule?.hymn_name,
+            offertoryPerformer: serviceSchedule?.offertory_performer,
           }}
           showCaptureInfo={true}
           onEmergencyUnavailable={handleEmergencyUnavailable}
@@ -1166,7 +1171,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
               date: arrangement.date,
               title: arrangement.title,
               conductor: arrangement.conductor || undefined,
-              serviceScheduleId: arrangement.service_schedule_id || undefined,
+              serviceType: serviceSchedule?.service_type || undefined,
+              hymnName: serviceSchedule?.hymn_name,
+              offertoryPerformer: serviceSchedule?.offertory_performer,
             }}
             showCaptureInfo={true}
             onEmergencyUnavailable={handleEmergencyUnavailable}

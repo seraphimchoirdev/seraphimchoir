@@ -218,6 +218,8 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-07 | fix(arrangements): 이미지 내보내기 시 뷰포트 독립적 해상도 고정 |
+| 2026-02-07 | fix(arrangements): 이미지 내보내기 시 예배 유형 표시 안정화 |
 | 2026-02-07 | fix(arrangements): 배치표 예배 유형 잘못 표시 버그 수정 |
 | 2026-02-07 | fix(dashboard): 다중 예배 시 "다음 예배" 정보 미표시 버그 수정 |
 | 2026-02-07 | feat(attendances): ADMIN/CONDUCTOR 출석 탭 시간 기반 기본 선택 적용 |

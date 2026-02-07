@@ -465,6 +465,68 @@ body {
   }
 }
 
+/* === 이미지 캡처 모드 (lg 기준 고정 해상도) === */
+
+/* 캡처 영역 패딩: sm:px-8 기준 */
+[data-capture-mode] {
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+}
+
+/* SeatSlot: lg 기준 크기 강제 */
+[data-capture-mode] [data-seat-slot] {
+  width: 72px !important;
+  height: 54px !important;
+  padding: 0.25rem !important;
+}
+
+/* 좌석번호 라벨: lg 기준 */
+[data-capture-mode] [data-seat-slot] > span:first-child {
+  top: 2px !important;
+  left: 2px !important;
+  font-size: 11px !important;
+}
+
+/* 이름 텍스트: lg 기준 */
+[data-capture-mode] [data-seat-slot] [data-member-name] {
+  font-size: 1rem !important;
+  white-space: nowrap !important;
+}
+
+/* 좌석 행 gap: sm 기준 */
+[data-capture-mode] [data-seat-row] {
+  gap: 8px !important;
+}
+
+/* 행 전체 컨테이너 gap */
+[data-capture-mode] [data-rows-container] {
+  gap: 8px !important;
+}
+
+/* 열 라벨: sm 기준 */
+[data-capture-mode] [data-row-label] {
+  width: 1.75rem !important;
+  font-size: 0.75rem !important;
+  margin-right: 0.5rem !important;
+}
+
+/* 행별 인원수: sm 기준 */
+[data-capture-mode] [data-row-count] {
+  width: 1.75rem !important;
+  font-size: 0.75rem !important;
+  margin-left: 0.5rem !important;
+}
+
+/* 지휘자: sm 기준 */
+[data-capture-mode] [data-conductor] {
+  margin-top: 2rem !important;
+}
+[data-capture-mode] [data-conductor] > div {
+  height: 3rem !important;
+  width: 8rem !important;
+  font-size: 0.875rem !important;
+}
+
 /* === 인쇄 모드 === */
 @media print {
   @page {

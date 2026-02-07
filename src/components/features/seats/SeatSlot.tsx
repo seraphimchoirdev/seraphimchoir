@@ -262,6 +262,7 @@ const GridClickableMember = memo(function GridClickableMember({
       aria-label={`${name} - ${part} 파트, ${row}열 ${col}번 배치됨${isRowLeader ? ' (줄반장)' : ''}${changeHighlight ? ` (${changeHighlight === 'ADDED' ? '새로 추가됨' : '이동됨'})` : ''}`}
     >
       <span
+        data-member-name
         className="max-w-full px-0.5 text-center text-xs leading-tight font-bold sm:text-sm lg:text-base"
         style={{
           wordBreak: 'keep-all',

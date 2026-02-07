@@ -2,12 +2,12 @@
 
 import { Music } from 'lucide-react';
 
-import { useServiceSchedule, useServiceScheduleByDate } from '@/hooks/useServiceSchedules';
-
 interface CaptureHeaderProps {
   date: string;
   title?: string;
-  serviceScheduleId?: string;
+  serviceType?: string;
+  hymnName?: string | null;
+  offertoryPerformer?: string | null;
 }
 
 /**
@@ -25,12 +25,11 @@ function formatDateKorean(dateStr: string): string {
  * 2행: 날짜 + 예배유형 (부제)
  * 3행: 찬양곡명 (선택)
  * 4행: 봉헌송 연주자 (선택)
+ *
+ * props로 모든 데이터를 직접 전달받아 API 호출 없이 렌더링합니다.
+ * 이미지 캡처 시 캐시/로딩 타이밍 문제를 방지합니다.
  */
-export default function CaptureHeader({ date, title: _title, serviceScheduleId }: CaptureHeaderProps) {
-  // serviceScheduleId가 있으면 정확한 ID로 조회, 없으면 날짜 기반 폴백 (레거시 배치표 호환)
-  const { data: scheduleById } = useServiceSchedule(serviceScheduleId);
-  const { data: scheduleByDate } = useServiceScheduleByDate(!serviceScheduleId ? date : undefined);
-  const schedule = scheduleById ?? scheduleByDate;
+export default function CaptureHeader({ date, title: _title, serviceType, hymnName, offertoryPerformer }: CaptureHeaderProps) {
   const formattedDate = formatDateKorean(date);
 
   return (
@@ -42,21 +41,21 @@ export default function CaptureHeader({ date, title: _title, serviceScheduleId }
 
       {/* 2행: 부제 - 날짜 + 예배유형 */}
       <div className="mt-1 text-lg text-[var(--color-text-primary)]">
-        {formattedDate} {schedule?.service_type || '주일예배'}
+        {formattedDate} {serviceType || '주일예배'}
       </div>
 
       {/* 3행: 찬양곡 */}
-      {schedule?.hymn_name && (
+      {hymnName && (
         <div className="mt-3 flex items-center justify-center gap-1.5 text-lg font-medium text-[var(--color-primary-600)]">
           <Music className="h-5 w-5" />
-          {schedule.hymn_name}
+          {hymnName}
         </div>
       )}
 
       {/* 4행: 봉헌송 */}
-      {schedule?.offertory_performer && (
+      {offertoryPerformer && (
         <div className="mt-3 text-lg leading-relaxed text-[var(--color-text-secondary)]">
-          봉헌송: {schedule.offertory_performer}
+          봉헌송: {offertoryPerformer}
         </div>
       )}
     </div>
