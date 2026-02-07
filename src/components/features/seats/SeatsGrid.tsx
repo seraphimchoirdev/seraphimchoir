@@ -94,7 +94,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
 
           {/* 좌석 그리드 - Flexbox 왼쪽 정렬 (역순: 6열이 상단, 1열이 하단) */}
           {/* 실제 배치표 분석 결과: 왼쪽 정렬 기반, 지그재그는 선택적 */}
-          <div className="mx-auto flex w-fit flex-col-reverse items-start gap-1.5 sm:gap-2">
+          <div data-rows-container className="mx-auto flex w-fit flex-col-reverse items-start gap-1.5 sm:gap-2">
             {seatsByRow
               .filter((rowData) => rowData.capacity > 0) // 빈 행 제외
               .map((rowData) => (
@@ -121,7 +121,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                   )}
 
                   {/* 열 라벨 (줄 왼쪽) */}
-                  <div className="mr-1.5 flex w-5 flex-shrink-0 items-center justify-center text-[10px] font-semibold text-[var(--color-text-tertiary)] sm:mr-2 sm:w-7 sm:text-xs">
+                  <div data-row-label className="mr-1.5 flex w-5 flex-shrink-0 items-center justify-center text-[10px] font-semibold text-[var(--color-text-tertiary)] sm:mr-2 sm:w-7 sm:text-xs">
                     {rowData.rowIndex}열
                   </div>
 
@@ -143,6 +143,8 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                                       무시되므로 JavaScript에서 직접 px 값을 계산하여 적용
                                     */}
                   <div
+                    data-seat-row
+                    data-row-offset={layout.rowOffsets?.[rowData.rowIndex - 1] ?? 0}
                     className="flex gap-1.5 sm:gap-2"
                     style={(() => {
                       const currentRowOffset = layout.rowOffsets?.[rowData.rowIndex - 1] ?? 0;
@@ -176,7 +178,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                   {(() => {
                     const count = Object.values(assignments).filter((a) => a.row === rowData.rowIndex).length;
                     return count > 0 ? (
-                      <div className="ml-1.5 flex w-5 flex-shrink-0 items-center justify-center text-[10px] font-semibold text-[var(--color-text-tertiary)] sm:ml-2 sm:w-7 sm:text-xs">
+                      <div data-row-count className="ml-1.5 flex w-5 flex-shrink-0 items-center justify-center text-[10px] font-semibold text-[var(--color-text-tertiary)] sm:ml-2 sm:w-7 sm:text-xs">
                         {count}
                       </div>
                     ) : null;
@@ -186,7 +188,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
           </div>
 
           {/* 지휘자 (최하단) */}
-          <div className="mx-auto mt-6 w-fit text-center sm:mt-8">
+          <div data-conductor className="mx-auto mt-6 w-fit text-center sm:mt-8">
             <div className="mx-auto flex h-10 w-28 items-center justify-center rounded-full border-2 border-[var(--color-primary-400)] bg-[var(--color-surface)] text-xs font-bold text-[var(--color-text-primary)] shadow-md sm:h-12 sm:w-32 sm:text-sm">
               지휘자
             </div>

@@ -4,6 +4,9 @@ import { toPng } from 'html-to-image';
 
 import { useCallback, useState } from 'react';
 
+// lg 기준 zigzag offset: (72px seat + 8px gap) / 2 = 40px
+const CAPTURE_ZIGZAG_OFFSET = 40;
+
 interface UseImageGenerationOptions {
   scale?: number;
   backgroundColor?: string;
@@ -64,7 +67,19 @@ export function useImageGeneration(
    */
   const captureToBlob = useCallback(
     async (element: HTMLElement): Promise<Blob> => {
-      // 캡처 모드: data-seat-slot 요소들의 배경만 투명화 (테두리는 유지)
+      // 1. 캡처 모드 활성화: lg 기준 CSS 오버라이드
+      element.setAttribute('data-capture-mode', 'true');
+
+      // 2. zigzag offset을 lg 기준(40px)으로 재계산
+      const seatRows = element.querySelectorAll<HTMLElement>('[data-seat-row]');
+      const originalMargins: string[] = [];
+      seatRows.forEach((row) => {
+        originalMargins.push(row.style.marginLeft);
+        const rowOffset = parseFloat(row.dataset.rowOffset || '0');
+        row.style.marginLeft = `${rowOffset * 2 * CAPTURE_ZIGZAG_OFFSET}px`;
+      });
+
+      // 3. 캡처 모드: data-seat-slot 요소들의 배경만 투명화 (테두리는 유지)
       // html-to-image는 computed style을 inline으로 복사하므로 CSS 클래스로는 불가
       const seatSlots = element.querySelectorAll<HTMLElement>('[data-seat-slot]');
       const originalStyles: { backgroundColor: string }[] = [];
@@ -117,6 +132,10 @@ export function useImageGeneration(
         return blob;
       } finally {
         // 원래 스타일 복원
+        element.removeAttribute('data-capture-mode');
+        seatRows.forEach((row, i) => {
+          row.style.marginLeft = originalMargins[i];
+        });
         seatSlots.forEach((slot, i) => {
           slot.style.backgroundColor = originalStyles[i].backgroundColor;
         });
