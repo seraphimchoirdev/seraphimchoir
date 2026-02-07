@@ -771,7 +771,7 @@ export default function ArrangementHeader({
               ) : (
                 <CheckCircle2 className="h-4 w-4" />
               )}
-              확정
+              최종 확정
             </Button>
           </>
         ) : (
@@ -857,12 +857,12 @@ export default function ArrangementHeader({
         title="배치표 확정"
         description={
           <>
-            배치표를 확정하시겠습니까?
+            배치표를 최종 확정하시겠습니까?
             <br />
             확정 후에도 관리자/지휘자가 긴급 수정을 위해 되돌릴 수 있습니다.
           </>
         }
-        confirmLabel="확정"
+        confirmLabel="최종 확정"
         variant="warning"
         onConfirm={handleConfirmAction}
       />

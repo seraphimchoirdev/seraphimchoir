@@ -164,6 +164,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     }
   }, [arrangement?.date, arrangement?.title, shareImage, getActiveCaptureRef]);
 
+  // 줄반장 자동 지정 토스트 중복 방지
+  const rowLeaderToastShownRef = useRef(false);
+
   // 초기 로드 완료 추적 (compactAllRows 중복 실행 방지)
   const initialLoadDoneRef = useRef(false);
   // AI 추천 분배 useEffect 트리거용 (ref 변경은 re-render를 유발하지 않으므로 state로 별도 관리)
@@ -246,6 +249,20 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
   // 워크플로우 자동 진행 훅 (위자드 모드에서 단계 완료 조건 자동 감지)
   useWorkflowAutoAdvance(totalMembers, arrangement?.status ?? undefined);
+
+  // 줄반장 자동 지정 토스트 (5단계 진입 시)
+  useEffect(() => {
+    if (workflow.currentStep === 5 && !rowLeaderToastShownRef.current) {
+      const rowLeaderCount = Object.values(assignments).filter(a => a.isRowLeader).length;
+      if (rowLeaderCount > 0) {
+        rowLeaderToastShownRef.current = true;
+        showSuccess(`줄반장 ${rowLeaderCount}명이 자동 지정되었습니다. 수정이 필요하면 직접 조정하세요.`);
+      }
+    }
+    if (workflow.currentStep !== 5) {
+      rowLeaderToastShownRef.current = false;
+    }
+  }, [workflow.currentStep, assignments]);
 
   // 대원 목록 표시 여부: 3단계(수동 배치 조정)에서만
   const showMemberSidebar = workflow.currentStep === 3;
@@ -362,6 +379,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       if (isTabletRange && !userOverridePanelRef.current) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 시스템(창 크기)에 반응
         setPanelMode('compact');
+        showInfo('대원 목록 공간 확보를 위해 워크플로우 패널을 축소했습니다.');
       }
     }
   }, [workflow.currentStep]);
@@ -580,13 +598,21 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         // 줄 구성 설정 (1단계에서는 줄 수/줄별 인원만 표시)
         // embedded: WorkflowPanel 내부에서 Card wrapper 없이 렌더링 (중첩 Card 방지)
         return (
-          <GridSettingsPanel
-            gridLayout={gridLayout}
-            onChange={setGridLayout}
-            totalMembers={totalMembers}
-            workflowStep={1}
-            embedded
-          />
+          <>
+            {gridLayout?.isAIRecommended && (
+              <p className="text-sm text-[var(--color-text-secondary)]">
+                출석 인원 <strong>{totalMembers}명</strong> 기반으로 줄 구성이 자동 설정되었습니다.
+                필요 시 아래에서 수동으로 조정하세요.
+              </p>
+            )}
+            <GridSettingsPanel
+              gridLayout={gridLayout}
+              onChange={setGridLayout}
+              totalMembers={totalMembers}
+              workflowStep={1}
+              embedded
+            />
+          </>
         );
       case 2:
         // AI 자동배치 - 버튼을 Card 내부에 직접 배치
@@ -659,6 +685,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   title={preset.description}
                 >
                   {preset.name}
+                  {preset.id === 'arc' && (
+                    <span className="ml-1 text-xs text-amber-500">추천</span>
+                  )}
                 </Button>
               ))}
             </div>
@@ -778,7 +807,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
               {currentArrangementStatus === 'SHARED' && (
                 <p className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                   <Lock className="h-3 w-3" />
-                  상단의 &apos;확정&apos; 버튼으로 최종 확정할 수 있습니다.
+                  상단의 &apos;최종 확정&apos; 버튼으로 최종 확정할 수 있습니다.
                 </p>
               )}
               {currentArrangementStatus === 'CONFIRMED' && (
@@ -892,6 +921,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   title={preset.description}
                 >
                   {preset.name}
+                  {preset.id === 'arc' && (
+                    <span className="ml-1 text-xs text-amber-500">추천</span>
+                  )}
                 </Button>
               ))}
             </div>

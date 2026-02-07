@@ -3,7 +3,9 @@
 import { AlertTriangle, Search, UserPlus } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
+
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +53,96 @@ interface OutOfBoundsMember {
   part: Part;
   row: number;
   col: number;
+}
+
+// 가상 스크롤 적용 멤버 리스트
+type VirtualListItem =
+  | { type: 'header'; part: Part; count: number }
+  | { type: 'member'; member: { id: string; name: string; part: Part } };
+
+function VirtualizedMemberList({
+  parts,
+  selectedPart,
+  groupedMembers,
+  compact,
+  isMemberPlaced,
+}: {
+  parts: Part[];
+  selectedPart: Part | 'ALL';
+  groupedMembers: Record<string, { id: string; name: string; part: Part }[]>;
+  compact: boolean;
+  isMemberPlaced: (memberId: string) => boolean;
+}) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  // 파트별 헤더 + 멤버를 플랫 리스트로 변환
+  const flatList = useMemo<VirtualListItem[]>(() => {
+    const items: VirtualListItem[] = [];
+    for (const part of parts) {
+      if (selectedPart !== 'ALL' && part !== selectedPart) continue;
+      const partMembers = groupedMembers[part] || [];
+      if (partMembers.length === 0) continue;
+      if (!compact) {
+        items.push({ type: 'header', part, count: partMembers.length });
+      }
+      for (const member of partMembers) {
+        items.push({ type: 'member', member });
+      }
+    }
+    return items;
+  }, [parts, selectedPart, groupedMembers, compact]);
+
+  const virtualizer = useVirtualizer({
+    count: flatList.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (index) => (flatList[index].type === 'header' ? 28 : 44),
+    overscan: 5,
+  });
+
+  if (flatList.length === 0) return null;
+
+  return (
+    <div ref={parentRef} className="max-h-[500px] overflow-auto">
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualItem) => {
+          const item = flatList[virtualItem.index];
+          return (
+            <div
+              key={virtualItem.key}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: `${virtualItem.size}px`,
+                transform: `translateY(${virtualItem.start}px)`,
+              }}
+            >
+              {item.type === 'header' ? (
+                <div className="flex items-center justify-between py-1 text-xs font-medium text-[var(--color-text-tertiary)]">
+                  <span>{item.part}</span>
+                  <span>{item.count}</span>
+                </div>
+              ) : (
+                <ClickableMember
+                  memberId={item.member.id}
+                  name={item.member.name}
+                  part={item.member.part}
+                  isPlaced={isMemberPlaced(item.member.id)}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 const MemberSidebar = memo(function MemberSidebar({
@@ -380,35 +472,13 @@ const MemberSidebar = memo(function MemberSidebar({
           </Alert>
         )}
 
-        {PARTS.map((part) => {
-          // Filter by selected part
-          if (selectedPart !== 'ALL' && part !== selectedPart) return null;
-
-          const partMembers = groupedMembers[part] || [];
-          if (partMembers.length === 0) return null;
-
-          return (
-            <div key={part} className="space-y-1">
-              {!compact && (
-                <div className="flex items-center justify-between py-1 text-xs font-medium text-[var(--color-text-tertiary)]">
-                  <span>{part}</span>
-                  <span>{partMembers.length}</span>
-                </div>
-              )}
-              <div className="grid grid-cols-1 gap-1">
-                {partMembers.map((member) => (
-                  <ClickableMember
-                    key={member.id}
-                    memberId={member.id}
-                    name={member.name}
-                    part={member.part}
-                    isPlaced={isMemberPlaced(member.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+        <VirtualizedMemberList
+          parts={PARTS}
+          selectedPart={selectedPart}
+          groupedMembers={groupedMembers}
+          compact={compact}
+          isMemberPlaced={isMemberPlaced}
+        />
 
         {(!members || members.length === 0) && (
           <div className="mt-8 text-center text-sm text-[var(--color-text-secondary)]">

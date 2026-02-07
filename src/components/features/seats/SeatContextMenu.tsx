@@ -51,9 +51,8 @@ const SeatContextMenu = memo(function SeatContextMenu({
     setOpen(false);
   }, [onRemoveFromSeat]);
 
-  // 빈 좌석이거나 비활성화된 경우, 또는 긴급 수정 모드가 아닌 경우 컨텍스트 메뉴 없이 children만 렌더링
-  // SHARED 상태에서만 긴급 수정 컨텍스트 메뉴가 표시됨
-  if (!isOccupied || disabled || !isEmergencyMode) {
+  // 빈 좌석이거나 비활성화된 경우 컨텍스트 메뉴 없이 children만 렌더링
+  if (!isOccupied || disabled) {
     return <>{children}</>;
   }
 
@@ -61,7 +60,7 @@ const SeatContextMenu = memo(function SeatContextMenu({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[180px]">
-        {onEmergencyUnavailable && (
+        {isEmergencyMode && onEmergencyUnavailable && (
           <DropdownMenuItem
             className="cursor-pointer gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950"
             onClick={handleEmergencyUnavailable}

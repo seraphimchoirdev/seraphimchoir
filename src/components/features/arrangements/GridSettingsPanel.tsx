@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronUp, RotateCcw, Zap } from 'lucide-react';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +42,56 @@ export default function GridSettingsPanel({
   const currentRows = gridLayout?.rows ?? GRID_CONSTRAINTS.DEFAULT_ROWS;
   const currentCapacities =
     gridLayout?.rowCapacities ?? Array(GRID_CONSTRAINTS.DEFAULT_ROWS).fill(8);
+
+  // 디바운스: 줄 수 로컬 state
+  const [localRows, setLocalRows] = useState(currentRows);
+  const isRowsSyncing = useRef(false);
+
+  useEffect(() => {
+    if (!isRowsSyncing.current) {
+      setLocalRows(currentRows);
+    }
+    isRowsSyncing.current = false;
+  }, [currentRows]);
+
+  useEffect(() => {
+    if (localRows === currentRows) return;
+    isRowsSyncing.current = true;
+    const timer = setTimeout(() => {
+      handleRowsChange(localRows);
+    }, 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localRows]);
+
+  // 디바운스: 줄별 인원 로컬 state
+  const [localCapacities, setLocalCapacities] = useState(currentCapacities);
+  const isCapacitiesSyncing = useRef(false);
+
+  useEffect(() => {
+    if (!isCapacitiesSyncing.current) {
+      setLocalCapacities(currentCapacities);
+    }
+    isCapacitiesSyncing.current = false;
+  }, [currentCapacities]);
+
+  useEffect(() => {
+    // 배열 비교
+    const changed = localCapacities.some((v, i) => v !== currentCapacities[i]) ||
+      localCapacities.length !== currentCapacities.length;
+    if (!changed) return;
+    isCapacitiesSyncing.current = true;
+    const timer = setTimeout(() => {
+      // 변경된 인덱스 찾아서 반영
+      localCapacities.forEach((val, idx) => {
+        if (val !== currentCapacities[idx]) {
+          handleCapacityChange(idx, String(val));
+        }
+      });
+    }, 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localCapacities]);
   const currentZigzag = gridLayout?.zigzagPattern ?? 'even';
   const currentRowOffsets = gridLayout?.rowOffsets ?? {};
 
@@ -123,9 +173,9 @@ export default function GridSettingsPanel({
             type="number"
             min={GRID_CONSTRAINTS.MIN_ROWS}
             max={GRID_CONSTRAINTS.MAX_ROWS}
-            value={currentRows}
+            value={localRows}
             onChange={(e) =>
-              handleRowsChange(parseInt(e.target.value) || GRID_CONSTRAINTS.DEFAULT_ROWS)
+              setLocalRows(parseInt(e.target.value) || GRID_CONSTRAINTS.DEFAULT_ROWS)
             }
             className="h-11 w-20 text-base"
           />
@@ -154,7 +204,7 @@ export default function GridSettingsPanel({
       <div className="space-y-2">
         <Label className="text-sm sm:text-base">줄별 인원 수</Label>
         <div className="space-y-2">
-          {currentCapacities.map((capacity, idx) => (
+          {localCapacities.map((capacity, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <span className="w-12 text-sm font-medium sm:w-14">{idx + 1}줄:</span>
               <Input
@@ -162,7 +212,11 @@ export default function GridSettingsPanel({
                 min={0}
                 max={GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW}
                 value={capacity}
-                onChange={(e) => handleCapacityChange(idx, e.target.value)}
+                onChange={(e) => {
+                  const newCapacities = [...localCapacities];
+                  newCapacities[idx] = parseInt(e.target.value) || 0;
+                  setLocalCapacities(newCapacities);
+                }}
                 className="h-11 w-20 text-base"
               />
               <span className="text-xs text-[var(--color-text-tertiary)] sm:text-sm">명</span>
