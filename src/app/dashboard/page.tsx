@@ -1,11 +1,14 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+
 import AppShell from '@/components/layout/AppShell';
-import ConductorDashboard from '@/components/features/dashboard/conductor/ConductorDashboard';
-import MemberDashboard from '@/components/features/dashboard/member/MemberDashboard';
-import StaffDashboard from '@/components/features/dashboard/staff/StaffDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
+
+const ConductorDashboard = dynamic(() => import('@/components/features/dashboard/conductor/ConductorDashboard'));
+const MemberDashboard = dynamic(() => import('@/components/features/dashboard/member/MemberDashboard'));
+const StaffDashboard = dynamic(() => import('@/components/features/dashboard/staff/StaffDashboard'));
 
 /**
  * 대시보드 페이지
