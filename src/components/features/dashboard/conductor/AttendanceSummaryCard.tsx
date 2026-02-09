@@ -1,10 +1,15 @@
 'use client';
 
-import { Users } from 'lucide-react';
+import { Check, Users } from 'lucide-react';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  READINESS_PARTS,
+  getReadyPartsCount,
+  useAttendanceDeadlines,
+} from '@/hooks/useAttendanceDeadlines';
 import { formatDisplayDate } from '@/lib/dashboard-context';
 
 interface PartSummary {
@@ -69,9 +74,10 @@ const PART_CARD_COLORS: Record<string, { bg: string; border: string; label: stri
 export function AttendanceSummaryCard({ nextServiceDate, summary }: AttendanceSummaryCardProps) {
   const { totalMembers, availableCount, unavailableCount, noResponseCount, byPart } = summary;
 
-  // 출석률 계산 (전체 대원 대비 출석 가능 비율)
-  const attendanceRate =
-    totalMembers > 0 ? Math.round((availableCount / totalMembers) * 100) : 0;
+  // 준비 완료 현황 조회
+  const { data: deadlines } = useAttendanceDeadlines(nextServiceDate || undefined);
+  const readyCount = getReadyPartsCount(deadlines);
+  const totalParts = READINESS_PARTS.length;
 
   return (
     <Card>
@@ -109,11 +115,17 @@ export function AttendanceSummaryCard({ nextServiceDate, summary }: AttendanceSu
             .filter((p) => PART_LABELS[p.part]) // SPECIAL 제외
             .map((part) => {
               const colors = PART_CARD_COLORS[part.part];
+              const isReady = deadlines?.partDeadlines?.[part.part as keyof typeof deadlines.partDeadlines] !== null;
               return (
                 <div
                   key={part.part}
-                  className={`rounded-md border p-2 text-center ${colors?.bg ?? ''} ${colors?.border ?? 'border-[var(--color-border-subtle)]'}`}
+                  className={`relative rounded-md border p-2 text-center ${colors?.bg ?? ''} ${colors?.border ?? 'border-[var(--color-border-subtle)]'}`}
                 >
+                  {isReady && (
+                    <div className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-success-500)]">
+                      <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+                    </div>
+                  )}
                   <div className={`text-xs font-semibold ${colors?.label ?? 'text-[var(--color-text-tertiary)]'}`}>
                     {PART_LABELS[part.part]}
                   </div>
@@ -126,6 +138,14 @@ export function AttendanceSummaryCard({ nextServiceDate, summary }: AttendanceSu
                 </div>
               );
             })}
+        </div>
+
+        {/* 준비 완료 현황 */}
+        <div className="flex items-center justify-between rounded-md bg-[var(--color-background-tertiary)] px-3 py-2 text-xs">
+          <span className="text-[var(--color-text-secondary)]">파트 준비 현황</span>
+          <span className={readyCount === totalParts ? 'font-semibold text-[var(--color-success-600)]' : 'font-medium text-[var(--color-text-tertiary)]'}>
+            {readyCount}/{totalParts} 완료
+          </span>
         </div>
 
         {/* 액션 버튼 */}

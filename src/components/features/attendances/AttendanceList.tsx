@@ -4,10 +4,10 @@ import { Part } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns/format';
 import { ko } from 'date-fns/locale/ko';
-import { ChevronsDown, ChevronsUp, Lock, RotateCcw, Save } from 'lucide-react';
+import { Check, ChevronsDown, ChevronsUp, Lock, RotateCcw, Save } from 'lucide-react';
 import { CheckCheck, ChevronDown, ChevronRight, XCircle } from 'lucide-react';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -19,6 +19,8 @@ import { useAttendances } from '@/hooks/useAttendances';
 import { useAttendanceMode } from '@/hooks/useAttendanceMode';
 import { useAuth } from '@/hooks/useAuth';
 import { useMembers } from '@/hooks/useMembers';
+
+import type { DeadlinesResponse } from '@/hooks/useAttendanceDeadlines';
 
 import { createLogger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/client';
@@ -36,6 +38,8 @@ const logger = createLogger({ prefix: 'AttendanceList' });
 interface AttendanceListProps {
   date: Date;
   serviceScheduleId?: string;
+  deadlines?: DeadlinesResponse;
+  onMarkReady?: (part: Part) => Promise<void>;
 }
 
 // Supabase Database 타입 사용
@@ -60,12 +64,24 @@ const partAccentColors: Record<Part, string> = {
   SPECIAL: 'text-[var(--color-part-special-700)]',
 };
 
-export default function AttendanceList({ date, serviceScheduleId }: AttendanceListProps) {
+export default function AttendanceList({ date, serviceScheduleId, deadlines, onMarkReady }: AttendanceListProps) {
   const dateStr = format(date, 'yyyy-MM-dd');
   const { profile, user } = useAuth();
   const [userPart, setUserPart] = useState<string | null>(null);
   const [isPartLoading, setIsPartLoading] = useState(false);
   const queryClient = useQueryClient();
+
+  // 저장 후 준비완료 제안 상태
+  const [showReadinessPrompt, setShowReadinessPrompt] = useState(false);
+  const [isMarkingReady, setIsMarkingReady] = useState(false);
+  const readinessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (readinessTimerRef.current) clearTimeout(readinessTimerRef.current);
+    };
+  }, []);
 
   // 해당 예배의 has_post_practice 조회
   const [hasPostPractice, setHasPostPractice] = useState<boolean>(true);
@@ -364,6 +380,17 @@ export default function AttendanceList({ date, serviceScheduleId }: AttendanceLi
       setPendingChanges({});
       queryClient.invalidateQueries({ queryKey: ['attendances'] });
       showSuccess('저장되었습니다.');
+
+      // 저장 성공 후 준비완료 제안 조건 확인
+      if (
+        userPart &&
+        profile?.role === 'PART_LEADER' &&
+        deadlines?.partDeadlines?.[userPart as Part] === null
+      ) {
+        setShowReadinessPrompt(true);
+        if (readinessTimerRef.current) clearTimeout(readinessTimerRef.current);
+        readinessTimerRef.current = setTimeout(() => setShowReadinessPrompt(false), 5000);
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       logger.error('Failed to save attendances:', error);
@@ -690,6 +717,47 @@ export default function AttendanceList({ date, serviceScheduleId }: AttendanceLi
                 저장 ({Object.keys(pendingChanges).length}건)
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 저장 후 준비완료 제안 플로팅 바 */}
+      {showReadinessPrompt && !hasChanges && userPart && (
+        <div className="animate-in slide-in-from-bottom-4 fixed right-0 bottom-20 left-0 z-40 px-4 duration-300 lg:bottom-6">
+          <div className="mx-auto flex max-w-lg items-center gap-3 rounded-xl border border-[var(--color-success-200)] bg-[var(--color-success-50)] p-3 shadow-lg">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowReadinessPrompt(false);
+                if (readinessTimerRef.current) clearTimeout(readinessTimerRef.current);
+              }}
+              className="flex-shrink-0 text-[var(--color-text-secondary)]"
+            >
+              나중에
+            </Button>
+            <Button
+              size="sm"
+              disabled={isMarkingReady}
+              onClick={async () => {
+                setIsMarkingReady(true);
+                try {
+                  await onMarkReady?.(userPart as Part);
+                  setShowReadinessPrompt(false);
+                  if (readinessTimerRef.current) clearTimeout(readinessTimerRef.current);
+                } finally {
+                  setIsMarkingReady(false);
+                }
+              }}
+              className="flex-1 bg-[var(--color-success-600)] text-white hover:bg-[var(--color-success-700)]"
+            >
+              {isMarkingReady ? (
+                <Spinner size="sm" className="mr-1.5" />
+              ) : (
+                <Check className="mr-1.5 h-4 w-4" />
+              )}
+              {getPartLabel(userPart as Part)} 준비완료
+            </Button>
           </div>
         </div>
       )}
