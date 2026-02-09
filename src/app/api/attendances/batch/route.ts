@@ -86,7 +86,7 @@ async function checkArrangementExists(
 const attendanceItemSchema = z.object({
   member_id: z.string().uuid('유효한 찬양대원 ID를 입력해주세요'),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식은 YYYY-MM-DD여야 합니다'),
-  service_schedule_id: z.string().uuid('유효한 예배 일정 ID를 입력해주세요'),
+  service_schedule_id: z.string().uuid('유효한 예배 일정 ID를 입력해주세요').optional(),
   is_service_available: z.boolean().default(true),
   is_practice_attended: z.boolean().default(true),
   notes: z.string().nullable().optional(),
@@ -188,7 +188,32 @@ export async function POST(request: NextRequest) {
 
     // 3. 예배 일정 존재 확인
     // 모든 출석 기록은 같은 service_schedule_id를 가짐
-    const targetServiceScheduleId = validatedData.attendances[0].service_schedule_id;
+    let targetServiceScheduleId = validatedData.attendances[0].service_schedule_id;
+
+    // service_schedule_id가 없으면 date로 조회하여 자동 채우기
+    if (!targetServiceScheduleId) {
+      const targetDate = validatedData.attendances[0].date;
+      const { data: schedule } = await supabase
+        .from('service_schedules')
+        .select('id')
+        .eq('date', targetDate)
+        .single();
+
+      if (!schedule) {
+        return NextResponse.json(
+          { error: '해당 날짜의 예배 일정을 찾을 수 없습니다.' },
+          { status: 400 }
+        );
+      }
+      targetServiceScheduleId = schedule.id;
+
+      // 각 항목에 service_schedule_id 주입
+      validatedData.attendances = validatedData.attendances.map((a) => ({
+        ...a,
+        service_schedule_id: schedule.id,
+      }));
+    }
+
     const hasServiceSchedule = await checkServiceScheduleExists(supabase, targetServiceScheduleId);
 
     if (!hasServiceSchedule) {
