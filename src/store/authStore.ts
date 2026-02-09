@@ -320,11 +320,11 @@ export const useAuthStore = create<AuthStore>()(
                   return;
                 }
 
-                // 프로필 정보 가져오기
+                // 프로필 + 연결 대원 정보를 FK join으로 한 번에 조회
                 logger.debug('[fetchUser] 프로필 조회 시작, uid:', session.user.id);
                 const { data: profileData, error: profileError } = await supabase
                   .from('user_profiles')
-                  .select('id, email, name, role, linked_member_id, link_status')
+                  .select('id, email, name, role, linked_member_id, link_status, linked_member:members!linked_member_id(name, part)')
                   .eq('id', session.user.id)
                   .maybeSingle();
 
@@ -333,23 +333,24 @@ export const useAuthStore = create<AuthStore>()(
                 }
                 logger.debug('[fetchUser] 프로필 조회 완료:', { hasProfile: !!profileData, role: profileData?.role });
 
-                // 연결된 대원 정보를 별도 쿼리로 조회 (linked_member_id가 있는 경우만)
-                let linkedMember: { name: string; part: Part | null } | null = null;
-                if (profileData?.linked_member_id) {
-                  const { data: memberData } = await supabase
-                    .from('members')
-                    .select('name, part')
-                    .eq('id', profileData.linked_member_id)
-                    .single();
-                  linkedMember = memberData as { name: string; part: Part | null } | null;
-                }
+                let profile: UserProfile | null = null;
+                if (profileData) {
+                  // FK join 결과: 단일 FK 관계이지만 타입이 배열로 추론될 수 있음
+                  const rawLinkedMember = profileData.linked_member;
+                  const linkedMember = Array.isArray(rawLinkedMember)
+                    ? (rawLinkedMember[0] as { name: string; part: Part | null } | undefined) ?? null
+                    : (rawLinkedMember as { name: string; part: Part | null } | null);
 
-                const profile = profileData
-                  ? {
-                      ...profileData,
-                      linked_member: linkedMember,
-                    }
-                  : null;
+                  profile = {
+                    id: profileData.id,
+                    email: profileData.email,
+                    name: profileData.name,
+                    role: profileData.role,
+                    linked_member_id: profileData.linked_member_id,
+                    link_status: profileData.link_status,
+                    linked_member: linkedMember,
+                  };
+                }
 
                 set(
                   {

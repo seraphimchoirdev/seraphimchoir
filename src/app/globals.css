@@ -141,9 +141,9 @@
 
     /* Typography */
     --font-family-base:
-      'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
-      'Noto Sans KR', sans-serif;
-    --font-family-display: 'Pretendard Variable', 'Pretendard', sans-serif;
+      var(--font-pretendard), 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont,
+      'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    --font-family-display: var(--font-pretendard), 'Pretendard Variable', 'Pretendard', sans-serif;
     --font-family-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
 
     /* Font Sizes */

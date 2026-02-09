@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import localFont from 'next/font/local';
 
 import type { Metadata } from 'next';
 
@@ -8,6 +9,13 @@ import SplashScreen from '@/components/layout/SplashScreen';
 import { Providers } from '@/lib/providers';
 
 import './globals.css';
+
+const pretendard = localFont({
+  src: '../../public/fonts/PretendardVariable.woff2',
+  display: 'swap',
+  weight: '45 920',
+  variable: '--font-pretendard',
+});
 
 export const metadata: Metadata = {
   title: '새로핌:On',
@@ -123,16 +131,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          as="style"
-          crossOrigin="anonymous"
-          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
-        />
-      </head>
+    <html lang="ko" className={pretendard.variable} suppressHydrationWarning>
       <body
         className="bg-[var(--color-background-primary)] text-[var(--color-text-primary)] antialiased"
         suppressHydrationWarning
