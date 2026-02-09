@@ -82,11 +82,24 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
   const seatsByRow = useMemo(() => calculateSeatsByRow(layout), [layout]);
 
   // 하이라이트 대상 좌석으로 자동 스크롤
+  // scrollIntoView는 중첩 overflow 컨테이너(모바일)에서 실패하므로
+  // 가장 가까운 스크롤 가능 부모를 찾아 직접 scrollTo 사용
   useEffect(() => {
     if (!highlightMemberId) return;
     const timer = setTimeout(() => {
       const el = document.querySelector('[data-highlight-seat]');
-      if (el) {
+      if (!el) return;
+
+      const scrollParent = el.closest('.overflow-auto');
+      if (scrollParent) {
+        const parentRect = scrollParent.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        scrollParent.scrollTo({
+          top: scrollParent.scrollTop + (elRect.top - parentRect.top) - parentRect.height / 2 + elRect.height / 2,
+          left: scrollParent.scrollLeft + (elRect.left - parentRect.left) - parentRect.width / 2 + elRect.width / 2,
+          behavior: 'smooth',
+        });
+      } else {
         el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
       }
     }, 500);
