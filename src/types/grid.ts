@@ -198,7 +198,7 @@ export const GRID_CONSTRAINTS = {
  * 기존 배치표와의 호환성을 위한 fallback
  *
  * zigzagPattern: 'none' - 실제 배치표 분석 결과, 지그재그 없이 왼쪽 정렬이 기본
- * 지휘자 시야 확보가 필요한 경우에만 Step 5에서 지그재그 활성화
+ * 지휘자 시야 확보가 필요한 경우에만 Step 2에서 지그재그 활성화
  */
 export const DEFAULT_GRID_LAYOUT: GridLayout = {
   rows: 4,

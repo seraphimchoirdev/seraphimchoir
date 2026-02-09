@@ -12,6 +12,7 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Info, Music } from
 import { useMemo, useState } from 'react';
 
 import AttendanceList from '@/components/features/attendances/AttendanceList';
+import ReadinessStatusBar from '@/components/features/attendances/ReadinessStatusBar';
 import AppShell from '@/components/layout/AppShell';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -26,11 +27,14 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 
+import { useAttendanceDeadlines, useToggleReadiness } from '@/hooks/useAttendanceDeadlines';
 import { useAuth } from '@/hooks/useAuth';
 import { useServiceSchedules, useServiceSchedulesByDate } from '@/hooks/useServiceSchedules';
+import { useUserPart } from '@/hooks/useUserPart';
 
 export default function AttendancesPage() {
-  const { hasRole, isLoading: authLoading } = useAuth();
+  const { hasRole, profile, isLoading: authLoading } = useAuth();
+  const { userPart } = useUserPart();
 
   // 출석 관리 권한: ADMIN, CONDUCTOR, MANAGER, PART_LEADER
   const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']);
@@ -43,6 +47,10 @@ export default function AttendancesPage() {
   });
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
+
+  // 준비 완료 상태 조회 및 토글
+  const { data: deadlines, isLoading: deadlinesLoading } = useAttendanceDeadlines(dateStr);
+  const { toggleReadiness } = useToggleReadiness();
 
   // 선택된 예배 일정 ID (사용자가 드롭다운에서 선택한 값, 없으면 자동 선택)
   const [manualServiceScheduleId, setManualServiceScheduleId] = useState<string | undefined>();
@@ -248,11 +256,27 @@ export default function AttendancesPage() {
               )}
             </div>
 
+            {/* 준비 완료 현황 */}
+            {hasPermission && (
+              <ReadinessStatusBar
+                date={dateStr}
+                deadlines={deadlines}
+                isLoading={deadlinesLoading}
+                userRole={profile?.role ?? undefined}
+                userPart={userPart}
+              />
+            )}
+
             {/* 출석 목록 */}
             <div className="rounded-xl bg-white p-6 shadow-sm">
               <AttendanceList
                 date={selectedDate}
                 serviceScheduleId={selectedServiceScheduleId}
+                deadlines={deadlines}
+                onMarkReady={async (part) => {
+                  const deadline = deadlines?.partDeadlines?.[part] ?? null;
+                  await toggleReadiness({ date: dateStr, part, currentDeadline: deadline });
+                }}
               />
             </div>
           </div>

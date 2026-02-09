@@ -34,9 +34,9 @@ const logger = createLogger({ prefix: 'ArrangementStore' });
 /**
  * 워크플로우 단계 (1~6)
  * 1: 줄 구성 설정
- * 2: AI 자동배치
- * 3: 수동 배치 조정
- * 4: 줄 정렬 조정
+ * 2: 줄 정렬 조정
+ * 3: AI 자동배치
+ * 4: 수동 배치 조정
  * 5: 줄반장 지정
  * 6: 내보내기 및 확정
  */
@@ -64,21 +64,21 @@ export const WORKFLOW_STEPS: Record<WorkflowStep, WorkflowStepMeta> = {
   },
   2: {
     step: 2,
+    title: '줄 정렬 조정',
+    shortTitle: '줄 정렬',
+    description: '지휘자 시야 확보를 위해 줄 위치를 조정합니다.',
+  },
+  3: {
+    step: 3,
     title: 'AI 자동배치',
     shortTitle: 'AI 배치',
     description: '파트, 키, 경력을 고려하여 좌석을 자동 배치합니다.',
   },
-  3: {
-    step: 3,
+  4: {
+    step: 4,
     title: '수동 배치 조정',
     shortTitle: '수동 조정',
     description: '클릭-클릭 방식으로 좌석을 미세 조정합니다.',
-  },
-  4: {
-    step: 4,
-    title: '줄 정렬 조정',
-    shortTitle: '줄 정렬',
-    description: '지휘자 시야 확보를 위해 줄 위치를 조정합니다.',
   },
   5: {
     step: 5,
@@ -720,9 +720,9 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
    * | 단계 | 단계명 | 초기화 동작 |
    * |------|--------|------------|
    * | 1 | 줄 구성 설정 | rowCapacities를 기본값(각 행 12명)으로 복원 |
-   * | 2 | AI 자동배치 | assignments 초기화 (gridLayout 유지) |
-   * | 3 | 수동 배치 조정 | assignments 초기화 (gridLayout 유지) |
-   * | 4 | Offset 조정 | rowOffsets 제거 |
+   * | 2 | 줄 정렬 조정 | rowOffsets 제거 |
+   * | 3 | AI 자동배치 | assignments 초기화 (gridLayout 유지) |
+   * | 4 | 수동 배치 조정 | assignments 초기화 (gridLayout 유지) |
    * | 5 | 줄반장 지정 | 모든 isRowLeader를 false로 |
    * | 6 | 내보내기 | 초기화 불필요 |
    */
@@ -747,15 +747,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
           };
 
         case 2:
-        case 3:
-          // AI 자동배치 / 수동 배치 조정: assignments만 초기화 (gridLayout 유지)
-          return {
-            _history: saveToHistory(state),
-            assignments: {},
-          };
-
-        case 4:
-          // Offset 조정 단계: rowOffsets만 제거
+          // 줄 정렬 조정 단계: rowOffsets만 제거
           if (!state.gridLayout) return state;
           const { rowOffsets: _rowOffsets, ...restGridLayout } = state.gridLayout;
           return {
@@ -764,6 +756,14 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
               ...restGridLayout,
               rowOffsets: undefined,
             },
+          };
+
+        case 3:
+        case 4:
+          // AI 자동배치 / 수동 배치 조정: assignments만 초기화 (gridLayout 유지)
+          return {
+            _history: saveToHistory(state),
+            assignments: {},
           };
 
         case 5:

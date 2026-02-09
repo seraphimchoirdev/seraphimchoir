@@ -4,10 +4,10 @@ import { Part } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns/format';
 import { ko } from 'date-fns/locale/ko';
-import { ChevronsDown, ChevronsUp, Lock, RotateCcw, Save } from 'lucide-react';
+import { Check, ChevronsDown, ChevronsUp, Lock, LockKeyhole, RotateCcw, Save } from 'lucide-react';
 import { CheckCheck, ChevronDown, ChevronRight, XCircle } from 'lucide-react';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -20,9 +20,11 @@ import { useAttendanceMode } from '@/hooks/useAttendanceMode';
 import { useAuth } from '@/hooks/useAuth';
 import { useMembers } from '@/hooks/useMembers';
 
+import type { DeadlinesResponse } from '@/hooks/useAttendanceDeadlines';
+
 import { createLogger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/client';
-import { showError, showSuccess } from '@/lib/toast';
+import { showError, showSuccess, showWarning } from '@/lib/toast';
 import { cn, getPartLabel, getTestAccountPart, isTestAccount } from '@/lib/utils';
 
 import { Database } from '@/types/database.types';
@@ -36,6 +38,8 @@ const logger = createLogger({ prefix: 'AttendanceList' });
 interface AttendanceListProps {
   date: Date;
   serviceScheduleId?: string;
+  deadlines?: DeadlinesResponse;
+  onMarkReady?: (part: Part) => Promise<void>;
 }
 
 // Supabase Database 타입 사용
@@ -60,12 +64,24 @@ const partAccentColors: Record<Part, string> = {
   SPECIAL: 'text-[var(--color-part-special-700)]',
 };
 
-export default function AttendanceList({ date, serviceScheduleId }: AttendanceListProps) {
+export default function AttendanceList({ date, serviceScheduleId, deadlines, onMarkReady }: AttendanceListProps) {
   const dateStr = format(date, 'yyyy-MM-dd');
   const { profile, user } = useAuth();
   const [userPart, setUserPart] = useState<string | null>(null);
   const [isPartLoading, setIsPartLoading] = useState(false);
   const queryClient = useQueryClient();
+
+  // 저장 후 준비완료 제안 상태
+  const [showReadinessPrompt, setShowReadinessPrompt] = useState(false);
+  const [isMarkingReady, setIsMarkingReady] = useState(false);
+  const readinessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (readinessTimerRef.current) clearTimeout(readinessTimerRef.current);
+    };
+  }, []);
 
   // 해당 예배의 has_post_practice 조회
   const [hasPostPractice, setHasPostPractice] = useState<boolean>(true);
@@ -275,9 +291,29 @@ export default function AttendanceList({ date, serviceScheduleId }: AttendanceLi
     );
   }, [membersByPart, getMemberAttendingStatus, showAbsentOnly]);
 
+  // 해당 파트가 준비완료 상태인지 확인
+  const isPartReadinessLocked = useCallback(
+    (part: string): boolean => {
+      return deadlines?.partDeadlines?.[part as Part] !== null &&
+        deadlines?.partDeadlines?.[part as Part] !== undefined;
+    },
+    [deadlines]
+  );
+
+  // 잠금 상태별 경고 메시지
+  const getLockedWarningMessage = useCallback(() => {
+    return deadlines?.hasArrangement
+      ? '자리배치표 생성 이후 출석 수정은 지휘자에게 별도 보고해주세요.'
+      : '준비 완료 해제 후에 수정해주세요.';
+  }, [deadlines?.hasArrangement]);
+
   // 출석 상태 변경 핸들러
   const handleToggle = useCallback(
-    (memberId: string) => {
+    (memberId: string, memberPart: string) => {
+      if (isPartReadinessLocked(memberPart)) {
+        showWarning(getLockedWarningMessage());
+        return;
+      }
       const currentValue = getMemberAttendingStatus(memberId);
       setPendingChanges((prev) => {
         const memberChanges = prev[memberId] || {};
@@ -290,12 +326,16 @@ export default function AttendanceList({ date, serviceScheduleId }: AttendanceLi
         };
       });
     },
-    [getMemberAttendingStatus, currentField]
+    [getMemberAttendingStatus, currentField, isPartReadinessLocked, getLockedWarningMessage]
   );
 
   // 파트 전체 선택/해제 핸들러
   const handleSelectAllPart = useCallback(
     (part: string, value: boolean) => {
+      if (isPartReadinessLocked(part)) {
+        showWarning(getLockedWarningMessage());
+        return;
+      }
       const partMembers = membersByPart[part] || [];
 
       setPendingChanges((prev) => {
@@ -309,7 +349,7 @@ export default function AttendanceList({ date, serviceScheduleId }: AttendanceLi
         return updates;
       });
     },
-    [membersByPart, currentField]
+    [membersByPart, currentField, isPartReadinessLocked, getLockedWarningMessage]
   );
 
   // 파트 토글 핸들러
@@ -364,6 +404,17 @@ export default function AttendanceList({ date, serviceScheduleId }: AttendanceLi
       setPendingChanges({});
       queryClient.invalidateQueries({ queryKey: ['attendances'] });
       showSuccess('저장되었습니다.');
+
+      // 저장 성공 후 준비완료 제안 조건 확인
+      if (
+        userPart &&
+        profile?.role === 'PART_LEADER' &&
+        deadlines?.partDeadlines?.[userPart as Part] === null
+      ) {
+        setShowReadinessPrompt(true);
+        if (readinessTimerRef.current) clearTimeout(readinessTimerRef.current);
+        readinessTimerRef.current = setTimeout(() => setShowReadinessPrompt(false), 5000);
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       logger.error('Failed to save attendances:', error);
@@ -556,77 +607,93 @@ export default function AttendanceList({ date, serviceScheduleId }: AttendanceLi
 
                   {/* 펼쳐진 내용 */}
                   {isExpanded && (
-                    <div className="space-y-3 bg-[var(--color-background-primary)] p-4">
-                      {/* 빠른 액션 버튼들 */}
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectAllPart(part, true);
-                          }}
-                          disabled={isTabLocked}
-                          className="h-auto px-2.5 py-1 text-xs text-[var(--color-success-600)] hover:bg-[var(--color-success-100)] disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <CheckCheck className="h-3.5 w-3.5" />
-                          전체 출석
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectAllPart(part, false);
-                          }}
-                          disabled={isTabLocked}
-                          className="h-auto px-2.5 py-1 text-xs text-[var(--color-text-tertiary)] hover:bg-[var(--color-border-subtle)] disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <XCircle className="h-3.5 w-3.5" />
-                          전체 불참
-                        </Button>
+                    <div className="relative bg-[var(--color-background-primary)] p-4">
+                      <div className={cn('space-y-3', isPartReadinessLocked(part) && 'blur-[2px] select-none')}>
+                        {/* 빠른 액션 버튼들 */}
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectAllPart(part, true);
+                            }}
+                            disabled={isTabLocked || isPartReadinessLocked(part)}
+                            className="h-auto px-2.5 py-1 text-xs text-[var(--color-success-600)] hover:bg-[var(--color-success-100)] disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <CheckCheck className="h-3.5 w-3.5" />
+                            전체 출석
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectAllPart(part, false);
+                            }}
+                            disabled={isTabLocked || isPartReadinessLocked(part)}
+                            className="h-auto px-2.5 py-1 text-xs text-[var(--color-text-tertiary)] hover:bg-[var(--color-border-subtle)] disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                            전체 불참
+                          </Button>
+                        </div>
+
+                        {/* 칩 그리드 */}
+                        <div className="flex flex-wrap gap-2">
+                          {partMembers.map((member) => {
+                            const attendance = attendances?.find((a) => a.member_id === member.id);
+                            const dbValue =
+                              tabValue === 'service'
+                                ? (attendance?.is_service_available ?? true)
+                                : (attendance?.is_practice_attended ?? true);
+                            const pending = pendingChanges[member.id];
+                            const pendingValue =
+                              tabValue === 'service'
+                                ? pending?.is_service_available
+                                : pending?.is_practice_attended;
+                            const isAttending = pendingValue !== undefined ? pendingValue : dbValue;
+                            const isChanged = pendingValue !== undefined && pendingValue !== dbValue;
+
+                            return (
+                              <MemberChip
+                                key={member.id}
+                                member={{
+                                  id: member.id,
+                                  name: member.name,
+                                  part: member.part as Part,
+                                  is_leader: member.is_leader ?? false,
+                                }}
+                                isAttending={isAttending}
+                                isChanged={isChanged}
+                                disabled={isTabLocked || isPartReadinessLocked(member.part)}
+                                onToggle={() => handleToggle(member.id, member.part)}
+                              />
+                            );
+                          })}
+                        </div>
+
+                        {/* 불참자 필터 시 해당 파트에 불참자가 없을 때 */}
+                        {showAbsentOnly && partMembers.length === 0 && partAbsentCount === 0 && (
+                          <div className="py-4 text-center text-sm text-[var(--color-text-tertiary)]">
+                            이 파트는 전원 출석입니다
+                          </div>
+                        )}
                       </div>
 
-                      {/* 칩 그리드 */}
-                      <div className="flex flex-wrap gap-2">
-                        {partMembers.map((member) => {
-                          const attendance = attendances?.find((a) => a.member_id === member.id);
-                          const dbValue =
-                            tabValue === 'service'
-                              ? (attendance?.is_service_available ?? true)
-                              : (attendance?.is_practice_attended ?? true);
-                          const pending = pendingChanges[member.id];
-                          const pendingValue =
-                            tabValue === 'service'
-                              ? pending?.is_service_available
-                              : pending?.is_practice_attended;
-                          const isAttending = pendingValue !== undefined ? pendingValue : dbValue;
-                          const isChanged = pendingValue !== undefined && pendingValue !== dbValue;
-
-                          return (
-                            <MemberChip
-                              key={member.id}
-                              member={{
-                                id: member.id,
-                                name: member.name,
-                                part: member.part as Part,
-                                is_leader: member.is_leader ?? false,
-                              }}
-                              isAttending={isAttending}
-                              isChanged={isChanged}
-                              disabled={isTabLocked}
-                              onToggle={() => handleToggle(member.id)}
-                            />
-                          );
-                        })}
-                      </div>
-
-                      {/* 불참자 필터 시 해당 파트에 불참자가 없을 때 */}
-                      {showAbsentOnly && partMembers.length === 0 && partAbsentCount === 0 && (
-                        <div className="py-4 text-center text-sm text-[var(--color-text-tertiary)]">
-                          이 파트는 전원 출석입니다
+                      {/* 준비완료 잠금 오버레이 */}
+                      {isPartReadinessLocked(part) && (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center">
+                          <div className="flex items-center gap-2 rounded-lg bg-[var(--color-background-primary)]/90 px-4 py-2 shadow-sm">
+                            <LockKeyhole className="h-4 w-4 flex-shrink-0 text-[var(--color-text-tertiary)]" />
+                            <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+                              {deadlines?.hasArrangement
+                                ? '자리배치표 생성 이후 출석 수정은 지휘자에게 별도 보고해주세요.'
+                                : '준비 완료 해제 후에 수정해주세요.'}
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -690,6 +757,47 @@ export default function AttendanceList({ date, serviceScheduleId }: AttendanceLi
                 저장 ({Object.keys(pendingChanges).length}건)
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 저장 후 준비완료 제안 플로팅 바 */}
+      {showReadinessPrompt && !hasChanges && userPart && (
+        <div className="animate-in slide-in-from-bottom-4 fixed right-0 bottom-20 left-0 z-40 px-4 duration-300 lg:bottom-6">
+          <div className="mx-auto flex max-w-lg items-center gap-3 rounded-xl border border-[var(--color-success-200)] bg-[var(--color-success-50)] p-3 shadow-lg">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowReadinessPrompt(false);
+                if (readinessTimerRef.current) clearTimeout(readinessTimerRef.current);
+              }}
+              className="flex-shrink-0 text-[var(--color-text-secondary)]"
+            >
+              나중에
+            </Button>
+            <Button
+              size="sm"
+              disabled={isMarkingReady}
+              onClick={async () => {
+                setIsMarkingReady(true);
+                try {
+                  await onMarkReady?.(userPart as Part);
+                  setShowReadinessPrompt(false);
+                  if (readinessTimerRef.current) clearTimeout(readinessTimerRef.current);
+                } finally {
+                  setIsMarkingReady(false);
+                }
+              }}
+              className="flex-1 bg-[var(--color-success-600)] text-white hover:bg-[var(--color-success-700)]"
+            >
+              {isMarkingReady ? (
+                <Spinner size="sm" className="mr-1.5" />
+              ) : (
+                <Check className="mr-1.5 h-4 w-4" />
+              )}
+              {getPartLabel(userPart as Part)} 준비완료
+            </Button>
           </div>
         </div>
       )}

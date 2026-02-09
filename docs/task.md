@@ -67,6 +67,35 @@
 
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
+### 2026-02-09
+- [x] **perf: Vercel Speed Insights 성능 최적화 — TTFB/LCP 개선**
+  - 커밋: `a49e601`
+
+- [x] **feat(dashboard): 지휘자 대시보드 환영 메시지에 파트 준비 현황 반영**
+  - 커밋: `b4352e5`
+
+- [x] **refactor(arrangements): 워크플로우 단계 순서 변경 — 줄 정렬을 AI 배치 앞으로 이동**
+  - 커밋: `900bf05`
+
+- [x] **fix(attendances): 긴급 등단 불가 처리 시 batch API 400 에러 수정**
+  - 커밋: `4cf9ae0`
+
+- [x] **feat(attendances): 자리배치표 생성 여부에 따른 잠금 오버레이 문구 분기**
+  - 커밋: `25a17eb`
+
+- [x] **feat(attendances): 준비완료 파트 칩 영역 블러 오버레이 + 안내 문구**
+  - 커밋: `7a07924`
+
+- [x] **fix(attendances): 준비 완료 상태에서 출석 수정 차단 + 토스트 안내**
+  - 커밋: `6907518`
+
+- [x] **feat(attendances): 파트별 준비완료 현황 바 + 저장 후 플로팅 준비완료 제안 UX**
+  - 커밋: `3ec5e7c`
+
+
+- [x] **fix(arrangements): 모바일 좌석 자동 스크롤 미동작 버그 수정**
+  - 커밋: `8d4fc8a`
+
 ### 2026-02-08
 - [x] **feat(arrangements): 배치표 내 자리 자동 포커싱 + 하이라이트 애니메이션**
   - 커밋: `17c93f1`

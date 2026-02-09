@@ -93,11 +93,20 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // 해당 날짜에 자리배치표가 존재하는지 확인
+    const { data: arrangement } = await supabase
+      .from('arrangements')
+      .select('id')
+      .eq('date', date)
+      .limit(1)
+      .maybeSingle();
+
     return NextResponse.json({
       date,
       partDeadlines,
       fullDeadline,
       isFullyClosed: fullDeadline !== null,
+      hasArrangement: arrangement !== null,
     });
   } catch (error) {
     logger.error('Deadlines GET error:', error);
@@ -137,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER'];
     if (!userRole || !allowedRoles.includes(userRole)) {
-      return NextResponse.json({ error: '마감 처리 권한이 없습니다' }, { status: 403 });
+      return NextResponse.json({ error: '준비 완료 처리 권한이 없습니다' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -147,10 +156,10 @@ export async function POST(request: NextRequest) {
     const isFullDeadline = validatedData.part === undefined || validatedData.part === null;
 
     if (isFullDeadline) {
-      // 전체 마감은 CONDUCTOR/ADMIN만 가능
+      // 전체 준비 완료는 CONDUCTOR/ADMIN만 가능
       if (!['ADMIN', 'CONDUCTOR'].includes(userRole)) {
         return NextResponse.json(
-          { error: '전체 마감은 CONDUCTOR 또는 ADMIN만 할 수 있습니다' },
+          { error: '전체 준비 완료는 CONDUCTOR 또는 ADMIN만 할 수 있습니다' },
           { status: 403 }
         );
       }
@@ -167,7 +176,7 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (!member || member.part !== validatedData.part) {
-          return NextResponse.json({ error: '자신의 파트만 마감할 수 있습니다' }, { status: 403 });
+          return NextResponse.json({ error: '자신의 파트만 준비 완료 처리할 수 있습니다' }, { status: 403 });
         }
       }
       // MANAGER, CONDUCTOR, ADMIN은 모든 파트 마감 가능
@@ -190,7 +199,7 @@ export async function POST(request: NextRequest) {
       if (error.code === '23505') {
         return NextResponse.json(
           {
-            error: isFullDeadline ? '이미 전체 마감되었습니다' : '해당 파트가 이미 마감되었습니다',
+            error: isFullDeadline ? '이미 전체 준비 완료되었습니다' : '해당 파트가 이미 준비 완료되었습니다',
           },
           { status: 409 }
         );
@@ -205,6 +214,6 @@ export async function POST(request: NextRequest) {
     }
 
     logger.error('Deadlines POST error:', error);
-    return NextResponse.json({ error: '마감 처리에 실패했습니다' }, { status: 500 });
+    return NextResponse.json({ error: '준비 완료 처리에 실패했습니다' }, { status: 500 });
   }
 }

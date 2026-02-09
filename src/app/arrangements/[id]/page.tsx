@@ -75,9 +75,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     goToStep,
     canAccessStep,
     completeStep,
-    // 줄 정렬 프리셋 (Step 5용)
+    // 줄 정렬 프리셋 (Step 2용)
     applyOffsetPreset,
-    // 줄반장 관련 (Step 6용)
+    // 줄반장 관련 (Step 5용)
     rowLeaderMode,
     toggleRowLeaderMode,
     autoAssignRowLeaders,
@@ -272,8 +272,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     }
   }, [workflow.currentStep, assignments]);
 
-  // 대원 목록 표시 여부: 3단계(수동 배치 조정)에서만
-  const showMemberSidebar = workflow.currentStep === 3;
+  // 대원 목록 표시 여부: 4단계(수동 배치 조정)에서만
+  const showMemberSidebar = workflow.currentStep === 4;
 
   // 배치표 상태 및 권한에 따른 읽기 전용 모드
   // - CONFIRMED 상태: 모두 읽기 전용
@@ -284,7 +284,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     (arrangement?.status === 'SHARED' && !canEmergencyEdit) ||
     (arrangement?.status === 'DRAFT' && !canEdit);
 
-  // AI 추천 결과 적용 핸들러 (Step 3용)
+  // AI 추천 결과 적용 핸들러 (Step 3 AI 자동배치용)
   const handleApplyRecommendation = useCallback(
     (recommendation: RecommendationResponse, preserveGrid: boolean) => {
       logger.debug('=== AI 추천 결과 적용 ===');
@@ -324,11 +324,11 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         `AI 추천이 적용되었습니다! (품질 점수: ${(qualityScore * 100).toFixed(0)}%)${gridMessage}`
       );
 
-      // 2단계 자동 완료 및 다음 단계 이동 (위자드 모드일 때)
-      if (workflow.isWizardMode && workflow.currentStep === 2) {
+      // 3단계(AI 자동배치) 자동 완료 및 다음 단계 이동 (위자드 모드일 때)
+      if (workflow.isWizardMode && workflow.currentStep === 3) {
         setTimeout(() => {
-          completeStep(2);
-          goToStep(3);
+          completeStep(3);
+          goToStep(4);
         }, 300);
       }
     },
@@ -373,16 +373,16 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     isReadOnly,
   });
 
-  // Step 3 (수동 배치 조정) 진입 시 워크플로우 패널 자동 Compact
+  // Step 4 (수동 배치 조정) 진입 시 워크플로우 패널 자동 Compact
   // 태블릿/폴더블 기기(640px-1023px)에서 MemberSidebar + SeatsGrid 공간 확보
-  // ⭐ useRef로 이전 Step을 추적하여 Step 3 "진입" 시에만 실행 (재펼침 가능)
+  // ⭐ useRef로 이전 Step을 추적하여 Step 4 "진입" 시에만 실행 (재펼침 가능)
   // 브라우저 창 크기에 반응하는 정당한 useEffect 사용
   useEffect(() => {
     const prevStep = prevStepRef.current;
     prevStepRef.current = workflow.currentStep;
 
-    // Step 3로 "진입"하는 순간에만 실행 (이미 3에 있으면 무시)
-    if (workflow.currentStep === 3 && prevStep !== 3) {
+    // Step 4로 "진입"하는 순간에만 실행 (이미 4에 있으면 무시)
+    if (workflow.currentStep === 4 && prevStep !== 4) {
       const isTabletRange = window.innerWidth >= 640 && window.innerWidth < 1024;
       if (isTabletRange && !userOverridePanelRef.current) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 시스템(창 크기)에 반응
@@ -622,38 +622,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             />
           </>
         );
-      case 2:
-        // AI 자동배치 - 버튼을 Card 내부에 직접 배치
-        return (
-          <div className="space-y-3">
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              파트, 키, 경력을 고려하여 좌석을 자동으로 배치합니다.
-            </p>
-            {!isReadOnly && gridLayout && (
-              <RecommendButton
-                arrangementId={id}
-                gridLayout={gridLayout}
-                onApply={handleApplyRecommendation}
-              />
-            )}
-          </div>
-        );
-      case 3:
-        // 수동 배치 조정
-        return (
-          <div className="space-y-3">
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              대원을 선택하고 좌석을 클릭하여 배치를 조정합니다.
-            </p>
-            <ul className="list-inside list-disc space-y-1 text-xs text-[var(--color-text-tertiary)]">
-              <li>대원 목록에서 이름 클릭 → 좌석 클릭</li>
-              <li>배치된 좌석 더블클릭으로 제거</li>
-              <li>좌석 간 드래그로 이동</li>
-            </ul>
-          </div>
-        );
-      case 4: {
-        // 행별 Offset 조정 - 프리셋 + 인라인 화살표 컨트롤
+      case 2: {
+        // 줄 정렬 조정 - 프리셋 + 인라인 화살표 컨트롤
         const rows = gridLayout?.rows ?? 0;
         const currentOffsets = gridLayout?.rowOffsets;
 
@@ -705,6 +675,36 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           </div>
         );
       }
+      case 3:
+        // AI 자동배치 - 버튼을 Card 내부에 직접 배치
+        return (
+          <div className="space-y-3">
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              파트, 키, 경력을 고려하여 좌석을 자동으로 배치합니다.
+            </p>
+            {!isReadOnly && gridLayout && (
+              <RecommendButton
+                arrangementId={id}
+                gridLayout={gridLayout}
+                onApply={handleApplyRecommendation}
+              />
+            )}
+          </div>
+        );
+      case 4:
+        // 수동 배치 조정
+        return (
+          <div className="space-y-3">
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              대원을 선택하고 좌석을 클릭하여 배치를 조정합니다.
+            </p>
+            <ul className="list-inside list-disc space-y-1 text-xs text-[var(--color-text-tertiary)]">
+              <li>대원 목록에서 이름 클릭 → 좌석 클릭</li>
+              <li>배치된 좌석 더블클릭으로 제거</li>
+              <li>좌석 간 드래그로 이동</li>
+            </ul>
+          </div>
+        );
       case 5:
         // 줄반장 지정 - 버튼을 Card 내부에 직접 배치
         return (
@@ -867,35 +867,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             )}
           </div>
         );
-      case 2:
-        return (
-          !isReadOnly && gridLayout && (
-            <RecommendButton
-              arrangementId={id}
-              gridLayout={gridLayout}
-              onApply={handleApplyRecommendation}
-            />
-          )
-        );
-      case 3:
-        return (
-          <div className="space-y-2">
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              대원을 선택 → 좌석 클릭으로 배치를 조정하세요.
-            </p>
-            {workflow.isWizardMode && !workflow.completedSteps.has(3) && (
-              <Button
-                size="sm"
-                onClick={() => completeStep(3)}
-                disabled={totalMembers === 0 || unassignedCount !== 0}
-                className="w-full gap-1"
-              >
-                <Check className="h-4 w-4" />이 단계 완료
-              </Button>
-            )}
-          </div>
-        );
-      case 4: {
+      case 2: {
+        // 줄 정렬 조정 Floating UI
         const rows = gridLayout?.rows ?? 0;
         const currentOffsets = gridLayout?.rowOffsets;
 
@@ -935,10 +908,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 </Button>
               ))}
             </div>
-            {workflow.isWizardMode && !workflow.completedSteps.has(4) && (
+            {workflow.isWizardMode && !workflow.completedSteps.has(2) && (
               <Button
                 size="sm"
-                onClick={() => completeStep(4)}
+                onClick={() => completeStep(2)}
                 className="w-full gap-1"
               >
                 <Check className="h-4 w-4" />이 단계 완료
@@ -947,6 +920,36 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           </div>
         );
       }
+      case 3:
+        // AI 자동배치 Floating UI
+        return (
+          !isReadOnly && gridLayout && (
+            <RecommendButton
+              arrangementId={id}
+              gridLayout={gridLayout}
+              onApply={handleApplyRecommendation}
+            />
+          )
+        );
+      case 4:
+        // 수동 배치 조정 Floating UI
+        return (
+          <div className="space-y-2">
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              대원을 선택 → 좌석 클릭으로 배치를 조정하세요.
+            </p>
+            {workflow.isWizardMode && !workflow.completedSteps.has(4) && (
+              <Button
+                size="sm"
+                onClick={() => completeStep(4)}
+                disabled={totalMembers === 0 || unassignedCount !== 0}
+                className="w-full gap-1"
+              >
+                <Check className="h-4 w-4" />이 단계 완료
+              </Button>
+            )}
+          </div>
+        );
       case 5:
         return (
           <div className="space-y-2">

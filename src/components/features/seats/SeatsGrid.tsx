@@ -43,7 +43,7 @@ interface SeatsGridProps {
   isReadOnly?: boolean;
   /** 긴급 수정 모드 (SHARED 상태에서만 true) - 컨텍스트 메뉴 표시 조건 */
   isEmergencyMode?: boolean;
-  /** 현재 워크플로우 단계 (5단계에서 인라인 오프셋 컨트롤 표시) */
+  /** 현재 워크플로우 단계 (2단계에서 인라인 오프셋 컨트롤 표시) */
   workflowStep?: number;
   /** 하이라이트 대상 멤버 ID (대시보드에서 "내 자리 확인하기" 클릭 시) */
   highlightMemberId?: string | null;
@@ -67,12 +67,12 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
 
   // 캡처 푸터에 필요한 assignments 가져오기
   const assignments = useArrangementStore((state) => state.assignments);
-  // 행별 오프셋 설정 함수 (Step 5 인라인 컨트롤용)
+  // 행별 오프셋 설정 함수 (Step 2 인라인 컨트롤용)
   const setRowOffset = useArrangementStore((state) => state.setRowOffset);
 
-  // Step 5에서 인라인 오프셋 컨트롤 표시 여부
+  // Step 2에서 인라인 오프셋 컨트롤 표시 여부
   // (showCaptureInfo는 헤더/푸터 표시 여부일 뿐, 편집 모드와 무관)
-  const showInlineOffsetControls = workflowStep === 5;
+  const showInlineOffsetControls = workflowStep === 2;
 
   // 브레이크포인트별 zigzag offset 값 (CSS 변수 대신 JS 계산 사용)
   // CSS calc(var(--zigzag-offset) * N) 형태가 일부 브라우저에서 무시되는 문제 해결
@@ -82,11 +82,24 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
   const seatsByRow = useMemo(() => calculateSeatsByRow(layout), [layout]);
 
   // 하이라이트 대상 좌석으로 자동 스크롤
+  // scrollIntoView는 중첩 overflow 컨테이너(모바일)에서 실패하므로
+  // 가장 가까운 스크롤 가능 부모를 찾아 직접 scrollTo 사용
   useEffect(() => {
     if (!highlightMemberId) return;
     const timer = setTimeout(() => {
       const el = document.querySelector('[data-highlight-seat]');
-      if (el) {
+      if (!el) return;
+
+      const scrollParent = el.closest('.overflow-auto');
+      if (scrollParent) {
+        const parentRect = scrollParent.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        scrollParent.scrollTo({
+          top: scrollParent.scrollTop + (elRect.top - parentRect.top) - parentRect.height / 2 + elRect.height / 2,
+          left: scrollParent.scrollLeft + (elRect.left - parentRect.left) - parentRect.width / 2 + elRect.width / 2,
+          behavior: 'smooth',
+        });
+      } else {
         el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
       }
     }, 500);
@@ -114,7 +127,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
               .filter((rowData) => rowData.capacity > 0) // 빈 행 제외
               .map((rowData) => (
                 <div key={rowData.rowIndex} className="relative flex items-center">
-                  {/* Step 5: 인라인 오프셋 컨트롤 (왼쪽) */}
+                  {/* Step 2: 인라인 오프셋 컨트롤 (왼쪽) */}
                   {/* absolute 배치로 좌석 행 이동과 독립적으로 고정 위치 유지 */}
                   {showInlineOffsetControls && (
                     <div
@@ -168,7 +181,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                       // offset 0.5 → 0.5 * 2 = 1 → 1 * zigzag-offset = 반칸
                       // offset 1.0 → 1.0 * 2 = 2 → 2 * zigzag-offset = 1칸
                       const offsetPx = currentRowOffset * 2 * zigzagOffset;
-                      // Step 5에서는 기준점(baseMargin)을 설정하고 offset으로 상대 이동
+                      // Step 2에서는 기준점(baseMargin)을 설정하고 offset으로 상대 이동
                       // 기준점: 3 * zigzagOffset으로 여백 축소 (기존 4배 → 3배)
                       // offset -1.5까지 점프 없이 안정적, 여백 25% 감소
                       const baseMargin = showInlineOffsetControls ? zigzagOffset * 3 : 0;

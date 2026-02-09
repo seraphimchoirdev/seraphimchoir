@@ -25,9 +25,9 @@ interface StepCompletionResult {
  *
  * 완료 조건:
  * - 1단계 (줄 구성 설정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
- * - 2단계 (AI 자동배치): 멤버가 배치되면 자동 완료
- * - 3단계 (수동 배치 조정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
- * - 4단계 (줄 정렬 조정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
+ * - 2단계 (줄 정렬 조정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
+ * - 3단계 (AI 자동배치): 멤버가 배치되면 자동 완료
+ * - 4단계 (수동 배치 조정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
  * - 5단계 (줄반장 지정): 수동 완료 전용 ("이 단계 완료" 버튼 필요)
  * - 6단계 (내보내기): 공유/확정 시 자동 완료
  *
@@ -94,22 +94,22 @@ export function useWorkflowAutoAdvance(totalMembers: number, arrangementStatus?:
         reason: '수동 완료 필요',
       });
 
-      // 2단계: AI 자동배치 (멤버가 배치됨)
-      results.push({
-        step: 2,
-        isCompleted: assignmentsCount > 0,
-        reason: `${assignmentsCount}명 배치됨`,
-      });
-
-      // 3단계: 수동 배치 조정 (수동 완료 전용 - 자동 완료 비활성화)
+      // 2단계: 줄 정렬 조정 (수동 완료 전용 - 자동 완료 비활성화)
       // 사용자가 "이 단계 완료" 버튼을 눌러야만 완료됨
       results.push({
-        step: 3,
+        step: 2,
         isCompleted: false,
         reason: '수동 완료 필요',
       });
 
-      // 4단계: 줄 정렬 조정 (수동 완료 전용 - 자동 완료 비활성화)
+      // 3단계: AI 자동배치 (멤버가 배치됨)
+      results.push({
+        step: 3,
+        isCompleted: assignmentsCount > 0,
+        reason: `${assignmentsCount}명 배치됨`,
+      });
+
+      // 4단계: 수동 배치 조정 (수동 완료 전용 - 자동 완료 비활성화)
       // 사용자가 "이 단계 완료" 버튼을 눌러야만 완료됨
       results.push({
         step: 4,

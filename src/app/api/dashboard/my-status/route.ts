@@ -81,7 +81,6 @@ export async function GET() {
     }
 
     // 역할 보유자이지만 대원 연결이 없는 경우 (ADMIN 등)
-    // 대원 관련 정보 없이 isLinked: true로 반환하여 대시보드 기능 활성화
     if (!linkedMemberId) {
       const response: MyDashboardStatusResponse = {
         isLinked: true,
@@ -95,38 +94,41 @@ export async function GET() {
       return NextResponse.json(response);
     }
 
-    // 연결된 대원 정보 조회
-    const { data: member } = await adminSupabase
-      .from('members')
-      .select('name, part')
-      .eq('id', linkedMemberId)
-      .single();
+    // 3개 독립 쿼리 병렬 실행: 대원 정보, 투표, 배치표
+    const [memberResult, attendanceResult, arrangementResult] = await Promise.all([
+      // 연결된 대원 정보 조회
+      adminSupabase.from('members').select('name, part').eq('id', linkedMemberId).single(),
 
-    // 1. 내 투표 (다음 주일)
-    const { data: myAttendance } = await adminSupabase
-      .from('attendances')
-      .select('date, is_service_available, notes')
-      .eq('member_id', linkedMemberId)
-      .eq('date', nextSunday)
-      .maybeSingle();
+      // 내 투표 (다음 주일)
+      adminSupabase
+        .from('attendances')
+        .select('date, is_service_available, notes')
+        .eq('member_id', linkedMemberId)
+        .eq('date', nextSunday)
+        .maybeSingle(),
 
-    const myVote: MyVote | null = myAttendance
+      // 배치표 (SHARED 또는 CONFIRMED인 경우만)
+      adminSupabase
+        .from('arrangements')
+        .select('id, date, status')
+        .eq('date', nextSunday)
+        .in('status', ['SHARED', 'CONFIRMED'])
+        .maybeSingle(),
+    ]);
+
+    const member = memberResult.data;
+
+    const myVote: MyVote | null = attendanceResult.data
       ? {
-          date: myAttendance.date,
-          isAvailable: myAttendance.is_service_available,
-          notes: myAttendance.notes,
+          date: attendanceResult.data.date,
+          isAvailable: attendanceResult.data.is_service_available,
+          notes: attendanceResult.data.notes,
         }
       : null;
 
-    // 2. 내 좌석 (배치표가 SHARED 또는 CONFIRMED인 경우만)
+    // 좌석 조회는 배치표 결과에 의존
     let mySeat: MySeat | null = null;
-
-    const { data: arrangement } = await adminSupabase
-      .from('arrangements')
-      .select('id, date, status')
-      .eq('date', nextSunday)
-      .in('status', ['SHARED', 'CONFIRMED'])
-      .maybeSingle();
+    const arrangement = arrangementResult.data;
 
     if (arrangement) {
       const { data: seat } = await adminSupabase

@@ -4,7 +4,6 @@ import {
   type DashboardContext,
   determineTimeContext,
   formatDate,
-  formatDisplayDate,
   getDayOfWeek,
   getNextSunday,
   isToday,
@@ -43,71 +42,74 @@ export async function GET() {
     // Admin 클라이언트로 데이터 조회 (RLS 우회)
     const adminSupabase = await createAdminClient();
 
-    const today = formatDate(new Date());
     const nextSunday = getNextSunday();
 
-    // 1. 다음 예배 정보 조회 (service_schedules)
-    // 같은 날짜에 여러 예배가 있을 수 있으므로 배열로 조회 후 대표 예배 선택
-    const { data: serviceSchedules } = await adminSupabase
-      .from('service_schedules')
-      .select('*')
-      .eq('date', nextSunday)
-      .order('service_start_time', { ascending: true, nullsFirst: false });
+    // 독립적인 4개 쿼리를 병렬 실행
+    const [serviceSchedulesResult, voteDeadlineResult, attendanceResult, arrangementResult] =
+      await Promise.all([
+        // 1. 다음 예배 정보 조회
+        adminSupabase
+          .from('service_schedules')
+          .select('*')
+          .eq('date', nextSunday)
+          .order('service_start_time', { ascending: true, nullsFirst: false }),
 
-    // 대표 예배 선택: "주일 2부 예배" 우선, 없으면 시간이 가장 이른 예배
+        // 2. 투표 마감 정보 조회
+        adminSupabase
+          .from('attendance_vote_deadlines')
+          .select('deadline_at')
+          .eq('service_date', nextSunday)
+          .maybeSingle(),
+
+        // 3. 내 투표 여부 확인 (연결된 대원이 있을 경우)
+        isLinked && linkedMemberId
+          ? adminSupabase
+              .from('attendances')
+              .select('id')
+              .eq('member_id', linkedMemberId)
+              .eq('date', nextSunday)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+
+        // 4. 배치표 상태 확인
+        adminSupabase
+          .from('arrangements')
+          .select('id, status')
+          .eq('date', nextSunday)
+          .maybeSingle(),
+      ]);
+
+    // 결과 처리
+    const serviceSchedules = serviceSchedulesResult.data;
     const serviceSchedule =
       serviceSchedules?.find((s) => s.service_type === '주일 2부 예배') ??
       serviceSchedules?.[0] ??
       null;
 
-    // 2. 투표 마감 정보 조회
-    const { data: voteDeadline } = await adminSupabase
-      .from('attendance_vote_deadlines')
-      .select('deadline_at')
-      .eq('service_date', nextSunday)
-      .maybeSingle();
-
-    const deadlineAt = voteDeadline?.deadline_at || null;
+    const deadlineAt = voteDeadlineResult.data?.deadline_at || null;
     const isVotePassed = deadlineAt ? new Date(deadlineAt) < new Date() : true;
 
-    // 3. 내 투표 여부 확인 (연결된 대원이 있을 경우)
-    let hasVoted = false;
-    if (isLinked && linkedMemberId) {
-      const { data: myAttendance } = await adminSupabase
-        .from('attendances')
-        .select('id')
-        .eq('member_id', linkedMemberId)
-        .eq('date', nextSunday)
-        .maybeSingle();
+    const hasVoted = !!attendanceResult.data;
 
-      hasVoted = !!myAttendance;
-    }
-
-    // 4. 배치표 상태 확인
-    const { data: arrangement } = await adminSupabase
-      .from('arrangements')
-      .select('id, status')
-      .eq('date', nextSunday)
-      .maybeSingle();
-
+    const arrangement = arrangementResult.data;
     const hasArrangement = !!arrangement;
     const arrangementStatus = (arrangement?.status as 'DRAFT' | 'SHARED' | 'CONFIRMED') || null;
 
-    // 5. 시간 컨텍스트 결정
+    // 시간 컨텍스트 결정
     const timeContext = determineTimeContext({
       hasVoted,
       isVotePassed,
       hasArrangement,
       arrangementStatus,
       isServiceDay: isToday(nextSunday),
-      hasUpcomingService: true, // 항상 다음 주일이 있다고 가정
+      hasUpcomingService: true,
     });
 
     // 마감 시간 표시용 포맷
     let voteDeadlineDisplay: string | null = null;
     if (deadlineAt) {
       const deadline = new Date(deadlineAt);
-      const dayOfWeek = getDayOfWeek(formatDate(deadline)).slice(0, 1); // "금"
+      const dayOfWeek = getDayOfWeek(formatDate(deadline)).slice(0, 1);
       const hours = deadline.getHours();
       const minutes = deadline.getMinutes().toString().padStart(2, '0');
       voteDeadlineDisplay = `${dayOfWeek}요일 ${hours}:${minutes}`;

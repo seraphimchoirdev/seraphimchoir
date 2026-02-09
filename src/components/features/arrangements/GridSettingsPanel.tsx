@@ -280,7 +280,7 @@ export default function GridSettingsPanel({
         </div>
       </div>
 
-      {/* 지그재그 패턴 설정 - 1단계에서는 숨김 (4단계 전용) */}
+      {/* 지그재그 패턴 설정 - 1단계에서는 숨김 (2단계 전용) */}
       {!isStep2 && (
         <div className="space-y-2">
           <Label className="text-sm sm:text-base">지그재그 패턴</Label>
@@ -337,7 +337,7 @@ export default function GridSettingsPanel({
         </div>
       )}
 
-      {/* 행별 지그재그 세부 조정 - 1단계에서는 숨김 (4단계 전용) */}
+      {/* 행별 지그재그 세부 조정 - 1단계에서는 숨김 (2단계 전용) */}
       {!isStep2 && (
         <div className="space-y-2">
           <button
