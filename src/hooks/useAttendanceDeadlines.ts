@@ -24,6 +24,7 @@ export interface DeadlinesResponse {
   partDeadlines: Record<Part, AttendanceDeadline | null>;
   fullDeadline: AttendanceDeadline | null;
   isFullyClosed: boolean;
+  hasArrangement: boolean;
 }
 
 /**

@@ -93,11 +93,20 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // 해당 날짜에 자리배치표가 존재하는지 확인
+    const { data: arrangement } = await supabase
+      .from('arrangements')
+      .select('id')
+      .eq('date', date)
+      .limit(1)
+      .maybeSingle();
+
     return NextResponse.json({
       date,
       partDeadlines,
       fullDeadline,
       isFullyClosed: fullDeadline !== null,
+      hasArrangement: arrangement !== null,
     });
   } catch (error) {
     logger.error('Deadlines GET error:', error);

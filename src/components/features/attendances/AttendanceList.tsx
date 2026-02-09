@@ -300,11 +300,18 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
     [deadlines]
   );
 
+  // 잠금 상태별 경고 메시지
+  const getLockedWarningMessage = useCallback(() => {
+    return deadlines?.hasArrangement
+      ? '자리배치표 생성 이후 출석 수정은 지휘자에게 별도 보고해주세요.'
+      : '준비 완료 해제 후에 수정해주세요.';
+  }, [deadlines?.hasArrangement]);
+
   // 출석 상태 변경 핸들러
   const handleToggle = useCallback(
     (memberId: string, memberPart: string) => {
       if (isPartReadinessLocked(memberPart)) {
-        showWarning('준비 완료 해제 후에 수정해주세요.');
+        showWarning(getLockedWarningMessage());
         return;
       }
       const currentValue = getMemberAttendingStatus(memberId);
@@ -319,14 +326,14 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
         };
       });
     },
-    [getMemberAttendingStatus, currentField, isPartReadinessLocked]
+    [getMemberAttendingStatus, currentField, isPartReadinessLocked, getLockedWarningMessage]
   );
 
   // 파트 전체 선택/해제 핸들러
   const handleSelectAllPart = useCallback(
     (part: string, value: boolean) => {
       if (isPartReadinessLocked(part)) {
-        showWarning('준비 완료 해제 후에 수정해주세요.');
+        showWarning(getLockedWarningMessage());
         return;
       }
       const partMembers = membersByPart[part] || [];
@@ -342,7 +349,7 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
         return updates;
       });
     },
-    [membersByPart, currentField, isPartReadinessLocked]
+    [membersByPart, currentField, isPartReadinessLocked, getLockedWarningMessage]
   );
 
   // 파트 토글 핸들러
@@ -680,9 +687,11 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
                       {isPartReadinessLocked(part) && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center">
                           <div className="flex items-center gap-2 rounded-lg bg-[var(--color-background-primary)]/90 px-4 py-2 shadow-sm">
-                            <LockKeyhole className="h-4 w-4 text-[var(--color-text-tertiary)]" />
+                            <LockKeyhole className="h-4 w-4 flex-shrink-0 text-[var(--color-text-tertiary)]" />
                             <span className="text-sm font-medium text-[var(--color-text-secondary)]">
-                              준비 완료 해제 후에 수정해주세요.
+                              {deadlines?.hasArrangement
+                                ? '자리배치표 생성 이후 출석 수정은 지휘자에게 별도 보고해주세요.'
+                                : '준비 완료 해제 후에 수정해주세요.'}
                             </span>
                           </div>
                         </div>
