@@ -4,7 +4,7 @@ import { Part } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns/format';
 import { ko } from 'date-fns/locale/ko';
-import { Check, ChevronsDown, ChevronsUp, Lock, RotateCcw, Save } from 'lucide-react';
+import { Check, ChevronsDown, ChevronsUp, Lock, LockKeyhole, RotateCcw, Save } from 'lucide-react';
 import { CheckCheck, ChevronDown, ChevronRight, XCircle } from 'lucide-react';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -600,77 +600,91 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
 
                   {/* 펼쳐진 내용 */}
                   {isExpanded && (
-                    <div className="space-y-3 bg-[var(--color-background-primary)] p-4">
-                      {/* 빠른 액션 버튼들 */}
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectAllPart(part, true);
-                          }}
-                          disabled={isTabLocked || isPartReadinessLocked(part)}
-                          className="h-auto px-2.5 py-1 text-xs text-[var(--color-success-600)] hover:bg-[var(--color-success-100)] disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <CheckCheck className="h-3.5 w-3.5" />
-                          전체 출석
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectAllPart(part, false);
-                          }}
-                          disabled={isTabLocked || isPartReadinessLocked(part)}
-                          className="h-auto px-2.5 py-1 text-xs text-[var(--color-text-tertiary)] hover:bg-[var(--color-border-subtle)] disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <XCircle className="h-3.5 w-3.5" />
-                          전체 불참
-                        </Button>
+                    <div className="relative bg-[var(--color-background-primary)] p-4">
+                      <div className={cn('space-y-3', isPartReadinessLocked(part) && 'blur-[2px] select-none')}>
+                        {/* 빠른 액션 버튼들 */}
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectAllPart(part, true);
+                            }}
+                            disabled={isTabLocked || isPartReadinessLocked(part)}
+                            className="h-auto px-2.5 py-1 text-xs text-[var(--color-success-600)] hover:bg-[var(--color-success-100)] disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <CheckCheck className="h-3.5 w-3.5" />
+                            전체 출석
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectAllPart(part, false);
+                            }}
+                            disabled={isTabLocked || isPartReadinessLocked(part)}
+                            className="h-auto px-2.5 py-1 text-xs text-[var(--color-text-tertiary)] hover:bg-[var(--color-border-subtle)] disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                            전체 불참
+                          </Button>
+                        </div>
+
+                        {/* 칩 그리드 */}
+                        <div className="flex flex-wrap gap-2">
+                          {partMembers.map((member) => {
+                            const attendance = attendances?.find((a) => a.member_id === member.id);
+                            const dbValue =
+                              tabValue === 'service'
+                                ? (attendance?.is_service_available ?? true)
+                                : (attendance?.is_practice_attended ?? true);
+                            const pending = pendingChanges[member.id];
+                            const pendingValue =
+                              tabValue === 'service'
+                                ? pending?.is_service_available
+                                : pending?.is_practice_attended;
+                            const isAttending = pendingValue !== undefined ? pendingValue : dbValue;
+                            const isChanged = pendingValue !== undefined && pendingValue !== dbValue;
+
+                            return (
+                              <MemberChip
+                                key={member.id}
+                                member={{
+                                  id: member.id,
+                                  name: member.name,
+                                  part: member.part as Part,
+                                  is_leader: member.is_leader ?? false,
+                                }}
+                                isAttending={isAttending}
+                                isChanged={isChanged}
+                                disabled={isTabLocked || isPartReadinessLocked(member.part)}
+                                onToggle={() => handleToggle(member.id, member.part)}
+                              />
+                            );
+                          })}
+                        </div>
+
+                        {/* 불참자 필터 시 해당 파트에 불참자가 없을 때 */}
+                        {showAbsentOnly && partMembers.length === 0 && partAbsentCount === 0 && (
+                          <div className="py-4 text-center text-sm text-[var(--color-text-tertiary)]">
+                            이 파트는 전원 출석입니다
+                          </div>
+                        )}
                       </div>
 
-                      {/* 칩 그리드 */}
-                      <div className="flex flex-wrap gap-2">
-                        {partMembers.map((member) => {
-                          const attendance = attendances?.find((a) => a.member_id === member.id);
-                          const dbValue =
-                            tabValue === 'service'
-                              ? (attendance?.is_service_available ?? true)
-                              : (attendance?.is_practice_attended ?? true);
-                          const pending = pendingChanges[member.id];
-                          const pendingValue =
-                            tabValue === 'service'
-                              ? pending?.is_service_available
-                              : pending?.is_practice_attended;
-                          const isAttending = pendingValue !== undefined ? pendingValue : dbValue;
-                          const isChanged = pendingValue !== undefined && pendingValue !== dbValue;
-
-                          return (
-                            <MemberChip
-                              key={member.id}
-                              member={{
-                                id: member.id,
-                                name: member.name,
-                                part: member.part as Part,
-                                is_leader: member.is_leader ?? false,
-                              }}
-                              isAttending={isAttending}
-                              isChanged={isChanged}
-                              disabled={isTabLocked || isPartReadinessLocked(member.part)}
-                              onToggle={() => handleToggle(member.id, member.part)}
-                            />
-                          );
-                        })}
-                      </div>
-
-                      {/* 불참자 필터 시 해당 파트에 불참자가 없을 때 */}
-                      {showAbsentOnly && partMembers.length === 0 && partAbsentCount === 0 && (
-                        <div className="py-4 text-center text-sm text-[var(--color-text-tertiary)]">
-                          이 파트는 전원 출석입니다
+                      {/* 준비완료 잠금 오버레이 */}
+                      {isPartReadinessLocked(part) && (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center">
+                          <div className="flex items-center gap-2 rounded-lg bg-[var(--color-background-primary)]/90 px-4 py-2 shadow-sm">
+                            <LockKeyhole className="h-4 w-4 text-[var(--color-text-tertiary)]" />
+                            <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+                              준비 완료 해제 후에 수정해주세요.
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>
