@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-09 | refactor(arrangements): 워크플로우 단계 순서 변경 — 줄 정렬을 AI 배치 앞으로 이동 |
 | 2026-02-09 | fix(attendances): 긴급 등단 불가 처리 시 batch API 400 에러 수정 |
 | 2026-02-09 | feat(attendances): 자리배치표 생성 여부에 따른 잠금 오버레이 문구 분기 |
 | 2026-02-09 | feat(attendances): 준비완료 파트 칩 영역 블러 오버레이 + 안내 문구 |

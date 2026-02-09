@@ -665,8 +665,8 @@ export default function ArrangementHeader({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        {/* 이미지 메뉴: Step 3 이후 (배치 완료 후 내보내기 가능) */}
-        {workflow.currentStep >= 3 && (
+        {/* 이미지 메뉴: Step 4 이후 (배치 완료 후 내보내기 가능) */}
+        {workflow.currentStep >= 4 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

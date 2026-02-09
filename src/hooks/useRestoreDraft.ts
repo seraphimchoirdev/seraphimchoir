@@ -53,9 +53,9 @@ interface UseRestoreDraftReturn {
 // 워크플로우 단계 이름 매핑
 const STEP_TITLES: Record<WorkflowStep, string> = {
   1: '줄 구성 설정',
-  2: 'AI 자동배치',
-  3: '수동 배치 조정',
-  4: '줄 정렬 조정',
+  2: '줄 정렬 조정',
+  3: 'AI 자동배치',
+  4: '수동 배치 조정',
   5: '줄반장 지정',
   6: '내보내기 및 확정',
 };
