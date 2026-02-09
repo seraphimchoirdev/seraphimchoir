@@ -24,7 +24,7 @@ import type { DeadlinesResponse } from '@/hooks/useAttendanceDeadlines';
 
 import { createLogger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/client';
-import { showError, showSuccess } from '@/lib/toast';
+import { showError, showSuccess, showWarning } from '@/lib/toast';
 import { cn, getPartLabel, getTestAccountPart, isTestAccount } from '@/lib/utils';
 
 import { Database } from '@/types/database.types';
@@ -291,9 +291,22 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
     );
   }, [membersByPart, getMemberAttendingStatus, showAbsentOnly]);
 
+  // 해당 파트가 준비완료 상태인지 확인
+  const isPartReadinessLocked = useCallback(
+    (part: string): boolean => {
+      return deadlines?.partDeadlines?.[part as Part] !== null &&
+        deadlines?.partDeadlines?.[part as Part] !== undefined;
+    },
+    [deadlines]
+  );
+
   // 출석 상태 변경 핸들러
   const handleToggle = useCallback(
-    (memberId: string) => {
+    (memberId: string, memberPart: string) => {
+      if (isPartReadinessLocked(memberPart)) {
+        showWarning('준비 완료 해제 후에 수정해주세요.');
+        return;
+      }
       const currentValue = getMemberAttendingStatus(memberId);
       setPendingChanges((prev) => {
         const memberChanges = prev[memberId] || {};
@@ -306,12 +319,16 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
         };
       });
     },
-    [getMemberAttendingStatus, currentField]
+    [getMemberAttendingStatus, currentField, isPartReadinessLocked]
   );
 
   // 파트 전체 선택/해제 핸들러
   const handleSelectAllPart = useCallback(
     (part: string, value: boolean) => {
+      if (isPartReadinessLocked(part)) {
+        showWarning('준비 완료 해제 후에 수정해주세요.');
+        return;
+      }
       const partMembers = membersByPart[part] || [];
 
       setPendingChanges((prev) => {
@@ -325,7 +342,7 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
         return updates;
       });
     },
-    [membersByPart, currentField]
+    [membersByPart, currentField, isPartReadinessLocked]
   );
 
   // 파트 토글 핸들러
@@ -594,7 +611,7 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
                             e.stopPropagation();
                             handleSelectAllPart(part, true);
                           }}
-                          disabled={isTabLocked}
+                          disabled={isTabLocked || isPartReadinessLocked(part)}
                           className="h-auto px-2.5 py-1 text-xs text-[var(--color-success-600)] hover:bg-[var(--color-success-100)] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <CheckCheck className="h-3.5 w-3.5" />
@@ -608,7 +625,7 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
                             e.stopPropagation();
                             handleSelectAllPart(part, false);
                           }}
-                          disabled={isTabLocked}
+                          disabled={isTabLocked || isPartReadinessLocked(part)}
                           className="h-auto px-2.5 py-1 text-xs text-[var(--color-text-tertiary)] hover:bg-[var(--color-border-subtle)] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <XCircle className="h-3.5 w-3.5" />
@@ -643,8 +660,8 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
                               }}
                               isAttending={isAttending}
                               isChanged={isChanged}
-                              disabled={isTabLocked}
-                              onToggle={() => handleToggle(member.id)}
+                              disabled={isTabLocked || isPartReadinessLocked(member.part)}
+                              onToggle={() => handleToggle(member.id, member.part)}
                             />
                           );
                         })}
