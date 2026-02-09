@@ -51,31 +51,44 @@ export async function GET() {
     const adminSupabase = await createAdminClient();
     const nextSunday = getNextSunday();
 
-    // 1. 최근 배치표 조회 (다음 주일 또는 가장 최근)
-    let arrangement = null;
-
-    // 먼저 다음 주일 배치표 확인
-    const { data: nextArrangement } = await adminSupabase
-      .from('arrangements')
-      .select('id, date, title, status')
-      .eq('date', nextSunday)
-      .maybeSingle();
-
-    if (nextArrangement) {
-      arrangement = nextArrangement;
-    } else {
-      // 없으면 가장 최근 배치표
-      const { data: latestArrangement } = await adminSupabase
+    // 독립 쿼리 3개를 병렬 실행
+    const [arrangementResult, activeMembersResult, attendancesResult] = await Promise.all([
+      // 1. 배치표 조회 (다음 주일 우선, 없으면 최근)
+      adminSupabase
         .from('arrangements')
         .select('id, date, title, status')
-        .order('date', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .eq('date', nextSunday)
+        .maybeSingle()
+        .then(async ({ data: nextArrangement }) => {
+          if (nextArrangement) return nextArrangement;
+          const { data: latestArrangement } = await adminSupabase
+            .from('arrangements')
+            .select('id, date, title, status')
+            .order('date', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          return latestArrangement;
+        }),
 
-      arrangement = latestArrangement;
-    }
+      // 2. 활동 중인 대원 목록
+      adminSupabase
+        .from('members')
+        .select('id, part')
+        .in('member_status', ['REGULAR', 'NEW'])
+        .eq('is_singer', true),
 
-    // 배치표가 있으면 좌석 정보 조회
+      // 3. 출석 투표 데이터
+      adminSupabase
+        .from('attendances')
+        .select('member_id, is_service_available')
+        .eq('date', nextSunday),
+    ]);
+
+    const arrangement = arrangementResult;
+    const { data: activeMembers } = activeMembersResult;
+    const { data: attendances } = attendancesResult;
+
+    // 배치표가 있으면 좌석 정보 조회 (arrangement.id에 의존)
     let seatCount = 0;
     let hasRowLeaders = false;
 
@@ -88,20 +101,6 @@ export async function GET() {
       seatCount = seats?.length || 0;
       hasRowLeaders = seats?.some((s) => s.is_row_leader) || false;
     }
-
-    // 2. 출석 현황 조회 (다음 주일 기준)
-    // 활동 중인 대원 목록
-    const { data: activeMembers } = await adminSupabase
-      .from('members')
-      .select('id, part')
-      .in('member_status', ['REGULAR', 'NEW'])
-      .eq('is_singer', true);
-
-    // 출석 투표 데이터
-    const { data: attendances } = await adminSupabase
-      .from('attendances')
-      .select('member_id, is_service_available')
-      .eq('date', nextSunday);
 
     // 출석 맵 생성
     const attendanceMap = new Map(

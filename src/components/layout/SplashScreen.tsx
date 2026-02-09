@@ -35,7 +35,7 @@ export default function SplashScreen() {
       window.navigator.standalone === true ||
       document.referrer.includes('android-app://');
 
-    const minDisplayTime = isPWA ? 800 : 500;
+    const minDisplayTime = isPWA ? 500 : 300;
     const maxDisplayTime = 2500;
 
     const hideSplash = () => {

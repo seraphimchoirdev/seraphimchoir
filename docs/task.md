@@ -67,6 +67,11 @@
 
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
+### 2026-02-10
+
+- [x] **perf: 모바일 Speed Insights 추가 최적화 — dynamic import, 쿼리 병렬화, 스플래시 단축**
+  - 커밋: `55ab16e`
+
 ### 2026-02-09
 - [x] **perf: Vercel Speed Insights 성능 최적화 — TTFB/LCP 개선**
   - 커밋: `a49e601`
