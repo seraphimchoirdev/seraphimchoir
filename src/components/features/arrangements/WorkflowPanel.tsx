@@ -64,7 +64,7 @@ export default function WorkflowPanel({
   const steps = Object.values(WORKFLOW_STEPS);
 
   // 선택적 단계 (건너뛰기 가능)
-  const optionalSteps: WorkflowStep[] = [2]; // 줄 정렬 조정
+  const optionalSteps: WorkflowStep[] = [2, 3]; // 줄 정렬 조정, AI 자동배치
 
   // 배치 상태 계산
   const assignmentsCount = Object.keys(assignments).length;
@@ -84,9 +84,8 @@ export default function WorkflowPanel({
         canComplete: true,
       },
       3: {
-        // 3단계: AI 자동배치 - 배치된 멤버가 있어야 완료 가능
-        canComplete: assignmentsCount > 0,
-        message: 'AI 자동배치 또는 과거 배치를 적용해야 합니다.',
+        // 3단계: AI 자동배치 - 건너뛰기 가능 (수동 배치로 직접 진행 가능)
+        canComplete: true,
       },
       4: {
         // 4단계: 수동 배치 조정 - 모든 멤버가 배치되어야 완료 가능

@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-10
+- [x] **feat(arrangements): Step 3(AI 자동배치) 건너뛰기 옵션 추가**
+  - 커밋: `f6f6e6d`
+
 
 - [x] **perf: 모바일 Speed Insights 추가 최적화 — dynamic import, 쿼리 병렬화, 스플래시 단축**
   - 커밋: `55ab16e`
