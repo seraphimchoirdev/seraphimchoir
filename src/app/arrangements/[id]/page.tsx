@@ -69,6 +69,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     clearArrangement,
     clearHistory,
     compactAllRows,
+    shrinkRowCapacitiesToFit,
     resetWorkflow,
     restoreWorkflowState,
     workflow,
@@ -531,6 +532,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       // 약간의 지연 후 실행하여 gridLayout 설정이 반영되도록 함
       setTimeout(() => {
         compactAllRows({ silent: true });
+
+        // 등단 불가 멤버 필터링으로 빈 좌석이 생긴 경우, rowCapacities를 실제 멤버 수에 맞게 축소
+        const filteredCount = (arrangement?.seats?.length ?? 0) - (arrangement?.seats?.filter((seat) => isServiceAvailable(seat.member_id))?.length ?? 0);
+        if (filteredCount > 0) {
+          shrinkRowCapacitiesToFit({ silent: true });
+        }
+
         clearHistory(); // 컴팩션 후 히스토리 클리어
       }, 0);
     }
@@ -542,6 +550,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     setGridLayout,
     clearHistory,
     compactAllRows,
+    shrinkRowCapacitiesToFit,
     gridLayout,
     resetWorkflow,
     restoreWorkflowState,
