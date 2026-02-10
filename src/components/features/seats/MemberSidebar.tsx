@@ -1,11 +1,9 @@
 'use client';
 
-import { AlertTriangle, Search, UserPlus } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronRight, Search, UserPlus } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
-
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { memo, useCallback, useMemo, useState } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -53,96 +51,6 @@ interface OutOfBoundsMember {
   part: Part;
   row: number;
   col: number;
-}
-
-// 가상 스크롤 적용 멤버 리스트
-type VirtualListItem =
-  | { type: 'header'; part: Part; count: number }
-  | { type: 'member'; member: { id: string; name: string; part: Part } };
-
-function VirtualizedMemberList({
-  parts,
-  selectedPart,
-  groupedMembers,
-  compact,
-  isMemberPlaced,
-}: {
-  parts: Part[];
-  selectedPart: Part | 'ALL';
-  groupedMembers: Record<string, { id: string; name: string; part: Part }[]>;
-  compact: boolean;
-  isMemberPlaced: (memberId: string) => boolean;
-}) {
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  // 파트별 헤더 + 멤버를 플랫 리스트로 변환
-  const flatList = useMemo<VirtualListItem[]>(() => {
-    const items: VirtualListItem[] = [];
-    for (const part of parts) {
-      if (selectedPart !== 'ALL' && part !== selectedPart) continue;
-      const partMembers = groupedMembers[part] || [];
-      if (partMembers.length === 0) continue;
-      if (!compact) {
-        items.push({ type: 'header', part, count: partMembers.length });
-      }
-      for (const member of partMembers) {
-        items.push({ type: 'member', member });
-      }
-    }
-    return items;
-  }, [parts, selectedPart, groupedMembers, compact]);
-
-  const virtualizer = useVirtualizer({
-    count: flatList.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: (index) => (flatList[index].type === 'header' ? 28 : 44),
-    overscan: 5,
-  });
-
-  if (flatList.length === 0) return null;
-
-  return (
-    <div ref={parentRef} className="max-h-[500px] overflow-auto">
-      <div
-        style={{
-          height: `${virtualizer.getTotalSize()}px`,
-          width: '100%',
-          position: 'relative',
-        }}
-      >
-        {virtualizer.getVirtualItems().map((virtualItem) => {
-          const item = flatList[virtualItem.index];
-          return (
-            <div
-              key={virtualItem.key}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: `${virtualItem.size}px`,
-                transform: `translateY(${virtualItem.start}px)`,
-              }}
-            >
-              {item.type === 'header' ? (
-                <div className="flex items-center justify-between py-1 text-xs font-medium text-[var(--color-text-tertiary)]">
-                  <span>{item.part}</span>
-                  <span>{item.count}</span>
-                </div>
-              ) : (
-                <ClickableMember
-                  memberId={item.member.id}
-                  name={item.member.name}
-                  part={item.member.part}
-                  isPlaced={isMemberPlaced(item.member.id)}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
 }
 
 const MemberSidebar = memo(function MemberSidebar({
@@ -344,38 +252,6 @@ const MemberSidebar = memo(function MemberSidebar({
           )}
         </div>
 
-        {/* Part Filter Buttons */}
-        <div className={`flex flex-wrap gap-2 ${compact ? 'mt-2' : 'mt-3 sm:mt-4'}`}>
-          <button
-            onClick={() => setSelectedPart('ALL')}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-              selectedPart === 'ALL'
-                ? 'bg-[var(--color-primary-600)] text-white'
-                : 'bg-[var(--color-background-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-background-tertiary)]'
-            }`}
-          >
-            전체
-          </button>
-          {PARTS.map((part) => {
-            const count = (groupedMembers[part] || []).length;
-            // In compact mode with hidePlaced, if count is 0, we might still want to show the button if there are placed members?
-            // No, groupedMembers is already filtered. So if 0, no unplaced members in this part.
-            if (count === 0) return null;
-            return (
-              <button
-                key={part}
-                onClick={() => setSelectedPart(part)}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  selectedPart === part
-                    ? 'bg-[var(--color-primary-600)] text-white'
-                    : 'bg-[var(--color-background-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-background-tertiary)]'
-                }`}
-              >
-                {part === 'SPECIAL' ? 'Sp' : part.charAt(0)} ({count})
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       <div
@@ -472,13 +348,49 @@ const MemberSidebar = memo(function MemberSidebar({
           </Alert>
         )}
 
-        <VirtualizedMemberList
-          parts={PARTS}
-          selectedPart={selectedPart}
-          groupedMembers={groupedMembers}
-          compact={compact}
-          isMemberPlaced={isMemberPlaced}
-        />
+        {/* 파트별 칩 리스트 (헤더 클릭으로 필터 토글) */}
+        {PARTS.map((part) => {
+          const partMembers = groupedMembers[part];
+          if (!partMembers?.length) return null;
+
+          const isExpanded = selectedPart === 'ALL' || selectedPart === part;
+          const isActive = selectedPart === part;
+          const partLabel = part === 'SPECIAL' ? 'Sp' : part;
+
+          return (
+            <div key={part}>
+              <button
+                type="button"
+                onClick={() => setSelectedPart(selectedPart === part ? 'ALL' : part)}
+                className={`mb-1.5 flex w-full items-center gap-1 rounded-md px-2 py-1 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-[var(--color-primary-100)] text-[var(--color-primary-700)]'
+                    : 'text-[var(--color-text-tertiary)] hover:bg-[var(--color-background-secondary)]'
+                }`}
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                )}
+                {partLabel} ({partMembers.length})
+              </button>
+              {isExpanded && (
+                <div className={`flex flex-wrap ${compact ? 'gap-1' : 'gap-1.5'}`}>
+                  {partMembers.map((m) => (
+                    <ClickableMember
+                      key={m.id}
+                      memberId={m.id}
+                      name={m.name}
+                      part={m.part}
+                      isPlaced={isMemberPlaced(m.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {(!members || members.length === 0) && (
           <div className="mt-8 text-center text-sm text-[var(--color-text-secondary)]">

@@ -218,6 +218,10 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-10 | fix(arrangements): 확정 배치표에서 등단 불가 멤버 필터링 후 빈 좌석이 표시되는 버그 수정 |
+| 2026-02-10 | feat(seats): 사이드바 칩 크기 확대 + 파트 헤더 필터 토글 개선 |
+| 2026-02-10 | docs: 핸드오프 문서 추가 (2026-02-08 ~ 2026-02-10) |
+| 2026-02-10 | feat(arrangements): Step 3(AI 자동배치) 건너뛰기 옵션 추가 |
 | 2026-02-10 | perf: 모바일 Speed Insights 추가 최적화 — dynamic import, 쿼리 병렬화, 스플래시 단축 |
 | 2026-02-09 | perf: Vercel Speed Insights 성능 최적화 — TTFB/LCP 개선 |
 | 2026-02-09 | feat(dashboard): 지휘자 대시보드 환영 메시지에 파트 준비 현황 반영 |

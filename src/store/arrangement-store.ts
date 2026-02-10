@@ -360,6 +360,13 @@ interface ArrangementState {
    */
   compactAllRows: (options?: { silent?: boolean }) => void;
 
+  /**
+   * 각 행의 rowCapacity를 실제 배치된 멤버 수로 축소
+   * - 등단 불가 멤버 필터링 후 compactAllRows 이후 호출
+   * - rowCapacity > 실제 멤버 수인 행만 축소
+   */
+  shrinkRowCapacitiesToFit: (options?: { silent?: boolean }) => void;
+
   // ============================================
   // 긴급 변동 추적 시스템 (Emergency Changes Tracking)
   // ============================================
@@ -1611,6 +1618,36 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
       }
 
       return { assignments: newAssignments };
+    });
+  },
+
+  /**
+   * 각 행의 rowCapacity를 실제 배치된 멤버 수로 축소
+   * 등단 불가 멤버 필터링 후 compactAllRows 이후 호출하여
+   * rowCapacity와 실제 멤버 수의 불일치를 해소
+   */
+  shrinkRowCapacitiesToFit: (options) => {
+    if (!options?.silent) get().invalidateFromCurrentStep('rowCapacity 축소');
+    set((state) => {
+      const { gridLayout, assignments } = state;
+      if (!gridLayout) return state;
+
+      const newCapacities = gridLayout.rowCapacities.map((capacity, index) => {
+        const row = index + 1;
+        const membersInRow = Object.values(assignments).filter((a) => a.row === row).length;
+        return Math.max(membersInRow, 0);
+      });
+
+      // 변경이 없으면 스킵
+      if (newCapacities.every((c, i) => c === gridLayout.rowCapacities[i])) return state;
+
+      logger.debug(
+        `rowCapacities 축소: [${gridLayout.rowCapacities.join(',')}] → [${newCapacities.join(',')}]`
+      );
+
+      return {
+        gridLayout: { ...gridLayout, rowCapacities: newCapacities },
+      };
     });
   },
 
