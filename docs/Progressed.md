@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-10 | docs: 핸드오프 문서 추가 (2026-02-08 ~ 2026-02-10) |
 | 2026-02-10 | feat(arrangements): Step 3(AI 자동배치) 건너뛰기 옵션 추가 |
 | 2026-02-10 | perf: 모바일 Speed Insights 추가 최적화 — dynamic import, 쿼리 병렬화, 스플래시 단축 |
 | 2026-02-09 | perf: Vercel Speed Insights 성능 최적화 — TTFB/LCP 개선 |
