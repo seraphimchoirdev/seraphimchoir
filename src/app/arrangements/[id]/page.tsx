@@ -689,6 +689,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 onApply={handleApplyRecommendation}
               />
             )}
+            <p className="text-xs text-[var(--color-text-tertiary)]">
+              이 단계를 건너뛰고 직접 배치할 수도 있습니다.
+            </p>
           </div>
         );
       case 4:
