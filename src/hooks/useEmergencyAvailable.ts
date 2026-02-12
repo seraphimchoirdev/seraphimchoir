@@ -110,7 +110,7 @@ export function useEmergencyAvailable({
 
         // 2.5. 캐시 무효화 + refetch 대기
         logger.debug(`[Emergency] 출석 캐시 무효화 및 refetch 대기 중...`);
-        await queryClient.invalidateQueries({ queryKey: ['attendances'] });
+        await queryClient.invalidateQueries({ queryKey: ['attendances', { date }] });
         logger.debug(`[Emergency] 출석 캐시 refetch 완료`);
 
         // 3. Store 상태 업데이트 (assignments + gridLayout)
@@ -206,7 +206,7 @@ export function useEmergencyAvailable({
         await updateAttendanceMutation.mutateAsync({ memberId });
 
         // 2. 캐시 무효화 + refetch 대기
-        await queryClient.invalidateQueries({ queryKey: ['attendances'] });
+        await queryClient.invalidateQueries({ queryKey: ['attendances', { date }] });
 
         // 3. 변동 이력 기록 (수동 배치는 cascadeChanges 최소화)
         addEmergencyChange({

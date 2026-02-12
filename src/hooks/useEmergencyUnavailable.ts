@@ -74,6 +74,7 @@ export function useEmergencyUnavailable({
   const crossRowFillFromBack = useArrangementStore((state) => state.crossRowFillFromBack);
   const shouldCrossRowMove = useArrangementStore((state) => state.shouldCrossRowMove);
   const findLastEmptyColForPart = useArrangementStore((state) => state.findLastEmptyColForPart);
+  const toggleRowLeader = useArrangementStore((state) => state.toggleRowLeader);
 
   // 출석 데이터 업데이트 mutation
   // ⭐ onSuccess 제거: handleEmergencyUnavailable에서 직접 await하여 캐시 무효화
@@ -116,16 +117,36 @@ export function useEmergencyUnavailable({
         // invalidateQueries에 await를 사용하면 refetch가 완료될 때까지 기다림
         // → totalMembers와 MemberSidebar가 즉시 업데이트됨
         logger.debug(`[Emergency] 출석 캐시 무효화 및 refetch 대기 중...`);
-        await queryClient.invalidateQueries({ queryKey: ['attendances'] });
+        await queryClient.invalidateQueries({ queryKey: ['attendances', { date }] });
         logger.debug(`[Emergency] 출석 캐시 refetch 완료`);
 
-        // 2. 좌석에서 제거
+        // 2. 줄반장 여부 확인 (제거 전에 체크)
+        const seatKey = `${row}-${col}`;
+        const currentAssignments = useArrangementStore.getState().assignments;
+        const removedMember = currentAssignments[seatKey];
+        const wasRowLeader = removedMember?.isRowLeader;
+
+        // 3. 좌석에서 제거
         removeMember(row, col);
 
-        // 3. 같은 행에서 "같은 파트" 멤버만 왼쪽으로 당기기
+        // 4. 같은 행에서 "같은 파트" 멤버만 왼쪽으로 당기기
         pullSamePartMembersLeft(row, col, part);
 
-        // 4. 크로스-행 이동 로직 (선택적)
+        // 4.5. 줄반장이었으면 후임 지정
+        if (wasRowLeader) {
+          const stateAfterPull = useArrangementStore.getState();
+          const sameRowSamePart = Object.values(stateAfterPull.assignments)
+            .filter((a) => a.row === row && a.part === part)
+            .sort((a, b) => a.col - b.col);
+          if (sameRowSamePart.length > 0) {
+            toggleRowLeader(row, sameRowSamePart[0].col, { silent: true });
+            logger.debug(
+              `[Emergency] 줄반장 후임 지정: ${sameRowSamePart[0].memberName} (${row}행 ${sameRowSamePart[0].col}열)`
+            );
+          }
+        }
+
+        // 5. 크로스-행 이동 로직 (선택적)
         const side = getPartSide(part);
         let crossRowMoved = false;
 
@@ -163,7 +184,43 @@ export function useEmergencyUnavailable({
           shrinkRowFromSide(row, side);
         }
 
-        // 6. ⭐ gridLayout과 seats를 DB에 자동 저장
+        // 6. 빈 마지막 행 정리 (rowCapacity=0 또는 멤버 없는 마지막 행)
+        {
+          const stateForCleanup = useArrangementStore.getState();
+          const caps = stateForCleanup.gridLayout?.rowCapacities;
+          if (caps && caps.length > 1) {
+            let trimmed = false;
+            while (caps.length > 1 && caps[caps.length - 1] === 0) {
+              caps.pop();
+              trimmed = true;
+            }
+            // 마지막 행에 용량은 있지만 멤버가 없는 경우도 정리
+            while (caps.length > 1) {
+              const lastRow = caps.length;
+              const hasMembers = Object.values(stateForCleanup.assignments).some(
+                (a) => a.row === lastRow
+              );
+              if (!hasMembers && caps[lastRow - 1] <= 1) {
+                caps.pop();
+                trimmed = true;
+              } else {
+                break;
+              }
+            }
+            if (trimmed) {
+              useArrangementStore.setState({
+                gridLayout: {
+                  ...stateForCleanup.gridLayout!,
+                  rows: caps.length,
+                  rowCapacities: caps,
+                },
+              });
+              logger.debug(`[Emergency] 빈 마지막 행 정리 완료: ${caps.length}행`);
+            }
+          }
+        }
+
+        // 7. ⭐ gridLayout과 seats를 DB에 자동 저장
         // zustand store에서 최신 상태 가져오기
         const currentState = useArrangementStore.getState();
         const { gridLayout: updatedGridLayout, assignments: updatedAssignments } = currentState;
@@ -195,7 +252,7 @@ export function useEmergencyUnavailable({
 
         logger.debug(`[Emergency] gridLayout 및 seats 저장 완료`);
 
-        // 7. 성공 메시지
+        // 8. 성공 메시지
         const crossRowInfo = crossRowMoved ? ' (뒷줄에서 1명 이동)' : '';
         const message = `${memberName}님이 등단 불가로 처리되었습니다.${crossRowInfo}`;
 
@@ -220,10 +277,12 @@ export function useEmergencyUnavailable({
       crossRowFillFromBack,
       shouldCrossRowMove,
       findLastEmptyColForPart,
+      toggleRowLeader,
       enableCrossRowMove,
       crossRowThreshold,
       onSuccess,
       onError,
+      date,
     ]
   );
 
