@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-14
+- [x] **perf(middleware): API 라우트 및 OAuth 콜백에서 getUser() 스킵**
+  - 커밋: `1c4674e`
+
 - [x] **feat(dashboard): 대시보드를 Server Component로 전환하여 성능 개선**
   - 커밋: `dd68177`
 

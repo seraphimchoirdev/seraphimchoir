@@ -29,6 +29,18 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // API 라우트는 자체 인증을 수행하므로 middleware에서 getUser() 스킵
+  // → API 호출당 ~100-300ms 절약
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/');
+  if (isApiRoute) {
+    return supabaseResponse;
+  }
+
+  // OAuth 콜백은 인증 체크 없이 통과
+  if (request.nextUrl.pathname.startsWith('/auth/callback')) {
+    return supabaseResponse;
+  }
+
   // 세션 새로고침 (만료된 토큰 갱신)
   // 중요: getUser()가 아닌 getSession()을 호출하지 마세요
   // getSession()은 클라이언트 측에서만 사용해야 합니다
@@ -66,11 +78,6 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
-  }
-
-  // OAuth 콜백은 인증 체크 없이 통과
-  if (request.nextUrl.pathname.startsWith('/auth/callback')) {
-    return supabaseResponse;
   }
 
   return supabaseResponse;

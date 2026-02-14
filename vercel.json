@@ -6,6 +6,12 @@
   "regions": ["icn1"],
   "headers": [
     {
+      "source": "/api/dashboard/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "private, max-age=30, stale-while-revalidate=60" }
+      ]
+    },
+    {
       "source": "/api/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, must-revalidate" }
