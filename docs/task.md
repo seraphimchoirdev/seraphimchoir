@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-14
+- [x] **fix(dashboard): getSession() → getUser()로 복원하여 보안 경고 해소**
+  - 커밋: `516b368`
+
 - [x] **perf(dashboard): TTFB/FCP/CLS 성능 최적화**
   - 커밋: `f2dbeee`
 
