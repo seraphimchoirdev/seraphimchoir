@@ -178,10 +178,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     logger.debug('Querying members and attendances for date:', arrangement.date);
 
     const [membersResult, attendancesResult, profilesResult] = await Promise.all([
-      // 모든 정대원 조회 (등단자만 - 지휘자/반주자 제외, experience 컬럼은 스키마에 없으므로 제외)
+      // 모든 정대원 조회 (등단자만 - 지휘자/반주자 제외, joined_date로 임명일 필터링)
       supabase
         .from('members')
-        .select('id, name, part, height, member_status')
+        .select('id, name, part, height, member_status, joined_date')
         .eq('member_status', 'REGULAR')
         .eq('is_singer', true),
 
@@ -231,16 +231,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const partLeaderIds = new Set(profiles?.map((p) => p.member_id) || []);
 
     // 5. 등단 가능한 대원 필터링
-    // - 출석 레코드가 없으면 기본값 true (등단 가능)
-    // - 출석 레코드가 있으면 is_service_available 값 사용
+    // - 출석 레코드가 없으면 등단 가능 (파트장이 등단 불가 멤버만 DB에 기록하는 워크플로우)
+    // - 출석 데이터가 없는 날짜: 모든 정대원 포함
     const memberHeightMap = new Map<string, number>();
     const memberLeaderMap = new Set<string>();
 
     const availableMembers: Member[] = (allMembers || [])
       .filter((member) => {
+        // 배치표 날짜 이전에 입단한 대원만 포함 (MemberSidebar와 동일 기준)
+        if (member.joined_date && member.joined_date > arrangement.date) return false;
         const isServiceAvailable = attendanceMap.get(member.id);
-        // 출석 레코드가 없으면 기본값 true, 있으면 해당 값 사용
-        return isServiceAvailable === undefined || isServiceAvailable === true;
+        if (isServiceAvailable === undefined) return true; // 레코드 없음 = 등단 가능
+        return isServiceAvailable === true;
       })
       .map((member) => {
         // 키 정보 저장

@@ -68,6 +68,21 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-14
+- [x] **fix(draft): DB 데이터 선택 시 resetWorkflow() 호출 제거**
+  - 커밋: `860bec7`
+
+- [x] **fix(arrangements): AI 추천에서 joined_date 기반 대원 필터링 추가**
+  - 커밋: `91e050c`
+
+- [x] **perf(middleware): API 라우트 및 OAuth 콜백에서 getUser() 스킵**
+  - 커밋: `1c4674e`
+
+- [x] **feat(dashboard): 대시보드를 Server Component로 전환하여 성능 개선**
+  - 커밋: `dd68177`
+
+- [x] **fix(splash): SplashScreen 반복 표시 버그 수정**
+  - 커밋: `f4e3b23`
+
 - [x] **feat(emergency): 긴급 변동 되돌리기 기능 + rowOffset 초기화 버그 수정**
   - 커밋: `bd7ee28`
 

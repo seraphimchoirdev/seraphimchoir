@@ -79,6 +79,13 @@ class SplashManager {
   }
 
   /**
+   * 스플래시가 이미 dismiss되었는지 확인합니다.
+   */
+  getIsSplashDismissed(): boolean {
+    return this.isSplashDismissed;
+  }
+
+  /**
    * 스플래시 상태를 리셋합니다 (개발 환경용).
    */
   reset(): void {

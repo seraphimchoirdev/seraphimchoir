@@ -142,13 +142,12 @@ const MemberSidebar = memo(function MemberSidebar({
     return map;
   }, [attendances]);
 
-  // 멤버가 등단 가능한지 확인 (출석 레코드가 없거나 is_service_available이 true인 경우)
+  // 멤버가 등단 가능한지 확인
+  // 출석 레코드가 없으면 등단 가능 (파트장이 등단 불가 멤버만 DB에 기록하는 워크플로우)
   const isServiceAvailable = useCallback(
     (memberId: string) => {
       const attendance = attendanceMap.get(memberId);
-      // 출석 레코드가 없으면 기본값 true (등단 가능)
       if (!attendance) return true;
-      // 출석 레코드가 있으면 is_service_available 값 사용
       return attendance.is_service_available === true;
     },
     [attendanceMap]

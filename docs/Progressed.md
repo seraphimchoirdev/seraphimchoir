@@ -218,6 +218,11 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-14 | fix(draft): DB 데이터 선택 시 resetWorkflow() 호출 제거 |
+| 2026-02-14 | fix(arrangements): AI 추천에서 joined_date 기반 대원 필터링 추가 |
+| 2026-02-14 | perf(middleware): API 라우트 및 OAuth 콜백에서 getUser() 스킵 |
+| 2026-02-14 | feat(dashboard): 대시보드를 Server Component로 전환하여 성능 개선 |
+| 2026-02-14 | fix(splash): SplashScreen 반복 표시 버그 수정 |
 | 2026-02-14 | feat(emergency): 긴급 변동 되돌리기 기능 + rowOffset 초기화 버그 수정 |
 | 2026-02-14 | fix(arrangements): 새 배치표 생성 시 총 좌석이 전체 대원 수로 세팅되는 버그 수정 |
 | 2026-02-12 | feat(emergency): 긴급 등단 불가 로직 고도화 |

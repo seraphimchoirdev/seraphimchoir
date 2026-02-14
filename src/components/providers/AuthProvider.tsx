@@ -40,6 +40,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const supabase = createClient();
 
+    // Zustand persist에서 이미 hydration 완료된 경우 즉시 스플래시 해제
+    // (Server Component 전환 후 서버에서 이미 인증된 HTML이 도착하므로)
+    const { hasHydrated, isAuthenticated } = useAuthStore.getState();
+    if (hasHydrated && isAuthenticated) {
+      splashManager.setAppReady();
+    }
+
     // 초기 세션 체크
     const initAuth = async () => {
       logger.debug('세션 체크 시작');
