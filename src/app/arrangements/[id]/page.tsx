@@ -181,8 +181,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   // AI 추천 분배 useEffect 트리거용 (ref 변경은 re-render를 유발하지 않으므로 state로 별도 관리)
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
-  // 새 배치표 AI 추천 분배 자동 적용 추적
-  const autoDistributionAppliedRef = useRef(false);
+  // 새 배치표 AI 추천 분배 토스트 중복 방지
+  const autoDistributionToastShownRef = useRef(false);
 
   // 배치표 ID 변경 감지 (이전 배치표 → 다른 배치표 이동 시 스토어 잔존 데이터 초기화)
   const prevArrangementIdRef = useRef<string | null>(null);
@@ -195,7 +195,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       resetWorkflow();
       initialLoadDoneRef.current = false;
       setInitialLoadDone(false);
-      autoDistributionAppliedRef.current = false;
+      autoDistributionToastShownRef.current = false;
     }
     prevArrangementIdRef.current = id;
   }, [id, clearArrangement, clearHistory, resetWorkflow]);
@@ -233,28 +233,28 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   }, [attendances]);
 
   // 멤버가 등단 가능한지 확인하는 헬퍼 함수
+  // 출석 레코드가 없으면 등단 가능 (파트장이 등단 불가 멤버만 DB에 기록하는 워크플로우)
   const isServiceAvailable = useCallback(
     (memberId: string) => {
       const attendance = attendanceMap.get(memberId);
-      // 출석 레코드가 없으면 기본값 true (등단 가능)
       if (!attendance) return true;
-      // 출석 레코드가 있으면 is_service_available 값 사용
       return attendance.is_service_available === true;
     },
     [attendanceMap]
   );
 
-  // 등단 가능한 멤버 수 계산 (출석 레코드가 없거나 is_service_available이 true인 경우)
+  // 등단 가능한 멤버 수 계산
+  const arrangementDate = arrangement?.date;
   const totalMembers = useMemo(() => {
     const members = membersData?.data || [];
     return members.filter((member) => {
+      // 배치표 날짜 이전에 입단한 대원만 포함 (MemberSidebar와 동일 기준)
+      if (arrangementDate && member.joined_date && member.joined_date > arrangementDate) return false;
       const attendance = attendanceMap.get(member.id);
-      // 출석 레코드가 없으면 기본값 true (등단 가능)
       if (!attendance) return true;
-      // 출석 레코드가 있으면 is_service_available 값 사용
       return attendance.is_service_available === true;
     }).length;
-  }, [membersData, attendanceMap]);
+  }, [membersData, attendanceMap, arrangementDate]);
 
   // 워크플로우 자동 진행 훅 (위자드 모드에서 단계 완료 조건 자동 감지)
   useWorkflowAutoAdvance(totalMembers, arrangement?.status ?? undefined);
@@ -558,23 +558,22 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     skipInitialization,
   ]);
 
-  // 새 배치표: AI 추천 분배 자동 적용
+  // 새 배치표: AI 추천 분배 자동 적용 (totalMembers 변경 시 재적용)
   useEffect(() => {
-    // 이미 자동 적용됨
-    if (autoDistributionAppliedRef.current) return;
     // 초기화가 아직 완료되지 않음
     if (!initialLoadDone) return;
     // DB에 저장된 좌석이 있는 기존 배치표
     if (dbHasData) return;
     // 멤버 데이터 로딩 중 (totalMembers가 아직 0)
     if (totalMembers === 0) return;
-    // 이미 AI 추천이 적용되어 있음
-    if (gridLayout?.isAIRecommended) return;
     // 이미 수동으로 구성된 그리드 (저장 후 refetch 시 race condition 방어)
     if (gridLayout?.isManuallyConfigured) return;
 
-    // AI 추천 분배 자동 적용
-    autoDistributionAppliedRef.current = true;
+    // 이미 같은 인원 기반으로 AI 추천이 적용되어 있으면 스킵
+    const currentTotal = gridLayout?.rowCapacities?.reduce((a, b) => a + b, 0) ?? 0;
+    if (gridLayout?.isAIRecommended && currentTotal === totalMembers) return;
+
+    // AI 추천 분배 자동 적용 (totalMembers가 변하면 재적용)
     const recommendation = recommendRowDistribution(totalMembers);
     setGridLayout({
       rows: recommendation.rows,
@@ -583,9 +582,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       isAIRecommended: true,
     }, { silent: true });
 
-    showSuccess(
-      `배치표가 생성되었습니다. 출석 인원 ${totalMembers}명 기반으로 줄 구성이 자동 설정되었습니다.`
-    );
+    // 토스트는 최초 1회만 표시
+    if (!autoDistributionToastShownRef.current) {
+      autoDistributionToastShownRef.current = true;
+      showSuccess(
+        `배치표가 생성되었습니다. 출석 인원 ${totalMembers}명 기반으로 줄 구성이 자동 설정되었습니다.`
+      );
+    }
   }, [totalMembers, dbHasData, gridLayout, setGridLayout, initialLoadDone]);
 
   if (isLoading || authLoading) {
