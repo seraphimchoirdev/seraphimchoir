@@ -98,6 +98,13 @@ export function useEmergencyAvailable({
       try {
         logger.debug(`[Emergency] 등단 가능 자동 배치 시작: ${memberName}(${part})`);
 
+        // 0. ⭐ 되돌리기용 스냅샷 캡처 (상태 변경 전!)
+        const snapshotState = useArrangementStore.getState();
+        const beforeSnapshot = {
+          assignments: { ...snapshotState.assignments },
+          gridLayout: structuredClone(snapshotState.gridLayout!),
+        };
+
         // 1. 시뮬레이션으로 배치 위치 결정
         const simulation = simulateAutoPlace(memberId, memberName, part);
 
@@ -110,7 +117,7 @@ export function useEmergencyAvailable({
 
         // 2.5. 캐시 무효화 + refetch 대기
         logger.debug(`[Emergency] 출석 캐시 무효화 및 refetch 대기 중...`);
-        await queryClient.invalidateQueries({ queryKey: ['attendances'] });
+        await queryClient.invalidateQueries({ queryKey: ['attendances', { date }] });
         logger.debug(`[Emergency] 출석 캐시 refetch 완료`);
 
         // 3. Store 상태 업데이트 (assignments + gridLayout)
@@ -164,6 +171,7 @@ export function useEmergencyAvailable({
           addedTo: addedPosition,
           cascadeChanges: simulation.cascadeChanges,
           movedMemberCount: simulation.movedMemberCount,
+          beforeSnapshot,
         });
 
         // 6. 성공 메시지
@@ -202,11 +210,18 @@ export function useEmergencyAvailable({
       try {
         logger.debug(`[Emergency] 등단 가능 수동 배치 시작: ${memberName}(${part})`);
 
+        // 0. ⭐ 되돌리기용 스냅샷 캡처 (상태 변경 전!)
+        const snapshotState = useArrangementStore.getState();
+        const beforeSnapshot = {
+          assignments: { ...snapshotState.assignments },
+          gridLayout: structuredClone(snapshotState.gridLayout!),
+        };
+
         // 1. DB 업데이트 (출석 상태만)
         await updateAttendanceMutation.mutateAsync({ memberId });
 
         // 2. 캐시 무효화 + refetch 대기
-        await queryClient.invalidateQueries({ queryKey: ['attendances'] });
+        await queryClient.invalidateQueries({ queryKey: ['attendances', { date }] });
 
         // 3. 변동 이력 기록 (수동 배치는 cascadeChanges 최소화)
         addEmergencyChange({
@@ -228,6 +243,7 @@ export function useEmergencyAvailable({
             },
           ],
           movedMemberCount: 0,
+          beforeSnapshot,
         });
 
         // 4. 성공 메시지

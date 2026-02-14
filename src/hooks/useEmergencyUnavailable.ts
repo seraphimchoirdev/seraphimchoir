@@ -25,6 +25,7 @@ interface EmergencyUnavailableParams {
   part: Part; // ⭐ 파트 정보 (파트 영역 고려를 위해 필수)
   row: number;
   col: number;
+  processMode: 'LEAVE_EMPTY' | 'AUTO_PULL'; // ⭐ 처리 방식 (빈 자리 유지 vs 자동 당기기)
 }
 
 interface UseEmergencyUnavailableOptions {
@@ -74,6 +75,7 @@ export function useEmergencyUnavailable({
   const crossRowFillFromBack = useArrangementStore((state) => state.crossRowFillFromBack);
   const shouldCrossRowMove = useArrangementStore((state) => state.shouldCrossRowMove);
   const findLastEmptyColForPart = useArrangementStore((state) => state.findLastEmptyColForPart);
+  const toggleRowLeader = useArrangementStore((state) => state.toggleRowLeader);
 
   // 출석 데이터 업데이트 mutation
   // ⭐ onSuccess 제거: handleEmergencyUnavailable에서 직접 await하여 캐시 무효화
@@ -105,72 +107,145 @@ export function useEmergencyUnavailable({
   });
 
   const handleEmergencyUnavailable = useCallback(
-    async ({ memberId, memberName, part, row, col }: EmergencyUnavailableParams) => {
+    async ({ memberId, memberName, part, row, col, processMode }: EmergencyUnavailableParams) => {
       try {
-        logger.debug(`[Emergency] 등단 불가 처리 시작: ${memberName}(${part}) at (${row}, ${col})`);
+        logger.debug(`[Emergency] 등단 불가 처리 시작: ${memberName}(${part}) at (${row}, ${col}) [${processMode}]`);
+
+        // 0. ⭐ 되돌리기용 스냅샷 캡처 (상태 변경 전!)
+        const snapshotState = useArrangementStore.getState();
+        const beforeSnapshot = {
+          assignments: { ...snapshotState.assignments },
+          gridLayout: structuredClone(snapshotState.gridLayout!),
+        };
 
         // 1. DB 업데이트
         await updateAttendanceMutation.mutateAsync({ memberId });
 
         // 1.5. ⭐ 캐시 무효화 + refetch 완료 대기
-        // invalidateQueries에 await를 사용하면 refetch가 완료될 때까지 기다림
-        // → totalMembers와 MemberSidebar가 즉시 업데이트됨
         logger.debug(`[Emergency] 출석 캐시 무효화 및 refetch 대기 중...`);
-        await queryClient.invalidateQueries({ queryKey: ['attendances'] });
+        await queryClient.invalidateQueries({ queryKey: ['attendances', { date }] });
         logger.debug(`[Emergency] 출석 캐시 refetch 완료`);
 
-        // 2. 좌석에서 제거
+        // 2. 줄반장 여부 확인 (제거 전에 체크)
+        const seatKey = `${row}-${col}`;
+        const currentAssignments = useArrangementStore.getState().assignments;
+        const removedMember = currentAssignments[seatKey];
+        const wasRowLeader = removedMember?.isRowLeader;
+
+        // 3. 좌석에서 제거 (공통)
         removeMember(row, col);
 
-        // 3. 같은 행에서 "같은 파트" 멤버만 왼쪽으로 당기기
-        pullSamePartMembersLeft(row, col, part);
-
-        // 4. 크로스-행 이동 로직 (선택적)
-        const side = getPartSide(part);
         let crossRowMoved = false;
 
-        if (enableCrossRowMove) {
-          // 당기기 후 빈 열 찾기
-          const emptyCol = findLastEmptyColForPart(row, part);
+        if (processMode === 'LEAVE_EMPTY') {
+          // ── LEAVE_EMPTY: 빈 자리 유지 ──
+          // 당기기/축소/크로스-행 이동 없이 줄반장 후임만 처리
 
-          // 행 간 불균형 확인
-          if (emptyCol && shouldCrossRowMove(row, part, crossRowThreshold)) {
-            // 뒷줄에서 앞줄로 이동 시도
-            crossRowMoved = crossRowFillFromBack(row, emptyCol, part);
+          if (wasRowLeader) {
+            const stateAfterRemove = useArrangementStore.getState();
+            const sameRowSamePart = Object.values(stateAfterRemove.assignments)
+              .filter((a) => a.row === row && a.part === part)
+              .sort((a, b) => a.col - b.col);
+            if (sameRowSamePart.length > 0) {
+              toggleRowLeader(row, sameRowSamePart[0].col, { silent: true });
+              logger.debug(
+                `[Emergency] 줄반장 후임 지정: ${sameRowSamePart[0].memberName} (${row}행 ${sameRowSamePart[0].col}열)`
+              );
+            }
+          }
+        } else {
+          // ── AUTO_PULL: 자동 당기기 (기존 로직) ──
 
-            if (crossRowMoved) {
-              // 뒷줄 정리: 당기기 + 용량 축소
-              const backRow = row + 1;
-              const backEmptyCol = findLastEmptyColForPart(backRow, part);
+          // 4. 같은 행에서 "같은 파트" 멤버만 왼쪽으로 당기기
+          pullSamePartMembersLeft(row, col, part);
 
-              if (backEmptyCol) {
-                pullSamePartMembersLeft(backRow, backEmptyCol, part);
+          // 4.5. 줄반장이었으면 후임 지정
+          if (wasRowLeader) {
+            const stateAfterPull = useArrangementStore.getState();
+            const sameRowSamePart = Object.values(stateAfterPull.assignments)
+              .filter((a) => a.row === row && a.part === part)
+              .sort((a, b) => a.col - b.col);
+            if (sameRowSamePart.length > 0) {
+              toggleRowLeader(row, sameRowSamePart[0].col, { silent: true });
+              logger.debug(
+                `[Emergency] 줄반장 후임 지정: ${sameRowSamePart[0].memberName} (${row}행 ${sameRowSamePart[0].col}열)`
+              );
+            }
+          }
+
+          // 5. 크로스-행 이동 로직 (선택적)
+          const side = getPartSide(part);
+
+          if (enableCrossRowMove) {
+            const emptyCol = findLastEmptyColForPart(row, part);
+
+            if (emptyCol && shouldCrossRowMove(row, part, crossRowThreshold)) {
+              crossRowMoved = crossRowFillFromBack(row, emptyCol, part);
+
+              if (crossRowMoved) {
+                const backRow = row + 1;
+                const backEmptyCol = findLastEmptyColForPart(backRow, part);
+
+                if (backEmptyCol) {
+                  pullSamePartMembersLeft(backRow, backEmptyCol, part);
+                }
+
+                shrinkRowFromSide(backRow, side);
+                logger.debug(`[Emergency] 크로스-행 이동 완료: ${backRow}행 → ${row}행`);
+              } else {
+                shrinkRowFromSide(row, side);
               }
-
-              // 뒷줄 용량 축소
-              shrinkRowFromSide(backRow, side);
-              logger.debug(`[Emergency] 크로스-행 이동 완료: ${backRow}행 → ${row}행`);
             } else {
-              // 크로스-행 이동 실패 시 현재 행만 축소
               shrinkRowFromSide(row, side);
             }
           } else {
-            // 크로스-행 이동 불필요 시 현재 행만 축소
             shrinkRowFromSide(row, side);
           }
-        } else {
-          // 5. 크로스-행 이동 비활성화 시: 단순히 해당 행 축소
-          shrinkRowFromSide(row, side);
+
+          // 6. 빈 마지막 행 정리 (rowCapacity=0 또는 멤버 없는 마지막 행)
+          {
+            const stateForCleanup = useArrangementStore.getState();
+            const originalCaps = stateForCleanup.gridLayout?.rowCapacities;
+            if (originalCaps && originalCaps.length > 1) {
+              // ⭐ 복사본 사용 — 직접 mutation은 Zustand immutability 위반
+              const caps = [...originalCaps];
+              let trimmed = false;
+              while (caps.length > 1 && caps[caps.length - 1] === 0) {
+                caps.pop();
+                trimmed = true;
+              }
+              while (caps.length > 1) {
+                const lastRow = caps.length;
+                const hasMembers = Object.values(stateForCleanup.assignments).some(
+                  (a) => a.row === lastRow
+                );
+                if (!hasMembers && caps[lastRow - 1] <= 1) {
+                  caps.pop();
+                  trimmed = true;
+                } else {
+                  break;
+                }
+              }
+              if (trimmed) {
+                useArrangementStore.setState({
+                  gridLayout: {
+                    ...stateForCleanup.gridLayout!,
+                    rows: caps.length,
+                    rowCapacities: caps,
+                  },
+                });
+                logger.debug(`[Emergency] 빈 마지막 행 정리 완료: ${caps.length}행`);
+              }
+            }
+          }
         }
 
-        // 6. ⭐ gridLayout과 seats를 DB에 자동 저장
-        // zustand store에서 최신 상태 가져오기
+        // 7. ⭐ gridLayout과 seats를 DB에 자동 저장 (공통)
         const currentState = useArrangementStore.getState();
         const { gridLayout: updatedGridLayout, assignments: updatedAssignments } = currentState;
 
         logger.debug(`[Emergency] gridLayout 및 seats 자동 저장 시작...`);
 
-        // gridLayout 저장
         await updateArrangement.mutateAsync({
           id: arrangementId,
           data: {
@@ -179,7 +254,6 @@ export function useEmergencyUnavailable({
           },
         });
 
-        // seats 저장
         const seatsData = Object.values(updatedAssignments).map((a) => ({
           memberId: a.memberId,
           row: a.row,
@@ -195,12 +269,15 @@ export function useEmergencyUnavailable({
 
         logger.debug(`[Emergency] gridLayout 및 seats 저장 완료`);
 
-        // 7. 성공 메시지
+        // 8. 성공 메시지 (공통)
+        const modeLabel = processMode === 'LEAVE_EMPTY' ? ' (빈 자리 유지)' : '';
         const crossRowInfo = crossRowMoved ? ' (뒷줄에서 1명 이동)' : '';
-        const message = `${memberName}님이 등단 불가로 처리되었습니다.${crossRowInfo}`;
+        const message = `${memberName}님이 등단 불가로 처리되었습니다.${modeLabel}${crossRowInfo}`;
 
         logger.debug(`[Emergency] 처리 완료: ${message}`);
         onSuccess?.(message);
+
+        return { beforeSnapshot };
       } catch (error) {
         const message = error instanceof Error ? error.message : '처리에 실패했습니다';
         logger.error(`[Emergency] 오류:`, error);
@@ -220,10 +297,12 @@ export function useEmergencyUnavailable({
       crossRowFillFromBack,
       shouldCrossRowMove,
       findLastEmptyColForPart,
+      toggleRowLeader,
       enableCrossRowMove,
       crossRowThreshold,
       onSuccess,
       onError,
+      date,
     ]
   );
 

@@ -1,5 +1,7 @@
 'use client';
 
+import { useRef } from 'react';
+
 import { Check, Circle, ClipboardCheck } from 'lucide-react';
 
 import {
@@ -48,6 +50,7 @@ export default function ReadinessStatusBar({
   userPart,
 }: ReadinessStatusBarProps) {
   const { toggleReadiness, isPending } = useToggleReadiness();
+  const isProcessingRef = useRef(false);
 
   const readyCount = getReadyPartsCount(deadlines);
   const totalCount = READINESS_PARTS.length;
@@ -57,6 +60,8 @@ export default function ReadinessStatusBar({
   const canToggleOwnPart = userRole === 'PART_LEADER' && userPart;
 
   const handleToggle = async (part: Part, currentDeadline: AttendanceDeadline | null) => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
     try {
       await toggleReadiness({ date, part, currentDeadline });
       if (currentDeadline) {
@@ -68,6 +73,8 @@ export default function ReadinessStatusBar({
       logger.error('Toggle readiness error:', error);
       const errorMessage = error instanceof Error ? error.message : '준비 완료 처리에 실패했습니다';
       showError(errorMessage);
+    } finally {
+      isProcessingRef.current = false;
     }
   };
 

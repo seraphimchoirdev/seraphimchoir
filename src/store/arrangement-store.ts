@@ -390,6 +390,11 @@ interface ArrangementState {
   addEmergencyChange: (change: EmergencyChange) => void;
 
   /**
+   * 마지막 긴급 변동 되돌리기 (로컬 상태만 복원). 제거된 EmergencyChange 반환
+   */
+  undoLastEmergencyChange: () => EmergencyChange | null;
+
+  /**
    * 긴급 변동 이력 초기화
    */
   clearEmergencyChanges: () => void;
@@ -2045,6 +2050,53 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
     }),
 
   /**
+   * 마지막 긴급 변동 되돌리기 (로컬 상태 복원)
+   */
+  undoLastEmergencyChange: () => {
+    const state = get();
+    const { changes, highlights } = state.emergencyChanges;
+
+    if (changes.length === 0) return null;
+
+    const lastChange = changes[changes.length - 1];
+    const remainingChanges = changes.slice(0, -1);
+
+    // 하이라이트에서 마지막 변동 관련 항목 제거
+    const newHighlights = new Map(highlights);
+    newHighlights.delete(lastChange.memberId);
+    lastChange.cascadeChanges.forEach((cascade) => {
+      if (cascade.memberId) {
+        newHighlights.delete(cascade.memberId);
+      }
+    });
+
+    // beforeSnapshot이 있으면 상태 복원
+    if (lastChange.beforeSnapshot) {
+      set({
+        assignments: lastChange.beforeSnapshot.assignments,
+        gridLayout: lastChange.beforeSnapshot.gridLayout,
+        emergencyChanges: {
+          ...state.emergencyChanges,
+          changes: remainingChanges,
+          highlights: newHighlights,
+        },
+      });
+    } else {
+      // 스냅샷 없으면 이력만 제거
+      set({
+        emergencyChanges: {
+          ...state.emergencyChanges,
+          changes: remainingChanges,
+          highlights: newHighlights,
+        },
+      });
+    }
+
+    logger.debug(`긴급 변동 되돌리기: ${lastChange.type} - ${lastChange.memberName}`);
+    return lastChange;
+  },
+
+  /**
    * 긴급 변동 이력 초기화
    */
   clearEmergencyChanges: () =>
@@ -2225,9 +2277,120 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
       currentEmptyCol = c;
     }
 
-    // Step 3: 행 용량 축소
+    // Step 3: 크로스-행 이동 판단 + 행 용량 축소
     const side = getPartSide(part);
-    if (newCapacities[row - 1] > 1) {
+    const backRow = row + 1;
+    const hasBackRow = backRow <= newCapacities.length;
+
+    // 크로스-행 이동 조건 체크 (복사본에서 순수 판단)
+    let crossRowMoved = false;
+    if (hasBackRow) {
+      let frontRowCount = 0;
+      let backRowCount = 0;
+      Object.values(newAssignments).forEach((a) => {
+        if (a.part === part) {
+          if (a.row === row) frontRowCount++;
+          if (a.row === backRow) backRowCount++;
+        }
+      });
+
+      const shouldMove = backRowCount - frontRowCount >= 2; // threshold=2
+
+      if (shouldMove) {
+        // 앞줄에서 빈 열 찾기 (당기기 후 비어있는 위치)
+        const frontMaxCol = newCapacities[row - 1] || 0;
+        let emptyCol: number | null = null;
+
+        if (side === 'right') {
+          for (let c = frontMaxCol; c >= 1; c--) {
+            if (!newAssignments[`${row}-${c}`]) { emptyCol = c; break; }
+          }
+        } else {
+          const midCol = Math.ceil(frontMaxCol / 2);
+          for (let c = midCol; c >= 1; c--) {
+            if (!newAssignments[`${row}-${c}`]) { emptyCol = c; break; }
+          }
+        }
+
+        if (emptyCol) {
+          // 뒷줄에서 같은 파트 후보 찾기 (가장 오른쪽)
+          const backMaxCol = newCapacities[backRow - 1] || 0;
+          let candidateMember: SeatAssignment | null = null;
+          let candidateCol: number | null = null;
+
+          for (let c = backMaxCol; c >= 1; c--) {
+            const key = `${backRow}-${c}`;
+            const member = newAssignments[key];
+            if (member && member.part === part) {
+              candidateMember = member;
+              candidateCol = c;
+              break;
+            }
+          }
+
+          if (candidateMember && candidateCol !== null) {
+            // 뒷줄→앞줄 이동
+            const oldKey = `${backRow}-${candidateCol}`;
+            const newKey = `${row}-${emptyCol}`;
+            newAssignments[newKey] = { ...candidateMember, row, col: emptyCol };
+            delete newAssignments[oldKey];
+
+            cascadeChanges.push({
+              step: stepNum++,
+              type: 'MOVE',
+              description: `${candidateMember.memberName}(${candidateMember.part.charAt(0)}) 이동: ${backRow}행 ${candidateCol}열 → ${row}행 ${emptyCol}열 (뒷줄→앞줄)`,
+              memberId: candidateMember.memberId,
+              memberName: candidateMember.memberName,
+              part: candidateMember.part,
+              from: { row: backRow, col: candidateCol },
+              to: { row, col: emptyCol },
+            });
+            movedCount++;
+            crossRowMoved = true;
+
+            // 뒷줄 당기기 시뮬레이션
+            let backEmptyCol = candidateCol;
+            for (let c = candidateCol + 1; c <= backMaxCol; c++) {
+              const bKey = `${backRow}-${c}`;
+              const bMember = newAssignments[bKey];
+              if (!bMember) continue;
+              if (bMember.part !== part) break;
+
+              const bNewKey = `${backRow}-${backEmptyCol}`;
+              newAssignments[bNewKey] = { ...bMember, col: backEmptyCol };
+              delete newAssignments[bKey];
+
+              cascadeChanges.push({
+                step: stepNum++,
+                type: 'MOVE',
+                description: `${bMember.memberName}(${bMember.part.charAt(0)}) 이동: ${backRow}행 ${c}열 → ${backRow}행 ${backEmptyCol}열`,
+                memberId: bMember.memberId,
+                memberName: bMember.memberName,
+                part: bMember.part,
+                from: { row: backRow, col: c },
+                to: { row: backRow, col: backEmptyCol },
+              });
+              movedCount++;
+              backEmptyCol = c;
+            }
+
+            // 뒷줄 용량 축소
+            if (newCapacities[backRow - 1] > 1) {
+              const beforeBackCap = newCapacities[backRow - 1];
+              newCapacities[backRow - 1]--;
+              cascadeChanges.push({
+                step: stepNum++,
+                type: 'SHRINK',
+                description: `${backRow}행 용량: ${beforeBackCap}석 → ${newCapacities[backRow - 1]}석 (${side === 'left' ? '왼쪽' : '오른쪽'} 파트 축소)`,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // 크로스-행 이동이 없었으면 현재 행 용량 축소
+    if (!crossRowMoved && newCapacities[row - 1] > 1) {
       const beforeCapacity = newCapacities[row - 1];
       newCapacities[row - 1]--;
 

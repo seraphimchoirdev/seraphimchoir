@@ -7,26 +7,42 @@ import Image from 'next/image';
 import { splashManager } from '@/lib/splash-manager';
 
 const FADE_OUT_MS = 500;
+const SESSION_KEY = 'seraphim-splash-shown';
 
 export default function SplashScreen() {
-  const [isVisible, setIsVisible] = useState(true);
+  // 세션 내 반복 방문 시 스플래시를 스킵
+  const alreadyShown = typeof window !== 'undefined' && sessionStorage.getItem(SESSION_KEY) === '1';
+
+  const [isVisible, setIsVisible] = useState(!alreadyShown);
   const [isFading, setIsFading] = useState(false);
   const [isShowing, setIsShowing] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const dismissedRef = useRef(false);
+  const dismissedRef = useRef(alreadyShown);
   const mountTimeRef = useRef(Date.now());
+
+  // 이미 표시했다면 즉시 splashManager에 완료 알림
+  useEffect(() => {
+    if (alreadyShown) {
+      splashManager.setAppReady();
+      splashManager.setSplashDismissed();
+    }
+  }, [alreadyShown]);
 
   // 페이드 인 애니메이션
   useEffect(() => {
+    if (alreadyShown) return;
+
     const showTimer = setTimeout(() => {
       setIsShowing(true);
     }, 50);
 
     return () => clearTimeout(showTimer);
-  }, []);
+  }, [alreadyShown]);
 
   // 앱 준비 상태 구독 + safety timeout
   useEffect(() => {
+    if (alreadyShown) return;
+
     let fadeTimer: NodeJS.Timeout;
 
     const isPWA =
@@ -36,7 +52,7 @@ export default function SplashScreen() {
       document.referrer.includes('android-app://');
 
     const minDisplayTime = isPWA ? 500 : 300;
-    const maxDisplayTime = 2500;
+    const maxDisplayTime = 1500;
 
     const hideSplash = () => {
       if (dismissedRef.current) return;
@@ -51,6 +67,12 @@ export default function SplashScreen() {
         fadeTimer = setTimeout(() => {
           setIsVisible(false);
           splashManager.setSplashDismissed();
+          // 세션에 표시 완료 기록
+          try {
+            sessionStorage.setItem(SESSION_KEY, '1');
+          } catch {
+            // sessionStorage 사용 불가한 환경 무시
+          }
         }, FADE_OUT_MS);
       }, remaining);
     };
@@ -66,14 +88,14 @@ export default function SplashScreen() {
       clearTimeout(safetyTimer);
       unsubscribe();
     };
-  }, []);
+  }, [alreadyShown]);
 
   if (!isVisible) return null;
 
   return (
     <div
       className={`fixed inset-0 z-[100] flex items-center justify-center bg-white transition-all duration-500 ${
-        !isShowing ? 'opacity-0' : isFading ? 'opacity-0' : 'opacity-100'
+        !isShowing ? 'opacity-0 pointer-events-none' : isFading ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >
       <div
@@ -85,11 +107,11 @@ export default function SplashScreen() {
           <Image
             src="/icon-512x512.png?v=2"
             alt="새로핌:On"
-            width={512}
-            height={512}
+            width={192}
+            height={192}
             className="h-48 w-48 object-contain md:h-64 md:w-64"
+            priority
             onError={() => setImageError(true)}
-            unoptimized={process.env.NODE_ENV === 'production'}
           />
         ) : (
           <div className="text-center">
