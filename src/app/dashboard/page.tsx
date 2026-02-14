@@ -1,91 +1,107 @@
-'use client';
-
-import dynamic from 'next/dynamic';
+import { redirect } from 'next/navigation';
+import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
 import AppShell from '@/components/layout/AppShell';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/hooks/useAuth';
-
-const ConductorDashboard = dynamic(() => import('@/components/features/dashboard/conductor/ConductorDashboard'));
-const MemberDashboard = dynamic(() => import('@/components/features/dashboard/member/MemberDashboard'));
-const StaffDashboard = dynamic(() => import('@/components/features/dashboard/staff/StaffDashboard'));
+import DashboardContent from '@/components/features/dashboard/DashboardContent';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
+import {
+  fetchDashboardContext,
+  fetchMyDashboardStatus,
+  fetchConductorStatus,
+  fetchPendingApprovals,
+} from '@/lib/dashboard-data';
 
 /**
- * 대시보드 페이지
+ * 대시보드 페이지 (Server Component)
  *
- * 사용자 역할에 따라 다른 대시보드를 표시합니다.
- *
- * - CONDUCTOR: 배치 작업 중심 대시보드
- * - ADMIN, MANAGER, STAFF: 임원 대시보드 (대원 기능 + 관리 기능)
- * - MEMBER, PART_LEADER, 기타: 대원 대시보드 (개인 행동 중심)
+ * 서버에서 1회 인증 + 데이터 프리패치 후, HydrationBoundary로 클라이언트 캐시에 주입합니다.
+ * 기존 5회 인증 워터폴을 1회로 줄여 TTFB/FCP를 대폭 개선합니다.
  */
-export default function DashboardPage() {
-  const { profile, isLoading } = useAuth();
-  const role = profile?.role;
+export default async function DashboardPage() {
+  const supabase = await createClient();
 
-  // 로딩 중
-  if (isLoading) {
-    return (
-      <AppShell>
-        <DashboardContainer>
-          <LoadingSkeleton />
-        </DashboardContainer>
-      </AppShell>
+  // 서버에서 1회 인증 (middleware와 같은 요청에서 쿠키를 공유하므로 실질적 중복 없음)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  // 프로필 조회 (1회)
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('id, role, linked_member_id, link_status')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const role = profile?.role || null;
+  const adminSupabase = await createAdminClient();
+
+  // React Query 캐시에 서버 데이터를 주입하기 위한 QueryClient
+  const queryClient = new QueryClient();
+
+  // 역할에 따라 필요한 데이터만 병렬로 프리패치
+  const prefetchPromises: Promise<void>[] = [];
+
+  // 모든 역할: dashboard-context
+  prefetchPromises.push(
+    queryClient.prefetchQuery({
+      queryKey: ['dashboard-context'],
+      queryFn: () =>
+        fetchDashboardContext(adminSupabase, {
+          id: user.id,
+          role,
+          linked_member_id: profile?.linked_member_id || null,
+          link_status: profile?.link_status as 'pending' | 'approved' | 'rejected' | null,
+        }),
+    })
+  );
+
+  // 대원/임원: my-status (지휘자 제외한 모든 역할)
+  if (role !== 'CONDUCTOR') {
+    prefetchPromises.push(
+      queryClient.prefetchQuery({
+        queryKey: ['dashboard-my-status'],
+        queryFn: () =>
+          fetchMyDashboardStatus(adminSupabase, {
+            id: user.id,
+            role,
+            linked_member_id: profile?.linked_member_id || null,
+            link_status: profile?.link_status as 'pending' | 'approved' | 'rejected' | null,
+          }),
+      })
     );
   }
 
-  // 지휘자 → 배치 작업 중심 대시보드
+  // 지휘자: conductor-status
   if (role === 'CONDUCTOR') {
-    return (
-      <AppShell>
-        <DashboardContainer>
-          <ConductorDashboard />
-        </DashboardContainer>
-      </AppShell>
+    prefetchPromises.push(
+      queryClient.prefetchQuery({
+        queryKey: ['dashboard-conductor-status'],
+        queryFn: () => fetchConductorStatus(adminSupabase),
+      })
     );
   }
 
-  // 임원 (ADMIN, MANAGER, STAFF) → 대원 기능 + 관리 기능
-  if (role === 'ADMIN' || role === 'MANAGER' || role === 'STAFF') {
-    return (
-      <AppShell>
-        <DashboardContainer>
-          <StaffDashboard />
-        </DashboardContainer>
-      </AppShell>
+  // ADMIN: pending-approvals
+  if (role === 'ADMIN') {
+    prefetchPromises.push(
+      queryClient.prefetchQuery({
+        queryKey: ['dashboard-pending-approvals'],
+        queryFn: () => fetchPendingApprovals(adminSupabase),
+      })
     );
   }
 
-  // 대원, 파트장, 기타 → 개인 행동 중심 대시보드
-  return (
-    <AppShell>
-      <DashboardContainer>
-        <MemberDashboard />
-      </DashboardContainer>
-    </AppShell>
-  );
-}
+  await Promise.all(prefetchPromises);
 
-function DashboardContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--color-background-tertiary)] px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">{children}</div>
-    </div>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="mt-2 h-5 w-64" />
-      </div>
-      <Skeleton className="h-24 rounded-lg" />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Skeleton className="h-56 rounded-lg" />
-        <Skeleton className="h-40 rounded-lg" />
-      </div>
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <AppShell>
+        <DashboardContent role={role} />
+      </AppShell>
+    </HydrationBoundary>
   );
 }

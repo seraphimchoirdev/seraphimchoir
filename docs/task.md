@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-14
+- [x] **feat(dashboard): 대시보드를 Server Component로 전환하여 성능 개선**
+  - 커밋: `dd68177`
+
 - [x] **fix(splash): SplashScreen 반복 표시 버그 수정**
   - 커밋: `f4e3b23`
 
