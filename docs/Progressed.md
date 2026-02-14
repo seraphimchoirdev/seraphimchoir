@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-14 | fix(splash): SplashScreen 반복 표시 버그 수정 |
 | 2026-02-14 | feat(emergency): 긴급 변동 되돌리기 기능 + rowOffset 초기화 버그 수정 |
 | 2026-02-14 | fix(arrangements): 새 배치표 생성 시 총 좌석이 전체 대원 수로 세팅되는 버그 수정 |
 | 2026-02-12 | feat(emergency): 긴급 등단 불가 로직 고도화 |

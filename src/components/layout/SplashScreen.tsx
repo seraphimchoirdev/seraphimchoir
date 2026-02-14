@@ -11,7 +11,8 @@ const SESSION_KEY = 'seraphim-splash-shown';
 
 export default function SplashScreen() {
   // 세션 내 반복 방문 시 스플래시를 스킵
-  const alreadyShown = typeof window !== 'undefined' && sessionStorage.getItem(SESSION_KEY) === '1';
+  const alreadyShown = typeof window !== 'undefined' &&
+    (sessionStorage.getItem(SESSION_KEY) === '1' || splashManager.getIsSplashDismissed());
 
   const [isVisible, setIsVisible] = useState(!alreadyShown);
   const [isFading, setIsFading] = useState(false);
@@ -64,15 +65,15 @@ export default function SplashScreen() {
 
       setTimeout(() => {
         setIsFading(true);
+        // 페이드아웃 시작 즉시 세션에 기록 (네비게이션 중 리마운트 방어)
+        try {
+          sessionStorage.setItem(SESSION_KEY, '1');
+        } catch {
+          // sessionStorage 사용 불가한 환경 무시
+        }
         fadeTimer = setTimeout(() => {
           setIsVisible(false);
           splashManager.setSplashDismissed();
-          // 세션에 표시 완료 기록
-          try {
-            sessionStorage.setItem(SESSION_KEY, '1');
-          } catch {
-            // sessionStorage 사용 불가한 환경 무시
-          }
         }, FADE_OUT_MS);
       }, remaining);
     };

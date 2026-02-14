@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-14
+- [x] **fix(splash): SplashScreen 반복 표시 버그 수정**
+  - 커밋: `f4e3b23`
+
 - [x] **feat(emergency): 긴급 변동 되돌리기 기능 + rowOffset 초기화 버그 수정**
   - 커밋: `bd7ee28`
 
