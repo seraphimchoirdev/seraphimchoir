@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-14 | fix(draft): DB 데이터 선택 시 resetWorkflow() 호출 제거 |
 | 2026-02-14 | fix(arrangements): AI 추천에서 joined_date 기반 대원 필터링 추가 |
 | 2026-02-14 | perf(middleware): API 라우트 및 OAuth 콜백에서 getUser() 스킵 |
 | 2026-02-14 | feat(dashboard): 대시보드를 Server Component로 전환하여 성능 개선 |

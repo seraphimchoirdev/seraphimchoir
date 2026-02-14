@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-14
+- [x] **fix(draft): DB 데이터 선택 시 resetWorkflow() 호출 제거**
+  - 커밋: `860bec7`
+
 - [x] **fix(arrangements): AI 추천에서 joined_date 기반 대원 필터링 추가**
   - 커밋: `91e050c`
 

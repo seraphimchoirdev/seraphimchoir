@@ -148,10 +148,11 @@ export function useRestoreDraft(
           break;
         }
         case 'useDb': {
-          // DB 데이터 사용 (페이지 기본 초기화 진행)
+          // DB 데이터 사용: draft만 삭제하고 페이지 초기화에 위임
+          // resetWorkflow() 호출하지 않음 — page.tsx useEffect가
+          // arrangement.status와 grid_layout.workflowState를 기반으로 올바르게 복원
           deleteDraft(arrangementId);
           setSkipInitialization(false);
-          resetWorkflow();
           logger.info(`Using DB data for ${arrangementId}`);
           break;
         }
