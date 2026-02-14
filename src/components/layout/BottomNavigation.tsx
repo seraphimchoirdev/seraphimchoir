@@ -115,8 +115,10 @@ export default function BottomNavigation() {
   const mainNav = isManager ? managerMainNav : memberMainNav;
   const moreNav = isManager ? managerMoreNav : memberMoreNav;
 
-  // 마운트 전이거나 로그인 안된 경우 렌더링 안함
-  if (!mounted || !profile) return null;
+  // 마운트 전이거나 로그인 안된 경우 빈 공간만 예약 (CLS 방지)
+  if (!mounted || !profile) {
+    return <div className="h-16 lg:hidden" />;
+  }
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
