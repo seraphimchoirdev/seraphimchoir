@@ -4,9 +4,44 @@ import dynamic from 'next/dynamic';
 
 import { Skeleton } from '@/components/ui/skeleton';
 
-const ConductorDashboard = dynamic(() => import('@/components/features/dashboard/conductor/ConductorDashboard'));
-const MemberDashboard = dynamic(() => import('@/components/features/dashboard/member/MemberDashboard'));
-const StaffDashboard = dynamic(() => import('@/components/features/dashboard/staff/StaffDashboard'));
+function DashboardContainer({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-[var(--color-background-tertiary)] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">{children}</div>
+    </div>
+  );
+}
+
+export function DashboardLoadingSkeleton() {
+  return (
+    <DashboardContainer>
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="mt-2 h-5 w-64" />
+        </div>
+        <Skeleton className="h-24 rounded-lg" />
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-56 rounded-lg" />
+          <Skeleton className="h-40 rounded-lg" />
+        </div>
+      </div>
+    </DashboardContainer>
+  );
+}
+
+const ConductorDashboard = dynamic(
+  () => import('@/components/features/dashboard/conductor/ConductorDashboard'),
+  { loading: () => <DashboardLoadingSkeleton /> }
+);
+const MemberDashboard = dynamic(
+  () => import('@/components/features/dashboard/member/MemberDashboard'),
+  { loading: () => <DashboardLoadingSkeleton /> }
+);
+const StaffDashboard = dynamic(
+  () => import('@/components/features/dashboard/staff/StaffDashboard'),
+  { loading: () => <DashboardLoadingSkeleton /> }
+);
 
 interface DashboardContentProps {
   role: string | null | undefined;
@@ -38,32 +73,6 @@ export default function DashboardContent({ role }: DashboardContentProps) {
   return (
     <DashboardContainer>
       <MemberDashboard />
-    </DashboardContainer>
-  );
-}
-
-function DashboardContainer({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen bg-[var(--color-background-tertiary)] px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">{children}</div>
-    </div>
-  );
-}
-
-export function DashboardLoadingSkeleton() {
-  return (
-    <DashboardContainer>
-      <div className="space-y-6">
-        <div>
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="mt-2 h-5 w-64" />
-        </div>
-        <Skeleton className="h-24 rounded-lg" />
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Skeleton className="h-56 rounded-lg" />
-          <Skeleton className="h-40 rounded-lg" />
-        </div>
-      </div>
     </DashboardContainer>
   );
 }

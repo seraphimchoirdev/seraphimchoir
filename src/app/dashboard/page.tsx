@@ -1,8 +1,10 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
 import AppShell from '@/components/layout/AppShell';
 import DashboardContent from '@/components/features/dashboard/DashboardContent';
+import { DashboardLoadingSkeleton } from '@/components/features/dashboard/DashboardContent';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import {
   fetchDashboardContext,
@@ -12,70 +14,47 @@ import {
 } from '@/lib/dashboard-data';
 
 /**
- * 대시보드 페이지 (Server Component)
+ * 데이터 프리패치를 수행하는 async Server Component
  *
- * 서버에서 1회 인증 + 데이터 프리패치 후, HydrationBoundary로 클라이언트 캐시에 주입합니다.
- * 기존 5회 인증 워터폴을 1회로 줄여 TTFB/FCP를 대폭 개선합니다.
+ * Suspense 경계 안에서 렌더되므로, 데이터 로딩 중에도 AppShell은 즉시 스트리밍됩니다.
  */
-export default async function DashboardPage() {
-  const supabase = await createClient();
-
-  // 서버에서 1회 인증 (middleware와 같은 요청에서 쿠키를 공유하므로 실질적 중복 없음)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  // 프로필 조회 (1회)
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('id, role, linked_member_id, link_status')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  const role = profile?.role || null;
+async function DashboardPrefetcher({
+  role,
+  userId,
+  profile,
+}: {
+  role: string | null;
+  userId: string;
+  profile: { linked_member_id: string | null; link_status: string | null } | null;
+}) {
   const adminSupabase = await createAdminClient();
-
-  // React Query 캐시에 서버 데이터를 주입하기 위한 QueryClient
   const queryClient = new QueryClient();
 
-  // 역할에 따라 필요한 데이터만 병렬로 프리패치
+  const userProfile = {
+    id: userId,
+    role,
+    linked_member_id: profile?.linked_member_id || null,
+    link_status: profile?.link_status as 'pending' | 'approved' | 'rejected' | null,
+  };
+
   const prefetchPromises: Promise<void>[] = [];
 
-  // 모든 역할: dashboard-context
   prefetchPromises.push(
     queryClient.prefetchQuery({
       queryKey: ['dashboard-context'],
-      queryFn: () =>
-        fetchDashboardContext(adminSupabase, {
-          id: user.id,
-          role,
-          linked_member_id: profile?.linked_member_id || null,
-          link_status: profile?.link_status as 'pending' | 'approved' | 'rejected' | null,
-        }),
+      queryFn: () => fetchDashboardContext(adminSupabase, userProfile),
     })
   );
 
-  // 대원/임원: my-status (지휘자 제외한 모든 역할)
   if (role !== 'CONDUCTOR') {
     prefetchPromises.push(
       queryClient.prefetchQuery({
         queryKey: ['dashboard-my-status'],
-        queryFn: () =>
-          fetchMyDashboardStatus(adminSupabase, {
-            id: user.id,
-            role,
-            linked_member_id: profile?.linked_member_id || null,
-            link_status: profile?.link_status as 'pending' | 'approved' | 'rejected' | null,
-          }),
+        queryFn: () => fetchMyDashboardStatus(adminSupabase, userProfile),
       })
     );
   }
 
-  // 지휘자: conductor-status
   if (role === 'CONDUCTOR') {
     prefetchPromises.push(
       queryClient.prefetchQuery({
@@ -85,7 +64,6 @@ export default async function DashboardPage() {
     );
   }
 
-  // ADMIN: pending-approvals
   if (role === 'ADMIN') {
     prefetchPromises.push(
       queryClient.prefetchQuery({
@@ -99,9 +77,45 @@ export default async function DashboardPage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <AppShell>
-        <DashboardContent role={role} />
-      </AppShell>
+      <DashboardContent role={role} />
     </HydrationBoundary>
+  );
+}
+
+/**
+ * 대시보드 페이지 (Server Component)
+ *
+ * AppShell을 즉시 스트리밍하고, 데이터 프리패치는 Suspense 경계 안에서 수행합니다.
+ * 사용자는 셸(네비게이션 + 스켈레톤)을 먼저 보고, 데이터가 준비되면 콘텐츠가 나타납니다.
+ */
+export default async function DashboardPage() {
+  const supabase = await createClient();
+
+  // 미들웨어에서 이미 getUser()로 인증 검증 완료 → 페이지에서는 getSession()으로 쿠키만 파싱 (네트워크 호출 없음)
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    redirect('/login');
+  }
+
+  const user = session.user;
+
+  // 프로필 조회 (Suspense 밖에서 수행 — role에 따라 셸 구조가 달라질 수 있음)
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('id, role, linked_member_id, link_status')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const role = profile?.role || null;
+
+  return (
+    <AppShell>
+      <Suspense fallback={<DashboardLoadingSkeleton />}>
+        <DashboardPrefetcher role={role} userId={user.id} profile={profile} />
+      </Suspense>
+    </AppShell>
   );
 }
