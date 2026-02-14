@@ -107,6 +107,13 @@ const EmergencyUnavailableDialog = memo(function EmergencyUnavailableDialog({
     if (!targetMember) return;
 
     if (processMode === 'MANUAL') {
+      // ⭐ 스냅샷 캡처 (수동 모드는 다이얼로그에서 직접 처리)
+      const snapshotState = useArrangementStore.getState();
+      const beforeSnapshot = {
+        assignments: { ...snapshotState.assignments },
+        gridLayout: structuredClone(snapshotState.gridLayout!),
+      };
+
       // 수동 처리: 제거만 하고 다이얼로그 닫기
       removeMember(targetMember.row, targetMember.col);
 
@@ -132,6 +139,7 @@ const EmergencyUnavailableDialog = memo(function EmergencyUnavailableDialog({
           },
         ],
         movedMemberCount: 0,
+        beforeSnapshot,
       });
 
       onOpenChange(false);
@@ -140,13 +148,13 @@ const EmergencyUnavailableDialog = memo(function EmergencyUnavailableDialog({
     }
 
     // 빈 자리 유지 또는 자동 당기기: useEmergencyUnavailable 호출
-    // 빈 자리 유지 모드일 때는 enableCrossRowMove를 false로
-    await handleEmergencyUnavailable({
+    const result = await handleEmergencyUnavailable({
       memberId: targetMember.memberId,
       memberName: targetMember.memberName,
       part: targetMember.part,
       row: targetMember.row,
       col: targetMember.col,
+      processMode,
     });
 
     // 변동 이력 기록
@@ -163,6 +171,7 @@ const EmergencyUnavailableDialog = memo(function EmergencyUnavailableDialog({
         removedFrom: { row: targetMember.row, col: targetMember.col },
         cascadeChanges: currentPreview.cascadeChanges,
         movedMemberCount: currentPreview.movedMemberCount,
+        beforeSnapshot: result?.beforeSnapshot,
       });
     }
   }, [

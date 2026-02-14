@@ -120,6 +120,12 @@ export interface EmergencyChange {
 
   /** 이동된 멤버 수 */
   movedMemberCount: number;
+
+  /** 되돌리기용: 변동 전 스냅샷 */
+  beforeSnapshot?: {
+    assignments: Record<string, SeatAssignment>;
+    gridLayout: GridLayout;
+  };
 }
 
 /**

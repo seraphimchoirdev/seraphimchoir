@@ -84,6 +84,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     autoAssignRowLeaders,
     clearAllRowLeaders,
     assignments,
+    saveSharedSnapshot,
+    emergencyChanges,
   } = useArrangementStore();
 
   // 키보드 단축키 훅 초기화 (Ctrl+Z/Y for Undo/Redo)
@@ -215,6 +217,14 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   // SHARED: 긴급 수정 모드 (컨텍스트 메뉴 표시) - 권한 필요
   // CONFIRMED: 읽기 전용 모드 (수정 불가)
   const isEmergencyMode = arrangement?.status === 'SHARED' && canEmergencyEdit;
+
+  // ⭐ SHARED 배치표 진입 시 sharedSnapshot이 없으면 자동 저장
+  // (편집 완료 시점에만 저장되므로, 페이지 재진입 시 복원 필요)
+  useEffect(() => {
+    if (isEmergencyMode && !emergencyChanges.sharedSnapshot && Object.keys(assignments).length > 0) {
+      saveSharedSnapshot();
+    }
+  }, [isEmergencyMode, emergencyChanges.sharedSnapshot, assignments, saveSharedSnapshot]);
 
   // 해당 날짜의 출석 데이터 조회 (필터 없이 전체)
   // ⭐ 긴급 모드에서는 탭 포커스 시 자동 갱신 (출석 관리에서 변경 후 돌아올 때)
@@ -1100,7 +1110,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       />
 
       {/* 긴급 변동 요약 배너 (SHARED 상태에서 변동 있을 때만 표시) */}
-      {isEmergencyMode && <div data-print-hide><EmergencyChangesBanner /></div>}
+      {isEmergencyMode && <div data-print-hide><EmergencyChangesBanner arrangementId={id} date={arrangement?.date || ''} /></div>}
 
       {/* 데스크톱: 3패널 가로 배치 (640px 이상 - Z Fold 펼침 대응) */}
       <div className="hidden flex-1 gap-4 overflow-hidden p-4 sm:flex">

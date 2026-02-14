@@ -390,6 +390,11 @@ interface ArrangementState {
   addEmergencyChange: (change: EmergencyChange) => void;
 
   /**
+   * 마지막 긴급 변동 되돌리기 (로컬 상태만 복원). 제거된 EmergencyChange 반환
+   */
+  undoLastEmergencyChange: () => EmergencyChange | null;
+
+  /**
    * 긴급 변동 이력 초기화
    */
   clearEmergencyChanges: () => void;
@@ -2043,6 +2048,53 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         },
       };
     }),
+
+  /**
+   * 마지막 긴급 변동 되돌리기 (로컬 상태 복원)
+   */
+  undoLastEmergencyChange: () => {
+    const state = get();
+    const { changes, highlights } = state.emergencyChanges;
+
+    if (changes.length === 0) return null;
+
+    const lastChange = changes[changes.length - 1];
+    const remainingChanges = changes.slice(0, -1);
+
+    // 하이라이트에서 마지막 변동 관련 항목 제거
+    const newHighlights = new Map(highlights);
+    newHighlights.delete(lastChange.memberId);
+    lastChange.cascadeChanges.forEach((cascade) => {
+      if (cascade.memberId) {
+        newHighlights.delete(cascade.memberId);
+      }
+    });
+
+    // beforeSnapshot이 있으면 상태 복원
+    if (lastChange.beforeSnapshot) {
+      set({
+        assignments: lastChange.beforeSnapshot.assignments,
+        gridLayout: lastChange.beforeSnapshot.gridLayout,
+        emergencyChanges: {
+          ...state.emergencyChanges,
+          changes: remainingChanges,
+          highlights: newHighlights,
+        },
+      });
+    } else {
+      // 스냅샷 없으면 이력만 제거
+      set({
+        emergencyChanges: {
+          ...state.emergencyChanges,
+          changes: remainingChanges,
+          highlights: newHighlights,
+        },
+      });
+    }
+
+    logger.debug(`긴급 변동 되돌리기: ${lastChange.type} - ${lastChange.memberName}`);
+    return lastChange;
+  },
 
   /**
    * 긴급 변동 이력 초기화
