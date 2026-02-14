@@ -91,16 +91,13 @@ async function DashboardPrefetcher({
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  // 미들웨어에서 이미 getUser()로 인증 검증 완료 → 페이지에서는 getSession()으로 쿠키만 파싱 (네트워크 호출 없음)
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect('/login');
   }
-
-  const user = session.user;
 
   // 프로필 조회 (Suspense 밖에서 수행 — role에 따라 셸 구조가 달라질 수 있음)
   const { data: profile } = await supabase
