@@ -1,0 +1,45 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # PR: 빠른 실패 (bail on first error)
+      - name: Run tests (PR - quick)
+        if: github.event_name == 'pull_request'
+        run: npm run test:quick
+
+      # Push to develop: 전체 테스트 + 커버리지
+      - name: Run tests (push - full coverage)
+        if: github.event_name == 'push'
+        run: npm run test:ci
+
+      - name: Upload coverage report
+        if: github.event_name == 'push' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7

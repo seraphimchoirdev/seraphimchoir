@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-19 | test: Phase 1 테스트 인프라 강화 및 유닛 테스트 11개 파일 추가 |
 | 2026-02-19 | refactor: 3순위 코드 리뷰 이슈 7건 수정 (아키텍처/성능) |
 | 2026-02-19 | fix(security,store): API 인증 강화, Emergency 롤백 추가, CSRF 데드코드 삭제 |
 | 2026-02-14 | fix(dashboard): getSession() → getUser()로 복원하여 보안 경고 해소 |

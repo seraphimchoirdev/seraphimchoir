@@ -1,5 +1,5 @@
 import type { Config } from 'jest';
-import nextJest from 'next/jest';
+import nextJest from 'next/jest.js';
 
 const createJestConfig = nextJest({
   // Next.js 앱의 경로 (next.config.ts가 있는 디렉토리)
