@@ -22,7 +22,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 
 import { useArrangement } from '@/hooks/useArrangements';
-import { useImageGeneration } from '@/hooks/useImageGeneration';
+import { useImageExportHandlers } from '@/hooks/useImageExportHandlers';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useServiceSchedule } from '@/hooks/useServiceSchedules';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,7 +35,7 @@ import { useWorkflowAutoAdvance } from '@/hooks/useWorkflowAutoAdvance';
 
 import { createLogger } from '@/lib/logger';
 import { recommendRowDistribution } from '@/lib/row-distribution-recommender';
-import { showError, showInfo, showSuccess, showWarning } from '@/lib/toast';
+import { showError, showInfo, showSuccess } from '@/lib/toast';
 import { calculateGridLayoutFromSeats } from '@/lib/utils/gridUtils';
 
 import { WorkflowStep, useArrangementStore } from '@/store/arrangement-store';
@@ -91,10 +91,6 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   // 키보드 단축키 훅 초기화 (Ctrl+Z/Y for Undo/Redo)
   useUndoRedoShortcuts();
 
-  // 이미지 생성 훅 (6단계 플로팅 바에서 사용)
-  const { isGenerating, downloadAsImage, copyToClipboard, shareImage, canShare, isMobile } =
-    useImageGeneration();
-
   const [showSettingsSheet, setShowSettingsSheet] = useState(false);
   const [panelMode, setPanelMode] = useState<'expanded' | 'compact'>('expanded');
   const [showMobileSidebar, setShowMobileSidebar] = useState(true);
@@ -120,60 +116,15 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   const mobileCaptureRef = useRef<HTMLDivElement>(null);
 
   // 이미지 내보내기 핸들러 (6단계 플로팅 바용)
-  const getActiveCaptureRef = useCallback(() => {
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      return desktopCaptureRef;
-    }
-    return mobileCaptureRef;
-  }, [desktopCaptureRef, mobileCaptureRef]);
-
-  const handleDownloadImage = useCallback(async () => {
-    const captureRef = getActiveCaptureRef();
-    if (!captureRef?.current) {
-      showWarning('캡처할 영역을 찾을 수 없습니다.');
-      return;
-    }
-    try {
-      const filename = `배치표_${arrangement?.date}_${arrangement?.title?.replace(/\s+/g, '_') ?? ''}`;
-      await downloadAsImage(captureRef.current, filename);
-      showSuccess('이미지가 다운로드되었습니다.');
-    } catch (error) {
-      logger.error('이미지 다운로드 실패:', error);
-      showError('이미지 다운로드에 실패했습니다.');
-    }
-  }, [arrangement?.date, arrangement?.title, downloadAsImage, getActiveCaptureRef]);
-
-  const handleCopyToClipboard = useCallback(async () => {
-    const captureRef = getActiveCaptureRef();
-    if (!captureRef?.current) {
-      showWarning('캡처할 영역을 찾을 수 없습니다.');
-      return;
-    }
-    try {
-      await copyToClipboard(captureRef.current);
-      showSuccess('이미지가 클립보드에 복사되었습니다.');
-    } catch (error) {
-      logger.error('클립보드 복사 실패:', error);
-      const message = error instanceof Error ? error.message : '클립보드 복사에 실패했습니다.';
-      showError(message);
-    }
-  }, [copyToClipboard, getActiveCaptureRef]);
-
-  const handleShareImage = useCallback(async () => {
-    const captureRef = getActiveCaptureRef();
-    if (!captureRef?.current) {
-      showWarning('캡처할 영역을 찾을 수 없습니다.');
-      return;
-    }
-    try {
-      const filename = `배치표_${arrangement?.date}_${arrangement?.title?.replace(/\s+/g, '_') ?? ''}`;
-      await shareImage(captureRef.current, filename);
-    } catch (error) {
-      logger.error('이미지 공유 실패:', error);
-      const message = error instanceof Error ? error.message : '이미지 공유에 실패했습니다.';
-      showError(message);
-    }
-  }, [arrangement?.date, arrangement?.title, shareImage, getActiveCaptureRef]);
+  const { handleDownloadImage, handleCopyToClipboard, handleShareImage, isGenerating, canShare, isMobile } =
+    useImageExportHandlers({
+      getFilename: useCallback(
+        () => `배치표_${arrangement?.date}_${arrangement?.title?.replace(/\s+/g, '_') ?? ''}`,
+        [arrangement?.date, arrangement?.title]
+      ),
+      desktopCaptureRef,
+      mobileCaptureRef,
+    });
 
   // 줄반장 자동 지정 토스트 중복 방지
   const rowLeaderToastShownRef = useRef(false);
@@ -619,6 +570,26 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     );
   }
 
+  // 현재 적용된 줄 정렬 프리셋 감지 (Step 2 공통)
+  const getActivePresetId = useCallback((): string | null => {
+    const rows = gridLayout?.rows ?? 0;
+    const currentOffsets = gridLayout?.rowOffsets;
+    for (const preset of OFFSET_PRESETS) {
+      const presetOffsets = preset.getOffsets(rows);
+      const presetKeys = Object.keys(presetOffsets);
+      const currentKeys = Object.keys(currentOffsets ?? {});
+
+      if (presetKeys.length === 0 && currentKeys.length === 0) return preset.id;
+      if (presetKeys.length !== currentKeys.length) continue;
+
+      const matches = presetKeys.every(
+        (k) => (currentOffsets ?? {})[Number(k)] === presetOffsets[Number(k)]
+      );
+      if (matches) return preset.id;
+    }
+    return null;
+  }, [gridLayout?.rows, gridLayout?.rowOffsets]);
+
   // ============================================
   // 워크플로우 단계별 컨텐츠 렌더링
   // ============================================
@@ -646,27 +617,6 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         );
       case 2: {
         // 줄 정렬 조정 - 프리셋 + 인라인 화살표 컨트롤
-        const rows = gridLayout?.rows ?? 0;
-        const currentOffsets = gridLayout?.rowOffsets;
-
-        // 현재 적용된 프리셋 감지
-        const getActivePresetId = (): string | null => {
-          for (const preset of OFFSET_PRESETS) {
-            const presetOffsets = preset.getOffsets(rows);
-            const presetKeys = Object.keys(presetOffsets);
-            const currentKeys = Object.keys(currentOffsets ?? {});
-
-            if (presetKeys.length === 0 && currentKeys.length === 0) return preset.id;
-            if (presetKeys.length !== currentKeys.length) continue;
-
-            const matches = presetKeys.every(
-              (k) => (currentOffsets ?? {})[Number(k)] === presetOffsets[Number(k)]
-            );
-            if (matches) return preset.id;
-          }
-          return null;
-        };
-
         const activePresetId = getActivePresetId();
 
         return (
@@ -895,24 +845,6 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         );
       case 2: {
         // 줄 정렬 조정 Floating UI
-        const rows = gridLayout?.rows ?? 0;
-        const currentOffsets = gridLayout?.rowOffsets;
-
-        const getActivePresetId = (): string | null => {
-          for (const preset of OFFSET_PRESETS) {
-            const presetOffsets = preset.getOffsets(rows);
-            const presetKeys = Object.keys(presetOffsets);
-            const currentKeys = Object.keys(currentOffsets ?? {});
-            if (presetKeys.length === 0 && currentKeys.length === 0) return preset.id;
-            if (presetKeys.length !== currentKeys.length) continue;
-            const matches = presetKeys.every(
-              (k) => (currentOffsets ?? {})[Number(k)] === presetOffsets[Number(k)]
-            );
-            if (matches) return preset.id;
-          }
-          return null;
-        };
-
         const activePresetId = getActivePresetId();
 
         return (

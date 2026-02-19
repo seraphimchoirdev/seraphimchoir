@@ -2,7 +2,7 @@
 
 import { Calendar, CheckCheck, RotateCcw, Send, Users } from 'lucide-react';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -12,10 +12,9 @@ import { Input } from '@/components/ui/input';
 import { useBulkCreateAttendances } from '@/hooks/useAttendances';
 import { useAuth } from '@/hooks/useAuth';
 import { useMembers } from '@/hooks/useMembers';
+import { useUserPart } from '@/hooks/useUserPart';
 
-import { createClient } from '@/lib/supabase/client';
 import { showError, showSuccess } from '@/lib/toast';
-import { getTestAccountPart, isTestAccount } from '@/lib/utils';
 
 import type { TablesInsert } from '@/types/database.types';
 import type { Database } from '@/types/database.types';
@@ -39,9 +38,8 @@ const PARTS: Part[] = ['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'];
  * - 파트별 접기/펼치기 지원
  */
 export default function BulkAttendanceForm() {
-  const { profile, user } = useAuth();
-  const [userPart, setUserPart] = useState<Part | null>(null);
-  const [isPartLoading, setIsPartLoading] = useState(false);
+  const { profile } = useAuth();
+  const { userPart, isLoading: isPartLoading } = useUserPart();
 
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [attendanceStates, setAttendanceStates] = useState<Map<string, MemberAttendanceState>>(
@@ -58,34 +56,6 @@ export default function BulkAttendanceForm() {
     failed: number;
     errors?: Array<{ chunk?: number; error?: string; message?: string }>;
   } | null>(null);
-
-  // 파트장인 경우 본인 파트 확인
-  useEffect(() => {
-    async function fetchUserPart() {
-      if (profile?.role === 'PART_LEADER' && user?.email) {
-        setIsPartLoading(true);
-
-        // 테스트 계정인 경우 이메일에서 파트 추출
-        if (isTestAccount(user.email)) {
-          const testPart = getTestAccountPart(user.email);
-          if (testPart) setUserPart(testPart);
-          setIsPartLoading(false);
-          return;
-        }
-
-        // 실제 계정인 경우 members 테이블에서 조회
-        const supabase = createClient();
-        const { data } = await supabase
-          .from('members')
-          .select('part')
-          .eq('email', user.email)
-          .single();
-        if (data) setUserPart(data.part as Part);
-        setIsPartLoading(false);
-      }
-    }
-    fetchUserPart();
-  }, [profile, user]);
 
   // 회원 목록 조회 (REGULAR 상태 등단자만, 최대 100명 - 지휘자/반주자 제외)
   const { data: membersResponse, isLoading: isMembersLoading } = useMembers({

@@ -19,13 +19,14 @@ import { useAttendances } from '@/hooks/useAttendances';
 import { useAttendanceMode } from '@/hooks/useAttendanceMode';
 import { useAuth } from '@/hooks/useAuth';
 import { useMembers } from '@/hooks/useMembers';
+import { useUserPart } from '@/hooks/useUserPart';
 
 import type { DeadlinesResponse } from '@/hooks/useAttendanceDeadlines';
 
 import { createLogger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/client';
 import { showError, showSuccess, showWarning } from '@/lib/toast';
-import { cn, getPartLabel, getTestAccountPart, isTestAccount } from '@/lib/utils';
+import { cn, getPartLabel } from '@/lib/utils';
 
 import { Database } from '@/types/database.types';
 
@@ -66,9 +67,8 @@ const partAccentColors: Record<Part, string> = {
 
 export default function AttendanceList({ date, serviceScheduleId, deadlines, onMarkReady }: AttendanceListProps) {
   const dateStr = format(date, 'yyyy-MM-dd');
-  const { profile, user } = useAuth();
-  const [userPart, setUserPart] = useState<string | null>(null);
-  const [isPartLoading, setIsPartLoading] = useState(false);
+  const { profile } = useAuth();
+  const { userPart, isLoading: isPartLoading } = useUserPart();
   const queryClient = useQueryClient();
 
   // 저장 후 준비완료 제안 상태
@@ -103,47 +103,6 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
 
   // 출석 관리 모드 및 잠금 상태
   const { mode, defaultTab, lockStatus, isLoading: isModeLoading } = useAttendanceMode({ date, serviceScheduleId });
-
-  // 파트장인 경우 본인 파트 확인
-  useEffect(() => {
-    async function fetchUserPart() {
-      if (profile?.role === 'PART_LEADER' && user?.email) {
-        setIsPartLoading(true);
-
-        // 테스트 계정인 경우 이메일에서 파트 추출
-        if (isTestAccount(user.email)) {
-          const testPart = getTestAccountPart(user.email);
-          if (testPart) setUserPart(testPart);
-          setIsPartLoading(false);
-          return;
-        }
-
-        // 실제 계정인 경우 user_profiles.linked_member_id를 통해 연결된 멤버의 파트 조회
-        const supabase = createClient();
-        const { data: profileData } = await supabase
-          .from('user_profiles')
-          .select('linked_member_id, members:linked_member_id(part)')
-          .eq('id', user.id)
-          .single();
-
-        // Supabase JOIN 결과는 단일 객체 또는 배열일 수 있음
-        const membersResult = profileData?.members;
-        let partValue: string | null = null;
-
-        if (Array.isArray(membersResult) && membersResult.length > 0) {
-          partValue = (membersResult[0] as { part: string })?.part ?? null;
-        } else if (membersResult && typeof membersResult === 'object' && 'part' in membersResult) {
-          partValue = (membersResult as { part: string }).part;
-        }
-
-        if (partValue) {
-          setUserPart(partValue);
-        }
-        setIsPartLoading(false);
-      }
-    }
-    fetchUserPart();
-  }, [profile, user]);
 
   const { data: membersData, isLoading: membersLoading } = useMembers({
     member_status: 'REGULAR',

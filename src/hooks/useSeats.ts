@@ -38,9 +38,9 @@ export function useUpdateSeats() {
 
       return response.json() as Promise<Seat[]>;
     },
-    onSuccess: (_, variables) => {
-      // 배치표 상세 쿼리 무효화 (좌석 정보 갱신)
-      queryClient.invalidateQueries({ queryKey: ['arrangements', variables.arrangementId] });
+    onSuccess: () => {
+      // 배치표 목록+상세 쿼리 모두 무효화 (prefix 매칭)
+      queryClient.invalidateQueries({ queryKey: ['arrangements'] });
     },
   });
 }

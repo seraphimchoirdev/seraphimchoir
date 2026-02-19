@@ -37,11 +37,11 @@ import { Input } from '@/components/ui/input';
 
 import { useUpdateArrangement } from '@/hooks/useArrangements';
 import { useAuth } from '@/hooks/useAuth';
-import { useImageGeneration } from '@/hooks/useImageGeneration';
+import { useImageExportHandlers } from '@/hooks/useImageExportHandlers';
 import { useUpdateSeats } from '@/hooks/useSeats';
 
 import { createLogger } from '@/lib/logger';
-import { showError, showInfo, showSuccess, showWarning } from '@/lib/toast';
+import { showError, showInfo, showSuccess } from '@/lib/toast';
 
 import { useArrangementDraftStore } from '@/store/arrangement-draft-store';
 import { useArrangementStore } from '@/store/arrangement-store';
@@ -69,8 +69,6 @@ export default function ArrangementHeader({
   const canRevertConfirmed = hasRole(['ADMIN', 'CONDUCTOR']);
   const updateArrangement = useUpdateArrangement();
   const updateSeats = useUpdateSeats();
-  const { isGenerating, downloadAsImage, copyToClipboard, shareImage, canShare, isMobile } =
-    useImageGeneration();
   const {
     assignments,
     gridLayout,
@@ -127,15 +125,6 @@ export default function ArrangementHeader({
 
   const statusBadge = getStatusBadge();
 
-  // 현재 활성화된 캡처 ref 선택 (뷰포트 기반)
-  const getActiveCaptureRef = useCallback(() => {
-    // lg breakpoint (1024px) 기준으로 데스크톱/모바일 구분
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      return desktopCaptureRef;
-    }
-    return mobileCaptureRef;
-  }, [desktopCaptureRef, mobileCaptureRef]);
-
   const [title, setTitle] = useState(arrangement.title);
   const [conductor, setConductor] = useState(arrangement.conductor || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -157,75 +146,18 @@ export default function ArrangementHeader({
     };
   }, []);
 
-  // 안전한 상태 업데이트 헬퍼 - 추후 필요 시 활성화
-  const _safeSetState = useCallback(
-    <T,>(setter: React.Dispatch<React.SetStateAction<T>>, value: T) => {
-      if (isMountedRef.current) {
-        setter(value);
-      }
-    },
-    []
-  );
-
-  // 이미지 내보내기 핸들러 (메모리 누수 방지 적용)
-  const handleDownloadImage = useCallback(async () => {
-    const captureRef = getActiveCaptureRef();
-    if (!captureRef?.current) {
-      showWarning('캡처할 영역을 찾을 수 없습니다.');
-      return;
-    }
-    try {
-      const filename = `배치표_${arrangement.date}_${title.replace(/\s+/g, '_')}`;
-      await downloadAsImage(captureRef.current, filename);
-      if (isMountedRef.current) {
-        showSuccess('이미지가 다운로드되었습니다.');
-      }
-    } catch (error) {
-      logger.error('이미지 다운로드 실패:', error);
-      if (isMountedRef.current) {
-        showError('이미지 다운로드에 실패했습니다.', handleDownloadImage);
-      }
-    }
-  }, [arrangement.date, title, downloadAsImage, getActiveCaptureRef]);
-
-  const handleCopyToClipboard = useCallback(async () => {
-    const captureRef = getActiveCaptureRef();
-    if (!captureRef?.current) {
-      showWarning('캡처할 영역을 찾을 수 없습니다.');
-      return;
-    }
-    try {
-      await copyToClipboard(captureRef.current);
-      if (isMountedRef.current) {
-        showSuccess('이미지가 클립보드에 복사되었습니다.');
-      }
-    } catch (error) {
-      logger.error('클립보드 복사 실패:', error);
-      if (isMountedRef.current) {
-        const message = error instanceof Error ? error.message : '클립보드 복사에 실패했습니다.';
-        showError(message);
-      }
-    }
-  }, [copyToClipboard, getActiveCaptureRef]);
-
-  const handleShareImage = useCallback(async () => {
-    const captureRef = getActiveCaptureRef();
-    if (!captureRef?.current) {
-      showWarning('캡처할 영역을 찾을 수 없습니다.');
-      return;
-    }
-    try {
-      const filename = `배치표_${arrangement.date}_${title.replace(/\s+/g, '_')}`;
-      await shareImage(captureRef.current, filename);
-      // 공유 성공 시 toast 불필요 (OS의 공유 UI가 표시됨)
-    } catch (error) {
-      logger.error('이미지 공유 실패:', error);
-      if (isMountedRef.current) {
-        const message = error instanceof Error ? error.message : '이미지 공유에 실패했습니다.';
-        showError(message);
-      }
-    }
-  }, [arrangement.date, title, shareImage, getActiveCaptureRef]);
+  // 이미지 내보내기 핸들러 (공통 훅 사용)
+  const { handleDownloadImage, handleCopyToClipboard, handleShareImage, isGenerating, canShare, isMobile } =
+    useImageExportHandlers({
+      getFilename: useCallback(
+        () => `배치표_${arrangement.date}_${title.replace(/\s+/g, '_')}`,
+        [arrangement.date, title]
+      ),
+      desktopCaptureRef,
+      mobileCaptureRef,
+      isMountedRef,
+      enableRetry: true,
+    });
 
   const handlePrint = useCallback(() => {
     window.print();
@@ -237,28 +169,40 @@ export default function ArrangementHeader({
     setConductor(arrangement.conductor || '');
   }, [arrangement]);
 
-  const handleSave = useCallback(async () => {
+  // ============================================
+  // 저장/편집완료/확정 공통 핸들러
+  // ============================================
+  interface SaveOptions {
+    newStatus?: ArrangementStatus;
+    extraFields?: Record<string, unknown>;
+    forceCompleteWorkflow?: boolean;
+    onAfterSave?: () => void;
+    successMessage: string;
+    retryCallback?: () => Promise<void>;
+  }
+
+  const saveArrangementWithSeats = useCallback(async (options: SaveOptions) => {
     setIsSaving(true);
     try {
-      // 1. Update Metadata and Grid Layout (워크플로우 상태 포함)
+      // 워크플로우 상태 구성
       const gridLayoutWithWorkflow = gridLayout
         ? {
             ...gridLayout,
-            workflowState: {
-              currentStep: workflow.currentStep,
-              completedSteps: Array.from(workflow.completedSteps),
-              isWizardMode: workflow.isWizardMode,
-            },
+            workflowState: options.forceCompleteWorkflow
+              ? {
+                  currentStep: 6,
+                  completedSteps: [1, 2, 3, 4, 5, 6],
+                  isWizardMode: workflow.isWizardMode,
+                }
+              : {
+                  currentStep: workflow.currentStep,
+                  completedSteps: Array.from(workflow.completedSteps),
+                  isWizardMode: workflow.isWizardMode,
+                },
           }
         : null;
 
-      // ⚠️ 순서 중요: seats를 먼저 저장한 후 arrangement를 저장
-      // updateArrangement의 onSuccess가 query를 invalidate하므로,
-      // seats가 아직 DELETE/INSERT 중일 때 refetch되면
-      // seats=[]인 상태를 읽어 AI 자동분배가 재실행되는 race condition 발생
-      // seats를 먼저 완료하면 refetch 시점에 항상 올바른 seats가 존재함
-
-      // 1. Update Seats (먼저)
+      // Seats 데이터 준비
       const seatsData = Object.values(assignments).map((a) => ({
         memberId: a.memberId,
         row: a.row,
@@ -267,12 +211,15 @@ export default function ArrangementHeader({
         isRowLeader: a.isRowLeader || false,
       }));
 
+      // ⚠️ 순서 중요: seats를 먼저 저장한 후 arrangement를 저장
+      // updateArrangement의 onSuccess가 query를 invalidate하므로,
+      // seats가 아직 DELETE/INSERT 중일 때 refetch되면
+      // seats=[]인 상태를 읽어 AI 자동분배가 재실행되는 race condition 발생
       await updateSeats.mutateAsync({
         arrangementId: arrangement.id,
         seats: seatsData,
       });
 
-      // 2. Update Arrangement metadata (seats 완료 후)
       await updateArrangement.mutateAsync({
         id: arrangement.id,
         data: {
@@ -280,20 +227,27 @@ export default function ArrangementHeader({
           conductor: conductor || null,
           grid_layout: gridLayoutWithWorkflow as Json,
           grid_rows: gridLayout?.rows || 6,
+          ...(options.newStatus ? { status: options.newStatus } : {}),
+          ...options.extraFields,
         },
       });
 
-      // 3. 저장 성공 시 draft 삭제
+      // 저장 성공 시 draft 삭제
       deleteDraft(arrangement.id);
-      logger.debug('Draft deleted after successful save');
+
+      // 후처리 콜백
+      options.onAfterSave?.();
 
       if (isMountedRef.current) {
-        showSuccess('저장되었습니다.');
+        showSuccess(options.successMessage);
       }
     } catch (error) {
       logger.error('저장 실패:', error);
       if (isMountedRef.current) {
-        showError('저장에 실패했습니다.', handleSave);
+        showError(
+          `${options.successMessage.replace('되었습니다.', '')}에 실패했습니다.`,
+          options.retryCallback
+        );
       }
     } finally {
       if (isMountedRef.current) {
@@ -311,6 +265,13 @@ export default function ArrangementHeader({
     deleteDraft,
     workflow,
   ]);
+
+  const handleSave = useCallback(async () => {
+    await saveArrangementWithSeats({
+      successMessage: '저장되었습니다.',
+      retryCallback: handleSave,
+    });
+  }, [saveArrangementWithSeats]);
 
   // 현재 단계만 초기화 - 다이얼로그 열기
   const handleResetCurrentStepClick = useCallback(() => {
@@ -355,78 +316,19 @@ export default function ArrangementHeader({
   // 편집 완료 (DRAFT → SHARED) - 실행
   const handleShare = useCallback(async () => {
     setShareDialog(false);
-    setIsSaving(true);
-    try {
-      // 먼저 현재 변경사항 저장 (워크플로우 상태 포함)
-      // 편집 완료 시 모든 단계를 강제 완료로 저장 (불완전한 completedSteps 방지)
-      const gridLayoutWithWorkflow = gridLayout
-        ? {
-            ...gridLayout,
-            workflowState: {
-              currentStep: 6,
-              completedSteps: [1, 2, 3, 4, 5, 6],
-              isWizardMode: workflow.isWizardMode,
-            },
-          }
-        : null;
-
-      await updateArrangement.mutateAsync({
-        id: arrangement.id,
-        data: {
-          title,
-          conductor: conductor || null,
-          grid_layout: gridLayoutWithWorkflow as Json,
-          grid_rows: gridLayout?.rows || 6,
-          status: 'SHARED',
-        },
-      });
-
-      const seatsData = Object.values(assignments).map((a) => ({
-        memberId: a.memberId,
-        row: a.row,
-        column: a.col,
-        part: a.part,
-        isRowLeader: a.isRowLeader || false,
-      }));
-
-      await updateSeats.mutateAsync({
-        arrangementId: arrangement.id,
-        seats: seatsData,
-      });
-
-      // 편집 완료 성공 시 draft 삭제
-      deleteDraft(arrangement.id);
-
-      // 편집 완료 시점 스냅샷 저장 (긴급 변동 추적용)
-      saveSharedSnapshot();
-
-      if (isMountedRef.current) {
-        showSuccess('편집이 완료되었습니다. 긴급 수정이 필요하면 언제든 수정할 수 있습니다.');
-        router.refresh();
-      }
-    } catch (error) {
-      logger.error('편집 완료 처리 실패:', error);
-      if (isMountedRef.current) {
-        showError('편집 완료 처리에 실패했습니다.', handleShare);
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setIsSaving(false);
-      }
-    }
-  }, [
-    arrangement.id,
-    title,
-    conductor,
-    gridLayout,
-    assignments,
-    updateArrangement,
-    updateSeats,
-    router,
-    deleteDraft,
-    workflow,
-    saveSharedSnapshot,
-  ]);
+    await saveArrangementWithSeats({
+      newStatus: 'SHARED',
+      forceCompleteWorkflow: true,
+      onAfterSave: () => {
+        saveSharedSnapshot();
+        if (isMountedRef.current) {
+          router.refresh();
+        }
+      },
+      successMessage: '편집이 완료되었습니다. 긴급 수정이 필요하면 언제든 수정할 수 있습니다.',
+      retryCallback: handleShare,
+    });
+  }, [saveArrangementWithSeats, saveSharedSnapshot, router]);
 
   // 확정하기 - 다이얼로그 열기
   const handleConfirmClick = useCallback(() => {
@@ -436,74 +338,19 @@ export default function ArrangementHeader({
   // 확정하기 (SHARED → CONFIRMED) - 실행
   const handleConfirmAction = useCallback(async () => {
     setConfirmDialog(false);
-    setIsSaving(true);
-    try {
-      // 워크플로우 상태 포함 (확정 시 모든 단계 강제 완료)
-      const gridLayoutWithWorkflow = gridLayout
-        ? {
-            ...gridLayout,
-            workflowState: {
-              currentStep: 6,
-              completedSteps: [1, 2, 3, 4, 5, 6],
-              isWizardMode: workflow.isWizardMode,
-            },
-          }
-        : null;
-
-      await updateArrangement.mutateAsync({
-        id: arrangement.id,
-        data: {
-          title,
-          conductor: conductor || null,
-          grid_layout: gridLayoutWithWorkflow as Json,
-          grid_rows: gridLayout?.rows || 6,
-          status: 'CONFIRMED',
-          is_published: true, // 레거시 호환성
-        },
-      });
-
-      const seatsData = Object.values(assignments).map((a) => ({
-        memberId: a.memberId,
-        row: a.row,
-        column: a.col,
-        part: a.part,
-        isRowLeader: a.isRowLeader || false,
-      }));
-
-      await updateSeats.mutateAsync({
-        arrangementId: arrangement.id,
-        seats: seatsData,
-      });
-
-      // 확정 성공 시 draft 삭제
-      deleteDraft(arrangement.id);
-
-      if (isMountedRef.current) {
-        showSuccess('자리배치표가 확정되었습니다.');
-        router.refresh();
-      }
-    } catch (error) {
-      logger.error('확정 실패:', error);
-      if (isMountedRef.current) {
-        showError('확정에 실패했습니다.', handleConfirmAction);
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setIsSaving(false);
-      }
-    }
-  }, [
-    arrangement.id,
-    title,
-    conductor,
-    gridLayout,
-    assignments,
-    updateArrangement,
-    updateSeats,
-    router,
-    deleteDraft,
-    workflow,
-  ]);
+    await saveArrangementWithSeats({
+      newStatus: 'CONFIRMED',
+      extraFields: { is_published: true },
+      forceCompleteWorkflow: true,
+      onAfterSave: () => {
+        if (isMountedRef.current) {
+          router.refresh();
+        }
+      },
+      successMessage: '자리배치표가 확정되었습니다.',
+      retryCallback: handleConfirmAction,
+    });
+  }, [saveArrangementWithSeats, router]);
 
   // 롤백 - 다이얼로그 열기
   const handleRevertClick = useCallback(() => {

@@ -79,7 +79,7 @@ export function useAttendances(filters?: AttendanceFilters) {
  */
 export function useAttendance(id: string | undefined) {
   return useQuery<Attendance>({
-    queryKey: ['attendance', id],
+    queryKey: ['attendances', id],
     queryFn: async () => {
       if (!id) throw new Error('ID가 필요합니다');
 
@@ -150,7 +150,7 @@ export function useUpdateAttendance() {
     },
     onSuccess: (_, variables) => {
       // 특정 출석 기록 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ['attendance', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['attendances', variables.id] });
       // 출석 현황 목록 캐시 무효화
       queryClient.invalidateQueries({ queryKey: ['attendances'] });
     },
