@@ -36,6 +36,12 @@ const bulkUpsertSchema = z.object({
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
+  // 인증 검사
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
+  }
+
   try {
     const json = await request.json();
     const { schedules } = bulkUpsertSchema.parse(json);

@@ -108,12 +108,17 @@ export function useEmergencyUnavailable({
 
   const handleEmergencyUnavailable = useCallback(
     async ({ memberId, memberName, part, row, col, processMode }: EmergencyUnavailableParams) => {
+      // ⭐ 스냅샷을 try 바깥에 선언하여 catch에서 접근 가능
+      let beforeSnapshot: {
+        assignments: ReturnType<typeof useArrangementStore.getState>['assignments'];
+        gridLayout: NonNullable<ReturnType<typeof useArrangementStore.getState>['gridLayout']>;
+      } | null = null;
       try {
         logger.debug(`[Emergency] 등단 불가 처리 시작: ${memberName}(${part}) at (${row}, ${col}) [${processMode}]`);
 
         // 0. ⭐ 되돌리기용 스냅샷 캡처 (상태 변경 전!)
         const snapshotState = useArrangementStore.getState();
-        const beforeSnapshot = {
+        beforeSnapshot = {
           assignments: { ...snapshotState.assignments },
           gridLayout: structuredClone(snapshotState.gridLayout!),
         };
@@ -279,6 +284,14 @@ export function useEmergencyUnavailable({
 
         return { beforeSnapshot };
       } catch (error) {
+        // ⭐ Store 롤백: DB-Store 불일치 방지
+        if (beforeSnapshot) {
+          useArrangementStore.setState({
+            assignments: beforeSnapshot.assignments,
+            gridLayout: beforeSnapshot.gridLayout,
+          });
+          logger.debug(`[Emergency] Store 롤백 완료 (등단 불가)`);
+        }
         const message = error instanceof Error ? error.message : '처리에 실패했습니다';
         logger.error(`[Emergency] 오류:`, error);
         onError?.(message);

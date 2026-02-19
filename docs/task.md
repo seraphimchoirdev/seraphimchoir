@@ -67,6 +67,11 @@
 
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
+### 2026-02-19
+
+- [x] **fix(security,store): API 인증 강화, Emergency 롤백 추가, CSRF 데드코드 삭제**
+  - 커밋: `9458cb7`
+
 ### 2026-02-14
 - [x] **fix(dashboard): getSession() → getUser()로 복원하여 보안 경고 해소**
   - 커밋: `516b368`

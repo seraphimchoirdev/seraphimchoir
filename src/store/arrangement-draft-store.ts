@@ -126,13 +126,24 @@ export const useArrangementDraftStore = create<DraftStore>()(
         }
 
         // 기존 7단계 데이터 호환: 6 초과 값을 클램프
-        if (draft.workflow.currentStep > 6) {
-          draft.workflow.currentStep = 6 as WorkflowStep;
-        }
-        draft.workflow.completedSteps = draft.workflow.completedSteps.filter(s => s <= 6) as WorkflowStep[];
-        draft.workflow.expandedSections = draft.workflow.expandedSections.filter(s => s <= 6) as WorkflowStep[];
+        // 원본 객체를 변조하지 않고 새 객체를 생성하여 Zustand 불변성 유지
+        const needsClamp = draft.workflow.currentStep > 6
+          || draft.workflow.completedSteps.some(s => s > 6)
+          || draft.workflow.expandedSections.some(s => s > 6);
 
-        return draft;
+        if (!needsClamp) {
+          return draft;
+        }
+
+        return {
+          ...draft,
+          workflow: {
+            ...draft.workflow,
+            currentStep: Math.min(draft.workflow.currentStep, 6) as WorkflowStep,
+            completedSteps: draft.workflow.completedSteps.filter(s => s <= 6) as WorkflowStep[],
+            expandedSections: draft.workflow.expandedSections.filter(s => s <= 6) as WorkflowStep[],
+          },
+        };
       },
 
       hasDraft: (arrangementId) => {

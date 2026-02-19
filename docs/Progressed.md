@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-19 | fix(security,store): API 인증 강화, Emergency 롤백 추가, CSRF 데드코드 삭제 |
 | 2026-02-14 | fix(dashboard): getSession() → getUser()로 복원하여 보안 경고 해소 |
 | 2026-02-14 | perf(dashboard): TTFB/FCP/CLS 성능 최적화 |
 | 2026-02-14 | fix(dashboard): 임원 대시보드 환영 메시지에서 소속 파트명 제거 |

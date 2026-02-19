@@ -390,6 +390,11 @@ interface ArrangementState {
   addEmergencyChange: (change: EmergencyChange) => void;
 
   /**
+   * 마지막 긴급 변동 정보를 읽기 전용으로 반환 (Store 미변경, peek)
+   */
+  getLastEmergencySnapshot: () => EmergencyChange | null;
+
+  /**
    * 마지막 긴급 변동 되돌리기 (로컬 상태만 복원). 제거된 EmergencyChange 반환
    */
   undoLastEmergencyChange: () => EmergencyChange | null;
@@ -1622,7 +1627,10 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         logger.debug(`총 ${totalCompacted}명 좌석 정리 완료`);
       }
 
-      return { assignments: newAssignments };
+      return {
+        assignments: newAssignments,
+        _history: saveToHistory(state),
+      };
     });
   },
 
@@ -2048,6 +2056,16 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         },
       };
     }),
+
+  /**
+   * 마지막 긴급 변동 정보를 읽기 전용으로 반환 (Store 미변경, peek)
+   */
+  getLastEmergencySnapshot: () => {
+    const state = get();
+    const { changes } = state.emergencyChanges;
+    if (changes.length === 0) return null;
+    return changes[changes.length - 1];
+  },
 
   /**
    * 마지막 긴급 변동 되돌리기 (로컬 상태 복원)

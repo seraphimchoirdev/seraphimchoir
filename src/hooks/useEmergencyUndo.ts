@@ -39,6 +39,7 @@ export function useEmergencyUndo({
   const updateSeats = useUpdateSeats();
 
   const undoLastEmergencyChange = useArrangementStore((state) => state.undoLastEmergencyChange);
+  const getLastEmergencySnapshot = useArrangementStore((state) => state.getLastEmergencySnapshot);
   const changes = useArrangementStore((state) => state.emergencyChanges.changes);
 
   // 출석 상태 복원 mutation
@@ -76,8 +77,8 @@ export function useEmergencyUndo({
 
   const handleUndo = useCallback(async () => {
     try {
-      // 마지막 변동 정보 확인 (제거 전)
-      const lastChange = changes[changes.length - 1];
+      // 1. 마지막 변동 정보를 peek (Store 미변경)
+      const lastChange = getLastEmergencySnapshot();
       if (!lastChange) {
         onError?.('되돌릴 변동이 없습니다');
         return;
@@ -90,37 +91,28 @@ export function useEmergencyUndo({
 
       logger.debug(`[Undo] 되돌리기 시작: ${lastChange.type} - ${lastChange.memberName}`);
 
-      // 1. 로컬 상태 복원 (store)
-      const removedChange = undoLastEmergencyChange();
-      if (!removedChange) {
-        onError?.('되돌릴 변동이 없습니다');
-        return;
-      }
-
-      // 2. 출석 상태 DB 복원
-      const restoreAvailable = removedChange.type === 'UNAVAILABLE'; // 등단 불가 → 등단 가능으로 복원
+      // 2. DB 복원 먼저 (실패 시 Store 변경 없이 종료)
+      const restoreAvailable = lastChange.type === 'UNAVAILABLE';
       await restoreAttendanceMutation.mutateAsync({
-        memberId: removedChange.memberId,
+        memberId: lastChange.memberId,
         isServiceAvailable: restoreAvailable,
       });
 
       // 3. 캐시 무효화
       await queryClient.invalidateQueries({ queryKey: ['attendances', { date }] });
 
-      // 4. 복원된 상태를 DB에 저장 (gridLayout + seats)
-      const restoredState = useArrangementStore.getState();
-      const { gridLayout, assignments } = restoredState;
-
-      if (gridLayout) {
+      // 4. beforeSnapshot 데이터로 DB에 저장 (gridLayout + seats)
+      const { beforeSnapshot } = lastChange;
+      if (beforeSnapshot.gridLayout) {
         await updateArrangement.mutateAsync({
           id: arrangementId,
           data: {
-            grid_layout: gridLayout as unknown as Json,
-            grid_rows: gridLayout.rows,
+            grid_layout: beforeSnapshot.gridLayout as unknown as Json,
+            grid_rows: beforeSnapshot.gridLayout.rows,
           },
         });
 
-        const seatsData = Object.values(assignments).map((a) => ({
+        const seatsData = Object.values(beforeSnapshot.assignments).map((a) => ({
           memberId: a.memberId,
           row: a.row,
           column: a.col,
@@ -134,7 +126,14 @@ export function useEmergencyUndo({
         });
       }
 
-      // 5. arrangements 캐시도 무효화
+      // 5. DB 성공 후에만 Store 복원 (undoLastEmergencyChange = Store 복원 + changes pop)
+      const removedChange = undoLastEmergencyChange();
+      if (!removedChange) {
+        onError?.('Store 복원에 실패했습니다');
+        return;
+      }
+
+      // 6. arrangements 캐시도 무효화
       await queryClient.invalidateQueries({ queryKey: ['arrangements'] });
 
       const typeLabel = removedChange.type === 'UNAVAILABLE' ? '등단 불가' : '등단 가능';
@@ -148,6 +147,7 @@ export function useEmergencyUndo({
     }
   }, [
     changes,
+    getLastEmergencySnapshot,
     undoLastEmergencyChange,
     restoreAttendanceMutation,
     queryClient,
