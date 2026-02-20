@@ -13,7 +13,7 @@ type MockQueryResult<T = unknown> = {
   count: number | null;
 };
 
-type MockSupabaseOverrides = {
+export type MockSupabaseOverrides = {
   selectData?: unknown;
   insertData?: unknown;
   updateData?: unknown;
@@ -23,7 +23,7 @@ type MockSupabaseOverrides = {
   rpcData?: unknown;
 };
 
-function createMockQueryBuilder(overrides: MockSupabaseOverrides = {}) {
+export function createMockQueryBuilder(overrides: MockSupabaseOverrides = {}) {
   const error = overrides.error
     ? { message: overrides.error.message, code: overrides.error.code ?? 'UNKNOWN' }
     : null;
@@ -91,6 +91,8 @@ function createMockQueryBuilder(overrides: MockSupabaseOverrides = {}) {
     for (const method of filterMethods) {
       result[method] = jest.fn().mockReturnValue(result);
     }
+    // select도 자기 자신을 반환하도록 설정 (insert().select().single() 패턴 지원)
+    result['select'] = jest.fn().mockReturnValue(result);
     return result;
   };
 

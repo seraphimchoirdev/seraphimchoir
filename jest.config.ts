@@ -27,7 +27,7 @@ const config: Config = {
   ],
 
   // 제외할 디렉토리
-  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
+  testPathIgnorePatterns: ['/node_modules/', '/.next/', '<rootDir>/src/__tests__/helpers/'],
 
   // Coverage 제외 패턴
   coveragePathIgnorePatterns: [
