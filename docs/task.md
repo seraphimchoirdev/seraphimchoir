@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-20
+- [x] **test: Phase 4 service-schedules CRUD + Hook 테스트 추가 (32 Suites, 404 Tests)**
+  - 커밋: `c1a8bdf`
+
 
 - [x] **test: Phase 2 통합 테스트 + Hook 테스트 추가 (22 Suites, 319 Tests)**
   - 커밋: `97924a5`
