@@ -1,0 +1,311 @@
+- generic [active] [ref=e1]:
+  - generic:
+    - generic:
+      - img "새로핌:On"
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - button [ref=e5]:
+          - img
+        - generic [ref=e7]:
+          - textbox [ref=e8]: 2월 15일 주일 2부 예배
+          - generic [ref=e9]: 편집완료
+          - generic [ref=e10]:
+            - img [ref=e11]
+            - text: 긴급 수정 가능
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - button "내보내기" [disabled]:
+            - img
+            - generic: 내보내기
+        - button "저장" [ref=e15]:
+          - img
+          - text: 저장
+        - button "수정하기" [ref=e16]:
+          - img
+          - generic [ref=e17]: 수정하기
+        - button "최종 확정" [disabled]:
+          - img
+          - text: 최종 확정
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - generic [ref=e22]:
+            - generic [ref=e23]: 자리배치 워크플로우
+            - button "가이드 모드" [ref=e24]:
+              - img
+              - generic [ref=e25]: 가이드 모드
+          - generic [ref=e26]:
+            - generic [ref=e27]:
+              - generic [ref=e28]:
+                - generic [ref=e29]: 가이드 모드
+                - generic [ref=e30]: 6 / 6 단계
+              - generic [ref=e31]:
+                - 'button "1단계: 줄 구성" [ref=e34] [cursor=pointer]':
+                  - generic [ref=e36]: "1"
+                  - generic [ref=e37]: 줄 구성
+                - 'button "2단계: 줄 정렬" [ref=e38] [cursor=pointer]':
+                  - generic [ref=e40]: "2"
+                  - generic [ref=e41]: 줄 정렬
+                - 'button "3단계: AI 배치" [ref=e42] [cursor=pointer]':
+                  - generic [ref=e44]: "3"
+                  - generic [ref=e45]: AI 배치
+                - 'button "4단계: 수동 조정" [ref=e46] [cursor=pointer]':
+                  - generic [ref=e48]: "4"
+                  - generic [ref=e49]: 수동 조정
+                - 'button "5단계: 줄반장" [ref=e50] [cursor=pointer]':
+                  - generic [ref=e52]: "5"
+                  - generic [ref=e53]: 줄반장
+                - 'button "6단계: 내보내기 (완료)" [ref=e54] [cursor=pointer]':
+                  - img [ref=e56]
+                  - generic [ref=e58]: 내보내기
+            - generic [ref=e59]:
+              - button "이전" [ref=e60]:
+                - img
+                - text: 이전
+              - generic [ref=e61]:
+                - button "다음" [disabled]:
+                  - text: 다음
+                  - img
+            - generic [ref=e62]:
+              - generic [ref=e63]:
+                - button "1 줄 구성 설정" [expanded] [ref=e64]:
+                  - generic [ref=e65]:
+                    - generic [ref=e66]: "1"
+                    - generic [ref=e67]: 줄 구성 설정
+                  - img [ref=e70]
+                - generic [ref=e74]:
+                  - generic [ref=e75]:
+                    - text: 줄 수
+                    - generic [ref=e76]:
+                      - spinbutton "줄 수" [ref=e77]: "6"
+                      - generic [ref=e78]: (4~8줄)
+                  - generic [ref=e79]:
+                    - text: 줄별 인원 수
+                    - generic [ref=e80]:
+                      - generic [ref=e81]:
+                        - generic [ref=e82]: "1줄:"
+                        - generic [ref=e83]:
+                          - button "1줄 인원 감소" [ref=e84]:
+                            - img [ref=e85]
+                          - textbox "1줄 인원 수" [ref=e86]: "8"
+                          - button "1줄 인원 증가" [ref=e87]:
+                            - img [ref=e88]
+                        - generic [ref=e89]: 명
+                      - generic [ref=e90]:
+                        - generic [ref=e91]: "2줄:"
+                        - generic [ref=e92]:
+                          - button "2줄 인원 감소" [ref=e93]:
+                            - img [ref=e94]
+                          - textbox "2줄 인원 수" [ref=e95]: "8"
+                          - button "2줄 인원 증가" [ref=e96]:
+                            - img [ref=e97]
+                        - generic [ref=e98]: 명
+                      - generic [ref=e99]:
+                        - generic [ref=e100]: "3줄:"
+                        - generic [ref=e101]:
+                          - button "3줄 인원 감소" [ref=e102]:
+                            - img [ref=e103]
+                          - textbox "3줄 인원 수" [ref=e104]: "8"
+                          - button "3줄 인원 증가" [ref=e105]:
+                            - img [ref=e106]
+                        - generic [ref=e107]: 명
+                      - generic [ref=e108]:
+                        - generic [ref=e109]: "4줄:"
+                        - generic [ref=e110]:
+                          - button "4줄 인원 감소" [ref=e111]:
+                            - img [ref=e112]
+                          - textbox "4줄 인원 수" [ref=e113]: "8"
+                          - button "4줄 인원 증가" [ref=e114]:
+                            - img [ref=e115]
+                        - generic [ref=e116]: 명
+                      - generic [ref=e117]:
+                        - generic [ref=e118]: "5줄:"
+                        - generic [ref=e119]:
+                          - button "5줄 인원 감소" [ref=e120]:
+                            - img [ref=e121]
+                          - textbox "5줄 인원 수" [ref=e122]: "8"
+                          - button "5줄 인원 증가" [ref=e123]:
+                            - img [ref=e124]
+                        - generic [ref=e125]: 명
+                      - generic [ref=e126]:
+                        - generic [ref=e127]: "6줄:"
+                        - generic [ref=e128]:
+                          - button "6줄 인원 감소" [ref=e129]:
+                            - img [ref=e130]
+                          - textbox "6줄 인원 수" [ref=e131]: "8"
+                          - button "6줄 인원 증가" [ref=e132]:
+                            - img [ref=e133]
+                        - generic [ref=e134]: 명
+                  - generic [ref=e135]:
+                    - generic [ref=e136]:
+                      - generic [ref=e137]: "총 좌석:"
+                      - generic [ref=e138]: 48개
+                    - paragraph [ref=e139]: ⚠ 출석 인원(97명)과 총 좌석(48개)이 일치하지 않습니다
+              - button "2 줄 정렬 조정" [ref=e141]:
+                - generic [ref=e142]:
+                  - generic [ref=e143]: "2"
+                  - generic [ref=e144]: 줄 정렬 조정
+                - img [ref=e147]
+              - button "3 AI 자동배치" [ref=e150]:
+                - generic [ref=e151]:
+                  - generic [ref=e152]: "3"
+                  - generic [ref=e153]: AI 자동배치
+                - img [ref=e156]
+              - button "4 수동 배치 조정" [ref=e159]:
+                - generic [ref=e160]:
+                  - generic [ref=e161]: "4"
+                  - generic [ref=e162]: 수동 배치 조정
+                - img [ref=e165]
+              - button "5 줄반장 지정" [ref=e168]:
+                - generic [ref=e169]:
+                  - generic [ref=e170]: "5"
+                  - generic [ref=e171]: 줄반장 지정
+                - img [ref=e174]
+              - button "내보내기 및 확정 완료" [ref=e177]:
+                - generic [ref=e178]:
+                  - img [ref=e180]
+                  - generic [ref=e182]: 내보내기 및 확정
+                - generic [ref=e183]:
+                  - generic [ref=e184]: 완료
+                  - img [ref=e186]
+        - button "워크플로우 패널 접기" [ref=e188]:
+          - img
+      - generic [ref=e190]:
+        - generic [ref=e191]:
+          - generic [ref=e192]:
+            - generic [ref=e193]: 새로핌찬양대 등단 자리표
+            - generic [ref=e194]: 2026년 2월 15일 주일예배
+          - generic [ref=e195]:
+            - generic [ref=e196]:
+              - generic [ref=e197]: 1열
+              - generic [ref=e198]:
+                - button "1열 1번" [ref=e199]:
+                  - generic: "1"
+                  - generic: 빈 좌석
+                - button "1열 2번" [ref=e200]:
+                  - generic: "2"
+                  - generic: 빈 좌석
+                - button "1열 3번" [ref=e201]:
+                  - generic: "3"
+                  - generic: 빈 좌석
+                - button "1열 4번" [ref=e202]:
+                  - generic: "4"
+                  - generic: 빈 좌석
+                - button "1열 5번" [ref=e203]:
+                  - generic: "5"
+                  - generic: 빈 좌석
+                - button "1열 6번" [ref=e204]:
+                  - generic: "6"
+                  - generic: 빈 좌석
+                - button "1열 7번" [ref=e205]:
+                  - generic: "7"
+                  - generic: 빈 좌석
+                - button "1열 8번" [ref=e206]:
+                  - generic: "8"
+                  - generic: 빈 좌석
+            - generic [ref=e207]:
+              - generic [ref=e208]: 2열
+              - generic [ref=e209]:
+                - button "2열 1번" [ref=e210]:
+                  - generic: "1"
+                  - generic: 빈 좌석
+                - button "2열 2번" [ref=e211]:
+                  - generic: "2"
+                  - generic: 빈 좌석
+                - button "2열 3번" [ref=e212]:
+                  - generic: "3"
+                  - generic: 빈 좌석
+                - button "2열 4번" [ref=e213]:
+                  - generic: "4"
+                  - generic: 빈 좌석
+                - button "2열 5번" [ref=e214]:
+                  - generic: "5"
+                  - generic: 빈 좌석
+                - button "2열 6번" [ref=e215]:
+                  - generic: "6"
+                  - generic: 빈 좌석
+                - button "2열 7번" [ref=e216]:
+                  - generic: "7"
+                  - generic: 빈 좌석
+                - button "2열 8번" [ref=e217]:
+                  - generic: "8"
+                  - generic: 빈 좌석
+            - generic [ref=e218]:
+              - generic [ref=e219]: 3열
+              - generic [ref=e220]:
+                - button "3열 1번" [ref=e221]:
+                  - generic: "1"
+                  - generic: 빈 좌석
+                - button "3열 2번" [ref=e222]:
+                  - generic: "2"
+                  - generic: 빈 좌석
+                - button "3열 3번" [ref=e223]:
+                  - generic: "3"
+                  - generic: 빈 좌석
+                - button "3열 4번" [ref=e224]:
+                  - generic: "4"
+                  - generic: 빈 좌석
+                - button "3열 5번" [ref=e225]:
+                  - generic: "5"
+                  - generic: 빈 좌석
+                - button "3열 6번" [ref=e226]:
+                  - generic: "6"
+                  - generic: 빈 좌석
+                - button "3열 7번" [ref=e227]:
+                  - generic: "7"
+                  - generic: 빈 좌석
+                - button "3열 8번" [ref=e228]:
+                  - generic: "8"
+                  - generic: 빈 좌석
+            - generic [ref=e229]:
+              - generic [ref=e230]: 4열
+              - generic [ref=e231]:
+                - button "4열 1번" [ref=e232]:
+                  - generic: "1"
+                  - generic: 빈 좌석
+                - button "4열 2번" [ref=e233]:
+                  - generic: "2"
+                  - generic: 빈 좌석
+                - button "4열 3번" [ref=e234]:
+                  - generic: "3"
+                  - generic: 빈 좌석
+                - button "4열 4번" [ref=e235]:
+                  - generic: "4"
+                  - generic: 빈 좌석
+                - button "4열 5번" [ref=e236]:
+                  - generic: "5"
+                  - generic: 빈 좌석
+                - button "4열 6번" [ref=e237]:
+                  - generic: "6"
+                  - generic: 빈 좌석
+                - button "4열 7번" [ref=e238]:
+                  - generic: "7"
+                  - generic: 빈 좌석
+                - button "4열 8번" [ref=e239]:
+                  - generic: "8"
+                  - generic: 빈 좌석
+          - generic [ref=e241]: 지휘자
+          - generic [ref=e242]:
+            - generic [ref=e243]:
+              - generic [ref=e244]:
+                - text: S
+                - generic [ref=e245]: ": 0명"
+              - generic [ref=e246]:
+                - text: A
+                - generic [ref=e247]: ": 0명"
+              - generic [ref=e248]:
+                - text: T
+                - generic [ref=e249]: ": 0명"
+              - generic [ref=e250]:
+                - text: B
+                - generic [ref=e251]: ": 0명"
+            - generic [ref=e252]: "총 등단 인원: 0명"
+        - generic [ref=e253]:
+          - paragraph [ref=e254]: "* 대원을 클릭하여 선택한 후, 좌석을 클릭하여 배치하세요"
+          - paragraph [ref=e255]: "좌석: 32개 | 줄: 4줄"
+          - paragraph [ref=e256]: "선택 취소: 같은 대원을 다시 클릭 | 제거: 좌석 더블 클릭"
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e262] [cursor=pointer]:
+    - img [ref=e263]
+  - alert [ref=e266]

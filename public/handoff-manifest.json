@@ -1,6 +1,22 @@
 {
   "files": [
     {
+      "filename": "2026-02-14.md",
+      "date": "2026-02-14",
+      "title": "AI Context Handoff",
+      "project": "SeraphimON (새로핌ON)",
+      "size": 5662,
+      "modifiedAt": "2026-02-19T05:37:01.422Z"
+    },
+    {
+      "filename": "2026-02-12.md",
+      "date": "2026-02-12",
+      "title": "AI Context Handoff",
+      "project": "SeraphimON (새로핌ON)",
+      "size": 5739,
+      "modifiedAt": "2026-02-19T05:39:36.143Z"
+    },
+    {
       "filename": "2026-02-10.md",
       "date": "2026-02-10",
       "title": "AI Context Handoff",
@@ -281,6 +297,6 @@
       "modifiedAt": "2026-01-25T14:13:17.525Z"
     }
   ],
-  "generatedAt": "2026-02-14T01:11:24.479Z",
-  "totalCount": 35
+  "generatedAt": "2026-02-19T07:37:39.512Z",
+  "totalCount": 37
 }

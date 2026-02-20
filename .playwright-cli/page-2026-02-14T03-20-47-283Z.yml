@@ -1,0 +1,717 @@
+- generic:
+  - generic:
+    - generic:
+      - img
+  - generic:
+    - generic:
+      - generic:
+        - button:
+          - img
+        - generic:
+          - generic:
+            - textbox: 2월 15일 주일 2부 예배
+            - generic: 편집완료
+            - generic:
+              - img
+              - text: 긴급 수정 가능
+      - generic:
+        - generic:
+          - button:
+            - img
+            - generic: 내보내기
+        - button:
+          - img
+          - text: 저장
+        - button:
+          - img
+          - generic: 수정하기
+        - button:
+          - img
+          - text: 최종 확정
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic: 자리배치 워크플로우
+              - button:
+                - img
+                - generic: 가이드 모드
+          - generic:
+            - generic:
+              - generic:
+                - generic: 가이드 모드
+                - generic: 6 / 6 단계
+              - generic:
+                - button:
+                  - generic:
+                    - img
+                  - generic: 줄 구성
+                - button:
+                  - generic:
+                    - img
+                  - generic: 줄 정렬
+                - button:
+                  - generic:
+                    - img
+                  - generic: AI 배치
+                - button:
+                  - generic:
+                    - img
+                  - generic: 수동 조정
+                - button:
+                  - generic:
+                    - img
+                  - generic: 줄반장
+                - button:
+                  - generic:
+                    - img
+                  - generic: 내보내기
+            - generic:
+              - button:
+                - img
+                - text: 이전
+              - generic:
+                - button [disabled]:
+                  - text: 다음
+                  - img
+            - generic:
+              - generic:
+                - button:
+                  - generic:
+                    - generic:
+                      - img
+                    - generic: 줄 구성 설정
+                  - generic:
+                    - generic: 완료
+                    - generic:
+                      - img
+              - generic:
+                - button:
+                  - generic:
+                    - generic:
+                      - img
+                    - generic: 줄 정렬 조정
+                  - generic:
+                    - generic: 완료
+                    - generic:
+                      - img
+              - generic:
+                - button:
+                  - generic:
+                    - generic:
+                      - img
+                    - generic: AI 자동배치
+                  - generic:
+                    - generic: 완료
+                    - generic:
+                      - img
+              - generic:
+                - button:
+                  - generic:
+                    - generic:
+                      - img
+                    - generic: 수동 배치 조정
+                  - generic:
+                    - generic: 완료
+                    - generic:
+                      - img
+              - generic:
+                - button:
+                  - generic:
+                    - generic:
+                      - img
+                    - generic: 줄반장 지정
+                  - generic:
+                    - generic: 완료
+                    - generic:
+                      - img
+              - generic:
+                - button [expanded]:
+                  - generic:
+                    - generic:
+                      - img
+                    - generic: 내보내기 및 확정
+                  - generic:
+                    - generic: 완료
+                    - generic:
+                      - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - paragraph: 이미지 내보내기
+                        - paragraph: 완성된 배치표를 이미지로 내보내세요.
+                        - generic:
+                          - button:
+                            - img
+                            - text: 이미지 공유하기
+                          - button:
+                            - img
+                            - text: PNG 다운로드
+                          - button:
+                            - img
+                            - text: 클립보드 복사
+                      - generic:
+                        - paragraph: 편집 완료
+                        - paragraph: 편집이 완료되면 상단 헤더의 버튼으로 잠그세요. 편집 완료 후에도 긴급 수정은 가능합니다.
+                        - paragraph:
+                          - img
+                          - text: 상단의 '최종 확정' 버튼으로 최종 확정할 수 있습니다.
+        - button:
+          - img
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic: 새로핌찬양대 등단 자리표
+              - generic: 2026년 2월 15일 주일 2부 예배
+              - generic:
+                - img
+                - text: 주 하나님 앞에
+              - generic: "봉헌송: 김지혜"
+            - generic:
+              - generic:
+                - generic: 1열
+                - generic:
+                  - generic:
+                    - button [pressed]:
+                      - generic: "1"
+                      - generic:
+                        - generic: 이은혜
+                  - generic:
+                    - button:
+                      - generic: "2"
+                      - generic:
+                        - generic: 추민아
+                  - generic:
+                    - button:
+                      - generic: "3"
+                      - generic:
+                        - generic: 김지혜
+                  - generic:
+                    - button:
+                      - generic: "4"
+                      - generic:
+                        - generic: 김문희
+                  - generic:
+                    - button:
+                      - generic: "5"
+                      - generic:
+                        - generic: 이승숙
+                  - generic:
+                    - button:
+                      - generic: "6"
+                      - generic:
+                        - generic: 김정희
+                  - generic:
+                    - button:
+                      - generic: "7"
+                      - generic:
+                        - generic: 김혜선
+                  - generic:
+                    - button:
+                      - generic: "8"
+                      - generic:
+                        - generic: 김향숙
+                  - generic:
+                    - button:
+                      - generic: "9"
+                      - generic:
+                        - generic: 김지영
+                        - generic:
+                          - img
+                  - generic:
+                    - button:
+                      - generic: "10"
+                      - generic:
+                        - generic: 심희숙
+                        - generic:
+                          - img
+                  - generic:
+                    - button:
+                      - generic: "11"
+                      - generic:
+                        - generic: 강혜선
+                  - generic:
+                    - button:
+                      - generic: "12"
+                      - generic:
+                        - generic: 민은홍
+                  - generic:
+                    - button:
+                      - generic: "13"
+                      - generic:
+                        - generic: 최연희
+                  - generic:
+                    - button:
+                      - generic: "14"
+                      - generic:
+                        - generic: 최명희
+                  - generic:
+                    - button:
+                      - generic: "15"
+                      - generic:
+                        - generic: 김수영
+                - generic: "15"
+              - generic:
+                - generic: 2열
+                - generic:
+                  - generic:
+                    - button:
+                      - generic: "1"
+                      - generic:
+                        - generic: 임신애
+                  - generic:
+                    - button:
+                      - generic: "2"
+                      - generic:
+                        - generic: 오연분
+                  - generic:
+                    - button:
+                      - generic: "3"
+                      - generic:
+                        - generic: 이광숙
+                  - generic:
+                    - button:
+                      - generic: "4"
+                      - generic:
+                        - generic: 정유정
+                  - generic:
+                    - button:
+                      - generic: "5"
+                      - generic:
+                        - generic: 김민식
+                  - generic:
+                    - button:
+                      - generic: "6"
+                      - generic:
+                        - generic: 신수정
+                  - generic:
+                    - button:
+                      - generic: "7"
+                      - generic:
+                        - generic: 방진경
+                  - generic:
+                    - button:
+                      - generic: "8"
+                      - generic:
+                        - generic: 이영란
+                  - generic:
+                    - button:
+                      - generic: "9"
+                      - generic:
+                        - generic: 이선미
+                  - generic:
+                    - button:
+                      - generic: "10"
+                      - generic:
+                        - generic: 이윤옥
+                  - generic:
+                    - button:
+                      - generic: "11"
+                      - generic:
+                        - generic: 이혜연
+                  - generic:
+                    - button:
+                      - generic: "12"
+                      - generic:
+                        - generic: 이은주
+                  - generic:
+                    - button:
+                      - generic: "13"
+                      - generic:
+                        - generic: 김희진
+                  - generic:
+                    - button:
+                      - generic: "14"
+                      - generic:
+                        - generic: 최유진
+                  - generic:
+                    - button:
+                      - generic: "15"
+                      - generic:
+                        - generic: 이지영
+                - generic: "15"
+              - generic:
+                - generic: 3열
+                - generic:
+                  - generic:
+                    - button:
+                      - generic: "1"
+                      - generic:
+                        - generic: 고연주
+                  - generic:
+                    - button:
+                      - generic: "2"
+                      - generic:
+                        - generic: 이선아
+                  - generic:
+                    - button:
+                      - generic: "3"
+                      - generic:
+                        - generic: 노은숙
+                  - generic:
+                    - button:
+                      - generic: "4"
+                      - generic:
+                        - generic: 오신영
+                  - generic:
+                    - button:
+                      - generic: "5"
+                      - generic:
+                        - generic: 임서연
+                  - generic:
+                    - button:
+                      - generic: "6"
+                      - generic:
+                        - generic: 손기순
+                  - generic:
+                    - button:
+                      - generic: "7"
+                      - generic:
+                        - generic: 문희
+                  - generic:
+                    - button:
+                      - generic: "8"
+                      - generic:
+                        - generic: 최해경
+                        - generic:
+                          - img
+                  - generic:
+                    - button:
+                      - generic: "9"
+                      - generic:
+                        - generic: 김은영
+                        - generic:
+                          - img
+                  - generic:
+                    - button:
+                      - generic: "10"
+                      - generic:
+                        - generic: 최승운
+                  - generic:
+                    - button:
+                      - generic: "11"
+                      - generic:
+                        - generic: 김이정
+                  - generic:
+                    - button:
+                      - generic: "12"
+                      - generic:
+                        - generic: 전신영
+                  - generic:
+                    - button:
+                      - generic: "13"
+                      - generic:
+                        - generic: 염용주
+                  - generic:
+                    - button:
+                      - generic: "14"
+                      - generic:
+                        - generic: 안은희
+                - generic: "14"
+              - generic:
+                - generic: 4열
+                - generic:
+                  - generic:
+                    - button:
+                      - generic: "1"
+                      - generic:
+                        - generic: 이문형
+                  - generic:
+                    - button:
+                      - generic: "2"
+                      - generic:
+                        - generic: 서헌숙
+                  - generic:
+                    - button:
+                      - generic: "3"
+                      - generic:
+                        - generic: 홍영은
+                  - generic:
+                    - button:
+                      - generic: "4"
+                      - generic:
+                        - generic: 이강봉
+                  - generic:
+                    - button:
+                      - generic: "5"
+                      - generic:
+                        - generic: 김한빛
+                  - generic:
+                    - button:
+                      - generic: "6"
+                      - generic:
+                        - generic: 안강현
+                  - generic:
+                    - button:
+                      - generic: "7"
+                      - generic:
+                        - generic: 권인영
+                  - generic:
+                    - button:
+                      - generic: "8"
+                      - generic:
+                        - generic: 김철우
+                        - generic:
+                          - img
+                  - generic:
+                    - button:
+                      - generic: "9"
+                      - generic:
+                        - generic: 박재용
+                  - generic:
+                    - button:
+                      - generic: "10"
+                      - generic:
+                        - generic: 남승호
+                  - generic:
+                    - button:
+                      - generic: "11"
+                      - generic:
+                        - generic: 변소정
+                  - generic:
+                    - button:
+                      - generic: "12"
+                      - generic:
+                        - generic: 백성원
+                  - generic:
+                    - button:
+                      - generic: "13"
+                      - generic:
+                        - generic: 김예슬
+                  - generic:
+                    - button:
+                      - generic: "14"
+                      - generic:
+                        - generic: 황선이
+                - generic: "14"
+              - generic:
+                - generic: 5열
+                - generic:
+                  - generic:
+                    - button:
+                      - generic: "1"
+                      - generic:
+                        - generic: 김진희
+                  - generic:
+                    - button:
+                      - generic: "2"
+                      - generic:
+                        - generic: 오흥철
+                  - generic:
+                    - button:
+                      - generic: "3"
+                      - generic:
+                        - generic: 장창대
+                  - generic:
+                    - button:
+                      - generic: "4"
+                      - generic:
+                        - generic: 정진문
+                  - generic:
+                    - button:
+                      - generic: "5"
+                      - generic:
+                        - generic: 최광열
+                        - generic:
+                          - img
+                  - generic:
+                    - button:
+                      - generic: "6"
+                      - generic:
+                        - generic: 김성휘
+                        - generic:
+                          - img
+                  - generic:
+                    - button:
+                      - generic: "7"
+                      - generic:
+                        - generic: 이규락
+                  - generic:
+                    - button:
+                      - generic: "8"
+                      - generic:
+                        - generic: 김창동
+                  - generic:
+                    - button:
+                      - generic: "9"
+                      - generic:
+                        - generic: 이경진
+                  - generic:
+                    - button:
+                      - generic: "10"
+                      - generic:
+                        - generic: 이원섭
+                  - generic:
+                    - button:
+                      - generic: "11"
+                      - generic:
+                        - generic: 문승현
+                - generic: "11"
+              - generic:
+                - generic: 6열
+                - generic:
+                  - generic:
+                    - button:
+                      - generic: "1"
+                      - generic:
+                        - generic: 백한나
+                  - generic:
+                    - button:
+                      - generic: "2"
+                      - generic:
+                        - generic: 김학영
+                  - generic:
+                    - button:
+                      - generic: "3"
+                      - generic:
+                        - generic: 배사무엘
+                  - generic:
+                    - button:
+                      - generic: "4"
+                      - generic:
+                        - generic: 김상목
+                  - generic:
+                    - button:
+                      - generic: "5"
+                      - generic:
+                        - generic: 이승균
+                  - generic:
+                    - button:
+                      - generic: "6"
+                      - generic:
+                        - generic: 임찬섭
+                        - generic:
+                          - img
+                  - generic:
+                    - button:
+                      - generic: "7"
+                      - generic:
+                        - generic: 윤종흔
+                  - generic:
+                    - button:
+                      - generic: "8"
+                      - generic:
+                        - generic: 안형준
+                  - generic:
+                    - button:
+                      - generic: "9"
+                      - generic:
+                        - generic: 하범
+                  - generic:
+                    - button:
+                      - generic: "10"
+                      - generic:
+                        - generic: 김택훈
+                - generic: "10"
+            - generic:
+              - generic: 지휘자
+            - generic:
+              - generic:
+                - generic:
+                  - text: S
+                  - generic: ": 30명"
+                - generic:
+                  - text: A
+                  - generic: ": 22명"
+                - generic:
+                  - text: T
+                  - generic: ": 13명"
+                - generic:
+                  - text: B
+                  - generic: ": 14명"
+              - generic: "총 등단 인원: 79명"
+          - generic:
+            - paragraph: "* 대원을 클릭하여 선택한 후, 좌석을 클릭하여 배치하세요"
+            - paragraph: "좌석: 79개 | 줄: 6줄"
+            - paragraph: "선택 취소: 같은 대원을 다시 클릭 | 제거: 좌석 더블 클릭"
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e262] [cursor=pointer]:
+    - img [ref=e263]
+  - alert
+  - dialog "긴급 등단 불가 처리" [ref=e516]:
+    - generic [ref=e517]:
+      - heading "긴급 등단 불가 처리" [level=2] [ref=e518]:
+        - img [ref=e519]
+        - text: 긴급 등단 불가 처리
+      - paragraph [ref=e521]: 처리 방식을 선택하고 예상 변동 사항을 확인하세요.
+    - generic [ref=e522]:
+      - generic [ref=e523]:
+        - generic [ref=e524]: "대상:"
+        - generic [ref=e525]: 이은혜
+        - generic [ref=e526]: 소프라노
+      - generic [ref=e527]:
+        - generic [ref=e528]: "현재 위치:"
+        - generic [ref=e529]: 1행 1열
+    - generic [ref=e530]:
+      - heading "처리 방식 선택" [level=4] [ref=e531]
+      - generic [ref=e532]:
+        - button "빈 자리 유지 자리만 비우고 이동 없음 (0명 이동)" [active] [ref=e533]:
+          - generic [ref=e536]: 빈 자리 유지
+          - generic [ref=e537]: 자리만 비우고 이동 없음
+          - generic [ref=e538]: (0명 이동)
+        - button "기본 ← 자동 당기기 같은 파트만 당김 (8명 이동)" [ref=e539]:
+          - img [ref=e541]
+          - generic [ref=e543]: 기본
+          - generic [ref=e547]: ←
+          - generic [ref=e549]: 자동 당기기
+          - generic [ref=e550]: 같은 파트만 당김
+          - generic [ref=e551]: (8명 이동)
+        - button "수동 처리 직접 좌석 조정 (0명 이동)" [ref=e552]:
+          - img [ref=e554]
+          - generic [ref=e557]: 수동 처리
+          - generic [ref=e558]: 직접 좌석 조정
+          - generic [ref=e559]: (0명 이동)
+    - generic [ref=e560]:
+      - heading "예상 변동 사항" [level=4] [ref=e561]
+      - generic [ref=e563]:
+        - generic [ref=e564]:
+          - generic [ref=e565]:
+            - img [ref=e567]
+            - generic [ref=e568]: "이은혜(S) 제거: 1행 1열 → 미배치"
+          - generic [ref=e569]:
+            - img [ref=e571]
+            - generic [ref=e574]: "추민아(S) 이동: 1행 2열 → 1행 1열"
+          - generic [ref=e575]:
+            - img [ref=e577]
+            - generic [ref=e580]: "김지혜(S) 이동: 1행 3열 → 1행 2열"
+          - generic [ref=e581]:
+            - img [ref=e583]
+            - generic [ref=e586]: "김문희(S) 이동: 1행 4열 → 1행 3열"
+          - generic [ref=e587]:
+            - img [ref=e589]
+            - generic [ref=e592]: "이승숙(S) 이동: 1행 5열 → 1행 4열"
+          - generic [ref=e593]:
+            - img [ref=e595]
+            - generic [ref=e598]: "김정희(S) 이동: 1행 6열 → 1행 5열"
+          - generic [ref=e599]:
+            - img [ref=e601]
+            - generic [ref=e604]: "김혜선(S) 이동: 1행 7열 → 1행 6열"
+          - generic [ref=e605]:
+            - img [ref=e607]
+            - generic [ref=e610]: "김향숙(S) 이동: 1행 8열 → 1행 7열"
+          - generic [ref=e611]:
+            - img [ref=e613]
+            - generic [ref=e616]: "김지영(S) 이동: 1행 9열 → 1행 8열"
+          - generic [ref=e617]:
+            - img [ref=e619]
+            - generic [ref=e620]: "1행 용량: 15석 → 14석 (왼쪽 파트 축소)"
+        - generic [ref=e622]:
+          - generic [ref=e623]: •
+          - generic [ref=e624]: "1행 용량: 15석"
+          - img [ref=e625]
+          - generic [ref=e627]: 14석
+        - generic [ref=e628]:
+          - img [ref=e629]
+          - generic [ref=e631]: "이동 인원: 8명"
+    - generic [ref=e632]:
+      - img [ref=e633]
+      - generic [ref=e635]: 출석 상태도 '등단 불가'로 변경됩니다.
+    - generic [ref=e636]:
+      - button "취소" [ref=e637]
+      - button "적용하기" [ref=e638]
+    - button "Close" [ref=e639]:
+      - img [ref=e640]
+      - generic [ref=e643]: Close

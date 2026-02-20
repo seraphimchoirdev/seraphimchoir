@@ -552,24 +552,6 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     }
   }, [totalMembers, dbHasData, gridLayout, setGridLayout, initialLoadDone]);
 
-  if (isLoading || authLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  if (error || !arrangement) {
-    return (
-      <div className="p-8">
-        <Alert variant="error">
-          <AlertDescription>{error?.message || '배치표를 찾을 수 없습니다.'}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   // 현재 적용된 줄 정렬 프리셋 감지 (Step 2 공통)
   const getActivePresetId = useCallback((): string | null => {
     const rows = gridLayout?.rows ?? 0;
@@ -589,6 +571,24 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     }
     return null;
   }, [gridLayout?.rows, gridLayout?.rowOffsets]);
+
+  if (isLoading || authLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error || !arrangement) {
+    return (
+      <div className="p-8">
+        <Alert variant="error">
+          <AlertDescription>{error?.message || '배치표를 찾을 수 없습니다.'}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   // ============================================
   // 워크플로우 단계별 컨텐츠 렌더링

@@ -1,0 +1,30 @@
+- generic [active] [ref=e1]:
+  - generic:
+    - generic:
+      - img "새로핌:On"
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - heading "로그인" [level=2] [ref=e5]
+      - paragraph [ref=e6]: 새로핌On에 오신 것을 환영합니다
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - paragraph [ref=e9]: 찬양대원이신가요? 카카오로 간편하게 로그인하세요
+        - button "카카오 로그인" [ref=e10]:
+          - img
+          - text: 카카오 로그인
+      - generic [ref=e15]: 또는
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - text: 이메일
+          - textbox "이메일" [ref=e19]:
+            - /placeholder: name@example.com
+        - generic [ref=e20]:
+          - text: 비밀번호
+          - textbox "비밀번호" [ref=e21]:
+            - /placeholder: ••••••••
+      - button "로그인" [ref=e23]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e29] [cursor=pointer]:
+    - img [ref=e30]
+  - alert [ref=e33]
