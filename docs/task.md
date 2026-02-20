@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-20
+- [x] **test: Phase 6 커버리지 부스트 + 신규 유틸/API 테스트 (44 Suites, 582 Tests, 81.49% Stmt)**
+  - 커밋: `0b4b59e`
+
 - [x] **test: Phase 4 service-schedules CRUD + Hook 테스트 추가 (32 Suites, 404 Tests)**
   - 커밋: `c1a8bdf`
 

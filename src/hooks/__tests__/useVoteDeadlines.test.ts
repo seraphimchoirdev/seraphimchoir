@@ -1,17 +1,67 @@
 /**
- * useVoteDeadlines 순수 유틸 함수 테스트
+ * useVoteDeadlines 테스트
  *
- * Hook 자체는 Supabase client를 직접 사용하므로 모킹이 복잡합니다.
- * 대신, 하단에 export된 순수 유틸 함수 4개를 테스트합니다.
- * 이들은 모킹 불필요하고 ROI가 높습니다.
+ * - 하단 순수 유틸 함수 5개: 모킹 불필요
+ * - Hook 함수 7개: @/lib/supabase/client의 createClient 모킹 필요
  */
+import { renderHook, waitFor } from '@testing-library/react';
+
+import { createMockQueryBuilder } from '@/__mocks__/supabase-helpers';
+import { createTestQueryWrapper } from '@/__tests__/helpers/query-wrapper';
+
 import {
   getDefaultDeadline,
   getPracticeDeadline,
   getServiceDeadline,
   getTimeUntilDeadline,
   isDeadlinePassed,
+  useDeleteVoteDeadline,
+  useIsVoteDeadlinePassed,
+  useSetVoteDeadline,
+  useUpcomingVoteDeadlines,
+  useVoteDeadline,
+  useVoteDeadlines,
 } from '../useVoteDeadlines';
+
+// ─── Supabase Client 모킹 ─────────────────────────────────────
+jest.mock('@/lib/supabase/client', () => ({
+  createClient: jest.fn(),
+}));
+
+import { createClient } from '@/lib/supabase/client';
+const mockCreateClient = createClient as jest.Mock;
+
+function setupMockClient(overrides: {
+  fromBuilder?: ReturnType<typeof createMockQueryBuilder>;
+  rpcData?: unknown;
+  rpcError?: { message: string } | null;
+  authUser?: { id: string } | null;
+} = {}) {
+  const fromBuilder = overrides.fromBuilder ?? createMockQueryBuilder({
+    selectData: [],
+  });
+
+  const mockClient = {
+    from: jest.fn().mockReturnValue(fromBuilder),
+    rpc: jest.fn().mockResolvedValue({
+      data: overrides.rpcData ?? null,
+      error: overrides.rpcError ?? null,
+    }),
+    auth: {
+      getUser: jest.fn().mockResolvedValue({
+        data: { user: overrides.authUser ?? { id: 'test-user-id' } },
+        error: null,
+      }),
+    },
+  };
+
+  mockCreateClient.mockReturnValue(mockClient);
+  return mockClient;
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe('getDefaultDeadline', () => {
   it('일요일 예배 -> 해당 주 금요일 18:00 반환', () => {
@@ -108,5 +158,144 @@ describe('getTimeUntilDeadline', () => {
     // 분은 반올림/절사 차이로 29 또는 30 가능
     expect(result.minutes).toBeGreaterThanOrEqual(29);
     expect(result.minutes).toBeLessThanOrEqual(30);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Hook 함수 테스트 (Supabase Client 모킹)
+// ═══════════════════════════════════════════════════════════════
+
+describe('useVoteDeadline', () => {
+  it('serviceDate로 마감 정보 조회 성공', async () => {
+    const mockDeadline = {
+      id: 'dl-1',
+      service_date: '2026-03-01',
+      deadline_at: '2026-02-28T15:00:00Z',
+      created_by: 'user-1',
+      created_at: '2026-02-20T00:00:00Z',
+    };
+
+    setupMockClient({
+      fromBuilder: createMockQueryBuilder({ selectData: mockDeadline }),
+    });
+
+    const { result } = renderHook(() => useVoteDeadline('2026-03-01'), {
+      wrapper: createTestQueryWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(mockDeadline);
+  });
+
+  it('serviceDate 빈 문자열 → 비활성화', () => {
+    setupMockClient();
+
+    const { result } = renderHook(() => useVoteDeadline(''), {
+      wrapper: createTestQueryWrapper(),
+    });
+
+    // enabled: !!serviceDate → false → fetchStatus가 idle
+    expect(result.current.fetchStatus).toBe('idle');
+  });
+});
+
+describe('useVoteDeadlines (목록)', () => {
+  it('목록 조회 성공', async () => {
+    const mockList = [
+      { id: 'dl-1', service_date: '2026-03-01', deadline_at: '2026-02-28T15:00:00Z', created_by: null, created_at: '2026-02-20' },
+      { id: 'dl-2', service_date: '2026-03-08', deadline_at: '2026-03-07T15:00:00Z', created_by: null, created_at: '2026-02-20' },
+    ];
+
+    setupMockClient({
+      fromBuilder: createMockQueryBuilder({ selectData: mockList }),
+    });
+
+    const { result } = renderHook(() => useVoteDeadlines(), {
+      wrapper: createTestQueryWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(mockList);
+  });
+});
+
+describe('useUpcomingVoteDeadlines', () => {
+  it('RPC 호출 성공', async () => {
+    const mockUpcoming = [
+      { service_date: '2026-03-01', deadline_at: '2026-02-28T15:00:00Z', is_passed: false },
+    ];
+
+    setupMockClient({ rpcData: mockUpcoming });
+
+    const { result } = renderHook(() => useUpcomingVoteDeadlines(5), {
+      wrapper: createTestQueryWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(mockUpcoming);
+  });
+});
+
+describe('useIsVoteDeadlinePassed', () => {
+  it('RPC 결과 반환', async () => {
+    setupMockClient({ rpcData: true });
+
+    const { result } = renderHook(() => useIsVoteDeadlinePassed('2026-03-01'), {
+      wrapper: createTestQueryWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toBe(true);
+  });
+
+  it('serviceDate 빈 → 비활성화', () => {
+    setupMockClient();
+
+    const { result } = renderHook(() => useIsVoteDeadlinePassed(''), {
+      wrapper: createTestQueryWrapper(),
+    });
+
+    expect(result.current.fetchStatus).toBe('idle');
+  });
+});
+
+describe('useSetVoteDeadline', () => {
+  it('upsert 성공', async () => {
+    const mockResult = {
+      id: 'dl-new',
+      service_date: '2026-03-01',
+      deadline_at: '2026-02-28T18:00:00Z',
+    };
+
+    setupMockClient({
+      fromBuilder: createMockQueryBuilder({ upsertData: mockResult }),
+    });
+
+    const { result } = renderHook(() => useSetVoteDeadline(), {
+      wrapper: createTestQueryWrapper(),
+    });
+
+    result.current.mutate({
+      serviceDate: '2026-03-01',
+      deadlineAt: '2026-02-28T18:00:00Z',
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
+
+describe('useDeleteVoteDeadline', () => {
+  it('삭제 성공', async () => {
+    setupMockClient({
+      fromBuilder: createMockQueryBuilder({ deleteData: null }),
+    });
+
+    const { result } = renderHook(() => useDeleteVoteDeadline(), {
+      wrapper: createTestQueryWrapper(),
+    });
+
+    result.current.mutate('2026-03-01');
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 });

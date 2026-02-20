@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-20 | test: Phase 6 커버리지 부스트 + 신규 유틸/API 테스트 (44 Suites, 582 Tests, 81.49% Stmt) |
 | 2026-02-20 | test: Phase 4 service-schedules CRUD + Hook 테스트 추가 (32 Suites, 404 Tests) |
 | 2026-02-20 | test: Phase 2 통합 테스트 + Hook 테스트 추가 (22 Suites, 319 Tests) |
 | 2026-02-19 | test: Phase 1 테스트 인프라 강화 및 유닛 테스트 11개 파일 추가 |
