@@ -67,6 +67,11 @@
 
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
+### 2026-02-22
+
+- [x] **test: Phase 8 Playwright E2E 테스트 환경 구축 (17 Suites, 512 Tests, 8 Devices)**
+  - 커밋: `ccaaafa`
+
 ### 2026-02-20
 - [x] **test: Phase 6 커버리지 부스트 + 신규 유틸/API 테스트 (44 Suites, 582 Tests, 81.49% Stmt)**
   - 커밋: `0b4b59e`
