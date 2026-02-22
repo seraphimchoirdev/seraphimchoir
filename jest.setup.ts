@@ -29,8 +29,10 @@ process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 
-// ─── 4. localStorage 모킹 ──────────────────────────────────────────
-const localStorageMock = (() => {
+// ─── 4. localStorage 모킹 (브라우저 환경에서만) ──────────────────────
+let localStorageMock: ReturnType<typeof createLocalStorageMock> | null = null;
+
+function createLocalStorageMock() {
   let store: Record<string, string> = {};
   return {
     getItem: jest.fn((key: string) => store[key] ?? null),
@@ -48,9 +50,12 @@ const localStorageMock = (() => {
     },
     key: jest.fn((index: number) => Object.keys(store)[index] ?? null),
   };
-})();
+}
 
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+if (typeof window !== 'undefined') {
+  localStorageMock = createLocalStorageMock();
+  Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+}
 
 // ─── 5. Browser API 모킹 ───────────────────────────────────────────
 Object.defineProperty(URL, 'createObjectURL', {
@@ -60,6 +65,6 @@ Object.defineProperty(URL, 'revokeObjectURL', { value: jest.fn() });
 
 // ─── 6. 테스트 간 격리 ─────────────────────────────────────────────
 beforeEach(() => {
-  localStorageMock.clear();
+  localStorageMock?.clear();
   jest.clearAllMocks();
 });

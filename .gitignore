@@ -64,3 +64,12 @@ supabase/full_schema_dump.sql
 .claude/settings.local.json
 .claude/settings.local.json
 supabase/prod_data.sql
+
+# Playwright
+e2e/.auth/
+playwright-report/
+test-results/
+blob-report/
+
+# Sentry Config File
+.env.sentry-build-plugin
