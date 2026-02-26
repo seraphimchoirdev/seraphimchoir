@@ -1,30 +1,13 @@
-// This file configures the initialization of Sentry on the client.
-// The added config here will be used whenever a users loads a page in their browser.
-// https://docs.sentry.io/platforms/javascript/guides/nextjs/
+/**
+ * Sentry 클라이언트 Instrumentation
+ *
+ * Next.js 16에서 클라이언트 사이드 Sentry 초기화를 담당합니다.
+ * 실제 설정은 루트의 sentry.client.config.ts에서 가져옵니다.
+ */
+
 import * as Sentry from '@sentry/nextjs';
 
-Sentry.init({
-  dsn: 'https://8b523482458242ac0ebc8280cd72a799@o4510726415187968.ingest.us.sentry.io/4510727885291520',
-
-  // Add optional integrations for additional features
-  integrations: [Sentry.replayIntegration()],
-
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
-
-  // Define how likely Replay events are sampled.
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.1,
-
-  // Define how likely Replay events are sampled when an error occurs.
-  replaysOnErrorSampleRate: 1.0,
-
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
-});
+// 루트의 sentry.client.config.ts를 로드 (DSN, ignoreErrors, sanitize 등 포함)
+import '../sentry.client.config';
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

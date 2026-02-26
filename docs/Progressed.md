@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-26 | fix(sentry): 보안 개선 + 불필요한 에러/예제 코드 정리 |
 | 2026-02-24 | fix(ui): 모바일 다이얼로그 스크롤 버그 수정 + E2E 테스트 |
 | 2026-02-22 | test: Phase 8 Playwright E2E 테스트 환경 구축 (17 Suites, 512 Tests, 8 Devices) |
 | 2026-02-20 | test: Phase 6 커버리지 부스트 + 신규 유틸/API 테스트 (44 Suites, 582 Tests, 81.49% Stmt) |
