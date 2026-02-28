@@ -46,7 +46,16 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      return NextResponse.json({ error: '좌석 저장 중 오류가 발생했습니다.' }, { status: 500 });
+      console.error('[seats/bulk] RPC 에러:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
+      return NextResponse.json(
+        { error: '좌석 저장 중 오류가 발생했습니다.', details: error.message },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(data || []);
@@ -57,6 +66,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('[seats/bulk] 예외:', error);
+    return NextResponse.json(
+      { error: '좌석 저장 중 오류가 발생했습니다.', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
   }
 }

@@ -33,7 +33,10 @@ export function useUpdateSeats() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || '좌석 저장에 실패했습니다');
+        const msg = error.details
+          ? `${error.error}: ${error.details}`
+          : error.error || '좌석 저장에 실패했습니다';
+        throw new Error(msg);
       }
 
       return response.json() as Promise<Seat[]>;
