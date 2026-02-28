@@ -14,7 +14,6 @@ import {
   Save,
   Share,
   Smartphone,
-  User,
   Users,
 } from 'lucide-react';
 
@@ -43,6 +42,35 @@ const PART_LABELS: Record<string, string> = {
   BASS: '베이스',
   SPECIAL: '특별',
 };
+
+const PART_BADGE_COLORS: Record<string, string> = {
+  SOPRANO:
+    'bg-[var(--color-part-soprano-50)] text-[var(--color-part-soprano-600)] border-[var(--color-part-soprano-500)]',
+  ALTO: 'bg-[var(--color-part-alto-50)] text-[var(--color-part-alto-600)] border-[var(--color-part-alto-500)]',
+  TENOR:
+    'bg-[var(--color-part-tenor-50)] text-[var(--color-part-tenor-600)] border-[var(--color-part-tenor-500)]',
+  BASS: 'bg-[var(--color-part-bass-50)] text-[var(--color-part-bass-600)] border-[var(--color-part-bass-500)]',
+  SPECIAL:
+    'bg-[var(--color-part-special-50)] text-[var(--color-part-special-600)] border-[var(--color-part-special-500)]',
+};
+
+const PART_AVATAR_COLORS: Record<string, string> = {
+  SOPRANO: 'bg-[var(--color-part-soprano-500)]',
+  ALTO: 'bg-[var(--color-part-alto-500)]',
+  TENOR: 'bg-[var(--color-part-tenor-500)]',
+  BASS: 'bg-[var(--color-part-bass-500)]',
+  SPECIAL: 'bg-[var(--color-part-special-500)]',
+};
+
+/** "2월 23일 (일)" 형태로 날짜 포맷 */
+function formatFriendlyDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  const dayName = dayNames[date.getDay()];
+  return `${month}월 ${day}일 (${dayName})`;
+}
 
 export default function MyPage() {
   const router = useRouter();
@@ -137,22 +165,44 @@ export default function MyPage() {
     <AppShell>
       <div className="min-h-screen bg-[var(--color-background-tertiary)]">
         <div className="container mx-auto max-w-2xl px-4 py-8">
-          {/* 헤더 */}
-          <div className="mb-8">
-            <h1 className="flex items-center gap-2 text-2xl font-bold text-[var(--color-text-primary)]">
-              <User className="h-6 w-6" />
-              마이페이지
-            </h1>
-            <p className="mt-2 text-[var(--color-text-secondary)]">
-              내 정보를 확인하고 수정할 수 있습니다.
-            </p>
+          {/* ── 프로필 헤더 ── */}
+          <div className="mb-6 rounded-[var(--radius-lg)] bg-gradient-to-br from-[var(--color-primary-50)] to-[var(--color-background-secondary)] p-6">
+            <div className="flex items-center gap-4">
+              {/* 아바타 */}
+              <div
+                className={`flex h-16 w-16 items-center justify-center rounded-full text-2xl font-bold text-white ${
+                  member?.part ? PART_AVATAR_COLORS[member.part] || 'bg-[var(--color-primary)]' : 'bg-[var(--color-primary)]'
+                }`}
+              >
+                {member?.name?.[0] || '?'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl font-bold text-[var(--color-text-primary)]">
+                  {member?.name || profile?.name || '사용자'}
+                </h1>
+                <div className="mt-1 flex items-center gap-2">
+                  {member?.part && (
+                    <span
+                      className={`rounded-md border px-2 py-0.5 text-xs font-medium ${PART_BADGE_COLORS[member.part] || ''}`}
+                    >
+                      {PART_LABELS[member.part] || member.part}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 truncate text-sm text-[var(--color-text-secondary)]">
+                  {profile?.email}
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* 기본 정보 (수정 불가) */}
-          <div className="mb-6 rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-6">
+          {/* ── 내 정보 (읽기전용 + 편집 통합) ── */}
+          <div className="mb-6 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-background-secondary)] shadow-[var(--shadow-sm)] p-6">
             <h2 className="mb-4 text-lg font-semibold text-[var(--color-text-primary)]">
-              기본 정보
+              내 정보
             </h2>
+
+            {/* 읽기 전용 필드 */}
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-[var(--color-text-secondary)]">이름</span>
@@ -170,19 +220,56 @@ export default function MyPage() {
                 <span className="text-[var(--color-text-secondary)]">이메일</span>
                 <span className="text-[var(--color-text-primary)]">{profile?.email || '-'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--color-text-secondary)]">정대원 임명일</span>
-                <span className="text-[var(--color-text-primary)]">
-                  {member?.regular_member_since
-                    ? new Date(member.regular_member_since).toLocaleDateString('ko-KR')
-                    : '-'}
-                </span>
-              </div>
             </div>
+
+            {/* 구분선 */}
+            <div className="my-5 border-t border-[var(--color-border)]" />
+
+            {/* 편집 가능 필드 */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label>키 (cm)</Label>
+                <Input
+                  type="number"
+                  value={heightCm}
+                  onChange={(e) => setHeightCm(e.target.value)}
+                  placeholder="예: 170"
+                  min={100}
+                  max={250}
+                />
+                <div className="flex items-start gap-2 text-xs text-[var(--color-text-tertiary)]">
+                  <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <span>AI 자리배치 추천에 활용됩니다.</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>정대원 임명일</Label>
+                <Input
+                  type="date"
+                  value={regularMemberSince}
+                  onChange={(e) => setRegularMemberSince(e.target.value)}
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    저장 중...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    저장
+                  </>
+                )}
+              </Button>
+            </form>
           </div>
 
-          {/* 출석 현황 */}
-          <div className="mb-6 rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-6">
+          {/* ── 출석 현황 ── */}
+          <div className="mb-6 rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-background-secondary)] shadow-[var(--shadow-sm)] p-6">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text-primary)]">
               <Calendar className="h-5 w-5" />
               출석 현황
@@ -190,79 +277,75 @@ export default function MyPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* 최근 등단일 */}
               <div className="rounded-lg bg-[var(--color-background-tertiary)] p-4">
-                <div className="mb-2 flex items-center gap-2 text-[var(--color-text-secondary)]">
-                  <Music className="h-4 w-4" />
-                  <span className="text-sm">최근 등단일</span>
+                <div className="mb-2 flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-primary)]/10">
+                    <Music className="h-4 w-4 text-[var(--color-primary)]" />
+                  </div>
+                  <span className="text-sm text-[var(--color-text-secondary)]">최근 등단일</span>
                 </div>
-                <p className="text-lg font-medium text-[var(--color-text-primary)]">
-                  {member?.last_service_date
-                    ? new Date(member.last_service_date).toLocaleDateString('ko-KR')
-                    : '기록 없음'}
-                </p>
+                {member?.last_service_date ? (
+                  <p className="text-lg font-medium text-[var(--color-text-primary)]">
+                    {formatFriendlyDate(member.last_service_date)}
+                  </p>
+                ) : (
+                  <p className="text-sm text-[var(--color-text-tertiary)]">
+                    아직 등단 기록이 없습니다
+                  </p>
+                )}
               </div>
               {/* 최근 연습 출석일 */}
               <div className="rounded-lg bg-[var(--color-background-tertiary)] p-4">
-                <div className="mb-2 flex items-center gap-2 text-[var(--color-text-secondary)]">
-                  <Users className="h-4 w-4" />
-                  <span className="text-sm">최근 연습 출석일</span>
+                <div className="mb-2 flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/10">
+                    <Users className="h-4 w-4 text-amber-500" />
+                  </div>
+                  <span className="text-sm text-[var(--color-text-secondary)]">최근 연습 출석일</span>
                 </div>
-                <p className="text-lg font-medium text-[var(--color-text-primary)]">
-                  {member?.last_practice_date
-                    ? new Date(member.last_practice_date).toLocaleDateString('ko-KR')
-                    : '기록 없음'}
-                </p>
+                {member?.last_practice_date ? (
+                  <p className="text-lg font-medium text-[var(--color-text-primary)]">
+                    {formatFriendlyDate(member.last_practice_date)}
+                  </p>
+                ) : (
+                  <p className="text-sm text-[var(--color-text-tertiary)]">
+                    아직 연습 기록이 없습니다
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* PWA 설정 */}
-          <div className="mb-6 rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-6">
+          {/* ── 앱 설정 ── */}
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-background-secondary)] shadow-[var(--shadow-sm)] p-6">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text-primary)]">
               <Smartphone className="h-5 w-5" />앱 설정
             </h2>
-            <div className="space-y-4">
-              {/* 앱 설치 상태 */}
-              <div className="flex items-center justify-between rounded-lg bg-[var(--color-background-tertiary)] p-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                      isInstalled
-                        ? 'bg-green-100 dark:bg-green-900/30'
-                        : 'bg-[var(--color-primary)]/10'
-                    }`}
-                  >
-                    {isInstalled ? (
-                      <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    ) : (
+            <div className="space-y-3">
+              {/* 앱 설치 상태 — 이미 설치된 경우 숨김 */}
+              {!isInstalled && (
+                <div className="flex items-center justify-between rounded-lg bg-[var(--color-background-tertiary)] p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-primary)]/10">
                       <Download className="h-5 w-5 text-[var(--color-primary)]" />
-                    )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-[var(--color-text-primary)]">앱 설치하기</p>
+                      <p className="text-sm text-[var(--color-text-secondary)]">
+                        홈 화면에 추가하여 앱처럼 사용하세요
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-[var(--color-text-primary)]">
-                      {isInstalled ? '앱 설치됨' : '앱 설치하기'}
-                    </p>
-                    <p className="text-sm text-[var(--color-text-secondary)]">
-                      {isInstalled
-                        ? '홈 화면에서 바로 실행할 수 있습니다'
-                        : '홈 화면에 추가하여 앱처럼 사용하세요'}
-                    </p>
-                  </div>
+                  {canInstall && (
+                    <Button size="sm" onClick={installApp}>
+                      설치
+                    </Button>
+                  )}
+                  {isIOS && (
+                    <Button size="sm" variant="outline" onClick={() => setShowIOSGuide(true)}>
+                      안내 보기
+                    </Button>
+                  )}
                 </div>
-                {!isInstalled && (
-                  <>
-                    {canInstall && (
-                      <Button size="sm" onClick={installApp}>
-                        설치
-                      </Button>
-                    )}
-                    {isIOS && (
-                      <Button size="sm" variant="outline" onClick={() => setShowIOSGuide(true)}>
-                        안내 보기
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
+              )}
 
               {/* 푸시 알림 상태 */}
               <div className="flex items-center justify-between rounded-lg bg-[var(--color-background-tertiary)] p-4">
@@ -307,6 +390,21 @@ export default function MyPage() {
                   </Button>
                 )}
               </div>
+
+              {/* 이미 설치된 경우 간결한 상태 표시 */}
+              {isInstalled && (
+                <div className="flex items-center gap-3 rounded-lg bg-[var(--color-background-tertiary)] p-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                    <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-[var(--color-text-primary)]">앱 설치됨</p>
+                    <p className="text-sm text-[var(--color-text-secondary)]">
+                      홈 화면에서 바로 실행할 수 있습니다
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* iOS 푸시 미지원 안내 */}
               {isIOS && !supportsPushInPWA && !isInstalled && (
@@ -405,64 +503,6 @@ export default function MyPage() {
               </div>
             </div>
           )}
-
-          {/* 수정 가능한 정보 */}
-          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-background-secondary)] p-6">
-            <h2 className="mb-4 text-lg font-semibold text-[var(--color-text-primary)]">
-              추가 정보 수정
-            </h2>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* 키 입력 */}
-              <div className="space-y-2">
-                <Label>
-                  키 (cm)
-                </Label>
-                <Input
-                  type="number"
-                  value={heightCm}
-                  onChange={(e) => setHeightCm(e.target.value)}
-                  placeholder="예: 170"
-                  min={100}
-                  max={250}
-                />
-                <div className="flex items-start gap-2 text-xs text-[var(--color-text-tertiary)]">
-                  <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                  <span>입력하신 키 정보는 AI 자리배치 추천에 활용됩니다.</span>
-                </div>
-              </div>
-
-              {/* 정대원 임명일 입력 */}
-              <div className="space-y-2">
-                <Label>
-                  정대원 임명일
-                </Label>
-                <Input
-                  type="date"
-                  value={regularMemberSince}
-                  onChange={(e) => setRegularMemberSince(e.target.value)}
-                />
-                <p className="text-xs text-[var(--color-text-tertiary)]">
-                  정대원으로 임명된 날짜를 입력해주세요.
-                </p>
-              </div>
-
-              {/* 저장 버튼 */}
-              <Button type="submit" className="w-full" disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    저장 중...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    저장
-                  </>
-                )}
-              </Button>
-            </form>
-          </div>
         </div>
       </div>
     </AppShell>

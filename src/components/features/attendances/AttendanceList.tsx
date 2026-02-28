@@ -486,9 +486,9 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
           <TabsList className="mb-4 grid w-full grid-cols-2">
             <TabsTrigger value="service">
               {lockStatus.isServiceEntryLocked && <Lock className="mr-1.5 h-3.5 w-3.5" />}
-              예배 등단 (주중 파악)
+              예배 등단
             </TabsTrigger>
-            <TabsTrigger value="practice">예배 후 연습 (주일 당일)</TabsTrigger>
+            <TabsTrigger value="practice">예배 후 연습</TabsTrigger>
           </TabsList>
         )}
 

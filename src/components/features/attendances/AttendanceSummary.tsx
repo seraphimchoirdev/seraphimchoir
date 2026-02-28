@@ -24,7 +24,7 @@ export default function AttendanceSummary({
   const percentage = totalCount > 0 ? Math.round((attendingCount / totalCount) * 100) : 0;
 
   return (
-    <div className="space-y-3 rounded-lg border border-[var(--color-border-default)] bg-white p-4">
+    <div className="space-y-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-background-primary)] p-4">
       {/* 메인 통계 */}
       <div className="flex items-center justify-between">
         <span className="font-medium text-[var(--color-text-primary)]">

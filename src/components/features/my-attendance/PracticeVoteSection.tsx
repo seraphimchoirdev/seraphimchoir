@@ -100,7 +100,7 @@ function DeadlineLabel({ deadline }: { deadline: DeadlineInfo }) {
   }
 
   const colorClass = deadline.isUrgent
-    ? 'text-amber-500'
+    ? 'text-[var(--color-warning-500)]'
     : 'text-[var(--color-text-tertiary)]';
 
   return (

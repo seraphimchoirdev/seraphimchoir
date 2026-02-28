@@ -28,6 +28,8 @@ interface WorkflowSectionProps {
   cannotCompleteMessage?: string;
   /** "이 단계 완료" 버튼 숨김 여부 (자동 진행되는 단계에서 사용) */
   hideCompleteButton?: boolean;
+  /** 선택적(건너뛰기 가능) 단계 여부 */
+  isOptional?: boolean;
 }
 
 /**
@@ -50,6 +52,7 @@ export default function WorkflowSection({
   canComplete,
   cannotCompleteMessage,
   hideCompleteButton,
+  isOptional,
 }: WorkflowSectionProps) {
   const { workflow, toggleSection, goToStep, canAccessStep, completeStep } = useArrangementStore();
   const { currentStep, completedSteps, expandedSections, isWizardMode } = workflow;
@@ -123,7 +126,7 @@ export default function WorkflowSection({
             {/* 단계 아이콘 */}
             <div
               className={cn(
-                'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold',
+                'flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold',
                 isCompleted
                   ? 'bg-[var(--color-success-500)] text-white'
                   : isCurrent
@@ -157,6 +160,9 @@ export default function WorkflowSection({
             >
               {stepMeta.title}
             </span>
+            {isOptional && !isCompleted && (
+              <span className="text-[10px] font-normal text-[var(--color-text-tertiary)]">(선택)</span>
+            )}
           </div>
 
           {/* 우측: 상태 배지 + 화살표 */}
@@ -170,7 +176,8 @@ export default function WorkflowSection({
 
             {/* 진행 중 배지 */}
             {isCurrent && !isCompleted && (
-              <span className="animate-pulse rounded-full bg-[var(--color-primary-100)] px-2 py-0.5 text-xs font-medium text-[var(--color-primary-600)]">
+              <span className="flex items-center gap-1 rounded-full bg-[var(--color-primary-100)] px-2 py-0.5 text-xs font-medium text-[var(--color-primary-600)]">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-primary-500)]" />
                 진행 중
               </span>
             )}
@@ -195,7 +202,7 @@ export default function WorkflowSection({
           className={cn(
             'border-t p-4',
             isCurrent
-              ? 'border-[var(--color-primary-200)] bg-white'
+              ? 'border-[var(--color-primary-200)] bg-[var(--color-background-primary)]'
               : isCompleted
                 ? 'border-[var(--color-success-200)]'
                 : 'border-[var(--color-border-subtle)]'
@@ -223,38 +230,6 @@ export default function WorkflowSection({
         </div>
       </CollapsibleContent>
 
-      {/* 애니메이션 스타일 */}
-      <style jsx global>{`
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            height: 0;
-          }
-          to {
-            opacity: 1;
-            height: var(--radix-collapsible-content-height);
-          }
-        }
-
-        @keyframes slideUp {
-          from {
-            opacity: 1;
-            height: var(--radix-collapsible-content-height);
-          }
-          to {
-            opacity: 0;
-            height: 0;
-          }
-        }
-
-        .animate-slideDown {
-          animation: slideDown 200ms ease-out;
-        }
-
-        .animate-slideUp {
-          animation: slideUp 200ms ease-out;
-        }
-      `}</style>
     </Collapsible>
   );
 }

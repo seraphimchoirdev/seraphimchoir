@@ -153,7 +153,7 @@ export default function AttendancesPage() {
         <div className="px-4 py-8 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl space-y-6">
             {/* 헤더 */}
-            <div className="rounded-xl bg-white p-6 shadow-sm">
+            <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-background-primary)] p-6 shadow-[var(--shadow-sm)]">
               <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
                 <div>
                   <h2 className="heading-2 text-[var(--color-text-primary)]">출석 관리</h2>
@@ -188,7 +188,7 @@ export default function AttendancesPage() {
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className="min-w-[160px] border-none bg-transparent text-lg font-medium shadow-sm hover:bg-white"
+                        className="min-w-[160px] border-none bg-transparent text-lg font-medium shadow-sm hover:bg-[var(--color-background-primary)]"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {format(selectedDate, 'yyyy-MM-dd')}
@@ -224,7 +224,7 @@ export default function AttendancesPage() {
               {hasMultipleServices && (
                 <div className="mt-4 border-t border-[var(--color-border-subtle)] pt-4 space-y-3">
                   {/* 다중 예배 안내 문구 */}
-                  <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700">
+                  <div className="flex items-center gap-2 rounded-lg bg-[var(--color-primary-50)] px-3 py-2 text-sm text-[var(--color-primary-700)]">
                     <Info className="h-4 w-4 shrink-0" />
                     <span>
                       이 날짜에 예배가 {sortedSchedules.length}개 등록되어 있습니다. 아래에서 예배를 선택해주세요.
@@ -268,7 +268,7 @@ export default function AttendancesPage() {
             )}
 
             {/* 출석 목록 */}
-            <div className="rounded-xl bg-white p-6 shadow-sm">
+            <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-background-primary)] p-6 shadow-[var(--shadow-sm)]">
               <AttendanceList
                 date={selectedDate}
                 serviceScheduleId={selectedServiceScheduleId}

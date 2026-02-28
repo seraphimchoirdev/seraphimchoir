@@ -191,7 +191,7 @@ export default function MyAttendancePage() {
       <div className="space-y-5">
         {/* 찬양곡 */}
         {service.hymn_name && (
-          <div className="rounded-lg bg-[var(--color-background-secondary)] px-3 py-2.5 space-y-1.5">
+          <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-background-secondary)] px-3 py-2.5 shadow-[var(--shadow-xs)] space-y-1.5">
             <div className="text-xs font-medium text-[var(--color-text-tertiary)]">찬양곡</div>
             <div className="flex items-center gap-2">
               <Music className="h-4 w-4 shrink-0 text-[var(--color-primary)]" />
@@ -233,7 +233,7 @@ export default function MyAttendancePage() {
       <div className="min-h-screen bg-[var(--color-background-tertiary)]">
         <div className="container mx-auto max-w-lg px-4 py-6">
           {/* 날짜 네비게이터 */}
-          <div className="mb-5">
+          <div className="mb-5 rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-background-primary)] py-3 shadow-[var(--shadow-xs)]">
             <DateNavigator
               selectedDate={selectedDate}
               relativeLabel={

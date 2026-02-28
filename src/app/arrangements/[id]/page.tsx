@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, CheckCircle2, ChevronDown, ChevronUp, Copy, Crown, Download, Loader2, Lock, Settings, Share2, Sparkles, Trash2 } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown, ChevronUp, Copy, Crown, Download, GripHorizontal, Loader2, Lock, MousePointer2, Settings, Share2, SkipForward, Sparkles, Trash2 } from 'lucide-react';
 
 import { useSearchParams } from 'next/navigation';
 import { ReactNode, use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -601,10 +601,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         return (
           <>
             {gridLayout?.isAIRecommended && (
-              <p className="text-sm text-[var(--color-text-secondary)]">
-                출석 인원 <strong>{totalMembers}명</strong> 기반으로 줄 구성이 자동 설정되었습니다.
-                필요 시 아래에서 수동으로 조정하세요.
-              </p>
+              <div className="flex items-start gap-2 rounded-lg bg-[var(--color-primary-50)] p-3">
+                <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-primary-500)]" />
+                <p className="text-sm text-[var(--color-primary-700)]">
+                  출석 인원 <strong>{totalMembers}명</strong> 기반으로 줄 구성이 자동 설정되었습니다.
+                  필요 시 아래에서 수동으로 조정하세요.
+                </p>
+              </div>
             )}
             <GridSettingsPanel
               gridLayout={gridLayout}
@@ -622,7 +625,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         return (
           <div className="space-y-3">
             <p className="text-sm text-[var(--color-text-secondary)]">
-              프리셋을 선택하거나, 화살표 버튼으로 각 행을 개별 조정합니다.
+              프리셋을 선택하거나, 화살표 버튼으로 각 행을 개별 조정하세요.
             </p>
             <div className="flex flex-wrap gap-2">
               {OFFSET_PRESETS.map((preset) => (
@@ -633,10 +636,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   disabled={isReadOnly}
                   onClick={() => applyOffsetPreset(preset.id)}
                   title={preset.description}
+                  aria-pressed={activePresetId === preset.id}
                 >
                   {preset.name}
                   {preset.id === 'arc' && (
-                    <span className="ml-1 text-xs text-amber-500">추천</span>
+                    <span className={`ml-1 inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${activePresetId === preset.id ? 'bg-white/20 text-white' : 'bg-[var(--color-warning-100)] text-[var(--color-warning-700)]'}`}>
+                      추천
+                    </span>
                   )}
                 </Button>
               ))}
@@ -661,10 +667,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 onApply={handleApplyRecommendation}
               />
             )}
-            <p className="text-sm text-[var(--color-text-tertiary)]">
-              이 단계를 건너뛰고 직접 배치할 수도 있습니다. 건너뛰기를 원하시면
-              &apos;이 단계 완료&apos; 버튼을 눌러주세요.
-            </p>
+            <div className="border-t border-dashed border-[var(--color-border-subtle)] pt-2">
+              <p className="flex items-start gap-1.5 text-xs text-[var(--color-text-tertiary)]">
+                <SkipForward className="mt-0.5 h-3 w-3 flex-shrink-0" />
+                이 단계를 건너뛰고 직접 배치할 수도 있습니다. 건너뛰기를 원하시면
+                &apos;이 단계 완료&apos; 버튼을 눌러주세요.
+              </p>
+            </div>
           </div>
         );
       case 4:
@@ -674,11 +683,20 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             <p className="text-sm text-[var(--color-text-secondary)]">
               대원을 선택하고 좌석을 클릭하여 배치를 조정합니다.
             </p>
-            <ul className="list-inside list-disc space-y-1 text-xs text-[var(--color-text-tertiary)]">
-              <li>대원 목록에서 이름 클릭 → 좌석 클릭</li>
-              <li>배치된 좌석 더블클릭으로 제거</li>
-              <li>좌석 간 드래그로 이동</li>
-            </ul>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2 text-xs text-[var(--color-text-tertiary)]">
+                <MousePointer2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-[var(--color-primary-400)]" />
+                <span>이름 클릭 후 빈 좌석을 클릭하여 배치</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-[var(--color-text-tertiary)]">
+                <MousePointer2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-[var(--color-error-400)]" />
+                <span>배치된 좌석 더블클릭으로 제거</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-[var(--color-text-tertiary)]">
+                <GripHorizontal className="mt-0.5 h-3 w-3 flex-shrink-0 text-[var(--color-text-tertiary)]" />
+                <span>좌석 간 드래그로 자리 이동</span>
+              </div>
+            </div>
           </div>
         );
       case 5:
@@ -686,18 +704,28 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         return (
           <div className="space-y-3">
             <p className="text-sm text-[var(--color-text-secondary)]">각 줄의 대표를 지정합니다.</p>
+            {Object.keys(assignments).length === 0 && (
+              <div className="rounded-lg bg-[var(--color-background-secondary)] p-4 text-center">
+                <p className="text-sm text-[var(--color-text-tertiary)]">
+                  아직 배치된 대원이 없습니다.<br/>이전 단계에서 대원을 배치해주세요.
+                </p>
+              </div>
+            )}
             {!isReadOnly && Object.keys(assignments).length > 0 && (
               <div className="flex flex-col gap-2">
                 <Button
+                  size="sm"
                   variant={rowLeaderMode ? 'default' : 'outline'}
                   onClick={toggleRowLeaderMode}
+                  aria-pressed={rowLeaderMode}
                   className={`w-full gap-2 ${rowLeaderMode ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
                 >
                   <Crown className="h-4 w-4" />
                   {rowLeaderMode ? '수동 지정 모드 끄기' : '수동 지정 모드'}
                 </Button>
                 <Button
-                  variant="outline"
+                  size="sm"
+                  variant="primarySubtle"
                   onClick={() => {
                     const candidates = autoAssignRowLeaders();
                     if (candidates.length > 0) {
@@ -708,17 +736,20 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   }}
                   className="w-full gap-2"
                 >
-                  <Sparkles className="h-4 w-4 text-yellow-500" />
+                  <Sparkles className="h-4 w-4" />
                   자동 지정
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setClearRowLeadersDialog(true)}
-                  className="w-full gap-2 text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  전체 해제
-                </Button>
+                <div className="border-t border-[var(--color-border-subtle)] pt-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setClearRowLeadersDialog(true)}
+                    className="w-full gap-2 text-[var(--color-text-tertiary)]"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    전체 해제
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -728,9 +759,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         const noAssignmentsExpanded = Object.keys(assignments).length === 0;
         const currentArrangementStatus = arrangement.status ?? 'DRAFT';
         return (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* 섹션 1: 이미지 내보내기 */}
-            <div className="space-y-2">
+            <div className="space-y-2 rounded-lg bg-[var(--color-background-secondary)] p-3">
               <p className="text-sm font-medium text-[var(--color-text-primary)]">
                 이미지 내보내기
               </p>
@@ -744,9 +775,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                     variant="outline"
                     onClick={handleShareImage}
                     disabled={noAssignmentsExpanded || isGenerating}
+                    aria-busy={isGenerating}
                     className="w-full gap-1"
                   >
-                    {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Share2 className="h-3 w-3" />}
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
                     이미지 공유하기
                   </Button>
                 )}
@@ -755,9 +787,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   variant="outline"
                   onClick={handleDownloadImage}
                   disabled={noAssignmentsExpanded || isGenerating}
+                  aria-busy={isGenerating}
                   className="w-full gap-1"
                 >
-                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                   PNG 다운로드
                 </Button>
                 <Button
@@ -765,21 +798,22 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   variant="outline"
                   onClick={handleCopyToClipboard}
                   disabled={noAssignmentsExpanded || isGenerating}
+                  aria-busy={isGenerating}
                   className="w-full gap-1"
                 >
-                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
+                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
                   클립보드 복사
                 </Button>
               </div>
             </div>
 
             {/* 섹션 2: 편집 완료 / 확정 안내 */}
-            <div className="space-y-2 border-t border-[var(--color-border-default)] pt-3">
+            <div className="space-y-2 rounded-lg bg-[var(--color-background-secondary)] p-3">
               <p className="text-sm font-medium text-[var(--color-text-primary)]">
                 편집 완료
               </p>
               <p className="text-xs text-[var(--color-text-secondary)]">
-                편집이 완료되면 상단 헤더의 버튼으로 잠그세요.{'\n'}
+                편집이 완료되면 상단 헤더의 버튼으로 잠가주세요.{'\n'}
                 편집 완료 후에도 긴급 수정은 가능합니다.
               </p>
               {currentArrangementStatus === 'DRAFT' && (
@@ -820,6 +854,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       case 1:
         return (
           <div className="space-y-2">
+            <p className="text-xs text-[var(--color-text-tertiary)]">
+              현재 {gridLayout?.rows ?? 0}줄 / {gridLayout?.rowCapacities?.reduce((a, b) => a + b, 0) ?? 0}석
+            </p>
             <Button
               onClick={() => {
                 setPanelMode('expanded');
@@ -858,10 +895,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   disabled={isReadOnly}
                   onClick={() => applyOffsetPreset(preset.id)}
                   title={preset.description}
+                  aria-pressed={activePresetId === preset.id}
                 >
                   {preset.name}
                   {preset.id === 'arc' && (
-                    <span className="ml-1 text-xs text-amber-500">추천</span>
+                    <span className={`ml-1 inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${activePresetId === preset.id ? 'bg-white/20 text-white' : 'bg-[var(--color-warning-100)] text-[var(--color-warning-700)]'}`}>
+                      추천
+                    </span>
                   )}
                 </Button>
               ))}
@@ -896,6 +936,11 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             <p className="text-sm text-[var(--color-text-secondary)]">
               대원을 선택 → 좌석 클릭으로 배치를 조정하세요.
             </p>
+            {unassignedCount > 0 ? (
+              <p className="text-xs text-[var(--color-warning-600)]">미배치: {unassignedCount}명</p>
+            ) : totalMembers > 0 ? (
+              <p className="text-xs text-[var(--color-success-600)]">전원 배치 완료</p>
+            ) : null}
             {workflow.isWizardMode && !workflow.completedSteps.has(4) && (
               <Button
                 size="sm"
@@ -964,9 +1009,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   variant="outline"
                   onClick={handleShareImage}
                   disabled={noAssignments || isGenerating}
+                  aria-busy={isGenerating}
                   className="gap-1"
                 >
-                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Share2 className="h-3 w-3" />}
+                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
                   이미지 공유하기
                 </Button>
               )}
@@ -975,9 +1021,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 variant="outline"
                 onClick={handleDownloadImage}
                 disabled={noAssignments || isGenerating}
+                aria-busy={isGenerating}
                 className="gap-1"
               >
-                {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 {isMobile ? '이미지 저장' : 'PNG 다운로드'}
               </Button>
               {!isMobile && (
@@ -986,9 +1033,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   variant="outline"
                   onClick={handleCopyToClipboard}
                   disabled={noAssignments || isGenerating}
+                  aria-busy={isGenerating}
                   className="gap-1"
                 >
-                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
+                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
                   클립보드 복사
                 </Button>
               )}
@@ -1076,6 +1124,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
               completedSteps={workflow.completedSteps}
               canAccessStep={canAccessStep}
               onStepClick={goToStep}
+              optionalSteps={[2, 3]}
               onExpand={() => {
                 setPanelMode('expanded');
                 userOverridePanelRef.current = true;

@@ -33,12 +33,12 @@ const PART_DISPLAY: Record<Part, { label: string; abbr: string; color: string }>
   SOPRANO: {
     label: '소프라노',
     abbr: 'S',
-    color: 'bg-purple-100 text-purple-700 border-purple-300',
+    color: 'bg-[var(--color-part-soprano-100)] text-[var(--color-part-soprano-700)] border-[var(--color-part-soprano-200)]',
   },
-  ALTO: { label: '알토', abbr: 'A', color: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
-  TENOR: { label: '테너', abbr: 'T', color: 'bg-blue-100 text-blue-700 border-blue-300' },
-  BASS: { label: '베이스', abbr: 'B', color: 'bg-green-100 text-green-700 border-green-300' },
-  SPECIAL: { label: '특별', abbr: 'SP', color: 'bg-gray-100 text-gray-700 border-gray-300' },
+  ALTO: { label: '알토', abbr: 'A', color: 'bg-[var(--color-part-alto-100)] text-[var(--color-part-alto-700)] border-[var(--color-part-alto-200)]' },
+  TENOR: { label: '테너', abbr: 'T', color: 'bg-[var(--color-part-tenor-100)] text-[var(--color-part-tenor-700)] border-[var(--color-part-tenor-200)]' },
+  BASS: { label: '베이스', abbr: 'B', color: 'bg-[var(--color-part-bass-100)] text-[var(--color-part-bass-700)] border-[var(--color-part-bass-200)]' },
+  SPECIAL: { label: '특별', abbr: 'SP', color: 'bg-[var(--color-part-special-100)] text-[var(--color-part-special-700)] border-[var(--color-part-special-200)]' },
 };
 
 const PARTS: Part[] = ['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'];
@@ -101,11 +101,11 @@ export default function DeadlineStatusBar({
 
   if (isLoading) {
     return (
-      <div className="flex animate-pulse items-center gap-2 rounded-lg bg-gray-50 p-3">
-        <div className="h-6 w-24 rounded bg-gray-200" />
+      <div className="flex animate-pulse items-center gap-2 rounded-lg bg-[var(--color-background-secondary)] p-3">
+        <div className="h-6 w-24 rounded bg-[var(--color-background-tertiary)]" />
         <div className="flex gap-1">
           {PARTS.map((part) => (
-            <div key={part} className="h-6 w-8 rounded bg-gray-200" />
+            <div key={part} className="h-6 w-8 rounded bg-[var(--color-background-tertiary)]" />
           ))}
         </div>
       </div>
@@ -118,7 +118,7 @@ export default function DeadlineStatusBar({
         'flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center',
         isFullyClosed
           ? 'border-[var(--color-error-200)] bg-[var(--color-error-50)]'
-          : 'border-[var(--color-border-default)] bg-[var(--color-surface)]'
+          : 'border-[var(--color-border-default)] bg-[var(--color-background-primary)]'
       )}
     >
       {/* 마감 현황 제목 */}
