@@ -64,6 +64,16 @@ supabase/full_schema_dump.sql
 .claude/settings.local.json
 .claude/settings.local.json
 supabase/prod_data.sql
+supabase/prod-data.sql
+
+# Root images (screenshots, KakaoTalk photos)
+*.jpeg
+*.png
+!public/**/*.png
+!public/**/*.jpeg
+
+# Playwright CLI logs
+.playwright-cli/
 
 # Playwright
 e2e/.auth/
