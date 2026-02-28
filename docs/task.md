@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-02-28
+- [x] **feat(emergency): 긴급 수정 모드 통합 — EmergencyEditPanel 연동 + 모바일 지원**
+  - 커밋: `da789ab`
+
 - [x] **feat(ui): EmergencyEditPanel 섹션 시각적 구분 개선**
   - 커밋: `95cc8c9`
 

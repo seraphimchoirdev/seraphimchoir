@@ -1,18 +1,19 @@
 'use client';
 
-import { Check, CheckCircle2, ChevronDown, ChevronUp, Copy, Crown, Download, GripHorizontal, Loader2, Lock, MousePointer2, Settings, Share2, SkipForward, Sparkles, Trash2 } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, Crown, Download, GripHorizontal, Loader2, Lock, MousePointer2, Settings, Share2, SkipForward, Sparkles, Trash2 } from 'lucide-react';
 
 import { useSearchParams } from 'next/navigation';
 import { ReactNode, use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import ArrangementHeader from '@/components/features/arrangements/ArrangementHeader';
 import CompactWorkflowStrip from '@/components/features/arrangements/CompactWorkflowStrip';
-import EmergencyChangesBanner from '@/components/features/arrangements/EmergencyChangesBanner';
+import EmergencyEditPanel from '@/components/features/arrangements/EmergencyEditPanel';
 import GridSettingsPanel from '@/components/features/arrangements/GridSettingsPanel';
 import RecommendButton from '@/components/features/arrangements/RecommendButton';
 import RestoreDialog from '@/components/features/arrangements/RestoreDialog';
 import WorkflowFloatingActionBar from '@/components/features/arrangements/WorkflowFloatingActionBar';
 import { WorkflowPanel } from '@/components/features/arrangements/workflow';
+import EmergencyAvailableDialog from '@/components/features/seats/EmergencyAvailableDialog';
 import EmergencyUnavailableDialog from '@/components/features/seats/EmergencyUnavailableDialog';
 import MemberSidebar from '@/components/features/seats/MemberSidebar';
 import SeatsGrid from '@/components/features/seats/SeatsGrid';
@@ -36,6 +37,7 @@ import { useWorkflowAutoAdvance } from '@/hooks/useWorkflowAutoAdvance';
 import { createLogger } from '@/lib/logger';
 import { recommendRowDistribution } from '@/lib/row-distribution-recommender';
 import { showError, showInfo, showSuccess } from '@/lib/toast';
+import { cn } from '@/lib/utils';
 import { calculateGridLayoutFromSeats } from '@/lib/utils/gridUtils';
 
 import { WorkflowStep, useArrangementStore } from '@/store/arrangement-store';
@@ -95,6 +97,12 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   const [panelMode, setPanelMode] = useState<'expanded' | 'compact'>('expanded');
   const [showMobileSidebar, setShowMobileSidebar] = useState(true);
 
+  // 긴급 수정 패널 접기/펼치기 상태 (데스크톱)
+  const [emergencyPanelCollapsed, setEmergencyPanelCollapsed] = useState(false);
+
+  // 모바일 좌석 선택 모드 (긴급 수정 시 "등단 불가 처리" 좌석 선택)
+  const [seatSelectionMode, setSeatSelectionMode] = useState<'unavailable' | null>(null);
+
   // 사용자가 수동으로 panelMode를 변경했는지 추적
   const userOverridePanelRef = useRef(false);
 
@@ -110,6 +118,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
   // 줄반장 전체 해제 확인 다이얼로그
   const [clearRowLeadersDialog, setClearRowLeadersDialog] = useState(false);
+
+  // 긴급 등단 가능 추가 다이얼로그 (EmergencyEditPanel용)
+  const [emergencyAvailableDialogOpen, setEmergencyAvailableDialogOpen] = useState(false);
 
   // 이미지 캡처를 위한 ref (데스크톱/모바일 각각)
   const desktopCaptureRef = useRef<HTMLDivElement>(null);
@@ -307,6 +318,16 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     },
     []
   );
+
+  // 패널에서 "등단 불가 처리" 클릭 시 래퍼 (모바일: 바텀시트 닫고 좌석 선택 모드 진입)
+  const handleEmergencyUnavailableFromPanel = useCallback(() => {
+    if (window.innerWidth < 640) {
+      setShowSettingsSheet(false);
+      setSeatSelectionMode('unavailable');
+    } else {
+      showInfo('그리드에서 제거할 대원의 좌석을 클릭하세요.');
+    }
+  }, []);
 
   // DB에 저장된 데이터가 있는지 확인
   const dbHasData = useMemo(() => {
@@ -1072,13 +1093,17 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       {/* 긴급 등단 불가 확인 다이얼로그 */}
       <EmergencyUnavailableDialog
         open={emergencyDialogOpen}
-        onOpenChange={setEmergencyDialogOpen}
+        onOpenChange={(open) => {
+          setEmergencyDialogOpen(open);
+          if (!open) setSeatSelectionMode(null);
+        }}
         targetMember={emergencyTargetMember}
         arrangementId={id}
         date={arrangement?.date || ''}
         onComplete={(message) => {
           showSuccess(message);
           setEmergencyTargetMember(null);
+          setSeatSelectionMode(null);
         }}
         onError={(message) => showError(`오류: ${message}`)}
       />
@@ -1089,51 +1114,74 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         mobileCaptureRef={mobileCaptureRef}
       />
 
-      {/* 긴급 변동 요약 배너 (SHARED 상태에서 변동 있을 때만 표시) */}
-      {isEmergencyMode && <div data-print-hide><EmergencyChangesBanner arrangementId={id} date={arrangement?.date || ''} /></div>}
-
       {/* 데스크톱: 3패널 가로 배치 (640px 이상 - Z Fold 펼침 대응) */}
       <div className="hidden flex-1 gap-4 overflow-hidden p-4 sm:flex">
-        {/* 워크플로우 패널 - 2단 접기 (Expanded ↔ Compact) */}
-        {panelMode === 'expanded' ? (
-          <div data-print-hide className="animate-in slide-in-from-left relative w-80 flex-shrink-0 duration-300">
-            <WorkflowPanel
-              renderStepContent={renderWorkflowStepContent}
+        {/* 긴급 수정 모드: EmergencyEditPanel 표시 (접기/펼치기 지원) */}
+        {isEmergencyMode ? (
+          <div data-print-hide className={cn(
+            'animate-in slide-in-from-left flex-shrink-0 transition-all duration-300',
+            emergencyPanelCollapsed ? 'w-16' : 'w-80',
+          )}>
+            <EmergencyEditPanel
+              arrangementId={id}
+              date={arrangement?.date || ''}
+              gridLayout={gridLayout}
+              onGridLayoutChange={setGridLayout}
+              onOpenUnavailableDialog={handleEmergencyUnavailable}
+              onOpenAvailableDialog={() => setEmergencyAvailableDialogOpen(true)}
+              onOpenClearRowLeadersDialog={() => setClearRowLeadersDialog(true)}
+              getActivePresetId={getActivePresetId}
               totalMembers={totalMembers}
-              arrangementStatus={arrangement.status ?? undefined}
-              className="h-full overflow-hidden"
+              collapsed={emergencyPanelCollapsed}
+              onToggleCollapse={() => setEmergencyPanelCollapsed(prev => !prev)}
+              className="h-full"
             />
-            {/* 접기 버튼 → Compact 전환 */}
-            <Button
-              onClick={() => {
-                setPanelMode('compact');
-                userOverridePanelRef.current = true;
-              }}
-              variant="ghost"
-              size="sm"
-              className="absolute top-4 -right-3 z-10 border border-[var(--color-border-default)] bg-[var(--color-surface)] shadow-md hover:bg-[var(--color-background-secondary)]"
-              title="워크플로우 패널 접기"
-            >
-              <ChevronDown className="h-4 w-4 rotate-90" />
-            </Button>
           </div>
         ) : (
-          <div data-print-hide>
-            <CompactWorkflowStrip
-              currentStep={workflow.currentStep}
-              completedSteps={workflow.completedSteps}
-              canAccessStep={canAccessStep}
-              onStepClick={goToStep}
-              optionalSteps={[2, 3]}
-              onExpand={() => {
-                setPanelMode('expanded');
-                userOverridePanelRef.current = true;
-              }}
-            />
-          </div>
+          <>
+            {/* 일반 모드: 워크플로우 패널 - 2단 접기 (Expanded ↔ Compact) */}
+            {panelMode === 'expanded' ? (
+              <div data-print-hide className="animate-in slide-in-from-left relative w-80 flex-shrink-0 duration-300">
+                <WorkflowPanel
+                  renderStepContent={renderWorkflowStepContent}
+                  totalMembers={totalMembers}
+                  arrangementStatus={arrangement.status ?? undefined}
+                  className="h-full overflow-hidden"
+                />
+                {/* 접기 버튼 → Compact 전환 */}
+                <Button
+                  onClick={() => {
+                    setPanelMode('compact');
+                    userOverridePanelRef.current = true;
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-4 -right-3 z-10 border border-[var(--color-border-default)] bg-[var(--color-surface)] shadow-md hover:bg-[var(--color-background-secondary)]"
+                  title="워크플로우 패널 접기"
+                >
+                  <ChevronDown className="h-4 w-4 rotate-90" />
+                </Button>
+              </div>
+            ) : (
+              <div data-print-hide>
+                <CompactWorkflowStrip
+                  currentStep={workflow.currentStep}
+                  completedSteps={workflow.completedSteps}
+                  canAccessStep={canAccessStep}
+                  onStepClick={goToStep}
+                  optionalSteps={[2, 3]}
+                  onExpand={() => {
+                    setPanelMode('expanded');
+                    userOverridePanelRef.current = true;
+                  }}
+                />
+              </div>
+            )}
+          </>
         )}
 
-        {/* Member Sidebar - 수동 배치 조정 단계(3단계)에서만 표시 */}
+        {/* Member Sidebar - 수동 배치 조정 단계(4단계)에서만 표시 */}
+        {/* 긴급 수정 모드에서는 EmergencyEditPanel의 "등단 가능 추가" 버튼이 다이얼로그를 열어주므로 상시 표시 불필요 */}
         {showMemberSidebar && (
           <div data-print-hide>
             <MemberSidebar
@@ -1166,18 +1214,34 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         />
       </div>
 
-      {/* Compact 모드용 플로팅 액션 바 (데스크톱에서만) */}
-      <div data-print-hide>
-        <WorkflowFloatingActionBar
-          currentStep={workflow.currentStep}
-          isVisible={panelMode === 'compact'}
-        >
-          {renderFloatingStepContent(workflow.currentStep)}
-        </WorkflowFloatingActionBar>
-      </div>
+      {/* Compact 모드용 플로팅 액션 바 (데스크톱에서만, 긴급 수정 모드에서는 숨김) */}
+      {!isEmergencyMode && (
+        <div data-print-hide>
+          <WorkflowFloatingActionBar
+            currentStep={workflow.currentStep}
+            isVisible={panelMode === 'compact'}
+          >
+            {renderFloatingStepContent(workflow.currentStep)}
+          </WorkflowFloatingActionBar>
+        </div>
+      )}
 
       {/* 모바일: 상단 그리드 + 하단 대원 목록 (Split View, 640px 미만) */}
       <div className="relative flex flex-1 flex-col overflow-hidden sm:hidden">
+        {/* 좌석 선택 모드 안내 바 (긴급 수정 - 등단 불가 처리) */}
+        {seatSelectionMode === 'unavailable' && (
+          <div className="flex flex-shrink-0 items-center justify-between bg-red-50 px-4 py-2 dark:bg-red-950/30">
+            <span className="text-sm font-medium text-red-700 dark:text-red-300">
+              불가 처리할 대원을 터치하세요
+            </span>
+            <Button size="sm" variant="ghost" onClick={() => setSeatSelectionMode(null)}
+              className="text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50"
+            >
+              취소
+            </Button>
+          </div>
+        )}
+
         {/* 상단: 좌석 그리드 (Scrollable) */}
         <div className="relative flex-1 overflow-auto">
           <SeatsGrid
@@ -1199,15 +1263,24 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             highlightMemberId={highlightMemberId}
           />
 
-          {/* 그리드 설정 버튼 (Floating) */}
+          {/* 그리드 설정 버튼 (Floating) — 긴급 수정 모드에서는 amber 스타일 */}
           <Button
             data-print-hide
             onClick={() => setShowSettingsSheet(true)}
             variant="outline"
             size="icon"
-            className="absolute top-4 right-4 z-10 h-10 w-10 rounded-full bg-white/90 shadow-md backdrop-blur-sm"
+            className={cn(
+              'absolute top-4 right-4 z-10 h-10 w-10 rounded-full shadow-md backdrop-blur-sm',
+              isEmergencyMode
+                ? 'border-amber-300 bg-amber-500 text-white hover:bg-amber-600'
+                : 'bg-white/90',
+            )}
           >
-            <Settings className="h-5 w-5" />
+            {isEmergencyMode ? (
+              <AlertTriangle className="h-5 w-5" />
+            ) : (
+              <Settings className="h-5 w-5" />
+            )}
           </Button>
         </div>
 
@@ -1245,7 +1318,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           </div>
         )}
 
-        {/* Bottom Sheet - 워크플로우 (모바일) */}
+        {/* Bottom Sheet - 워크플로우 또는 긴급 수정 패널 (모바일) */}
         {showSettingsSheet && (
           <>
             {/* 배경 오버레이 */}
@@ -1271,7 +1344,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
               </div>
               {/* 헤더 - flex-shrink-0로 항상 표시 보장 */}
               <div className="flex flex-shrink-0 items-center justify-between border-b border-[var(--color-border-default)] bg-[var(--color-surface)] px-4 py-3">
-                <h2 className="text-lg font-bold text-[var(--color-text-primary)]">워크플로우</h2>
+                <h2 className="text-lg font-bold text-[var(--color-text-primary)]">
+                  {isEmergencyMode ? '긴급 수정' : '워크플로우'}
+                </h2>
                 <Button
                   onClick={() => setShowSettingsSheet(false)}
                   variant="ghost"
@@ -1282,13 +1357,28 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   닫기
                 </Button>
               </div>
-              {/* 워크플로우 패널 - min-h-0으로 flex overflow 동작 보장 */}
+              {/* 패널 콘텐츠 - min-h-0으로 flex overflow 동작 보장 */}
               <div className="min-h-0 flex-1 overflow-auto p-4">
-                <WorkflowPanel
-                  renderStepContent={renderWorkflowStepContent}
-                  totalMembers={totalMembers}
-                  arrangementStatus={arrangement.status ?? undefined}
-                />
+                {isEmergencyMode ? (
+                  <EmergencyEditPanel
+                    arrangementId={id}
+                    date={arrangement?.date || ''}
+                    gridLayout={gridLayout}
+                    onGridLayoutChange={setGridLayout}
+                    onOpenUnavailableDialog={handleEmergencyUnavailable}
+                    onOpenAvailableDialog={() => setEmergencyAvailableDialogOpen(true)}
+                    onOpenClearRowLeadersDialog={() => setClearRowLeadersDialog(true)}
+                    getActivePresetId={getActivePresetId}
+                    totalMembers={totalMembers}
+                    onRequestUnavailableMode={handleEmergencyUnavailableFromPanel}
+                  />
+                ) : (
+                  <WorkflowPanel
+                    renderStepContent={renderWorkflowStepContent}
+                    totalMembers={totalMembers}
+                    arrangementStatus={arrangement.status ?? undefined}
+                  />
+                )}
               </div>
             </div>
           </>
@@ -1327,6 +1417,16 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           clearAllRowLeaders();
           setClearRowLeadersDialog(false);
         }}
+      />
+
+      {/* 긴급 등단 가능 추가 다이얼로그 (EmergencyEditPanel에서 사용) */}
+      <EmergencyAvailableDialog
+        open={emergencyAvailableDialogOpen}
+        onOpenChange={setEmergencyAvailableDialogOpen}
+        arrangementId={id}
+        date={arrangement?.date || ''}
+        onComplete={(message) => showSuccess(message)}
+        onError={(message) => showError(`오류: ${message}`)}
       />
     </div>
   );

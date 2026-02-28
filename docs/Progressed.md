@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-02-28 | feat(emergency): 긴급 수정 모드 통합 — EmergencyEditPanel 연동 + 모바일 지원 |
 | 2026-02-28 | feat(ui): EmergencyEditPanel 섹션 시각적 구분 개선 |
 | 2026-02-28 | feat(ui): 배치표 워크플로우 UX 개선 + 출석/마이페이지 UI 리팩토링 |
 | 2026-02-28 | fix(seats): RPC 에러 로깅 추가 + 로컬 Supabase 설정 수정 |
