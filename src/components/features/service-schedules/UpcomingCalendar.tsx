@@ -1,9 +1,13 @@
 'use client';
 'use memo';
 
+import { ArrowRight, CalendarCheck } from 'lucide-react';
+
 import { useCallback, useMemo, useState } from 'react';
 
 import dynamic from 'next/dynamic';
+
+import { Button } from '@/components/ui/button';
 
 import {
   DateCard,
@@ -13,7 +17,6 @@ import {
   type ServiceSchedule,
 } from './DateCard';
 
-// 모달 컴포넌트 동적 import (코드 스플리팅)
 const ServiceScheduleDialog = dynamic(() => import('./ServiceScheduleDialog'), {
   ssr: false,
   loading: () => null,
@@ -23,47 +26,55 @@ const EventDialog = dynamic(() => import('./EventDialog'), {
   loading: () => null,
 });
 
-interface MonthlyCalendarProps {
-  year: number;
-  month: number; // 1-12
+interface UpcomingCalendarProps {
+  startDate: string; // YYYY-MM-DD (오늘)
+  endDate: string; // YYYY-MM-DD (5주 후)
   schedules: ServiceSchedule[];
   events?: ChoirEvent[];
   onRefresh: () => void;
+  onShowPastSchedules?: () => void;
 }
 
 /**
- * 월 내 모든 일요일 날짜 계산
+ * 날짜 범위 내 모든 일요일 계산
  */
-function getSundaysInMonth(year: number, month: number): string[] {
+function getSundaysInRange(startDate: string, endDate: string): string[] {
   const sundays: string[] = [];
-  const daysInMonth = new Date(year, month, 0).getDate();
+  const start = new Date(startDate);
+  const end = new Date(endDate);
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month - 1, day);
-    if (date.getDay() === 0) {
-      const yyyy = date.getFullYear();
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      sundays.push(`${yyyy}-${mm}-${dd}`);
-    }
+  // 시작일에서 가장 가까운 일요일 찾기
+  const current = new Date(start);
+  const dayOfWeek = current.getDay();
+  if (dayOfWeek !== 0) {
+    current.setDate(current.getDate() + (7 - dayOfWeek));
+  }
+
+  while (current <= end) {
+    const yyyy = current.getFullYear();
+    const mm = String(current.getMonth() + 1).padStart(2, '0');
+    const dd = String(current.getDate()).padStart(2, '0');
+    sundays.push(`${yyyy}-${mm}-${dd}`);
+    current.setDate(current.getDate() + 7);
   }
 
   return sundays;
 }
 
-export default function MonthlyCalendar({
-  year,
-  month,
+export default function UpcomingCalendar({
+  startDate,
+  endDate,
   schedules,
   events = [],
   onRefresh,
-}: MonthlyCalendarProps) {
+  onShowPastSchedules,
+}: UpcomingCalendarProps) {
   const [editingSchedule, setEditingSchedule] = useState<ServiceSchedule | null>(null);
   const [creatingDate, setCreatingDate] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<ChoirEvent | null>(null);
   const [creatingEventDate, setCreatingEventDate] = useState<string | null>(null);
 
-  const sundays = useMemo(() => getSundaysInMonth(year, month), [year, month]);
+  const sundays = useMemo(() => getSundaysInRange(startDate, endDate), [startDate, endDate]);
 
   const scheduleMap = useMemo(() => {
     const map = new Map<string, ServiceSchedule[]>();
@@ -129,6 +140,13 @@ export default function MonthlyCalendar({
 
   return (
     <div className="space-y-3">
+      {allDates.length === 0 && (
+        <div className="flex flex-col items-center justify-center gap-3 py-12 text-[var(--color-text-tertiary)]">
+          <CalendarCheck className="h-10 w-10" />
+          <p className="text-sm">다가오는 일정이 없습니다</p>
+        </div>
+      )}
+
       {allDates.map((dateStr) => {
         const dateSchedules = scheduleMap.get(dateStr) || [];
         const dateEvents = eventMap.get(dateStr) || [];
@@ -149,6 +167,20 @@ export default function MonthlyCalendar({
           />
         );
       })}
+
+      {/* 지난 일정 보기 버튼 */}
+      {onShowPastSchedules && (
+        <div className="flex justify-center pt-2 pb-4">
+          <Button
+            variant="ghost"
+            className="gap-2 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+            onClick={onShowPastSchedules}
+          >
+            지난 일정 보기
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       <ServiceScheduleDialog
         open={!!editingSchedule || !!creatingDate}
