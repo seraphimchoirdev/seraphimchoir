@@ -452,9 +452,10 @@ export const useAuthStore = create<AuthStore>()(
           return profile?.role === 'ADMIN';
         },
 
-        // 대원 연결 확인
+        // 대원 연결 확인 (ADMIN은 대원 연결 없이도 모든 기능 접근 가능)
         isMemberLinked: () => {
           const { profile } = get();
+          if (profile?.role === 'ADMIN') return true;
           return profile?.linked_member_id !== null && profile?.link_status === 'approved';
         },
 

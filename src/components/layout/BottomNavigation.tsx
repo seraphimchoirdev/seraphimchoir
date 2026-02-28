@@ -48,6 +48,7 @@ export default function BottomNavigation() {
   };
 
   const isMemberLinked = (): boolean => {
+    if (profile?.role === 'ADMIN') return true;
     return !!(profile?.linked_member_id && profile?.link_status === 'approved');
   };
 

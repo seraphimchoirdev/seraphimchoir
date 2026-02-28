@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Calendar, Loader2 } from 'lucide-react';
+import { AlertTriangle, Calendar, Loader2, Music } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 
@@ -16,9 +16,18 @@ import { useAttendances, useCreateAttendance, useUpdateAttendance } from '@/hook
 import { useAuth } from '@/hooks/useAuth';
 import { useServiceDateNavigation } from '@/hooks/useServiceDateNavigation';
 import { useServiceSchedulesByDate } from '@/hooks/useServiceSchedules';
+import {
+  formatDeadlineDisplay,
+  formatTimeLeft,
+  getPracticeDeadline,
+  getServiceDeadline,
+  isDeadlinePassed,
+} from '@/hooks/useVoteDeadlines';
 import { createLogger } from '@/lib/logger';
 import { showError, showSuccess } from '@/lib/toast';
 import { PracticeAttendanceType } from '@/types/database.types';
+
+import type { DeadlineInfo } from '@/components/features/my-attendance/ServiceVoteSection';
 
 const logger = createLogger({ prefix: 'MyAttendancePage' });
 
@@ -148,6 +157,21 @@ export default function MyAttendancePage() {
 
   const isLoading = navLoading || servicesLoading || attendancesLoading;
 
+  // 마감 정보 계산 헬퍼
+  const buildDeadlineInfo = (deadline: Date): DeadlineInfo => {
+    const passed = isDeadlinePassed(deadline);
+    const now = new Date();
+    const diffMs = deadline.getTime() - now.getTime();
+    const isUrgent = !passed && diffMs < 60 * 60 * 1000; // 1시간 미만
+
+    return {
+      display: formatDeadlineDisplay(deadline),
+      timeLeft: formatTimeLeft(deadline),
+      isPassed: passed,
+      isUrgent,
+    };
+  };
+
   // 개별 예배의 투표 UI 렌더링
   const renderServiceVote = (service: (typeof services)[number]) => {
     const attendance = getAttendance(service.id);
@@ -155,12 +179,41 @@ export default function MyAttendancePage() {
     const practiceStatus = attendance?.practice_status ?? null;
     const isPracticeAttended = attendance?.is_practice_attended ?? false;
 
+    // 마감시한 계산
+    const serviceDeadline = buildDeadlineInfo(getServiceDeadline(service.date));
+    const practiceDeadline = service.has_post_practice
+      ? buildDeadlineInfo(
+          getPracticeDeadline(service.date, service.post_practice_start_time)
+        )
+      : null;
+
     return (
       <div className="space-y-5">
+        {/* 찬양곡 */}
+        {service.hymn_name && (
+          <div className="rounded-lg bg-[var(--color-background-secondary)] px-3 py-2.5 space-y-1.5">
+            <div className="text-xs font-medium text-[var(--color-text-tertiary)]">찬양곡</div>
+            <div className="flex items-center gap-2">
+              <Music className="h-4 w-4 shrink-0 text-[var(--color-primary)]" />
+              <div className="min-w-0 text-sm">
+                <span className="font-medium text-[var(--color-text-primary)]">
+                  {service.hymn_name}
+                </span>
+                {service.composer && (
+                  <span className="text-[var(--color-text-tertiary)]">
+                    {' · '}{service.composer}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <ServiceVoteSection
           isAvailable={isAvailable}
           onVote={(value) => handleServiceVote(service.id, service.date, value)}
           disabled={isMutating}
+          deadline={serviceDeadline}
         />
         {service.has_post_practice && (
           <PracticeVoteSection
@@ -168,6 +221,7 @@ export default function MyAttendancePage() {
             isPracticeAttended={isPracticeAttended}
             onVote={(status) => handlePracticeVote(service.id, service.date, status)}
             disabled={isMutating}
+            deadline={practiceDeadline}
           />
         )}
       </div>
@@ -182,7 +236,11 @@ export default function MyAttendancePage() {
           <div className="mb-5">
             <DateNavigator
               selectedDate={selectedDate}
-              relativeLabel={relativeLabel}
+              relativeLabel={
+                services.length === 1 && services[0].service_type
+                  ? (services[0].service_type as string)
+                  : relativeLabel
+              }
               hasPrev={hasPrev}
               hasNext={hasNext}
               onPrev={goToPrev}

@@ -1,9 +1,10 @@
 'use client';
 
-import { CheckCircle, LogIn, LogOut, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, LogIn, LogOut, XCircle } from 'lucide-react';
 
 import { PracticeAttendanceType } from '@/types/database.types';
 
+import type { DeadlineInfo } from './ServiceVoteSection';
 import { VoteButton } from './VoteButton';
 
 const PRACTICE_OPTIONS: {
@@ -45,6 +46,7 @@ interface PracticeVoteSectionProps {
   isPracticeAttended: boolean;
   onVote: (status: PracticeAttendanceType) => void;
   disabled?: boolean;
+  deadline?: DeadlineInfo | null;
 }
 
 export function PracticeVoteSection({
@@ -52,6 +54,7 @@ export function PracticeVoteSection({
   isPracticeAttended,
   onVote,
   disabled = false,
+  deadline,
 }: PracticeVoteSectionProps) {
   const isSelected = (value: PracticeAttendanceType) => {
     if (currentStatus !== null) return currentStatus === value;
@@ -63,9 +66,12 @@ export function PracticeVoteSection({
 
   return (
     <div className="space-y-2">
-      <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
-        연습 참석
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-semibold text-[var(--color-text-primary)]">
+          연습 참석
+        </h3>
+        {deadline && <DeadlineLabel deadline={deadline} />}
+      </div>
       <div className="grid grid-cols-2 gap-3">
         {PRACTICE_OPTIONS.map((option) => (
           <VoteButton
@@ -74,11 +80,33 @@ export function PracticeVoteSection({
             icon={option.icon}
             label={option.label}
             onClick={() => onVote(option.value)}
-            disabled={disabled}
+            disabled={disabled || (deadline?.isPassed ?? false)}
             colorScheme={option.colorScheme}
           />
         ))}
       </div>
     </div>
+  );
+}
+
+function DeadlineLabel({ deadline }: { deadline: DeadlineInfo }) {
+  if (deadline.isPassed) {
+    return (
+      <span className="flex items-center gap-1 text-xs text-[var(--color-text-disabled)]">
+        <Clock className="h-3.5 w-3.5" />
+        마감됨
+      </span>
+    );
+  }
+
+  const colorClass = deadline.isUrgent
+    ? 'text-amber-500'
+    : 'text-[var(--color-text-tertiary)]';
+
+  return (
+    <span className={`flex items-center gap-1 text-xs ${colorClass}`}>
+      <Clock className="h-3.5 w-3.5" />
+      {deadline.display} · {deadline.timeLeft}
+    </span>
   );
 }
