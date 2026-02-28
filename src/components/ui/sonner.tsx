@@ -32,6 +32,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mql.addEventListener('change', handler);
+
+    // DEV ONLY: Playwright 테스트용 글로벌 노출 (프로덕션 빌드에서 제거됨)
+    if (process.env.NODE_ENV === 'development') {
+      (window as unknown as Record<string, unknown>).__test_toast = toast;
+    }
+
     return () => mql.removeEventListener('change', handler);
   }, []);
 
@@ -40,6 +46,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       className="toaster group"
       position={isMobile ? 'bottom-center' : 'top-center'}
       offset={isMobile ? 80 : 16}
+      mobileOffset={80}
       // 접근성: 포커스 가능, 키보드 네비게이션
       closeButton
       // 여러 알림 스택 시 compact하게
