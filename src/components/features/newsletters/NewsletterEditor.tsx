@@ -28,7 +28,59 @@ interface NewsletterEditorProps {
   announcementsOnly?: boolean;
 }
 
-const DEFAULT_FOOTER = '후원계좌: 국민 293801-01-184111 (새로핌찬양대)\n둘째주, 넷째주 연습 전에는 목사님의 성경 공부가 있으며, 성경 공부 직후 찬양연습을 진행합니다.';
+const DEFAULT_FOOTER = '둘째주, 넷째주 연습 전에는 목사님의 성경 공부가 있으며, 성경 공부 직후 찬양연습을 진행합니다.\n후원계좌: 국민 293801-01-184111 (새로핌찬양대)';
+
+// 호수 자동 계산 기준점: 2026-03-01 = 제41권 9호, 통권 1984호
+const BASELINE = {
+  date: '2026-03-01',
+  volume: 41,
+  issueNumber: 9,
+  serialNumber: 1984,
+} as const;
+
+/**
+ * 기준점으로부터 주차 차이를 계산하여 호수 산출.
+ * 매주 주일마다 1호씩 증가하며, 연도가 바뀌면 issue_number는 1부터 다시 시작.
+ */
+function calcIssueNumbers(issueDate: string) {
+  const base = new Date(BASELINE.date + 'T00:00:00');
+  const target = new Date(issueDate + 'T00:00:00');
+  const diffWeeks = Math.round((target.getTime() - base.getTime()) / (7 * 24 * 60 * 60 * 1000));
+
+  const serialNumber = BASELINE.serialNumber + diffWeeks;
+
+  // 연도별 issue_number 계산: 기준점의 연도/호를 기반으로
+  const baseYear = base.getFullYear();
+  const targetYear = target.getFullYear();
+  const yearDiff = targetYear - baseYear;
+
+  if (yearDiff === 0) {
+    return {
+      volume: BASELINE.volume,
+      issueNumber: BASELINE.issueNumber + diffWeeks,
+      serialNumber,
+    };
+  }
+
+  // 다른 연도: 기준 연도의 마지막 주일까지 몇 주인지 계산 후 나머지를 새 연도 호수로
+  // 간단 접근: 기준 연도 말(12/31)까지 남은 주 수로 그 해 마지막 호 산출
+  const endOfBaseYear = new Date(`${baseYear}-12-31T00:00:00`);
+  // 기준점부터 연말까지의 주일 수 (기준점 포함)
+  const weeksToEndOfYear = Math.round((endOfBaseYear.getTime() - base.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  const lastIssueOfBaseYear = BASELINE.issueNumber + weeksToEndOfYear;
+
+  // 매년 약 52~53호. 타겟 연도 1/1부터의 주차로 issueNumber 산출
+  const startOfTargetYear = new Date(`${targetYear}-01-01T00:00:00`);
+  const weeksFromTargetYearStart = Math.round((target.getTime() - startOfTargetYear.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  // 그 해 첫 주일이 1호
+  const issueNumber = weeksFromTargetYearStart + 1;
+
+  return {
+    volume: BASELINE.volume + yearDiff,
+    issueNumber,
+    serialNumber,
+  };
+}
 
 /**
  * 다음 주일 날짜 계산
@@ -58,12 +110,14 @@ export default function NewsletterEditor({ newsletterId, announcementsOnly }: Ne
 
   const [showPreview, setShowPreview] = useState(false);
 
-  // 폼 상태
-  const [issueDate, setIssueDate] = useState(getNextSunday());
-  const [volume, setVolume] = useState(1);
-  const [issueNumber, setIssueNumber] = useState(1);
-  const [serialNumber, setSerialNumber] = useState(1);
-  const [yearMotto, setYearMotto] = useState('');
+  // 폼 상태 — 기준점 기반 자동 계산
+  const initialDate = getNextSunday();
+  const initialCalc = calcIssueNumbers(initialDate);
+  const [issueDate, setIssueDate] = useState(initialDate);
+  const [volume, setVolume] = useState(initialCalc.volume);
+  const [issueNumber, setIssueNumber] = useState(initialCalc.issueNumber);
+  const [serialNumber, setSerialNumber] = useState(initialCalc.serialNumber);
+  const [yearMotto, setYearMotto] = useState('성령 안에 하나되어, 예수님만 높이는 새로핌 찬양대');
   const [publisherName, setPublisherName] = useState('송혁진');
   const [editorName, setEditorName] = useState('김택훈');
   const [editorWeeklyName, setEditorWeeklyName] = useState('이수지');
@@ -107,31 +161,26 @@ export default function NewsletterEditor({ newsletterId, announcementsOnly }: Ne
     setFixedFooterText(existing.fixed_footer_text || DEFAULT_FOOTER);
   }, [existing]);
 
-  // 새 작성 시 이전 호 데이터로 자동 채움
+  // 새 작성 시: 발행일 변경 → 호수 자동 재계산 (기준점 기반)
+  useEffect(() => {
+    if (isEditMode) return;
+    const calc = calcIssueNumbers(issueDate);
+    setVolume(calc.volume);
+    setIssueNumber(calc.issueNumber);
+    setSerialNumber(calc.serialNumber);
+  }, [isEditMode, issueDate]);
+
+  // 새 작성 시: 이전 호에서 발행인/편집인/표어 등 메타 자동 채움
   useEffect(() => {
     if (isEditMode || !latestMeta?.data) return;
     const prev = latestMeta.data;
-
-    // 같은 연도면 issue_number +1, 다른 연도면 1부터
-    const prevYear = new Date(prev.issue_date + 'T00:00:00').getFullYear();
-    const currentYear = new Date(issueDate + 'T00:00:00').getFullYear();
-
-    if (prevYear === currentYear) {
-      setVolume(prev.volume);
-      setIssueNumber(prev.issue_number + 1);
-    } else {
-      setVolume(prev.volume + 1);
-      setIssueNumber(1);
-    }
-
-    setSerialNumber(prev.serial_number + 1);
-    setYearMotto(prev.year_motto || '');
+    setYearMotto(prev.year_motto || '성령 안에 하나되어, 예수님만 높이는 새로핌 찬양대');
     setPublisherName(prev.publisher_name || '송혁진');
     setEditorName(prev.editor_name || '김택훈');
     setEditorWeeklyName(prev.editor_weekly_name || '이수지');
     setMetaAutoFilled(true);
     setFixedFooterText(prev.fixed_footer_text || DEFAULT_FOOTER);
-  }, [isEditMode, latestMeta?.data, issueDate]);
+  }, [isEditMode, latestMeta?.data]);
 
   const handleSave = useCallback(async () => {
     const announcements = announcementItems.filter(Boolean).join('\n');
