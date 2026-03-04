@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-03-04 | feat(newsletters): 알림 항목별 입력 UI + 발행인/편집인 자동 채움 indicator |
 | 2026-03-01 | fix(db): 마이그레이션 seed INSERT 비활성화로 members 중복 해소 |
 | 2026-02-28 | feat(emergency): 긴급 수정 모드 통합 — EmergencyEditPanel 연동 + 모바일 지원 |
 | 2026-02-28 | feat(ui): EmergencyEditPanel 섹션 시각적 구분 개선 |
