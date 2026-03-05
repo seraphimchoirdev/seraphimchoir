@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, ArrowUp, Eye, EyeOff, Loader2, Plus, Save, Send, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Eye, EyeOff, Loader2, Pin, Plus, Save, Send, X } from 'lucide-react';
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -28,7 +28,12 @@ interface NewsletterEditorProps {
   announcementsOnly?: boolean;
 }
 
-const DEFAULT_FOOTER = '둘째주, 넷째주 연습 전에는 목사님의 성경 공부가 있으며, 성경 공부 직후 찬양연습을 진행합니다.\n후원계좌: 국민 293801-01-184111 (새로핌찬양대)';
+const DEFAULT_FOOTER = '후원계좌: 국민 293801-01-184111 (새로핌찬양대)';
+const DEFAULT_PINNED_ANNOUNCEMENT = '[pin]둘째주, 넷째주 연습 전에는 목사님의 성경 공부가 있으며, 성경 공부 직후 찬양연습을 진행합니다.';
+
+const PIN_PREFIX = '[pin]';
+const isPinned = (item: string) => item.startsWith(PIN_PREFIX);
+const getDisplayText = (item: string) => isPinned(item) ? item.slice(PIN_PREFIX.length) : item;
 
 // 호수 자동 계산 기준점: 2026-03-01 = 제41권 9호, 통권 1984호
 const BASELINE = {
@@ -122,7 +127,7 @@ export default function NewsletterEditor({ newsletterId, announcementsOnly }: Ne
   const [editorName, setEditorName] = useState('김택훈');
   const [editorWeeklyName, setEditorWeeklyName] = useState('이수지');
   const [metaAutoFilled, setMetaAutoFilled] = useState(false);
-  const [announcementItems, setAnnouncementItems] = useState<string[]>(['']);
+  const [announcementItems, setAnnouncementItems] = useState<string[]>(['', DEFAULT_PINNED_ANNOUNCEMENT]);
   const [fixedFooterText, setFixedFooterText] = useState(DEFAULT_FOOTER);
 
   // 알림 항목 조작 헬퍼
@@ -143,6 +148,12 @@ export default function NewsletterEditor({ newsletterId, announcementsOnly }: Ne
       [next[index], next[target]] = [next[target], next[index]];
       return next;
     });
+  };
+  const togglePinItem = (index: number) => {
+    setAnnouncementItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      return isPinned(item) ? item.slice(PIN_PREFIX.length) : `${PIN_PREFIX}${item}`;
+    }));
   };
 
   // 기존 소식지 데이터로 초기화 (편집 모드)
@@ -183,7 +194,11 @@ export default function NewsletterEditor({ newsletterId, announcementsOnly }: Ne
   }, [isEditMode, latestMeta?.data]);
 
   const handleSave = useCallback(async () => {
-    const announcements = announcementItems.filter(Boolean).join('\n');
+    // pin 항목은 하단에 정렬하여 저장
+    const filtered = announcementItems.filter(Boolean);
+    const normalItems = filtered.filter(item => !isPinned(item));
+    const pinnedItems = filtered.filter(item => isPinned(item));
+    const announcements = [...normalItems, ...pinnedItems].join('\n');
     const data = {
       issue_date: issueDate,
       volume,
@@ -415,11 +430,24 @@ export default function NewsletterEditor({ newsletterId, announcementsOnly }: Ne
                   </div>
                   {/* 입력 필드 */}
                   <Input
-                    value={item}
-                    onChange={e => updateAnnouncementItem(idx, e.target.value)}
+                    value={getDisplayText(item)}
+                    onChange={e => {
+                      const val = e.target.value;
+                      updateAnnouncementItem(idx, isPinned(item) ? `${PIN_PREFIX}${val}` : val);
+                    }}
                     placeholder={`알림 항목 ${idx + 1}`}
                     className="flex-1"
                   />
+                  {/* 고정 토글 */}
+                  <button
+                    type="button"
+                    onClick={() => togglePinItem(idx)}
+                    className={`rounded p-1 ${isPinned(item) ? 'text-[var(--color-primary-600)] bg-[var(--color-primary-50)]' : 'text-[var(--color-text-tertiary)] hover:bg-[var(--color-background-secondary)]'}`}
+                    aria-label={isPinned(item) ? '고정 해제' : '고정'}
+                    title={isPinned(item) ? '고정 해제' : '고정'}
+                  >
+                    <Pin className="h-4 w-4" />
+                  </button>
                   {/* 삭제 버튼 */}
                   <button
                     type="button"

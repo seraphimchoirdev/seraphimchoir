@@ -61,7 +61,7 @@ export default function FixedFooter({ text }: FixedFooterProps) {
   return (
     <>
       <footer className="border-t-2 border-[var(--color-primary-600)] pt-3">
-        <div className="space-y-1 text-xs text-[var(--color-text-tertiary)]">
+        <div className="space-y-1 text-sm text-[var(--color-text-tertiary)]">
           {lines.map((line, i) => {
             const account = extractAccountNumber(line);
             if (account) {
