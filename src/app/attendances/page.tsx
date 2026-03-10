@@ -1,12 +1,6 @@
 'use client';
 
-import { addMonths } from 'date-fns/addMonths';
-import { addWeeks } from 'date-fns/addWeeks';
 import { format } from 'date-fns/format';
-import { isSunday } from 'date-fns/isSunday';
-import { nextSunday } from 'date-fns/nextSunday';
-import { subMonths } from 'date-fns/subMonths';
-import { subWeeks } from 'date-fns/subWeeks';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Info, Music } from 'lucide-react';
 
 import { useMemo, useState } from 'react';
@@ -29,6 +23,7 @@ import { Spinner } from '@/components/ui/spinner';
 
 import { useAttendanceDeadlines, useToggleReadiness } from '@/hooks/useAttendanceDeadlines';
 import { useAuth } from '@/hooks/useAuth';
+import { useServiceDateNavigation } from '@/hooks/useServiceDateNavigation';
 import { useServiceSchedules, useServiceSchedulesByDate } from '@/hooks/useServiceSchedules';
 import { useUserPart } from '@/hooks/useUserPart';
 
@@ -39,14 +34,8 @@ export default function AttendancesPage() {
   // 출석 관리 권한: ADMIN, CONDUCTOR, MANAGER, PART_LEADER
   const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']);
 
-  // 기본값: 다가오는 주일 (오늘이 주일이면 오늘)
-  const [selectedDate, setSelectedDate] = useState<Date>(() => {
-    const today = new Date();
-    if (isSunday(today)) return today;
-    return nextSunday(today);
-  });
-
-  const dateStr = format(selectedDate, 'yyyy-MM-dd');
+  // 예배 일정 기반 날짜 네비게이션
+  const { selectedDate: dateStr, hasPrev, hasNext, goToPrev, goToNext, setDate } = useServiceDateNavigation();
 
   // 준비 완료 상태 조회 및 토글
   const { data: deadlines, isLoading: deadlinesLoading } = useAttendanceDeadlines(dateStr);
@@ -55,19 +44,20 @@ export default function AttendancesPage() {
   // 선택된 예배 일정 ID (사용자가 드롭다운에서 선택한 값, 없으면 자동 선택)
   const [manualServiceScheduleId, setManualServiceScheduleId] = useState<string | undefined>();
 
-  // 날짜 네비게이션
-  const handlePrevWeek = () => {
-    setSelectedDate((prev) => subWeeks(prev, 1));
-    setManualServiceScheduleId(undefined); // 날짜 변경 시 수동 선택 초기화
-  };
-  const handleNextWeek = () => {
-    setSelectedDate((prev) => addWeeks(prev, 1));
-    setManualServiceScheduleId(undefined);
-  };
+  // 날짜 이동 시 수동 선택 초기화하는 래퍼
+  const handlePrev = () => { goToPrev(); setManualServiceScheduleId(undefined); };
+  const handleNext = () => { goToNext(); setManualServiceScheduleId(undefined); };
+
+  // Date 객체 (Calendar, AttendanceList용)
+  const selectedDateObj = useMemo(() => new Date(dateStr + 'T00:00:00'), [dateStr]);
 
   // 캘린더에 표시될 범위의 예배 일정 조회 (전후 3개월)
-  const calendarStartDate = format(subMonths(selectedDate, 3), 'yyyy-MM-dd');
-  const calendarEndDate = format(addMonths(selectedDate, 3), 'yyyy-MM-dd');
+  const calStart = new Date(selectedDateObj);
+  calStart.setMonth(calStart.getMonth() - 3);
+  const calEnd = new Date(selectedDateObj);
+  calEnd.setMonth(calEnd.getMonth() + 3);
+  const calendarStartDate = format(calStart, 'yyyy-MM-dd');
+  const calendarEndDate = format(calEnd, 'yyyy-MM-dd');
 
   const { data: serviceSchedulesResponse } = useServiceSchedules({
     startDate: calendarStartDate,
@@ -180,7 +170,7 @@ export default function AttendancesPage() {
                 )}
 
                 <div className="flex items-center gap-4 rounded-lg bg-[var(--color-background-secondary)] p-2">
-                  <Button variant="ghost" size="icon" onClick={handlePrevWeek}>
+                  <Button variant="ghost" size="icon" onClick={handlePrev} disabled={!hasPrev}>
                     <ChevronLeft className="h-5 w-5" />
                   </Button>
 
@@ -191,17 +181,17 @@ export default function AttendancesPage() {
                         className="min-w-[160px] border-none bg-transparent text-lg font-medium shadow-sm hover:bg-[var(--color-background-primary)]"
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {format(selectedDate, 'yyyy-MM-dd')}
+                        {dateStr}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
                       <Calendar
                         mode="single"
-                        selected={selectedDate}
+                        selected={selectedDateObj}
                         onSelect={(date) => {
                           if (date instanceof Date && !isDateDisabled(date)) {
-                            setSelectedDate(date);
-                            setManualServiceScheduleId(undefined); // 날짜 변경 시 수동 선택 초기화
+                            setDate(format(date, 'yyyy-MM-dd'));
+                            setManualServiceScheduleId(undefined);
                           }
                         }}
                         disabled={isDateDisabled}
@@ -214,7 +204,7 @@ export default function AttendancesPage() {
                     </PopoverContent>
                   </Popover>
 
-                  <Button variant="ghost" size="icon" onClick={handleNextWeek}>
+                  <Button variant="ghost" size="icon" onClick={handleNext} disabled={!hasNext}>
                     <ChevronRight className="h-5 w-5" />
                   </Button>
                 </div>
@@ -270,7 +260,7 @@ export default function AttendancesPage() {
             {/* 출석 목록 */}
             <div className="rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-background-primary)] p-6 shadow-[var(--shadow-sm)]">
               <AttendanceList
-                date={selectedDate}
+                date={selectedDateObj}
                 serviceScheduleId={selectedServiceScheduleId}
                 deadlines={deadlines}
                 onMarkReady={async (part) => {

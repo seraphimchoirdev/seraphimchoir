@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
+import { formatDate } from '@/lib/dashboard-context';
 
 interface ServiceDateNavigation {
   /** 현재 선택된 날짜 (YYYY-MM-DD) */
@@ -15,6 +16,8 @@ interface ServiceDateNavigation {
   goToNext: () => void;
   /** "이번 주일 예배", "다음 주일 예배" 등 상대 라벨 */
   relativeLabel: string;
+  /** 외부에서 날짜를 직접 설정 */
+  setDate: (date: string) => void;
   /** 일정 로딩 중 */
   isLoading: boolean;
 }
@@ -31,8 +34,8 @@ export function useServiceDateNavigation(): ServiceDateNavigation {
   const threeMonthsLater = new Date(today);
   threeMonthsLater.setMonth(today.getMonth() + 3);
 
-  const startDate = sixMonthsAgo.toISOString().split('T')[0];
-  const endDate = threeMonthsLater.toISOString().split('T')[0];
+  const startDate = formatDate(sixMonthsAgo);
+  const endDate = formatDate(threeMonthsLater);
 
   const { data: schedules, isLoading } = useServiceSchedules({ startDate, endDate });
 
@@ -45,7 +48,7 @@ export function useServiceDateNavigation(): ServiceDateNavigation {
 
   // 가장 가까운 미래 날짜를 기본값으로 설정
   const defaultDate = useMemo(() => {
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = formatDate(today);
     const futureDate = sortedDates.find((d) => d >= todayStr);
     return futureDate || sortedDates[sortedDates.length - 1] || todayStr;
   }, [sortedDates, today]);
@@ -78,7 +81,7 @@ export function useServiceDateNavigation(): ServiceDateNavigation {
   const relativeLabel = useMemo(() => {
     if (!activeDate) return '';
 
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = formatDate(today);
     const selected = new Date(activeDate + 'T00:00:00');
     const todayDate = new Date(todayStr + 'T00:00:00');
     const diffDays = Math.round(
@@ -98,6 +101,7 @@ export function useServiceDateNavigation(): ServiceDateNavigation {
     hasNext,
     goToPrev,
     goToNext,
+    setDate: setSelectedDate,
     relativeLabel,
     isLoading,
   };
