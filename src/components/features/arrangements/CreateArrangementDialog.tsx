@@ -63,7 +63,11 @@ export default function CreateArrangementDialog({
   // 예배 일정 목록 (날짜순 정렬)
   const upcomingSchedules = useMemo(() => {
     if (!schedulesResponse?.data) return [];
-    return [...schedulesResponse.data].sort((a, b) => a.date.localeCompare(b.date));
+    return [...schedulesResponse.data].sort((a, b) => {
+      const dateCompare = a.date.localeCompare(b.date);
+      if (dateCompare !== 0) return dateCompare;
+      return (a.service_start_time ?? '').localeCompare(b.service_start_time ?? '');
+    });
   }, [schedulesResponse]);
 
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>('');

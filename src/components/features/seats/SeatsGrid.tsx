@@ -47,6 +47,8 @@ interface SeatsGridProps {
   workflowStep?: number;
   /** 하이라이트 대상 멤버 ID (대시보드에서 "내 자리 확인하기" 클릭 시) */
   highlightMemberId?: string | null;
+  /** 외부에서 직접 오프셋 컨트롤 표시를 제어 (긴급수정모드용) */
+  showOffsetControls?: boolean;
 }
 
 const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
@@ -59,6 +61,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
     isEmergencyMode = false,
     workflowStep,
     highlightMemberId,
+    showOffsetControls = false,
   },
   ref
 ) {
@@ -72,7 +75,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
 
   // Step 2에서 인라인 오프셋 컨트롤 표시 여부
   // (showCaptureInfo는 헤더/푸터 표시 여부일 뿐, 편집 모드와 무관)
-  const showInlineOffsetControls = workflowStep === 2;
+  const showInlineOffsetControls = workflowStep === 2 || showOffsetControls;
 
   // 브레이크포인트별 zigzag offset 값 (CSS 변수 대신 JS 계산 사용)
   // CSS calc(var(--zigzag-offset) * N) 형태가 일부 브라우저에서 무시되는 문제 해결
