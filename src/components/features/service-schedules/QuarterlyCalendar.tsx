@@ -29,6 +29,7 @@ interface QuarterlyCalendarProps {
   schedules: ServiceSchedule[];
   events?: ChoirEvent[];
   onRefresh: () => void;
+  canDeleteSchedule?: boolean;
 }
 
 /**
@@ -61,6 +62,7 @@ export default function QuarterlyCalendar({
   schedules,
   events = [],
   onRefresh,
+  canDeleteSchedule,
 }: QuarterlyCalendarProps) {
   const [editingSchedule, setEditingSchedule] = useState<ServiceSchedule | null>(null);
   const [creatingDate, setCreatingDate] = useState<string | null>(null);
@@ -169,6 +171,7 @@ export default function QuarterlyCalendar({
           setCreatingDate(null);
           onRefresh();
         }}
+        canDelete={canDeleteSchedule}
       />
 
       <EventDialog

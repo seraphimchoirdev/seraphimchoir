@@ -1,8 +1,18 @@
 'use client';
 
+import { useState } from 'react';
+
+import { Trash2 } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-import { useCreateServiceSchedule, useUpdateServiceSchedule } from '@/hooks/useServiceSchedules';
+import {
+  useCreateServiceSchedule,
+  useDeleteServiceSchedule,
+  useUpdateServiceSchedule,
+} from '@/hooks/useServiceSchedules';
 
 import { createLogger } from '@/lib/logger';
 import { showError, showSuccess } from '@/lib/toast';
@@ -22,6 +32,7 @@ interface ServiceScheduleDialogProps {
   schedule?: ServiceSchedule | null; // 수정 시
   date?: string | null; // 새 일정 생성 시
   onSuccess?: () => void;
+  canDelete?: boolean; // 삭제 권한 여부
 }
 
 export default function ServiceScheduleDialog({
@@ -30,12 +41,16 @@ export default function ServiceScheduleDialog({
   schedule,
   date,
   onSuccess,
+  canDelete,
 }: ServiceScheduleDialogProps) {
   const createMutation = useCreateServiceSchedule();
   const updateMutation = useUpdateServiceSchedule();
+  const deleteMutation = useDeleteServiceSchedule();
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const isEditing = !!schedule;
-  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   const handleSubmit = async (data: ServiceScheduleInsert) => {
     try {
@@ -78,6 +93,20 @@ export default function ServiceScheduleDialog({
     onOpenChange(false);
   };
 
+  const handleDelete = async () => {
+    if (!schedule) return;
+    try {
+      await deleteMutation.mutateAsync(schedule.id);
+      showSuccess('일정이 삭제되었습니다.');
+      setShowDeleteConfirm(false);
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (error) {
+      logger.error('ServiceSchedule delete error:', error);
+      showError('삭제에 실패했습니다.');
+    }
+  };
+
   // 날짜 포맷팅
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -99,6 +128,20 @@ export default function ServiceScheduleDialog({
             )}
           </DialogTitle>
         </DialogHeader>
+        {isEditing && canDelete && (
+          <div className="flex items-center border-b border-[var(--color-border-subtle)] pb-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-red-600 hover:bg-red-50 hover:text-red-700"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isLoading}
+            >
+              <Trash2 className="h-4 w-4" />
+              삭제
+            </Button>
+          </div>
+        )}
         <ServiceScheduleForm
           initialData={schedule}
           date={date || undefined}
@@ -107,6 +150,16 @@ export default function ServiceScheduleDialog({
           isLoading={isLoading}
         />
       </DialogContent>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="예배 일정 삭제"
+        description="이 예배 일정을 삭제하시겠습니까? 삭제된 일정은 복구할 수 없습니다."
+        variant="destructive"
+        onConfirm={handleDelete}
+        isLoading={deleteMutation.isPending}
+      />
     </Dialog>
   );
 }

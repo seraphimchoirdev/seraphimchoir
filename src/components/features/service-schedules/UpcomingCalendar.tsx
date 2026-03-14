@@ -33,6 +33,7 @@ interface UpcomingCalendarProps {
   events?: ChoirEvent[];
   onRefresh: () => void;
   onShowPastSchedules?: () => void;
+  canDeleteSchedule?: boolean;
 }
 
 /**
@@ -68,6 +69,7 @@ export default function UpcomingCalendar({
   events = [],
   onRefresh,
   onShowPastSchedules,
+  canDeleteSchedule,
 }: UpcomingCalendarProps) {
   const [editingSchedule, setEditingSchedule] = useState<ServiceSchedule | null>(null);
   const [creatingDate, setCreatingDate] = useState<string | null>(null);
@@ -197,6 +199,7 @@ export default function UpcomingCalendar({
           setCreatingDate(null);
           onRefresh();
         }}
+        canDelete={canDeleteSchedule}
       />
 
       <EventDialog

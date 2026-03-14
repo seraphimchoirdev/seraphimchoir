@@ -46,10 +46,18 @@ export async function POST(request: NextRequest) {
     const json = await request.json();
     const { schedules } = bulkUpsertSchema.parse(json);
 
+    // 동일 (date, service_type) 키 중복 제거 — 마지막 항목 우선
+    const deduped = Array.from(
+      schedules.reduce((map, s) => {
+        map.set(`${s.date}|${s.service_type}`, s);
+        return map;
+      }, new Map<string, typeof schedules[number]>()).values()
+    );
+
     // onConflict: 'date,service_type' - 같은 날짜에 다른 예배 유형은 별도 저장
     const { data, error } = await supabase
       .from('service_schedules')
-      .upsert(schedules, { onConflict: 'date,service_type' })
+      .upsert(deduped, { onConflict: 'date,service_type' })
       .select();
 
     if (error) {

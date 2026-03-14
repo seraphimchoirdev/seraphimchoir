@@ -29,6 +29,7 @@ interface MonthlyCalendarProps {
   schedules: ServiceSchedule[];
   events?: ChoirEvent[];
   onRefresh: () => void;
+  canDeleteSchedule?: boolean;
 }
 
 /**
@@ -57,6 +58,7 @@ export default function MonthlyCalendar({
   schedules,
   events = [],
   onRefresh,
+  canDeleteSchedule,
 }: MonthlyCalendarProps) {
   const [editingSchedule, setEditingSchedule] = useState<ServiceSchedule | null>(null);
   const [creatingDate, setCreatingDate] = useState<string | null>(null);
@@ -165,6 +167,7 @@ export default function MonthlyCalendar({
           setCreatingDate(null);
           onRefresh();
         }}
+        canDelete={canDeleteSchedule}
       />
 
       <EventDialog
