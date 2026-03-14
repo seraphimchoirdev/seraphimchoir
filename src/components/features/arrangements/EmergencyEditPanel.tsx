@@ -64,6 +64,8 @@ interface EmergencyEditPanelProps {
   onToggleCollapse?: () => void;
   /** 등단 불가 좌석 선택 모드 요청 핸들러 (모바일용) */
   onRequestUnavailableMode?: () => void;
+  /** 줄 정렬 조정 아코디언 열림/닫힘 변경 콜백 (그리드 인라인 오프셋 컨트롤 표시용) */
+  onOffsetEditChange?: (isEditing: boolean) => void;
   className?: string;
 }
 
@@ -92,6 +94,7 @@ export default function EmergencyEditPanel({
   collapsed = false,
   onToggleCollapse,
   onRequestUnavailableMode,
+  onOffsetEditChange,
   className,
 }: EmergencyEditPanelProps) {
   // Store 액션
@@ -515,7 +518,7 @@ export default function EmergencyEditPanel({
         {/* ============================== */}
         {/* 섹션 3: 줄 정렬 조정 (아코디언) */}
         {/* ============================== */}
-        <Collapsible open={offsetOpen} onOpenChange={setOffsetOpen} className="overflow-hidden rounded-lg border border-violet-200 dark:border-violet-800/50">
+        <Collapsible open={offsetOpen} onOpenChange={(open) => { setOffsetOpen(open); onOffsetEditChange?.(open); }} className="overflow-hidden rounded-lg border border-violet-200 dark:border-violet-800/50">
           <CollapsibleTrigger className="flex w-full items-center justify-between bg-violet-50/50 px-4 py-3 transition-colors hover:bg-violet-50 dark:bg-violet-950/20 dark:hover:bg-violet-950/30">
             <div className="flex items-center gap-3">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/50 dark:text-violet-400">

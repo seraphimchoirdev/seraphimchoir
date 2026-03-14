@@ -99,6 +99,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
   // 긴급 수정 패널 접기/펼치기 상태 (데스크톱)
   const [emergencyPanelCollapsed, setEmergencyPanelCollapsed] = useState(false);
+  const [emergencyOffsetEditing, setEmergencyOffsetEditing] = useState(false);
 
   // 모바일 좌석 선택 모드 (긴급 수정 시 "등단 불가 처리" 좌석 선택)
   const [seatSelectionMode, setSeatSelectionMode] = useState<'unavailable' | null>(null);
@@ -179,6 +180,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   // SHARED: 긴급 수정 모드 (컨텍스트 메뉴 표시) - 권한 필요
   // CONFIRMED: 읽기 전용 모드 (수정 불가)
   const isEmergencyMode = arrangement?.status === 'SHARED' && canEmergencyEdit;
+
+  // isEmergencyMode 해제 시 긴급수정 관련 state 정리
+  useEffect(() => {
+    if (!isEmergencyMode) {
+      setEmergencyOffsetEditing(false);
+    }
+  }, [isEmergencyMode]);
 
   // ⭐ SHARED 배치표 진입 시 sharedSnapshot이 없으면 자동 저장
   // (편집 완료 시점에만 저장되므로, 페이지 재진입 시 복원 필요)
@@ -542,9 +550,12 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   ]);
 
   // 새 배치표: AI 추천 분배 자동 적용 (totalMembers 변경 시 재적용)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- arrangementDate, attendances는 attendancesReady 가드용
   useEffect(() => {
     // 초기화가 아직 완료되지 않음
     if (!initialLoadDone) return;
+    // 출석 데이터가 올바른 날짜 기준으로 로드되었는지 확인 (빈 필터 방지 가드)
+    if (!(arrangementDate && attendances !== undefined)) return;
     // DB에 저장된 좌석이 있는 기존 배치표
     if (dbHasData) return;
     // 멤버 데이터 로딩 중 (totalMembers가 아직 0)
@@ -572,7 +583,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         `배치표가 생성되었습니다. 출석 인원 ${totalMembers}명 기반으로 줄 구성이 자동 설정되었습니다.`
       );
     }
-  }, [totalMembers, dbHasData, gridLayout, setGridLayout, initialLoadDone]);
+  }, [totalMembers, dbHasData, gridLayout, setGridLayout, initialLoadDone, arrangementDate, attendances]);
 
   // 현재 적용된 줄 정렬 프리셋 감지 (Step 2 공통)
   const getActivePresetId = useCallback((): string | null => {
@@ -1135,6 +1146,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
               totalMembers={totalMembers}
               collapsed={emergencyPanelCollapsed}
               onToggleCollapse={() => setEmergencyPanelCollapsed(prev => !prev)}
+              onOffsetEditChange={setEmergencyOffsetEditing}
               className="h-full"
             />
           </div>
@@ -1213,6 +1225,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           isEmergencyMode={isEmergencyMode}
           workflowStep={workflow.currentStep}
           highlightMemberId={highlightMemberId}
+          showOffsetControls={emergencyOffsetEditing}
         />
       </div>
 
@@ -1263,6 +1276,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             isEmergencyMode={isEmergencyMode}
             workflowStep={workflow.currentStep}
             highlightMemberId={highlightMemberId}
+            showOffsetControls={emergencyOffsetEditing}
           />
 
           {/* 그리드 설정 버튼 (Floating) — 긴급 수정 모드에서는 amber 스타일 */}
@@ -1374,6 +1388,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                     getActivePresetId={getActivePresetId}
                     totalMembers={totalMembers}
                     onRequestUnavailableMode={handleEmergencyUnavailableFromPanel}
+                    onOffsetEditChange={setEmergencyOffsetEditing}
                   />
                 ) : (
                   <WorkflowPanel

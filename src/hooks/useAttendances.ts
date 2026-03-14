@@ -30,6 +30,8 @@ export interface AttendanceFilters {
   is_practice_attended?: boolean;
   /** 탭 포커스 시 자동 갱신 (긴급 모드에서 출석 변경 반영용) */
   refetchOnWindowFocus?: boolean;
+  /** 쿼리 실행 조건 (기본값: 유효한 필터가 있을 때만 실행) */
+  enabled?: boolean;
 }
 
 /**
@@ -37,8 +39,17 @@ export interface AttendanceFilters {
  * @param filters - 필터링 옵션
  */
 export function useAttendances(filters?: AttendanceFilters) {
-  // refetchOnWindowFocus는 React Query 옵션이므로 API 파라미터에서 제외
-  const { refetchOnWindowFocus, ...apiFilters } = filters || {};
+  // refetchOnWindowFocus, enabled는 React Query 옵션이므로 API 파라미터에서 제외
+  const { refetchOnWindowFocus, enabled, ...apiFilters } = filters || {};
+
+  // 유효한 필터가 하나도 없으면 자동 disabled (빈 필터 API 호출 방지)
+  const hasAnyFilter = !!(
+    apiFilters?.member_id ||
+    apiFilters?.date ||
+    apiFilters?.start_date ||
+    apiFilters?.end_date ||
+    apiFilters?.service_schedule_id
+  );
 
   return useQuery<Attendance[]>({
     queryKey: ['attendances', apiFilters],
@@ -68,6 +79,7 @@ export function useAttendances(filters?: AttendanceFilters) {
       return response.json();
     },
     staleTime: STALE_TIME.ATTENDANCES_LIST,
+    enabled: enabled ?? hasAnyFilter,
     // 긴급 모드에서 탭 포커스 시 자동 갱신 (출석 관리 변경사항 반영)
     refetchOnWindowFocus: refetchOnWindowFocus ?? false,
   });
