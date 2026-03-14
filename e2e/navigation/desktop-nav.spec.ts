@@ -23,6 +23,7 @@ test.describe('데스크톱 네비게이션', () => {
     await expect(nav.getByRole('link', { name: '관리자' })).toBeVisible();
     await expect(nav.getByRole('link', { name: '출석 관리' })).toBeVisible();
     await expect(nav.getByRole('link', { name: '자리배치' })).toBeVisible();
+    await expect(nav.getByRole('link', { name: '새로핌지' })).toBeVisible();
     await expect(nav.getByRole('link', { name: '임원 포털' })).toBeVisible();
   });
 
