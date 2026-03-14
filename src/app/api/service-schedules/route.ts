@@ -43,7 +43,8 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('service_schedules')
     .select('*', { count: 'exact' })
-    .order('date', { ascending: true });
+    .order('date', { ascending: true })
+    .order('service_start_time', { ascending: true });
 
   // 단일 날짜 조회
   if (date) {
