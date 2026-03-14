@@ -27,6 +27,8 @@ type Part = Database['public']['Enums']['part'];
 
 interface MemberSidebarProps {
   date: string;
+  /** 예배별 출석 데이터 분리 조회용 */
+  serviceScheduleId?: string;
   hidePlaced?: boolean;
   compact?: boolean;
   /** 긴급 수정 모드 (SHARED 상태에서 대원 추가 배치 허용) */
@@ -55,6 +57,7 @@ interface OutOfBoundsMember {
 
 const MemberSidebar = memo(function MemberSidebar({
   date,
+  serviceScheduleId,
   hidePlaced = false,
   compact = false,
   isEmergencyMode = false,
@@ -116,10 +119,11 @@ const MemberSidebar = memo(function MemberSidebar({
     limit: 100,
   });
 
-  // 해당 날짜의 출석 데이터 조회 (필터 없이 전체)
+  // 해당 날짜+예배의 출석 데이터 조회 (service_schedule_id로 예배별 분리)
   // ⭐ 긴급 모드에서는 탭 포커스 시 자동 갱신 (출석 관리에서 변경 후 돌아올 때)
   const { data: attendances, isLoading: attendancesLoading } = useAttendances({
     date,
+    service_schedule_id: serviceScheduleId,
     refetchOnWindowFocus: isEmergencyMode,
   });
 

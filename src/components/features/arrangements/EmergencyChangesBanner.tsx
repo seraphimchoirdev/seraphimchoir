@@ -23,6 +23,8 @@ import { useArrangementStore } from '@/store/arrangement-store';
 interface EmergencyChangesBannerProps {
   arrangementId: string;
   date: string;
+  /** 인라인 모드: EmergencyEditPanel 내부에서 사용 시 배경/테두리 없이 렌더링 */
+  inline?: boolean;
 }
 
 /**
@@ -35,8 +37,9 @@ interface EmergencyChangesBannerProps {
 const EmergencyChangesBanner = memo(function EmergencyChangesBanner({
   arrangementId,
   date,
+  inline = false,
 }: EmergencyChangesBannerProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(inline); // 인라인 모드에서는 기본 펼침
 
   // Store에서 변동 이력 가져오기
   const changes = useArrangementStore((state) => state.emergencyChanges.changes);
@@ -70,6 +73,77 @@ const EmergencyChangesBanner = memo(function EmergencyChangesBanner({
     e.stopPropagation();
     handleUndo();
   };
+
+  // 인라인 모드: 변동 목록만 직접 표시 (배너 스타일 제거)
+  if (inline) {
+    return (
+      <div className="space-y-1.5">
+        {changes.map((change, idx) => (
+          <div
+            key={change.id}
+            className={cn(
+              'flex items-center gap-3 rounded-md px-3 py-1.5 text-sm',
+              change.type === 'UNAVAILABLE'
+                ? 'bg-red-50 dark:bg-red-950/30'
+                : 'bg-emerald-50 dark:bg-emerald-950/30'
+            )}
+          >
+            <span className="text-muted-foreground flex min-w-[60px] items-center gap-1 text-xs">
+              <Clock className="h-3 w-3" />
+              {formatTime(change.timestamp)}
+            </span>
+            {change.type === 'UNAVAILABLE' ? (
+              <UserMinus className="h-4 w-4 text-red-600 dark:text-red-400" />
+            ) : (
+              <UserPlus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            )}
+            <span
+              className={cn(
+                'flex-1',
+                change.type === 'UNAVAILABLE'
+                  ? 'text-red-700 dark:text-red-300'
+                  : 'text-emerald-700 dark:text-emerald-300'
+              )}
+            >
+              <strong>{change.memberName}</strong>
+              <span className="ml-1 text-xs opacity-75">({change.part.charAt(0)})</span>
+              {change.type === 'UNAVAILABLE'
+                ? change.removedFrom && (
+                    <span className="ml-2 text-xs opacity-75">
+                      {change.removedFrom.row}행 {change.removedFrom.col}열에서 제거
+                    </span>
+                  )
+                : change.addedTo && (
+                    <span className="ml-2 text-xs opacity-75">
+                      {change.addedTo.row}행 {change.addedTo.col}열에 배치
+                    </span>
+                  )}
+            </span>
+            {change.movedMemberCount > 0 && (
+              <span className="text-xs text-amber-600 dark:text-amber-400">
+                ({change.movedMemberCount}명 이동)
+              </span>
+            )}
+            {idx === changes.length - 1 && canUndo && (
+              <button
+                type="button"
+                onClick={handleUndoClick}
+                disabled={isUndoing}
+                className="ml-1 rounded-md p-1 text-amber-600 transition-colors hover:bg-amber-200 disabled:opacity-50 dark:text-amber-400 dark:hover:bg-amber-800"
+                title="되돌리기"
+              >
+                {isUndoing ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Undo2 className="h-3.5 w-3.5" />
+                )}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="border-b border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">

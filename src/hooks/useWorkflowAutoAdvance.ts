@@ -35,8 +35,15 @@ interface StepCompletionResult {
  * @param arrangementStatus - 현재 배치표 상태
  */
 export function useWorkflowAutoAdvance(totalMembers: number, arrangementStatus?: string) {
-  const { gridLayout, assignments, workflow, completeStep, goToStep, isStepCompleted } =
-    useArrangementStore();
+  // 개별 셀렉터로 필요한 상태만 구독 (불필요한 리렌더링 방지)
+  const gridLayout = useArrangementStore((s) => s.gridLayout);
+  const assignments = useArrangementStore((s) => s.assignments);
+  const currentStep = useArrangementStore((s) => s.workflow.currentStep);
+  const isWizardMode = useArrangementStore((s) => s.workflow.isWizardMode);
+  const completedSteps = useArrangementStore((s) => s.workflow.completedSteps);
+  const completeStep = useArrangementStore((s) => s.completeStep);
+  const goToStep = useArrangementStore((s) => s.goToStep);
+  const isStepCompleted = useArrangementStore((s) => s.isStepCompleted);
 
   // 이전 상태 추적 (불필요한 업데이트 방지)
   const prevStatesRef = useRef<{
@@ -55,7 +62,7 @@ export function useWorkflowAutoAdvance(totalMembers: number, arrangementStatus?:
 
   useEffect(() => {
     // 위자드 모드가 아니면 자동 진행 비활성화
-    if (!workflow.isWizardMode) return;
+    if (!isWizardMode) return;
 
     const assignmentValues = Object.values(assignments);
     const assignmentsCount = assignmentValues.length;
@@ -151,25 +158,25 @@ export function useWorkflowAutoAdvance(totalMembers: number, arrangementStatus?:
     });
 
     // 현재 단계가 완료되었으면 다음 단계로 자동 이동 (위자드 모드에서만)
-    const currentStepResult = results.find((r) => r.step === workflow.currentStep);
+    const currentStepResult = results.find((r) => r.step === currentStep);
     if (
       currentStepResult?.isCompleted &&
-      workflow.currentStep < 6 &&
-      !workflow.completedSteps.has(workflow.currentStep)
+      currentStep < 6 &&
+      !completedSteps.has(currentStep)
     ) {
       // 다음 단계로 이동은 completeStep 후에 수행
       setTimeout(() => {
-        const nextStep = (workflow.currentStep + 1) as WorkflowStep;
-        logger.debug(`다음 단계로 자동 이동: ${workflow.currentStep} → ${nextStep}`);
-        goToStep(nextStep);
+        const nextStepValue = (currentStep + 1) as WorkflowStep;
+        logger.debug(`다음 단계로 자동 이동: ${currentStep} → ${nextStepValue}`);
+        goToStep(nextStepValue);
       }, 300); // 애니메이션 완료 후 이동
     }
   }, [
     gridLayout,
     assignments,
-    workflow.isWizardMode,
-    workflow.currentStep,
-    workflow.completedSteps,
+    isWizardMode,
+    currentStep,
+    completedSteps,
     totalMembers,
     arrangementStatus,
     completeStep,

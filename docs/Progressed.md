@@ -218,9 +218,13 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
-| 2026-03-14 | fix(attendances): 출석 UI 디자인 토큰 마이그레이션 및 리팩토링 |
-| 2026-03-14 | fix(attendances): 출석 MemberChip 태블릿/노트북 반응형 그리드 레이아웃 적용 |
-| 2026-03-14 | feat(dashboard): 출석 현황 예배별 분리 표시 |
+| 2026-03-14 | fix(arrangements): 자리배치 생성 시 예배별 출석 데이터 미분리 버그 수정 |
+| 2026-03-14 | fix(attendances): 파트장 별 아이콘을 외부 absolute 뱃지로 변경 |
+| 2026-03-14 | test(e2e): E2E 테스트 업데이트 및 시드 데이터 갱신 |
+| 2026-03-14 | feat(newsletters): 새로핌지(소식지) 및 기도 담당 관리 기능 추가 |
+| 2026-03-14 | feat(service-schedules): 일정 삭제 기능 및 임포터 인라인 편집 추가 |
+| 2026-03-14 | fix(date): toISOString() UTC 기준 날짜 버그 수정 |
+| 2026-03-14 | refactor(auth): STAFF 역할을 SECRETARY/TREASURER로 분리 |
 | 2026-03-14 | feat(dashboard): 출석 현황 예배별 분리 표시 |
 | 2026-03-14 | fix(attendances): MemberChip 반응형 3열 고정 레이아웃으로 변경 |
 | 2026-03-14 | fix(members): 새 대원 등록 서버 에러 수정 |

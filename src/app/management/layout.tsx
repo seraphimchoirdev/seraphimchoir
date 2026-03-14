@@ -15,6 +15,7 @@ const managementMenuItems = [
   { href: '/management/members', label: '대원 관리' },
   { href: '/management/statistics', label: '출석 통계' },
   { href: '/management/documents', label: '문서 아카이브' },
+  { href: '/management/prayers', label: '기도 담당' },
 ];
 
 export default function ManagementLayout({ children }: { children: React.ReactNode }) {
@@ -31,8 +32,8 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
     );
   }
 
-  // 임원 권한만 접근 가능 (ADMIN, CONDUCTOR, MANAGER, STAFF, PART_LEADER)
-  if (!hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER'])) {
+  // 임원 권한만 접근 가능 (ADMIN, CONDUCTOR, MANAGER, SECRETARY, TREASURER, PART_LEADER)
+  if (!hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER', 'PART_LEADER'])) {
     return (
       <AppShell>
         <div className="min-h-screen bg-[var(--color-background-tertiary)]">

@@ -1,18 +1,19 @@
 'use client';
 
-import { Check, CheckCircle2, ChevronDown, ChevronUp, Copy, Crown, Download, Loader2, Lock, Settings, Share2, Sparkles, Trash2 } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, Crown, Download, GripHorizontal, Loader2, Lock, MousePointer2, Settings, Share2, SkipForward, Sparkles, Trash2 } from 'lucide-react';
 
 import { useSearchParams } from 'next/navigation';
 import { ReactNode, use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import ArrangementHeader from '@/components/features/arrangements/ArrangementHeader';
 import CompactWorkflowStrip from '@/components/features/arrangements/CompactWorkflowStrip';
-import EmergencyChangesBanner from '@/components/features/arrangements/EmergencyChangesBanner';
+import EmergencyEditPanel from '@/components/features/arrangements/EmergencyEditPanel';
 import GridSettingsPanel from '@/components/features/arrangements/GridSettingsPanel';
 import RecommendButton from '@/components/features/arrangements/RecommendButton';
 import RestoreDialog from '@/components/features/arrangements/RestoreDialog';
 import WorkflowFloatingActionBar from '@/components/features/arrangements/WorkflowFloatingActionBar';
 import { WorkflowPanel } from '@/components/features/arrangements/workflow';
+import EmergencyAvailableDialog from '@/components/features/seats/EmergencyAvailableDialog';
 import EmergencyUnavailableDialog from '@/components/features/seats/EmergencyUnavailableDialog';
 import MemberSidebar from '@/components/features/seats/MemberSidebar';
 import SeatsGrid from '@/components/features/seats/SeatsGrid';
@@ -22,7 +23,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 
 import { useArrangement } from '@/hooks/useArrangements';
-import { useImageGeneration } from '@/hooks/useImageGeneration';
+import { useImageExportHandlers } from '@/hooks/useImageExportHandlers';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useServiceSchedule } from '@/hooks/useServiceSchedules';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,7 +36,8 @@ import { useWorkflowAutoAdvance } from '@/hooks/useWorkflowAutoAdvance';
 
 import { createLogger } from '@/lib/logger';
 import { recommendRowDistribution } from '@/lib/row-distribution-recommender';
-import { showError, showInfo, showSuccess, showWarning } from '@/lib/toast';
+import { showError, showInfo, showSuccess } from '@/lib/toast';
+import { cn } from '@/lib/utils';
 import { calculateGridLayoutFromSeats } from '@/lib/utils/gridUtils';
 
 import { WorkflowStep, useArrangementStore } from '@/store/arrangement-store';
@@ -91,13 +93,15 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   // 키보드 단축키 훅 초기화 (Ctrl+Z/Y for Undo/Redo)
   useUndoRedoShortcuts();
 
-  // 이미지 생성 훅 (6단계 플로팅 바에서 사용)
-  const { isGenerating, downloadAsImage, copyToClipboard, shareImage, canShare, isMobile } =
-    useImageGeneration();
-
   const [showSettingsSheet, setShowSettingsSheet] = useState(false);
   const [panelMode, setPanelMode] = useState<'expanded' | 'compact'>('expanded');
   const [showMobileSidebar, setShowMobileSidebar] = useState(true);
+
+  // 긴급 수정 패널 접기/펼치기 상태 (데스크톱)
+  const [emergencyPanelCollapsed, setEmergencyPanelCollapsed] = useState(false);
+
+  // 모바일 좌석 선택 모드 (긴급 수정 시 "등단 불가 처리" 좌석 선택)
+  const [seatSelectionMode, setSeatSelectionMode] = useState<'unavailable' | null>(null);
 
   // 사용자가 수동으로 panelMode를 변경했는지 추적
   const userOverridePanelRef = useRef(false);
@@ -115,65 +119,23 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   // 줄반장 전체 해제 확인 다이얼로그
   const [clearRowLeadersDialog, setClearRowLeadersDialog] = useState(false);
 
+  // 긴급 등단 가능 추가 다이얼로그 (EmergencyEditPanel용)
+  const [emergencyAvailableDialogOpen, setEmergencyAvailableDialogOpen] = useState(false);
+
   // 이미지 캡처를 위한 ref (데스크톱/모바일 각각)
   const desktopCaptureRef = useRef<HTMLDivElement>(null);
   const mobileCaptureRef = useRef<HTMLDivElement>(null);
 
   // 이미지 내보내기 핸들러 (6단계 플로팅 바용)
-  const getActiveCaptureRef = useCallback(() => {
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      return desktopCaptureRef;
-    }
-    return mobileCaptureRef;
-  }, [desktopCaptureRef, mobileCaptureRef]);
-
-  const handleDownloadImage = useCallback(async () => {
-    const captureRef = getActiveCaptureRef();
-    if (!captureRef?.current) {
-      showWarning('캡처할 영역을 찾을 수 없습니다.');
-      return;
-    }
-    try {
-      const filename = `배치표_${arrangement?.date}_${arrangement?.title?.replace(/\s+/g, '_') ?? ''}`;
-      await downloadAsImage(captureRef.current, filename);
-      showSuccess('이미지가 다운로드되었습니다.');
-    } catch (error) {
-      logger.error('이미지 다운로드 실패:', error);
-      showError('이미지 다운로드에 실패했습니다.');
-    }
-  }, [arrangement?.date, arrangement?.title, downloadAsImage, getActiveCaptureRef]);
-
-  const handleCopyToClipboard = useCallback(async () => {
-    const captureRef = getActiveCaptureRef();
-    if (!captureRef?.current) {
-      showWarning('캡처할 영역을 찾을 수 없습니다.');
-      return;
-    }
-    try {
-      await copyToClipboard(captureRef.current);
-      showSuccess('이미지가 클립보드에 복사되었습니다.');
-    } catch (error) {
-      logger.error('클립보드 복사 실패:', error);
-      const message = error instanceof Error ? error.message : '클립보드 복사에 실패했습니다.';
-      showError(message);
-    }
-  }, [copyToClipboard, getActiveCaptureRef]);
-
-  const handleShareImage = useCallback(async () => {
-    const captureRef = getActiveCaptureRef();
-    if (!captureRef?.current) {
-      showWarning('캡처할 영역을 찾을 수 없습니다.');
-      return;
-    }
-    try {
-      const filename = `배치표_${arrangement?.date}_${arrangement?.title?.replace(/\s+/g, '_') ?? ''}`;
-      await shareImage(captureRef.current, filename);
-    } catch (error) {
-      logger.error('이미지 공유 실패:', error);
-      const message = error instanceof Error ? error.message : '이미지 공유에 실패했습니다.';
-      showError(message);
-    }
-  }, [arrangement?.date, arrangement?.title, shareImage, getActiveCaptureRef]);
+  const { handleDownloadImage, handleCopyToClipboard, handleShareImage, isGenerating, canShare, isMobile } =
+    useImageExportHandlers({
+      getFilename: useCallback(
+        () => `배치표_${arrangement?.date}_${arrangement?.title?.replace(/\s+/g, '_') ?? ''}`,
+        [arrangement?.date, arrangement?.title]
+      ),
+      desktopCaptureRef,
+      mobileCaptureRef,
+    });
 
   // 줄반장 자동 지정 토스트 중복 방지
   const rowLeaderToastShownRef = useRef(false);
@@ -226,10 +188,11 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     }
   }, [isEmergencyMode, emergencyChanges.sharedSnapshot, assignments, saveSharedSnapshot]);
 
-  // 해당 날짜의 출석 데이터 조회 (필터 없이 전체)
+  // 해당 날짜+예배의 출석 데이터 조회 (service_schedule_id로 예배별 분리)
   // ⭐ 긴급 모드에서는 탭 포커스 시 자동 갱신 (출석 관리에서 변경 후 돌아올 때)
   const { data: attendances } = useAttendances({
     date: arrangement?.date,
+    service_schedule_id: arrangement?.service_schedule_id ?? undefined,
     refetchOnWindowFocus: isEmergencyMode,
   });
 
@@ -356,6 +319,16 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     },
     []
   );
+
+  // 패널에서 "등단 불가 처리" 클릭 시 래퍼 (모바일: 바텀시트 닫고 좌석 선택 모드 진입)
+  const handleEmergencyUnavailableFromPanel = useCallback(() => {
+    if (window.innerWidth < 640) {
+      setShowSettingsSheet(false);
+      setSeatSelectionMode('unavailable');
+    } else {
+      showInfo('그리드에서 제거할 대원의 좌석을 클릭하세요.');
+    }
+  }, []);
 
   // DB에 저장된 데이터가 있는지 확인
   const dbHasData = useMemo(() => {
@@ -601,6 +574,26 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     }
   }, [totalMembers, dbHasData, gridLayout, setGridLayout, initialLoadDone]);
 
+  // 현재 적용된 줄 정렬 프리셋 감지 (Step 2 공통)
+  const getActivePresetId = useCallback((): string | null => {
+    const rows = gridLayout?.rows ?? 0;
+    const currentOffsets = gridLayout?.rowOffsets;
+    for (const preset of OFFSET_PRESETS) {
+      const presetOffsets = preset.getOffsets(rows);
+      const presetKeys = Object.keys(presetOffsets);
+      const currentKeys = Object.keys(currentOffsets ?? {});
+
+      if (presetKeys.length === 0 && currentKeys.length === 0) return preset.id;
+      if (presetKeys.length !== currentKeys.length) continue;
+
+      const matches = presetKeys.every(
+        (k) => (currentOffsets ?? {})[Number(k)] === presetOffsets[Number(k)]
+      );
+      if (matches) return preset.id;
+    }
+    return null;
+  }, [gridLayout?.rows, gridLayout?.rowOffsets]);
+
   if (isLoading || authLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -630,10 +623,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         return (
           <>
             {gridLayout?.isAIRecommended && (
-              <p className="text-sm text-[var(--color-text-secondary)]">
-                출석 인원 <strong>{totalMembers}명</strong> 기반으로 줄 구성이 자동 설정되었습니다.
-                필요 시 아래에서 수동으로 조정하세요.
-              </p>
+              <div className="flex items-start gap-2 rounded-lg bg-[var(--color-primary-50)] p-3">
+                <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-primary-500)]" />
+                <p className="text-sm text-[var(--color-primary-700)]">
+                  출석 인원 <strong>{totalMembers}명</strong> 기반으로 줄 구성이 자동 설정되었습니다.
+                  필요 시 아래에서 수동으로 조정하세요.
+                </p>
+              </div>
             )}
             <GridSettingsPanel
               gridLayout={gridLayout}
@@ -646,33 +642,12 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         );
       case 2: {
         // 줄 정렬 조정 - 프리셋 + 인라인 화살표 컨트롤
-        const rows = gridLayout?.rows ?? 0;
-        const currentOffsets = gridLayout?.rowOffsets;
-
-        // 현재 적용된 프리셋 감지
-        const getActivePresetId = (): string | null => {
-          for (const preset of OFFSET_PRESETS) {
-            const presetOffsets = preset.getOffsets(rows);
-            const presetKeys = Object.keys(presetOffsets);
-            const currentKeys = Object.keys(currentOffsets ?? {});
-
-            if (presetKeys.length === 0 && currentKeys.length === 0) return preset.id;
-            if (presetKeys.length !== currentKeys.length) continue;
-
-            const matches = presetKeys.every(
-              (k) => (currentOffsets ?? {})[Number(k)] === presetOffsets[Number(k)]
-            );
-            if (matches) return preset.id;
-          }
-          return null;
-        };
-
         const activePresetId = getActivePresetId();
 
         return (
           <div className="space-y-3">
             <p className="text-sm text-[var(--color-text-secondary)]">
-              프리셋을 선택하거나, 화살표 버튼으로 각 행을 개별 조정합니다.
+              프리셋을 선택하거나, 화살표 버튼으로 각 행을 개별 조정하세요.
             </p>
             <div className="flex flex-wrap gap-2">
               {OFFSET_PRESETS.map((preset) => (
@@ -683,10 +658,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   disabled={isReadOnly}
                   onClick={() => applyOffsetPreset(preset.id)}
                   title={preset.description}
+                  aria-pressed={activePresetId === preset.id}
                 >
                   {preset.name}
                   {preset.id === 'arc' && (
-                    <span className="ml-1 text-xs text-amber-500">추천</span>
+                    <span className={`ml-1 inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${activePresetId === preset.id ? 'bg-white/20 text-white' : 'bg-[var(--color-warning-100)] text-[var(--color-warning-700)]'}`}>
+                      추천
+                    </span>
                   )}
                 </Button>
               ))}
@@ -711,10 +689,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 onApply={handleApplyRecommendation}
               />
             )}
-            <p className="text-sm text-[var(--color-text-tertiary)]">
-              이 단계를 건너뛰고 직접 배치할 수도 있습니다. 건너뛰기를 원하시면
-              &apos;이 단계 완료&apos; 버튼을 눌러주세요.
-            </p>
+            <div className="border-t border-dashed border-[var(--color-border-subtle)] pt-2">
+              <p className="flex items-start gap-1.5 text-xs text-[var(--color-text-tertiary)]">
+                <SkipForward className="mt-0.5 h-3 w-3 flex-shrink-0" />
+                이 단계를 건너뛰고 직접 배치할 수도 있습니다. 건너뛰기를 원하시면
+                &apos;이 단계 완료&apos; 버튼을 눌러주세요.
+              </p>
+            </div>
           </div>
         );
       case 4:
@@ -724,11 +705,20 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             <p className="text-sm text-[var(--color-text-secondary)]">
               대원을 선택하고 좌석을 클릭하여 배치를 조정합니다.
             </p>
-            <ul className="list-inside list-disc space-y-1 text-xs text-[var(--color-text-tertiary)]">
-              <li>대원 목록에서 이름 클릭 → 좌석 클릭</li>
-              <li>배치된 좌석 더블클릭으로 제거</li>
-              <li>좌석 간 드래그로 이동</li>
-            </ul>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2 text-xs text-[var(--color-text-tertiary)]">
+                <MousePointer2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-[var(--color-primary-400)]" />
+                <span>이름 클릭 후 빈 좌석을 클릭하여 배치</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-[var(--color-text-tertiary)]">
+                <MousePointer2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-[var(--color-error-400)]" />
+                <span>배치된 좌석 더블클릭으로 제거</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-[var(--color-text-tertiary)]">
+                <GripHorizontal className="mt-0.5 h-3 w-3 flex-shrink-0 text-[var(--color-text-tertiary)]" />
+                <span>좌석 간 드래그로 자리 이동</span>
+              </div>
+            </div>
           </div>
         );
       case 5:
@@ -736,18 +726,28 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         return (
           <div className="space-y-3">
             <p className="text-sm text-[var(--color-text-secondary)]">각 줄의 대표를 지정합니다.</p>
+            {Object.keys(assignments).length === 0 && (
+              <div className="rounded-lg bg-[var(--color-background-secondary)] p-4 text-center">
+                <p className="text-sm text-[var(--color-text-tertiary)]">
+                  아직 배치된 대원이 없습니다.<br/>이전 단계에서 대원을 배치해주세요.
+                </p>
+              </div>
+            )}
             {!isReadOnly && Object.keys(assignments).length > 0 && (
               <div className="flex flex-col gap-2">
                 <Button
+                  size="sm"
                   variant={rowLeaderMode ? 'default' : 'outline'}
                   onClick={toggleRowLeaderMode}
+                  aria-pressed={rowLeaderMode}
                   className={`w-full gap-2 ${rowLeaderMode ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
                 >
                   <Crown className="h-4 w-4" />
                   {rowLeaderMode ? '수동 지정 모드 끄기' : '수동 지정 모드'}
                 </Button>
                 <Button
-                  variant="outline"
+                  size="sm"
+                  variant="primarySubtle"
                   onClick={() => {
                     const candidates = autoAssignRowLeaders();
                     if (candidates.length > 0) {
@@ -758,17 +758,20 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   }}
                   className="w-full gap-2"
                 >
-                  <Sparkles className="h-4 w-4 text-yellow-500" />
+                  <Sparkles className="h-4 w-4" />
                   자동 지정
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setClearRowLeadersDialog(true)}
-                  className="w-full gap-2 text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  전체 해제
-                </Button>
+                <div className="border-t border-[var(--color-border-subtle)] pt-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setClearRowLeadersDialog(true)}
+                    className="w-full gap-2 text-[var(--color-text-tertiary)]"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    전체 해제
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -778,9 +781,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         const noAssignmentsExpanded = Object.keys(assignments).length === 0;
         const currentArrangementStatus = arrangement.status ?? 'DRAFT';
         return (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* 섹션 1: 이미지 내보내기 */}
-            <div className="space-y-2">
+            <div className="space-y-2 rounded-lg bg-[var(--color-background-secondary)] p-3">
               <p className="text-sm font-medium text-[var(--color-text-primary)]">
                 이미지 내보내기
               </p>
@@ -794,9 +797,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                     variant="outline"
                     onClick={handleShareImage}
                     disabled={noAssignmentsExpanded || isGenerating}
+                    aria-busy={isGenerating}
                     className="w-full gap-1"
                   >
-                    {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Share2 className="h-3 w-3" />}
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
                     이미지 공유하기
                   </Button>
                 )}
@@ -805,9 +809,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   variant="outline"
                   onClick={handleDownloadImage}
                   disabled={noAssignmentsExpanded || isGenerating}
+                  aria-busy={isGenerating}
                   className="w-full gap-1"
                 >
-                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                   PNG 다운로드
                 </Button>
                 <Button
@@ -815,21 +820,22 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   variant="outline"
                   onClick={handleCopyToClipboard}
                   disabled={noAssignmentsExpanded || isGenerating}
+                  aria-busy={isGenerating}
                   className="w-full gap-1"
                 >
-                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
+                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
                   클립보드 복사
                 </Button>
               </div>
             </div>
 
             {/* 섹션 2: 편집 완료 / 확정 안내 */}
-            <div className="space-y-2 border-t border-[var(--color-border-default)] pt-3">
+            <div className="space-y-2 rounded-lg bg-[var(--color-background-secondary)] p-3">
               <p className="text-sm font-medium text-[var(--color-text-primary)]">
                 편집 완료
               </p>
               <p className="text-xs text-[var(--color-text-secondary)]">
-                편집이 완료되면 상단 헤더의 버튼으로 잠그세요.{'\n'}
+                편집이 완료되면 상단 헤더의 버튼으로 잠가주세요.{'\n'}
                 편집 완료 후에도 긴급 수정은 가능합니다.
               </p>
               {currentArrangementStatus === 'DRAFT' && (
@@ -870,6 +876,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       case 1:
         return (
           <div className="space-y-2">
+            <p className="text-xs text-[var(--color-text-tertiary)]">
+              현재 {gridLayout?.rows ?? 0}줄 / {gridLayout?.rowCapacities?.reduce((a, b) => a + b, 0) ?? 0}석
+            </p>
             <Button
               onClick={() => {
                 setPanelMode('expanded');
@@ -895,24 +904,6 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         );
       case 2: {
         // 줄 정렬 조정 Floating UI
-        const rows = gridLayout?.rows ?? 0;
-        const currentOffsets = gridLayout?.rowOffsets;
-
-        const getActivePresetId = (): string | null => {
-          for (const preset of OFFSET_PRESETS) {
-            const presetOffsets = preset.getOffsets(rows);
-            const presetKeys = Object.keys(presetOffsets);
-            const currentKeys = Object.keys(currentOffsets ?? {});
-            if (presetKeys.length === 0 && currentKeys.length === 0) return preset.id;
-            if (presetKeys.length !== currentKeys.length) continue;
-            const matches = presetKeys.every(
-              (k) => (currentOffsets ?? {})[Number(k)] === presetOffsets[Number(k)]
-            );
-            if (matches) return preset.id;
-          }
-          return null;
-        };
-
         const activePresetId = getActivePresetId();
 
         return (
@@ -926,10 +917,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   disabled={isReadOnly}
                   onClick={() => applyOffsetPreset(preset.id)}
                   title={preset.description}
+                  aria-pressed={activePresetId === preset.id}
                 >
                   {preset.name}
                   {preset.id === 'arc' && (
-                    <span className="ml-1 text-xs text-amber-500">추천</span>
+                    <span className={`ml-1 inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${activePresetId === preset.id ? 'bg-white/20 text-white' : 'bg-[var(--color-warning-100)] text-[var(--color-warning-700)]'}`}>
+                      추천
+                    </span>
                   )}
                 </Button>
               ))}
@@ -964,6 +958,11 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             <p className="text-sm text-[var(--color-text-secondary)]">
               대원을 선택 → 좌석 클릭으로 배치를 조정하세요.
             </p>
+            {unassignedCount > 0 ? (
+              <p className="text-xs text-[var(--color-warning-600)]">미배치: {unassignedCount}명</p>
+            ) : totalMembers > 0 ? (
+              <p className="text-xs text-[var(--color-success-600)]">전원 배치 완료</p>
+            ) : null}
             {workflow.isWizardMode && !workflow.completedSteps.has(4) && (
               <Button
                 size="sm"
@@ -1032,9 +1031,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   variant="outline"
                   onClick={handleShareImage}
                   disabled={noAssignments || isGenerating}
+                  aria-busy={isGenerating}
                   className="gap-1"
                 >
-                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Share2 className="h-3 w-3" />}
+                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
                   이미지 공유하기
                 </Button>
               )}
@@ -1043,9 +1043,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 variant="outline"
                 onClick={handleDownloadImage}
                 disabled={noAssignments || isGenerating}
+                aria-busy={isGenerating}
                 className="gap-1"
               >
-                {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 {isMobile ? '이미지 저장' : 'PNG 다운로드'}
               </Button>
               {!isMobile && (
@@ -1054,9 +1055,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   variant="outline"
                   onClick={handleCopyToClipboard}
                   disabled={noAssignments || isGenerating}
+                  aria-busy={isGenerating}
                   className="gap-1"
                 >
-                  {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
+                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
                   클립보드 복사
                 </Button>
               )}
@@ -1092,13 +1094,17 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       {/* 긴급 등단 불가 확인 다이얼로그 */}
       <EmergencyUnavailableDialog
         open={emergencyDialogOpen}
-        onOpenChange={setEmergencyDialogOpen}
+        onOpenChange={(open) => {
+          setEmergencyDialogOpen(open);
+          if (!open) setSeatSelectionMode(null);
+        }}
         targetMember={emergencyTargetMember}
         arrangementId={id}
         date={arrangement?.date || ''}
         onComplete={(message) => {
           showSuccess(message);
           setEmergencyTargetMember(null);
+          setSeatSelectionMode(null);
         }}
         onError={(message) => showError(`오류: ${message}`)}
       />
@@ -1109,54 +1115,79 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         mobileCaptureRef={mobileCaptureRef}
       />
 
-      {/* 긴급 변동 요약 배너 (SHARED 상태에서 변동 있을 때만 표시) */}
-      {isEmergencyMode && <div data-print-hide><EmergencyChangesBanner arrangementId={id} date={arrangement?.date || ''} /></div>}
-
       {/* 데스크톱: 3패널 가로 배치 (640px 이상 - Z Fold 펼침 대응) */}
       <div className="hidden flex-1 gap-4 overflow-hidden p-4 sm:flex">
-        {/* 워크플로우 패널 - 2단 접기 (Expanded ↔ Compact) */}
-        {panelMode === 'expanded' ? (
-          <div data-print-hide className="animate-in slide-in-from-left relative w-80 flex-shrink-0 duration-300">
-            <WorkflowPanel
-              renderStepContent={renderWorkflowStepContent}
+        {/* 긴급 수정 모드: EmergencyEditPanel 표시 (접기/펼치기 지원) */}
+        {isEmergencyMode ? (
+          <div data-print-hide className={cn(
+            'animate-in slide-in-from-left flex-shrink-0 transition-all duration-300',
+            emergencyPanelCollapsed ? 'w-16' : 'w-80',
+          )}>
+            <EmergencyEditPanel
+              arrangementId={id}
+              date={arrangement?.date || ''}
+              gridLayout={gridLayout}
+              onGridLayoutChange={setGridLayout}
+              onOpenUnavailableDialog={handleEmergencyUnavailable}
+              onOpenAvailableDialog={() => setEmergencyAvailableDialogOpen(true)}
+              onOpenClearRowLeadersDialog={() => setClearRowLeadersDialog(true)}
+              getActivePresetId={getActivePresetId}
               totalMembers={totalMembers}
-              arrangementStatus={arrangement.status ?? undefined}
-              className="h-full overflow-hidden"
+              collapsed={emergencyPanelCollapsed}
+              onToggleCollapse={() => setEmergencyPanelCollapsed(prev => !prev)}
+              className="h-full"
             />
-            {/* 접기 버튼 → Compact 전환 */}
-            <Button
-              onClick={() => {
-                setPanelMode('compact');
-                userOverridePanelRef.current = true;
-              }}
-              variant="ghost"
-              size="sm"
-              className="absolute top-4 -right-3 z-10 border border-[var(--color-border-default)] bg-[var(--color-surface)] shadow-md hover:bg-[var(--color-background-secondary)]"
-              title="워크플로우 패널 접기"
-            >
-              <ChevronDown className="h-4 w-4 rotate-90" />
-            </Button>
           </div>
         ) : (
-          <div data-print-hide>
-            <CompactWorkflowStrip
-              currentStep={workflow.currentStep}
-              completedSteps={workflow.completedSteps}
-              canAccessStep={canAccessStep}
-              onStepClick={goToStep}
-              onExpand={() => {
-                setPanelMode('expanded');
-                userOverridePanelRef.current = true;
-              }}
-            />
-          </div>
+          <>
+            {/* 일반 모드: 워크플로우 패널 - 2단 접기 (Expanded ↔ Compact) */}
+            {panelMode === 'expanded' ? (
+              <div data-print-hide className="animate-in slide-in-from-left relative w-80 flex-shrink-0 duration-300">
+                <WorkflowPanel
+                  renderStepContent={renderWorkflowStepContent}
+                  totalMembers={totalMembers}
+                  arrangementStatus={arrangement.status ?? undefined}
+                  className="h-full overflow-hidden"
+                />
+                {/* 접기 버튼 → Compact 전환 */}
+                <Button
+                  onClick={() => {
+                    setPanelMode('compact');
+                    userOverridePanelRef.current = true;
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-4 -right-3 z-10 border border-[var(--color-border-default)] bg-[var(--color-surface)] shadow-md hover:bg-[var(--color-background-secondary)]"
+                  title="워크플로우 패널 접기"
+                >
+                  <ChevronDown className="h-4 w-4 rotate-90" />
+                </Button>
+              </div>
+            ) : (
+              <div data-print-hide>
+                <CompactWorkflowStrip
+                  currentStep={workflow.currentStep}
+                  completedSteps={workflow.completedSteps}
+                  canAccessStep={canAccessStep}
+                  onStepClick={goToStep}
+                  optionalSteps={[2, 3]}
+                  onExpand={() => {
+                    setPanelMode('expanded');
+                    userOverridePanelRef.current = true;
+                  }}
+                />
+              </div>
+            )}
+          </>
         )}
 
-        {/* Member Sidebar - 수동 배치 조정 단계(3단계)에서만 표시 */}
+        {/* Member Sidebar - 수동 배치 조정 단계(4단계)에서만 표시 */}
+        {/* 긴급 수정 모드에서는 EmergencyEditPanel의 "등단 가능 추가" 버튼이 다이얼로그를 열어주므로 상시 표시 불필요 */}
         {showMemberSidebar && (
           <div data-print-hide>
             <MemberSidebar
               date={arrangement.date}
+              serviceScheduleId={arrangement.service_schedule_id ?? undefined}
               hidePlaced={true}
               isEmergencyMode={isEmergencyMode}
               arrangementId={id}
@@ -1185,18 +1216,34 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         />
       </div>
 
-      {/* Compact 모드용 플로팅 액션 바 (데스크톱에서만) */}
-      <div data-print-hide>
-        <WorkflowFloatingActionBar
-          currentStep={workflow.currentStep}
-          isVisible={panelMode === 'compact'}
-        >
-          {renderFloatingStepContent(workflow.currentStep)}
-        </WorkflowFloatingActionBar>
-      </div>
+      {/* Compact 모드용 플로팅 액션 바 (데스크톱에서만, 긴급 수정 모드에서는 숨김) */}
+      {!isEmergencyMode && (
+        <div data-print-hide>
+          <WorkflowFloatingActionBar
+            currentStep={workflow.currentStep}
+            isVisible={panelMode === 'compact'}
+          >
+            {renderFloatingStepContent(workflow.currentStep)}
+          </WorkflowFloatingActionBar>
+        </div>
+      )}
 
       {/* 모바일: 상단 그리드 + 하단 대원 목록 (Split View, 640px 미만) */}
       <div className="relative flex flex-1 flex-col overflow-hidden sm:hidden">
+        {/* 좌석 선택 모드 안내 바 (긴급 수정 - 등단 불가 처리) */}
+        {seatSelectionMode === 'unavailable' && (
+          <div className="flex flex-shrink-0 items-center justify-between bg-red-50 px-4 py-2 dark:bg-red-950/30">
+            <span className="text-sm font-medium text-red-700 dark:text-red-300">
+              불가 처리할 대원을 터치하세요
+            </span>
+            <Button size="sm" variant="ghost" onClick={() => setSeatSelectionMode(null)}
+              className="text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/50"
+            >
+              취소
+            </Button>
+          </div>
+        )}
+
         {/* 상단: 좌석 그리드 (Scrollable) */}
         <div className="relative flex-1 overflow-auto">
           <SeatsGrid
@@ -1218,15 +1265,24 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             highlightMemberId={highlightMemberId}
           />
 
-          {/* 그리드 설정 버튼 (Floating) */}
+          {/* 그리드 설정 버튼 (Floating) — 긴급 수정 모드에서는 amber 스타일 */}
           <Button
             data-print-hide
             onClick={() => setShowSettingsSheet(true)}
             variant="outline"
             size="icon"
-            className="absolute top-4 right-4 z-10 h-10 w-10 rounded-full bg-white/90 shadow-md backdrop-blur-sm"
+            className={cn(
+              'absolute top-4 right-4 z-10 h-10 w-10 rounded-full shadow-md backdrop-blur-sm',
+              isEmergencyMode
+                ? 'border-amber-300 bg-amber-500 text-white hover:bg-amber-600'
+                : 'bg-white/90',
+            )}
           >
-            <Settings className="h-5 w-5" />
+            {isEmergencyMode ? (
+              <AlertTriangle className="h-5 w-5" />
+            ) : (
+              <Settings className="h-5 w-5" />
+            )}
           </Button>
         </div>
 
@@ -1255,6 +1311,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             <div className={`flex-1 overflow-hidden ${!showMobileSidebar && 'hidden'}`}>
               <MemberSidebar
                 date={arrangement.date}
+                serviceScheduleId={arrangement.service_schedule_id ?? undefined}
                 hidePlaced={true}
                 compact={true}
                 isEmergencyMode={isEmergencyMode}
@@ -1264,7 +1321,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           </div>
         )}
 
-        {/* Bottom Sheet - 워크플로우 (모바일) */}
+        {/* Bottom Sheet - 워크플로우 또는 긴급 수정 패널 (모바일) */}
         {showSettingsSheet && (
           <>
             {/* 배경 오버레이 */}
@@ -1290,7 +1347,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
               </div>
               {/* 헤더 - flex-shrink-0로 항상 표시 보장 */}
               <div className="flex flex-shrink-0 items-center justify-between border-b border-[var(--color-border-default)] bg-[var(--color-surface)] px-4 py-3">
-                <h2 className="text-lg font-bold text-[var(--color-text-primary)]">워크플로우</h2>
+                <h2 className="text-lg font-bold text-[var(--color-text-primary)]">
+                  {isEmergencyMode ? '긴급 수정' : '워크플로우'}
+                </h2>
                 <Button
                   onClick={() => setShowSettingsSheet(false)}
                   variant="ghost"
@@ -1301,13 +1360,28 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   닫기
                 </Button>
               </div>
-              {/* 워크플로우 패널 - min-h-0으로 flex overflow 동작 보장 */}
+              {/* 패널 콘텐츠 - min-h-0으로 flex overflow 동작 보장 */}
               <div className="min-h-0 flex-1 overflow-auto p-4">
-                <WorkflowPanel
-                  renderStepContent={renderWorkflowStepContent}
-                  totalMembers={totalMembers}
-                  arrangementStatus={arrangement.status ?? undefined}
-                />
+                {isEmergencyMode ? (
+                  <EmergencyEditPanel
+                    arrangementId={id}
+                    date={arrangement?.date || ''}
+                    gridLayout={gridLayout}
+                    onGridLayoutChange={setGridLayout}
+                    onOpenUnavailableDialog={handleEmergencyUnavailable}
+                    onOpenAvailableDialog={() => setEmergencyAvailableDialogOpen(true)}
+                    onOpenClearRowLeadersDialog={() => setClearRowLeadersDialog(true)}
+                    getActivePresetId={getActivePresetId}
+                    totalMembers={totalMembers}
+                    onRequestUnavailableMode={handleEmergencyUnavailableFromPanel}
+                  />
+                ) : (
+                  <WorkflowPanel
+                    renderStepContent={renderWorkflowStepContent}
+                    totalMembers={totalMembers}
+                    arrangementStatus={arrangement.status ?? undefined}
+                  />
+                )}
               </div>
             </div>
           </>
@@ -1346,6 +1420,16 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           clearAllRowLeaders();
           setClearRowLeadersDialog(false);
         }}
+      />
+
+      {/* 긴급 등단 가능 추가 다이얼로그 (EmergencyEditPanel에서 사용) */}
+      <EmergencyAvailableDialog
+        open={emergencyAvailableDialogOpen}
+        onOpenChange={setEmergencyAvailableDialogOpen}
+        arrangementId={id}
+        date={arrangement?.date || ''}
+        onComplete={(message) => showSuccess(message)}
+        onError={(message) => showError(`오류: ${message}`)}
       />
     </div>
   );

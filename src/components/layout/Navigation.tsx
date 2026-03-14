@@ -70,6 +70,7 @@ export default function Navigation() {
   };
 
   const isMemberLinked = () => {
+    if (profile?.role === 'ADMIN') return true;
     return profile?.linked_member_id && profile?.link_status === 'approved';
   };
 
@@ -94,21 +95,28 @@ export default function Navigation() {
     {
       href: '/service-schedules',
       label: '찬양대 일정',
-      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']),
+      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER', 'PART_LEADER', 'MEMBER']),
     },
 
     // 자리배치 (조회는 모든 역할, 편집은 페이지에서 제한)
     {
       href: '/arrangements',
       label: '자리배치',
-      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER']),
+      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER', 'PART_LEADER', 'MEMBER']),
     },
 
-    // 임원 포털 (ADMIN, CONDUCTOR, MANAGER, STAFF, PART_LEADER)
+    // 새로핌지 (모든 인증 사용자 조회 가능)
+    {
+      href: '/newsletters',
+      label: '새로핌지',
+      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER', 'PART_LEADER', 'MEMBER']),
+    },
+
+    // 임원 포털 (ADMIN, CONDUCTOR, MANAGER, SECRETARY, TREASURER, PART_LEADER)
     {
       href: '/management',
       label: '임원 포털',
-      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER']),
+      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER', 'PART_LEADER']),
     },
 
     // 대원 연결된 사용자용 메뉴 (역할 무관, 대원 연결됨)

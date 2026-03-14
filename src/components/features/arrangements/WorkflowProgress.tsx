@@ -16,7 +16,12 @@ import { WORKFLOW_STEPS, WorkflowStep, useArrangementStore } from '@/store/arran
  *  1     2     3     4     5     6
  * ```
  */
-export default function WorkflowProgress() {
+interface WorkflowProgressProps {
+  /** 선택적(건너뛰기 가능) 단계 목록 */
+  optionalSteps?: WorkflowStep[];
+}
+
+export default function WorkflowProgress({ optionalSteps = [] }: WorkflowProgressProps) {
   const { workflow, goToStep, canAccessStep } = useArrangementStore();
   const { currentStep, completedSteps, isWizardMode } = workflow;
 
@@ -24,12 +29,20 @@ export default function WorkflowProgress() {
 
   return (
     <div className="w-full">
-      {/* 모드 표시 */}
+      {/* 모드 표시 + 전체 진행률 */}
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs text-[var(--color-text-tertiary)]">
           {isWizardMode ? '가이드 모드' : '자유 편집 모드'}
         </span>
-        <span className="text-xs text-[var(--color-text-tertiary)]">{currentStep} / 6 단계</span>
+        <span className="text-xs text-[var(--color-text-tertiary)]">{completedSteps.size} / 6 완료</span>
+      </div>
+
+      {/* 전체 진행률 바 */}
+      <div className="mb-2 h-1 w-full overflow-hidden rounded-full bg-[var(--color-border-subtle)]">
+        <div
+          className="h-full rounded-full bg-[var(--color-success-500)] transition-all duration-500"
+          style={{ width: `${(completedSteps.size / 6) * 100}%` }}
+        />
       </div>
 
       {/* Progress Bar - 데스크톱 */}
@@ -39,7 +52,7 @@ export default function WorkflowProgress() {
 
         {/* 완료된 구간 라인 */}
         <div
-          className="absolute top-4 left-6 h-0.5 bg-[var(--color-primary-500)] transition-all duration-300"
+          className="absolute top-4 left-6 h-0.5 bg-[var(--color-success-500)] transition-all duration-300"
           style={{
             width: `${((currentStep - 1) / 5) * (100 - (12 * 100) / 100)}%`,
           }}
@@ -59,6 +72,7 @@ export default function WorkflowProgress() {
               isCompleted={isCompleted}
               isCurrent={isCurrent}
               canAccess={canAccess}
+              isOptional={optionalSteps.includes(stepMeta.step)}
               onClick={() => canAccess && goToStep(stepMeta.step)}
             />
           );
@@ -81,6 +95,7 @@ export default function WorkflowProgress() {
                   isCompleted={isCompleted}
                   isCurrent={isCurrent}
                   canAccess={canAccess}
+                  isOptional={optionalSteps.includes(stepMeta.step)}
                   onClick={() => canAccess && goToStep(stepMeta.step)}
                 />
                 {/* 연결선 (마지막 제외) */}
@@ -89,7 +104,7 @@ export default function WorkflowProgress() {
                     className={cn(
                       'h-0.5 w-4 transition-colors',
                       isCompleted
-                        ? 'bg-[var(--color-primary-500)]'
+                        ? 'bg-[var(--color-success-500)]'
                         : 'bg-[var(--color-border-subtle)]'
                     )}
                   />
@@ -112,10 +127,11 @@ interface StepNodeProps {
   isCompleted: boolean;
   isCurrent: boolean;
   canAccess: boolean;
+  isOptional?: boolean;
   onClick: () => void;
 }
 
-function StepNode({ step, title, isCompleted, isCurrent, canAccess, onClick }: StepNodeProps) {
+function StepNode({ step, title, isCompleted, isCurrent, canAccess, isOptional, onClick }: StepNodeProps) {
   return (
     <button
       type="button"
@@ -135,11 +151,14 @@ function StepNode({ step, title, isCompleted, isCurrent, canAccess, onClick }: S
           'flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200',
           'border-2',
           isCompleted
-            ? 'border-[var(--color-primary-500)] bg-[var(--color-primary-500)] text-white'
+            ? 'border-[var(--color-success-500)] bg-[var(--color-success-500)] text-white'
             : isCurrent
               ? 'border-[var(--color-primary-500)] bg-white text-[var(--color-primary-600)]'
               : canAccess
-                ? 'border-[var(--color-border-default)] bg-white text-[var(--color-text-tertiary)]'
+                ? cn(
+                    'bg-white text-[var(--color-text-tertiary)]',
+                    isOptional ? 'border-dashed border-[var(--color-border-default)]' : 'border-[var(--color-border-default)]'
+                  )
                 : 'border-[var(--color-border-subtle)] bg-[var(--color-background-secondary)] text-[var(--color-text-quaternary)]'
         )}
       >
@@ -159,7 +178,7 @@ function StepNode({ step, title, isCompleted, isCurrent, canAccess, onClick }: S
           isCurrent
             ? 'text-[var(--color-primary-600)]'
             : isCompleted
-              ? 'text-[var(--color-text-primary)]'
+              ? 'text-[var(--color-success-600)]'
               : 'text-[var(--color-text-tertiary)]'
         )}
       >
@@ -178,6 +197,7 @@ function StepNodeMobile({
   isCompleted,
   isCurrent,
   canAccess,
+  isOptional,
   onClick,
 }: StepNodeProps) {
   return (
@@ -198,11 +218,14 @@ function StepNodeMobile({
           'flex h-6 w-6 items-center justify-center rounded-full transition-all duration-200',
           'border-2',
           isCompleted
-            ? 'border-[var(--color-primary-500)] bg-[var(--color-primary-500)] text-white'
+            ? 'border-[var(--color-success-500)] bg-[var(--color-success-500)] text-white'
             : isCurrent
               ? 'border-[var(--color-primary-500)] bg-white text-[var(--color-primary-600)] ring-2 ring-[var(--color-primary-200)]'
               : canAccess
-                ? 'border-[var(--color-border-default)] bg-white text-[var(--color-text-tertiary)]'
+                ? cn(
+                    'bg-white text-[var(--color-text-tertiary)]',
+                    isOptional ? 'border-dashed border-[var(--color-border-default)]' : 'border-[var(--color-border-default)]'
+                  )
                 : 'border-[var(--color-border-subtle)] bg-[var(--color-background-secondary)] text-[var(--color-text-quaternary)]'
         )}
       >
@@ -213,9 +236,18 @@ function StepNodeMobile({
         )}
       </div>
 
-      {/* 라벨 (현재 단계만 표시) */}
-      {isCurrent && (
-        <span className="text-[9px] font-medium whitespace-nowrap text-[var(--color-primary-600)]">
+      {/* 라벨 (접근 가능한 단계 표시, 잠긴 단계만 숨김) */}
+      {canAccess && (
+        <span
+          className={cn(
+            'text-[9px] font-medium whitespace-nowrap',
+            isCurrent
+              ? 'text-[var(--color-primary-600)]'
+              : isCompleted
+                ? 'text-[var(--color-success-600)]'
+                : 'text-[var(--color-text-tertiary)]'
+          )}
+        >
           {title}
         </span>
       )}

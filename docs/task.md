@@ -68,14 +68,26 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-03-14
-- [x] **fix(attendances): 출석 UI 디자인 토큰 마이그레이션 및 리팩토링**
-  - 커밋: `9a14ee9`
+- [x] **fix(arrangements): 자리배치 생성 시 예배별 출석 데이터 미분리 버그 수정**
+  - 커밋: `549a87a`
 
-- [x] **fix(attendances): 출석 MemberChip 태블릿/노트북 반응형 그리드 레이아웃 적용**
-  - 커밋: `31946f5`
+- [x] **fix(attendances): 파트장 별 아이콘을 외부 absolute 뱃지로 변경**
+  - 커밋: `fa3843d`
 
-- [x] **feat(dashboard): 출석 현황 예배별 분리 표시**
-  - 커밋: `955bd89`
+- [x] **test(e2e): E2E 테스트 업데이트 및 시드 데이터 갱신**
+  - 커밋: `2d8a651`
+
+- [x] **feat(newsletters): 새로핌지(소식지) 및 기도 담당 관리 기능 추가**
+  - 커밋: `4340c0d`
+
+- [x] **feat(service-schedules): 일정 삭제 기능 및 임포터 인라인 편집 추가**
+  - 커밋: `8878667`
+
+- [x] **fix(date): toISOString() UTC 기준 날짜 버그 수정**
+  - 커밋: `805a8a7`
+
+- [x] **refactor(auth): STAFF 역할을 SECRETARY/TREASURER로 분리**
+  - 커밋: `b269584`
 
 - [x] **feat(dashboard): 출석 현황 예배별 분리 표시**
   - 커밋: `69a798e`

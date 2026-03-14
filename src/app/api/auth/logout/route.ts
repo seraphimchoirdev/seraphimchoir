@@ -13,12 +13,12 @@ export async function POST(_request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // 현재 세션 확인
+    // 현재 사용자 확인 (getUser()는 서버에서 JWT를 재검증)
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ error: '로그인 상태가 아닙니다.' }, { status: 401 });
     }
 

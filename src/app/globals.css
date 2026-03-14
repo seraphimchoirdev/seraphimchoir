@@ -465,6 +465,44 @@ body {
   }
 }
 
+/* === Collapsible 애니메이션 (워크플로우 섹션) === */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    height: 0;
+  }
+  to {
+    opacity: 1;
+    height: var(--radix-collapsible-content-height);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    height: var(--radix-collapsible-content-height);
+  }
+  to {
+    opacity: 0;
+    height: 0;
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 200ms ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slideDown,
+  .animate-slideUp {
+    animation: none;
+  }
+}
+
 /* === 내 자리 하이라이트 애니메이션 === */
 @keyframes seat-highlight {
   0%, 100% {

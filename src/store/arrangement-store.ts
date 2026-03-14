@@ -390,6 +390,11 @@ interface ArrangementState {
   addEmergencyChange: (change: EmergencyChange) => void;
 
   /**
+   * 마지막 긴급 변동 정보를 읽기 전용으로 반환 (Store 미변경, peek)
+   */
+  getLastEmergencySnapshot: () => EmergencyChange | null;
+
+  /**
    * 마지막 긴급 변동 되돌리기 (로컬 상태만 복원). 제거된 EmergencyChange 반환
    */
   undoLastEmergencyChange: () => EmergencyChange | null;
@@ -690,6 +695,12 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
   moveMember: (fromRow, fromCol, toRow, toCol, options) => {
     if (!options?.silent) get().invalidateFromCurrentStep('좌석 이동');
+
+    // 긴급 수정 모드에서 이동 시 변동 이력에 기록
+    const currentState = get();
+    const isEmergency = !!currentState.emergencyChanges.sharedSnapshot;
+    const memberToMoveForTracking = currentState.assignments[`${fromRow}-${fromCol}`];
+
     set((state) => {
       const fromKey = `${fromRow}-${fromCol}`;
       const toKey = `${toRow}-${toCol}`;
@@ -716,6 +727,53 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         assignments: newAssignments,
       };
     });
+
+    // 긴급 모드: 이동 변동 기록 (set 이후에 실행하여 beforeSnapshot 정확성 보장)
+    if (isEmergency && memberToMoveForTracking) {
+      const targetSeat = currentState.assignments[`${toRow}-${toCol}`];
+      const cascadeChanges: CascadeChangeStep[] = [
+        {
+          step: 1,
+          type: 'MOVE',
+          description: `${memberToMoveForTracking.memberName}(${memberToMoveForTracking.part.charAt(0)}) 이동: ${fromRow}행 ${fromCol}열 → ${toRow}행 ${toCol}열`,
+          memberId: memberToMoveForTracking.memberId,
+          memberName: memberToMoveForTracking.memberName,
+          part: memberToMoveForTracking.part,
+          from: { row: fromRow, col: fromCol },
+          to: { row: toRow, col: toCol },
+        },
+      ];
+
+      if (targetSeat) {
+        cascadeChanges.push({
+          step: 2,
+          type: 'MOVE',
+          description: `${targetSeat.memberName}(${targetSeat.part.charAt(0)}) 교체: ${toRow}행 ${toCol}열 → ${fromRow}행 ${fromCol}열`,
+          memberId: targetSeat.memberId,
+          memberName: targetSeat.memberName,
+          part: targetSeat.part,
+          from: { row: toRow, col: toCol },
+          to: { row: fromRow, col: fromCol },
+        });
+      }
+
+      get().addEmergencyChange({
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        type: 'AVAILABLE', // MOVE는 별도 타입이 없으므로 AVAILABLE 사용
+        memberId: memberToMoveForTracking.memberId,
+        memberName: memberToMoveForTracking.memberName,
+        part: memberToMoveForTracking.part,
+        processMode: 'MANUAL',
+        addedTo: { row: toRow, col: toCol },
+        cascadeChanges,
+        movedMemberCount: targetSeat ? 2 : 1,
+        beforeSnapshot: {
+          assignments: { ...currentState.assignments },
+          gridLayout: structuredClone(currentState.gridLayout!),
+        },
+      });
+    }
   },
 
   clearArrangement: () =>
@@ -1622,7 +1680,10 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         logger.debug(`총 ${totalCompacted}명 좌석 정리 완료`);
       }
 
-      return { assignments: newAssignments };
+      return {
+        assignments: newAssignments,
+        _history: saveToHistory(state),
+      };
     });
   },
 
@@ -2048,6 +2109,16 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
         },
       };
     }),
+
+  /**
+   * 마지막 긴급 변동 정보를 읽기 전용으로 반환 (Store 미변경, peek)
+   */
+  getLastEmergencySnapshot: () => {
+    const state = get();
+    const { changes } = state.emergencyChanges;
+    if (changes.length === 0) return null;
+    return changes[changes.length - 1];
+  },
 
   /**
    * 마지막 긴급 변동 되돌리기 (로컬 상태 복원)

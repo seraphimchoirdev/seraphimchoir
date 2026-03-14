@@ -1,5 +1,5 @@
 import type { Config } from 'jest';
-import nextJest from 'next/jest';
+import nextJest from 'next/jest.js';
 
 const createJestConfig = nextJest({
   // Next.js 앱의 경로 (next.config.ts가 있는 디렉토리)
@@ -27,7 +27,7 @@ const config: Config = {
   ],
 
   // 제외할 디렉토리
-  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
+  testPathIgnorePatterns: ['/node_modules/', '/.next/', '<rootDir>/src/__tests__/helpers/'],
 
   // Coverage 제외 패턴
   coveragePathIgnorePatterns: [

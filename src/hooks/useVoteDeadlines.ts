@@ -206,14 +206,49 @@ export function getServiceDeadline(serviceDate: string): Date {
   return saturday;
 }
 
-// 연습 참석 투표 마감 시간 계산 (주일 09:00 KST)
-export function getPracticeDeadline(serviceDate: string): Date {
+// 연습 참석 투표 마감 시간 계산 (연습 시작 10분 전, 폴백: 당일 09:00)
+export function getPracticeDeadline(
+  serviceDate: string,
+  postPracticeStartTime?: string | null
+): Date {
   const date = new Date(serviceDate);
 
-  // 주일 당일 09:00
-  date.setHours(9, 0, 0, 0);
+  if (postPracticeStartTime) {
+    const [hours, minutes] = postPracticeStartTime.split(':').map(Number);
+    date.setHours(hours, minutes, 0, 0);
+    date.setMinutes(date.getMinutes() - 10); // 시작 10분 전 마감
+  } else {
+    date.setHours(9, 0, 0, 0); // 폴백
+  }
 
   return date;
+}
+
+// 마감 시간을 "토요일 15:00" 형태로 포맷
+export function formatDeadlineDisplay(deadline: Date): string {
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  const d = days[deadline.getDay()];
+  const h = deadline.getHours();
+  const m = deadline.getMinutes().toString().padStart(2, '0');
+  return `${d}요일 ${h}:${m}`;
+}
+
+// 마감까지 남은 시간을 짧은 문자열로 반환
+export function formatTimeLeft(deadline: Date): string {
+  const now = new Date();
+  const diff = deadline.getTime() - now.getTime();
+
+  if (diff <= 0) return '마감됨';
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    return `${days}일 남음`;
+  }
+  if (hours > 0) return `${hours}시간 ${minutes}분 남음`;
+  return `${minutes}분 남음`;
 }
 
 // 마감 여부 확인

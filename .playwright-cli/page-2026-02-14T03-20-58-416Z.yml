@@ -1,0 +1,552 @@
+- generic [active] [ref=e1]:
+  - generic:
+    - generic:
+      - img "새로핌:On"
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - button [ref=e5]:
+          - img
+        - generic [ref=e7]:
+          - textbox [ref=e8]: 2월 15일 주일 2부 예배
+          - generic [ref=e9]: 편집완료
+          - generic [ref=e10]:
+            - img [ref=e11]
+            - text: 긴급 수정 가능
+      - generic [ref=e13]:
+        - button "내보내기" [ref=e267]:
+          - img
+          - generic [ref=e268]: 내보내기
+        - button "저장" [ref=e15]:
+          - img
+          - text: 저장
+        - button "수정하기" [ref=e16]:
+          - img
+          - generic [ref=e17]: 수정하기
+        - button "최종 확정" [ref=e269]:
+          - img
+          - text: 최종 확정
+    - button "공유 후 1건의 변동이 있습니다 1명 제거 변동 내역" [ref=e646] [cursor=pointer]:
+      - generic [ref=e647]:
+        - img [ref=e648]
+        - generic [ref=e650]: 공유 후 1건의 변동이 있습니다
+        - generic [ref=e652]:
+          - img [ref=e653]
+          - text: 1명 제거
+      - generic [ref=e656]:
+        - button "마지막 변동 되돌리기" [ref=e657]:
+          - img [ref=e658]
+        - generic [ref=e661]: 변동 내역
+        - img [ref=e662]
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - generic [ref=e22]:
+            - generic [ref=e23]: 자리배치 워크플로우
+            - button "가이드 모드" [ref=e24]:
+              - img
+              - generic [ref=e25]: 가이드 모드
+          - generic [ref=e26]:
+            - generic [ref=e27]:
+              - generic [ref=e28]:
+                - generic [ref=e29]: 가이드 모드
+                - generic [ref=e30]: 6 / 6 단계
+              - generic [ref=e31]:
+                - 'button "1단계: 줄 구성 (완료)" [ref=e270] [cursor=pointer]':
+                  - img [ref=e271]
+                  - generic [ref=e37]: 줄 구성
+                - 'button "2단계: 줄 정렬 (완료)" [ref=e273] [cursor=pointer]':
+                  - img [ref=e274]
+                  - generic [ref=e41]: 줄 정렬
+                - 'button "3단계: AI 배치 (완료)" [ref=e276] [cursor=pointer]':
+                  - img [ref=e277]
+                  - generic [ref=e45]: AI 배치
+                - 'button "4단계: 수동 조정 (완료)" [ref=e279] [cursor=pointer]':
+                  - img [ref=e280]
+                  - generic [ref=e49]: 수동 조정
+                - 'button "5단계: 줄반장 (완료)" [ref=e282] [cursor=pointer]':
+                  - img [ref=e283]
+                  - generic [ref=e53]: 줄반장
+                - 'button "6단계: 내보내기 (완료)" [ref=e54] [cursor=pointer]':
+                  - img [ref=e56]
+                  - generic [ref=e58]: 내보내기
+            - generic [ref=e59]:
+              - button "이전" [ref=e60]:
+                - img
+                - text: 이전
+              - generic [ref=e61]:
+                - button "다음" [disabled]:
+                  - text: 다음
+                  - img
+            - generic [ref=e62]:
+              - button "줄 구성 설정 완료" [ref=e285]:
+                - generic [ref=e65]:
+                  - img [ref=e286]
+                  - generic [ref=e67]: 줄 구성 설정
+                - generic [ref=e68]:
+                  - generic [ref=e288]: 완료
+                  - img [ref=e289]
+              - button "줄 정렬 조정 완료" [ref=e291]:
+                - generic [ref=e142]:
+                  - img [ref=e292]
+                  - generic [ref=e144]: 줄 정렬 조정
+                - generic [ref=e145]:
+                  - generic [ref=e294]: 완료
+                  - img [ref=e147]
+              - button "AI 자동배치 완료" [ref=e295]:
+                - generic [ref=e151]:
+                  - img [ref=e296]
+                  - generic [ref=e153]: AI 자동배치
+                - generic [ref=e154]:
+                  - generic [ref=e298]: 완료
+                  - img [ref=e156]
+              - button "수동 배치 조정 완료" [ref=e299]:
+                - generic [ref=e160]:
+                  - img [ref=e300]
+                  - generic [ref=e162]: 수동 배치 조정
+                - generic [ref=e163]:
+                  - generic [ref=e302]: 완료
+                  - img [ref=e165]
+              - button "줄반장 지정 완료" [ref=e303]:
+                - generic [ref=e169]:
+                  - img [ref=e304]
+                  - generic [ref=e171]: 줄반장 지정
+                - generic [ref=e172]:
+                  - generic [ref=e306]: 완료
+                  - img [ref=e174]
+              - generic [ref=e176]:
+                - button "내보내기 및 확정 완료" [expanded] [ref=e177]:
+                  - generic [ref=e178]:
+                    - img [ref=e180]
+                    - generic [ref=e182]: 내보내기 및 확정
+                  - generic [ref=e183]:
+                    - generic [ref=e184]: 완료
+                    - img [ref=e307]
+                - generic [ref=e311]:
+                  - generic [ref=e312]:
+                    - paragraph [ref=e313]: 이미지 내보내기
+                    - paragraph [ref=e314]: 완성된 배치표를 이미지로 내보내세요.
+                    - generic [ref=e315]:
+                      - button "이미지 공유하기" [ref=e316]:
+                        - img
+                        - text: 이미지 공유하기
+                      - button "PNG 다운로드" [ref=e317]:
+                        - img
+                        - text: PNG 다운로드
+                      - button "클립보드 복사" [ref=e318]:
+                        - img
+                        - text: 클립보드 복사
+                  - generic [ref=e319]:
+                    - paragraph [ref=e320]: 편집 완료
+                    - paragraph [ref=e321]: 편집이 완료되면 상단 헤더의 버튼으로 잠그세요. 편집 완료 후에도 긴급 수정은 가능합니다.
+                    - paragraph [ref=e322]:
+                      - img [ref=e323]
+                      - text: 상단의 '최종 확정' 버튼으로 최종 확정할 수 있습니다.
+        - button "워크플로우 패널 접기" [ref=e188]:
+          - img
+      - generic [ref=e190]:
+        - generic [ref=e191]:
+          - generic [ref=e192]:
+            - generic [ref=e193]: 새로핌찬양대 등단 자리표
+            - generic [ref=e194]: 2026년 2월 15일 주일 2부 예배
+            - generic [ref=e326]:
+              - img [ref=e327]
+              - text: 주 하나님 앞에
+            - generic [ref=e331]: "봉헌송: 김지혜"
+          - generic [ref=e195]:
+            - generic [ref=e196]:
+              - generic [ref=e197]: 1열
+              - generic [ref=e198]:
+                - button "1열 1번 - 추민아 배치됨" [pressed] [ref=e664]:
+                  - generic: "1"
+                  - generic "추민아 - SOPRANO 파트, 1열 1번 배치됨 (이동됨)":
+                    - generic: 추민아
+                    - generic:
+                      - img
+                - button "1열 2번 - 김지혜 배치됨" [ref=e665]:
+                  - generic: "2"
+                  - generic "김지혜 - SOPRANO 파트, 1열 2번 배치됨 (이동됨)":
+                    - generic: 김지혜
+                    - generic:
+                      - img
+                - button "1열 3번 - 김문희 배치됨" [ref=e666]:
+                  - generic: "3"
+                  - generic "김문희 - SOPRANO 파트, 1열 3번 배치됨 (이동됨)":
+                    - generic: 김문희
+                    - generic:
+                      - img
+                - button "1열 4번 - 이승숙 배치됨" [ref=e667]:
+                  - generic: "4"
+                  - generic "이승숙 - SOPRANO 파트, 1열 4번 배치됨 (이동됨)":
+                    - generic: 이승숙
+                    - generic:
+                      - img
+                - button "1열 5번 - 김정희 배치됨" [ref=e668]:
+                  - generic: "5"
+                  - generic "김정희 - SOPRANO 파트, 1열 5번 배치됨 (이동됨)":
+                    - generic: 김정희
+                    - generic:
+                      - img
+                - button "1열 6번 - 김혜선 배치됨" [ref=e669]:
+                  - generic: "6"
+                  - generic "김혜선 - SOPRANO 파트, 1열 6번 배치됨 (이동됨)":
+                    - generic: 김혜선
+                    - generic:
+                      - img
+                - button "1열 7번 - 김향숙 배치됨" [ref=e670]:
+                  - generic: "7"
+                  - generic "김향숙 - SOPRANO 파트, 1열 7번 배치됨 (이동됨)":
+                    - generic: 김향숙
+                    - generic:
+                      - img
+                - button "1열 8번 - 김지영 배치됨" [ref=e671]:
+                  - generic: "8"
+                  - generic "김지영 - SOPRANO 파트, 1열 8번 배치됨 (줄반장) (이동됨)":
+                    - generic: 김지영
+                    - generic:
+                      - img
+                - button "1열 9번 - 심희숙 배치됨" [ref=e672]:
+                  - generic: "9"
+                  - generic "심희숙 - ALTO 파트, 1열 9번 배치됨 (줄반장)":
+                    - generic: 심희숙
+                    - generic:
+                      - img
+                - button "1열 10번 - 강혜선 배치됨" [ref=e673]:
+                  - generic: "10"
+                  - generic "강혜선 - ALTO 파트, 1열 10번 배치됨":
+                    - generic: 강혜선
+                - button "1열 11번 - 민은홍 배치됨" [ref=e674]:
+                  - generic: "11"
+                  - generic "민은홍 - ALTO 파트, 1열 11번 배치됨":
+                    - generic: 민은홍
+                - button "1열 12번 - 최연희 배치됨" [ref=e675]:
+                  - generic: "12"
+                  - generic "최연희 - ALTO 파트, 1열 12번 배치됨":
+                    - generic: 최연희
+                - button "1열 13번 - 최명희 배치됨" [ref=e676]:
+                  - generic: "13"
+                  - generic "최명희 - ALTO 파트, 1열 13번 배치됨":
+                    - generic: 최명희
+                - button "1열 14번 - 김수영 배치됨" [ref=e677]:
+                  - generic: "14"
+                  - generic "김수영 - ALTO 파트, 1열 14번 배치됨":
+                    - generic: 김수영
+              - generic [ref=e362]: "14"
+            - generic [ref=e207]:
+              - generic [ref=e208]: 2열
+              - generic [ref=e209]:
+                - button "2열 1번 - 임신애 배치됨" [ref=e364]:
+                  - generic: "1"
+                  - generic "임신애 - SOPRANO 파트, 2열 1번 배치됨":
+                    - generic: 임신애
+                - button "2열 2번 - 오연분 배치됨" [ref=e366]:
+                  - generic: "2"
+                  - generic "오연분 - SOPRANO 파트, 2열 2번 배치됨":
+                    - generic: 오연분
+                - button "2열 3번 - 이광숙 배치됨" [ref=e368]:
+                  - generic: "3"
+                  - generic "이광숙 - SOPRANO 파트, 2열 3번 배치됨":
+                    - generic: 이광숙
+                - button "2열 4번 - 정유정 배치됨" [ref=e370]:
+                  - generic: "4"
+                  - generic "정유정 - SOPRANO 파트, 2열 4번 배치됨":
+                    - generic: 정유정
+                - button "2열 5번 - 김민식 배치됨" [ref=e372]:
+                  - generic: "5"
+                  - generic "김민식 - SOPRANO 파트, 2열 5번 배치됨":
+                    - generic: 김민식
+                - button "2열 6번 - 신수정 배치됨" [ref=e374]:
+                  - generic: "6"
+                  - generic "신수정 - SOPRANO 파트, 2열 6번 배치됨":
+                    - generic: 신수정
+                - button "2열 7번 - 방진경 배치됨" [ref=e376]:
+                  - generic: "7"
+                  - generic "방진경 - SOPRANO 파트, 2열 7번 배치됨":
+                    - generic: 방진경
+                - button "2열 8번 - 이영란 배치됨" [ref=e378]:
+                  - generic: "8"
+                  - generic "이영란 - SOPRANO 파트, 2열 8번 배치됨":
+                    - generic: 이영란
+                - button "2열 9번 - 이선미 배치됨" [ref=e380]:
+                  - generic: "9"
+                  - generic "이선미 - SOPRANO 파트, 2열 9번 배치됨":
+                    - generic: 이선미
+                - button "2열 10번 - 이윤옥 배치됨" [ref=e382]:
+                  - generic: "10"
+                  - generic "이윤옥 - ALTO 파트, 2열 10번 배치됨":
+                    - generic: 이윤옥
+                - button "2열 11번 - 이혜연 배치됨" [ref=e384]:
+                  - generic: "11"
+                  - generic "이혜연 - ALTO 파트, 2열 11번 배치됨":
+                    - generic: 이혜연
+                - button "2열 12번 - 이은주 배치됨" [ref=e386]:
+                  - generic: "12"
+                  - generic "이은주 - ALTO 파트, 2열 12번 배치됨":
+                    - generic: 이은주
+                - button "2열 13번 - 김희진 배치됨" [ref=e388]:
+                  - generic: "13"
+                  - generic "김희진 - ALTO 파트, 2열 13번 배치됨":
+                    - generic: 김희진
+                - button "2열 14번 - 최유진 배치됨" [ref=e390]:
+                  - generic: "14"
+                  - generic "최유진 - ALTO 파트, 2열 14번 배치됨":
+                    - generic: 최유진
+                - button "2열 15번 - 이지영 배치됨" [ref=e392]:
+                  - generic: "15"
+                  - generic "이지영 - ALTO 파트, 2열 15번 배치됨":
+                    - generic: 이지영
+              - generic [ref=e393]: "15"
+            - generic [ref=e218]:
+              - generic [ref=e219]: 3열
+              - generic [ref=e220]:
+                - button "3열 1번 - 고연주 배치됨" [ref=e395]:
+                  - generic: "1"
+                  - generic "고연주 - SOPRANO 파트, 3열 1번 배치됨":
+                    - generic: 고연주
+                - button "3열 2번 - 이선아 배치됨" [ref=e397]:
+                  - generic: "2"
+                  - generic "이선아 - SOPRANO 파트, 3열 2번 배치됨":
+                    - generic: 이선아
+                - button "3열 3번 - 노은숙 배치됨" [ref=e399]:
+                  - generic: "3"
+                  - generic "노은숙 - SOPRANO 파트, 3열 3번 배치됨":
+                    - generic: 노은숙
+                - button "3열 4번 - 오신영 배치됨" [ref=e401]:
+                  - generic: "4"
+                  - generic "오신영 - SOPRANO 파트, 3열 4번 배치됨":
+                    - generic: 오신영
+                - button "3열 5번 - 임서연 배치됨" [ref=e403]:
+                  - generic: "5"
+                  - generic "임서연 - SOPRANO 파트, 3열 5번 배치됨":
+                    - generic: 임서연
+                - button "3열 6번 - 손기순 배치됨" [ref=e405]:
+                  - generic: "6"
+                  - generic "손기순 - SOPRANO 파트, 3열 6번 배치됨":
+                    - generic: 손기순
+                - button "3열 7번 - 문희 배치됨" [ref=e407]:
+                  - generic: "7"
+                  - generic "문희 - SOPRANO 파트, 3열 7번 배치됨":
+                    - generic: 문희
+                - button "3열 8번 - 최해경 배치됨" [ref=e409]:
+                  - generic: "8"
+                  - generic "최해경 - SOPRANO 파트, 3열 8번 배치됨 (줄반장)":
+                    - generic: 최해경
+                    - generic:
+                      - img
+                - button "3열 9번 - 김은영 배치됨" [ref=e411]:
+                  - generic: "9"
+                  - generic "김은영 - ALTO 파트, 3열 9번 배치됨 (줄반장)":
+                    - generic: 김은영
+                    - generic:
+                      - img
+                - button "3열 10번 - 최승운 배치됨" [ref=e413]:
+                  - generic: "10"
+                  - generic "최승운 - ALTO 파트, 3열 10번 배치됨":
+                    - generic: 최승운
+                - button "3열 11번 - 김이정 배치됨" [ref=e415]:
+                  - generic: "11"
+                  - generic "김이정 - ALTO 파트, 3열 11번 배치됨":
+                    - generic: 김이정
+                - button "3열 12번 - 전신영 배치됨" [ref=e417]:
+                  - generic: "12"
+                  - generic "전신영 - ALTO 파트, 3열 12번 배치됨":
+                    - generic: 전신영
+                - button "3열 13번 - 염용주 배치됨" [ref=e419]:
+                  - generic: "13"
+                  - generic "염용주 - ALTO 파트, 3열 13번 배치됨":
+                    - generic: 염용주
+                - button "3열 14번 - 안은희 배치됨" [ref=e421]:
+                  - generic: "14"
+                  - generic "안은희 - ALTO 파트, 3열 14번 배치됨":
+                    - generic: 안은희
+              - generic [ref=e422]: "14"
+            - generic [ref=e229]:
+              - generic [ref=e230]: 4열
+              - generic [ref=e231]:
+                - button "4열 1번 - 이문형 배치됨" [ref=e424]:
+                  - generic: "1"
+                  - generic "이문형 - SOPRANO 파트, 4열 1번 배치됨":
+                    - generic: 이문형
+                - button "4열 2번 - 서헌숙 배치됨" [ref=e426]:
+                  - generic: "2"
+                  - generic "서헌숙 - SOPRANO 파트, 4열 2번 배치됨":
+                    - generic: 서헌숙
+                - button "4열 3번 - 홍영은 배치됨" [ref=e428]:
+                  - generic: "3"
+                  - generic "홍영은 - TENOR 파트, 4열 3번 배치됨":
+                    - generic: 홍영은
+                - button "4열 4번 - 이강봉 배치됨" [ref=e430]:
+                  - generic: "4"
+                  - generic "이강봉 - TENOR 파트, 4열 4번 배치됨":
+                    - generic: 이강봉
+                - button "4열 5번 - 김한빛 배치됨" [ref=e432]:
+                  - generic: "5"
+                  - generic "김한빛 - TENOR 파트, 4열 5번 배치됨":
+                    - generic: 김한빛
+                - button "4열 6번 - 안강현 배치됨" [ref=e434]:
+                  - generic: "6"
+                  - generic "안강현 - TENOR 파트, 4열 6번 배치됨":
+                    - generic: 안강현
+                - button "4열 7번 - 권인영 배치됨" [ref=e436]:
+                  - generic: "7"
+                  - generic "권인영 - TENOR 파트, 4열 7번 배치됨":
+                    - generic: 권인영
+                - button "4열 8번 - 김철우 배치됨" [ref=e438]:
+                  - generic: "8"
+                  - generic "김철우 - BASS 파트, 4열 8번 배치됨 (줄반장)":
+                    - generic: 김철우
+                    - generic:
+                      - img
+                - button "4열 9번 - 박재용 배치됨" [ref=e440]:
+                  - generic: "9"
+                  - generic "박재용 - BASS 파트, 4열 9번 배치됨":
+                    - generic: 박재용
+                - button "4열 10번 - 남승호 배치됨" [ref=e442]:
+                  - generic: "10"
+                  - generic "남승호 - BASS 파트, 4열 10번 배치됨":
+                    - generic: 남승호
+                - button "4열 11번 - 변소정 배치됨" [ref=e444]:
+                  - generic: "11"
+                  - generic "변소정 - ALTO 파트, 4열 11번 배치됨":
+                    - generic: 변소정
+                - button "4열 12번 - 백성원 배치됨" [ref=e446]:
+                  - generic: "12"
+                  - generic "백성원 - ALTO 파트, 4열 12번 배치됨":
+                    - generic: 백성원
+                - button "4열 13번 - 김예슬 배치됨" [ref=e448]:
+                  - generic: "13"
+                  - generic "김예슬 - ALTO 파트, 4열 13번 배치됨":
+                    - generic: 김예슬
+                - button "4열 14번 - 황선이 배치됨" [ref=e450]:
+                  - generic: "14"
+                  - generic "황선이 - ALTO 파트, 4열 14번 배치됨":
+                    - generic: 황선이
+              - generic [ref=e451]: "14"
+            - generic [ref=e452]:
+              - generic [ref=e453]: 5열
+              - generic [ref=e454]:
+                - button "5열 1번 - 김진희 배치됨" [ref=e456]:
+                  - generic: "1"
+                  - generic "김진희 - SOPRANO 파트, 5열 1번 배치됨":
+                    - generic: 김진희
+                - button "5열 2번 - 오흥철 배치됨" [ref=e458]:
+                  - generic: "2"
+                  - generic "오흥철 - TENOR 파트, 5열 2번 배치됨":
+                    - generic: 오흥철
+                - button "5열 3번 - 장창대 배치됨" [ref=e460]:
+                  - generic: "3"
+                  - generic "장창대 - TENOR 파트, 5열 3번 배치됨":
+                    - generic: 장창대
+                - button "5열 4번 - 정진문 배치됨" [ref=e462]:
+                  - generic: "4"
+                  - generic "정진문 - TENOR 파트, 5열 4번 배치됨":
+                    - generic: 정진문
+                - button "5열 5번 - 최광열 배치됨" [ref=e464]:
+                  - generic: "5"
+                  - generic "최광열 - TENOR 파트, 5열 5번 배치됨 (줄반장)":
+                    - generic: 최광열
+                    - generic:
+                      - img
+                - button "5열 6번 - 김성휘 배치됨" [ref=e466]:
+                  - generic: "6"
+                  - generic "김성휘 - BASS 파트, 5열 6번 배치됨 (줄반장)":
+                    - generic: 김성휘
+                    - generic:
+                      - img
+                - button "5열 7번 - 이규락 배치됨" [ref=e468]:
+                  - generic: "7"
+                  - generic "이규락 - BASS 파트, 5열 7번 배치됨":
+                    - generic: 이규락
+                - button "5열 8번 - 김창동 배치됨" [ref=e470]:
+                  - generic: "8"
+                  - generic "김창동 - BASS 파트, 5열 8번 배치됨":
+                    - generic: 김창동
+                - button "5열 9번 - 이경진 배치됨" [ref=e472]:
+                  - generic: "9"
+                  - generic "이경진 - BASS 파트, 5열 9번 배치됨":
+                    - generic: 이경진
+                - button "5열 10번 - 이원섭 배치됨" [ref=e474]:
+                  - generic: "10"
+                  - generic "이원섭 - BASS 파트, 5열 10번 배치됨":
+                    - generic: 이원섭
+                - button "5열 11번 - 문승현 배치됨" [ref=e476]:
+                  - generic: "11"
+                  - generic "문승현 - BASS 파트, 5열 11번 배치됨":
+                    - generic: 문승현
+              - generic [ref=e477]: "11"
+            - generic [ref=e478]:
+              - generic [ref=e479]: 6열
+              - generic [ref=e480]:
+                - button "6열 1번 - 백한나 배치됨" [ref=e482]:
+                  - generic: "1"
+                  - generic "백한나 - SOPRANO 파트, 6열 1번 배치됨":
+                    - generic: 백한나
+                - button "6열 2번 - 김학영 배치됨" [ref=e484]:
+                  - generic: "2"
+                  - generic "김학영 - TENOR 파트, 6열 2번 배치됨":
+                    - generic: 김학영
+                - button "6열 3번 - 배사무엘 배치됨" [ref=e486]:
+                  - generic: "3"
+                  - generic "배사무엘 - TENOR 파트, 6열 3번 배치됨":
+                    - generic: 배사무엘
+                - button "6열 4번 - 김상목 배치됨" [ref=e488]:
+                  - generic: "4"
+                  - generic "김상목 - TENOR 파트, 6열 4번 배치됨":
+                    - generic: 김상목
+                - button "6열 5번 - 이승균 배치됨" [ref=e490]:
+                  - generic: "5"
+                  - generic "이승균 - TENOR 파트, 6열 5번 배치됨":
+                    - generic: 이승균
+                - button "6열 6번 - 임찬섭 배치됨" [ref=e492]:
+                  - generic: "6"
+                  - generic "임찬섭 - BASS 파트, 6열 6번 배치됨 (줄반장)":
+                    - generic: 임찬섭
+                    - generic:
+                      - img
+                - button "6열 7번 - 윤종흔 배치됨" [ref=e494]:
+                  - generic: "7"
+                  - generic "윤종흔 - BASS 파트, 6열 7번 배치됨":
+                    - generic: 윤종흔
+                - button "6열 8번 - 안형준 배치됨" [ref=e496]:
+                  - generic: "8"
+                  - generic "안형준 - BASS 파트, 6열 8번 배치됨":
+                    - generic: 안형준
+                - button "6열 9번 - 하범 배치됨" [ref=e498]:
+                  - generic: "9"
+                  - generic "하범 - BASS 파트, 6열 9번 배치됨":
+                    - generic: 하범
+                - button "6열 10번 - 김택훈 배치됨" [ref=e500]:
+                  - generic: "10"
+                  - generic "김택훈 - BASS 파트, 6열 10번 배치됨":
+                    - generic: 김택훈
+              - generic [ref=e501]: "10"
+          - generic [ref=e241]: 지휘자
+          - generic [ref=e242]:
+            - generic [ref=e243]:
+              - generic [ref=e244]:
+                - text: S
+                - generic [ref=e245]: ": 29명"
+              - generic [ref=e246]:
+                - text: A
+                - generic [ref=e247]: ": 22명"
+              - generic [ref=e248]:
+                - text: T
+                - generic [ref=e249]: ": 13명"
+              - generic [ref=e250]:
+                - text: B
+                - generic [ref=e251]: ": 14명"
+            - generic [ref=e252]: "총 등단 인원: 78명"
+        - generic [ref=e253]:
+          - paragraph [ref=e254]: "* 대원을 클릭하여 선택한 후, 좌석을 클릭하여 배치하세요"
+          - paragraph [ref=e255]: "좌석: 78개 | 줄: 6줄"
+          - paragraph [ref=e256]: "선택 취소: 같은 대원을 다시 클릭 | 제거: 좌석 더블 클릭"
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=e678]:
+        - button "Close toast" [ref=e679] [cursor=pointer]:
+          - img [ref=e680]
+        - img [ref=e684]
+        - generic [ref=e687]: 이은혜님이 등단 불가로 처리되었습니다.
+  - button "Open Next.js Dev Tools" [ref=e262] [cursor=pointer]:
+    - img [ref=e263]
+  - alert [ref=e266]

@@ -7,12 +7,13 @@ import {
   FileSpreadsheet,
   Image as ImageIcon,
   Loader2,
+  Trash2,
   Upload,
   XCircle,
 } from 'lucide-react';
 import Papa from 'papaparse';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -50,6 +59,16 @@ interface ParsedSchedule {
   valid: boolean;
   errors: string[];
 }
+
+// 예배 유형 선택지
+const SERVICE_TYPE_OPTIONS = [
+  '주일 2부 예배',
+  '오후찬양예배',
+  '절기찬양예배',
+  '찬양대연합예배',
+  '기도회',
+  '구국기도회',
+] as const;
 
 // 이미지 파일인지 확인
 function isImageFile(file: File): boolean {
@@ -243,6 +262,32 @@ export default function ServiceScheduleImporter({
   } | null>(null);
 
   const bulkUpsertMutation = useBulkUpsertServiceSchedules();
+
+  // 인라인 편집 핸들러
+  const updateParsedItem = (index: number, field: keyof ParsedSchedule, value: string) => {
+    setParsedData(prev => prev.map((item, i) =>
+      i === index ? { ...item, [field]: value } : item
+    ));
+  };
+
+  // 행 삭제 핸들러
+  const removeParsedItem = (index: number) => {
+    setParsedData(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // 중복 키 감지 (date|service_type)
+  const duplicateKeys = useMemo(() => {
+    const counts = new Map<string, number>();
+    parsedData.forEach(item => {
+      const key = `${item.date}|${item.service_type}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    const dupes = new Set<string>();
+    counts.forEach((count, key) => {
+      if (count > 1) dupes.add(key);
+    });
+    return dupes;
+  }, [parsedData]);
 
   // CSV 템플릿 다운로드
   const handleDownloadTemplate = () => {
@@ -558,13 +603,13 @@ export default function ServiceScheduleImporter({
 
               {/* Clova OCR 안내 */}
               <div className="mt-4 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-background-secondary)] p-3">
-                <p className="text-sm text-[var(--color-text-secondary)]">
+                <span className="text-sm text-[var(--color-text-secondary)]">
                   <span className="font-medium text-[var(--color-text-primary)]">Clova OCR</span>을
                   사용하여 이미지/PDF에서 텍스트를 추출합니다.
                   <Badge variant="secondary" className="ml-2 text-xs">
                     한글 최적화
                   </Badge>
-                </p>
+                </span>
               </div>
 
               {selectedFile && (
@@ -628,63 +673,140 @@ export default function ServiceScheduleImporter({
                   </Alert>
                 )}
 
+                {/* 중복 키 경고 */}
+                {duplicateKeys.size > 0 && (
+                  <Alert variant="error" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <p className="font-medium">
+                        같은 날짜 + 예배 유형 조합이 {duplicateKeys.size}건 중복됩니다.
+                      </p>
+                      <p className="text-sm">
+                        예배 유형을 변경하거나 중복 행을 삭제해주세요.
+                        수정하지 않으면 마지막 항목만 저장됩니다.
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {/* 테이블 */}
-                <div className="max-h-64 overflow-hidden overflow-y-auto rounded-lg border">
+                <div className="max-h-80 overflow-hidden overflow-y-auto rounded-lg border">
                   <Table>
-                    <TableHeader className="sticky top-0 bg-[var(--color-surface)]">
+                    <TableHeader className="sticky top-0 z-10 bg-[var(--color-surface)]">
                       <TableRow>
-                        <TableHead className="w-12">상태</TableHead>
-                        <TableHead>날짜</TableHead>
+                        <TableHead className="w-10">상태</TableHead>
+                        <TableHead className="whitespace-nowrap">날짜</TableHead>
+                        <TableHead className="whitespace-nowrap">예배 유형</TableHead>
                         <TableHead>후드</TableHead>
                         <TableHead>찬양곡명</TableHead>
                         <TableHead>작곡가</TableHead>
-                        <TableHead>악보</TableHead>
                         <TableHead>봉헌송</TableHead>
-                        <TableHead>절기</TableHead>
+                        <TableHead>절기/비고</TableHead>
+                        <TableHead className="w-10"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {parsedData.slice(0, 50).map((item, idx) => (
-                        <TableRow
-                          key={idx}
-                          className={item.valid ? '' : 'bg-[var(--color-error-50)]'}
-                        >
-                          <TableCell>
-                            {item.valid ? (
-                              <CheckCircle className="h-4 w-4 text-[var(--color-success-600)]" />
-                            ) : (
-                              <XCircle className="h-4 w-4 text-[var(--color-error-600)]" />
-                            )}
-                          </TableCell>
-                          <TableCell className="font-medium whitespace-nowrap">
-                            {item.date}
-                          </TableCell>
-                          <TableCell>
-                            {item.hood_color ? (
-                              <Badge variant="outline" className="text-xs">
-                                {item.hood_color}
-                              </Badge>
-                            ) : (
-                              '-'
-                            )}
-                          </TableCell>
-                          <TableCell className="max-w-24 truncate">
-                            {item.hymn_name || '-'}
-                          </TableCell>
-                          <TableCell className="max-w-20 truncate text-xs">
-                            {item.composer || '-'}
-                          </TableCell>
-                          <TableCell className="max-w-20 truncate text-xs">
-                            {item.music_source || '-'}
-                          </TableCell>
-                          <TableCell className="max-w-20 truncate text-xs">
-                            {item.offertory_performer || '-'}
-                          </TableCell>
-                          <TableCell className="max-w-20 truncate text-xs">
-                            {item.notes || '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {parsedData.slice(0, 50).map((item, idx) => {
+                        const isDuplicate = duplicateKeys.has(`${item.date}|${item.service_type}`);
+                        return (
+                          <TableRow
+                            key={idx}
+                            className={
+                              !item.valid
+                                ? 'bg-[var(--color-error-50)]'
+                                : isDuplicate
+                                  ? 'bg-amber-50'
+                                  : ''
+                            }
+                          >
+                            <TableCell>
+                              {item.valid ? (
+                                <CheckCircle className="h-4 w-4 text-[var(--color-success-600)]" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-[var(--color-error-600)]" />
+                              )}
+                            </TableCell>
+                            <TableCell className="font-medium whitespace-nowrap">
+                              {item.date}
+                            </TableCell>
+                            <TableCell className="min-w-[140px]">
+                              <div className="flex items-center gap-1">
+                                <Select
+                                  value={item.service_type}
+                                  onValueChange={(value) => updateParsedItem(idx, 'service_type', value)}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {SERVICE_TYPE_OPTIONS.map((type) => (
+                                      <SelectItem key={type} value={type}>
+                                        {type}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                {isDuplicate && (
+                                  <Badge variant="destructive" className="shrink-0 text-[10px] px-1">
+                                    중복
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {item.hood_color ? (
+                                <Badge variant="outline" className="text-xs">
+                                  {item.hood_color}
+                                </Badge>
+                              ) : (
+                                '-'
+                              )}
+                            </TableCell>
+                            <TableCell className="min-w-[120px]">
+                              <Input
+                                className="h-8 text-xs"
+                                value={item.hymn_name || ''}
+                                onChange={(e) => updateParsedItem(idx, 'hymn_name', e.target.value)}
+                                placeholder="-"
+                              />
+                            </TableCell>
+                            <TableCell className="min-w-[100px]">
+                              <Input
+                                className="h-8 text-xs"
+                                value={item.composer || ''}
+                                onChange={(e) => updateParsedItem(idx, 'composer', e.target.value)}
+                                placeholder="-"
+                              />
+                            </TableCell>
+                            <TableCell className="min-w-[100px]">
+                              <Input
+                                className="h-8 text-xs"
+                                value={item.offertory_performer || ''}
+                                onChange={(e) => updateParsedItem(idx, 'offertory_performer', e.target.value)}
+                                placeholder="-"
+                              />
+                            </TableCell>
+                            <TableCell className="min-w-[100px]">
+                              <Input
+                                className="h-8 text-xs"
+                                value={item.notes || ''}
+                                onChange={(e) => updateParsedItem(idx, 'notes', e.target.value)}
+                                placeholder="-"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-[var(--color-text-tertiary)] hover:text-[var(--color-error-600)]"
+                                onClick={() => removeParsedItem(idx)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>

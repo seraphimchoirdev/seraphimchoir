@@ -118,11 +118,11 @@ export default function WorkflowPanel({
 
       <CardContent className="space-y-4">
         {/* Progress Indicator */}
-        <WorkflowProgress />
+        <WorkflowProgress optionalSteps={optionalSteps} />
 
         {/* 워크플로우 네비게이션 (위자드 모드) */}
         {isWizardMode && (
-          <div className="flex items-center justify-between border-t border-[var(--color-border-subtle)] pt-2">
+          <div className="flex items-center justify-between rounded-lg bg-[var(--color-background-secondary)] px-3 py-2">
             <Button
               variant="ghost"
               size="sm"
@@ -173,6 +173,7 @@ export default function WorkflowPanel({
                 canComplete={config.canComplete}
                 cannotCompleteMessage={config.message}
                 hideCompleteButton={false}
+                isOptional={optionalSteps.includes(stepMeta.step)}
               >
                 {renderStepContent(stepMeta.step)}
               </WorkflowSection>

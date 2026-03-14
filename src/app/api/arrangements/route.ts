@@ -72,6 +72,12 @@ interface PartComposition {
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
+  // 인증 검사
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
+  }
+
   // 쿼리 파라미터 sanitization 및 검증
   const params = sanitizeQueryParams(request.nextUrl.searchParams, getArrangementsQuerySchema);
 
@@ -244,6 +250,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
+
+  // 인증 검사
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
+  }
 
   try {
     const json = await request.json();

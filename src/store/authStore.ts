@@ -294,19 +294,20 @@ export const useAuthStore = create<AuthStore>()(
 
             for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
               try {
-                logger.debug('[fetchUser] getSession 호출');
+                // getUser()는 Supabase 서버에서 JWT를 재검증하므로 getSession()보다 안전
+                logger.debug('[fetchUser] getUser 호출');
                 const {
-                  data: { session },
-                  error: sessionError,
-                } = await supabase.auth.getSession();
-                logger.debug('[fetchUser] getSession 완료:', { hasSession: !!session, sessionError });
+                  data: { user: authUser },
+                  error: userError,
+                } = await supabase.auth.getUser();
+                logger.debug('[fetchUser] getUser 완료:', { hasUser: !!authUser, userError });
 
-                if (sessionError) {
-                  throw sessionError;
+                if (userError) {
+                  throw userError;
                 }
 
-                if (!session?.user) {
-                  logger.debug('[fetchUser] 세션 없음');
+                if (!authUser) {
+                  logger.debug('[fetchUser] 인증된 사용자 없음');
                   set(
                     {
                       user: null,
@@ -321,11 +322,11 @@ export const useAuthStore = create<AuthStore>()(
                 }
 
                 // 프로필 + 연결 대원 정보를 FK join으로 한 번에 조회
-                logger.debug('[fetchUser] 프로필 조회 시작, uid:', session.user.id);
+                logger.debug('[fetchUser] 프로필 조회 시작, uid:', authUser.id);
                 const { data: profileData, error: profileError } = await supabase
                   .from('user_profiles')
                   .select('id, email, name, role, linked_member_id, link_status, linked_member:members!linked_member_id(name, part)')
-                  .eq('id', session.user.id)
+                  .eq('id', authUser.id)
                   .maybeSingle();
 
                 if (profileError) {
@@ -354,7 +355,7 @@ export const useAuthStore = create<AuthStore>()(
 
                 set(
                   {
-                    user: session.user,
+                    user: authUser,
                     profile: profile || null,
                     isAuthenticated: true,
                     isLoading: false,
@@ -451,9 +452,10 @@ export const useAuthStore = create<AuthStore>()(
           return profile?.role === 'ADMIN';
         },
 
-        // 대원 연결 확인
+        // 대원 연결 확인 (ADMIN은 대원 연결 없이도 모든 기능 접근 가능)
         isMemberLinked: () => {
           const { profile } = get();
+          if (profile?.role === 'ADMIN') return true;
           return profile?.linked_member_id !== null && profile?.link_status === 'approved';
         },
 

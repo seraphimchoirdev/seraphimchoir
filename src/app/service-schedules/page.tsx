@@ -3,6 +3,7 @@
 import {
   AlertCircle,
   Calendar,
+  CalendarDays,
   CalendarRange,
   FileSpreadsheet,
   Music,
@@ -10,7 +11,7 @@ import {
   Plus,
 } from 'lucide-react';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import {
   MonthSelector,
@@ -19,6 +20,7 @@ import {
   QuarterlyCalendar,
   ServiceScheduleDialog,
   ServiceScheduleImporter,
+  UpcomingCalendar,
 } from '@/components/features/service-schedules';
 import EventDialog from '@/components/features/service-schedules/EventDialog';
 import AppShell from '@/components/layout/AppShell';
@@ -36,46 +38,66 @@ import { useAuth } from '@/hooks/useAuth';
 import { useChoirEvents } from '@/hooks/useChoirEvents';
 import { useServiceSchedules } from '@/hooks/useServiceSchedules';
 
-type ViewMode = 'monthly' | 'quarterly';
+type ViewMode = 'upcoming' | 'monthly' | 'quarterly';
 
 export default function ServiceSchedulesPage() {
   const { hasRole, isLoading: authLoading } = useAuth();
 
-  // 일정 조회 권한: 모든 역할
   const hasPermission = hasRole([
     'ADMIN',
     'CONDUCTOR',
     'MANAGER',
-    'STAFF',
+    'SECRETARY',
+    'TREASURER',
     'PART_LEADER',
     'MEMBER',
   ]);
-  // 예배 일정 관리 권한: ADMIN, CONDUCTOR, MANAGER만
   const canManageService = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
-  // 행사 일정 관리 권한: 현재는 ADMIN, CONDUCTOR, MANAGER만 (향후 대원 승인제 도입 예정)
   const canManageEvents = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
 
   const currentDate = new Date();
-  const [viewMode, setViewMode] = useState<ViewMode>('monthly');
+  const [viewMode, setViewMode] = useState<ViewMode>('upcoming');
   const [year, setYear] = useState(currentDate.getFullYear());
-  const [month, setMonth] = useState(currentDate.getMonth() + 1); // 1-12
+  const [month, setMonth] = useState(currentDate.getMonth() + 1);
   const [quarter, setQuarter] = useState(Math.ceil((currentDate.getMonth() + 1) / 3));
+
+  // 다가오는 일정 날짜 범위 (오늘~5주 후)
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }, []);
+
+  const fiveWeeksLaterStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 35);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }, []);
 
   // 예배 일정 추가 다이얼로그 상태
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
-
-  // 행사 일정 추가 다이얼로그 상태
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
-
-  // 일괄 등록 다이얼로그 상태
   const [isImporterOpen, setIsImporterOpen] = useState(false);
 
   // 뷰 모드에 따른 필터 설정
-  const scheduleFilters = viewMode === 'monthly' ? { year, month } : { year, quarter };
+  const scheduleFilters = useMemo(() => {
+    switch (viewMode) {
+      case 'upcoming':
+        return { startDate: todayStr, endDate: fiveWeeksLaterStr };
+      case 'monthly':
+        return { year, month };
+      case 'quarterly':
+        return { year, quarter };
+    }
+  }, [viewMode, year, month, quarter, todayStr, fiveWeeksLaterStr]);
 
   const { data, isLoading, error, refetch } = useServiceSchedules(scheduleFilters);
 
-  // 행사 데이터 조회
   const {
     data: eventsData,
     isLoading: eventsLoading,
@@ -83,11 +105,30 @@ export default function ServiceSchedulesPage() {
     refetch: refetchEvents,
   } = useChoirEvents(scheduleFilters);
 
-  // 예배 일정과 행사 모두 refetch
   const handleRefresh = useCallback(() => {
     refetch();
     refetchEvents();
   }, [refetch, refetchEvents]);
+
+  // "지난 일정 보기" → 월간 뷰 + 현재 월로 전환
+  const handleShowPastSchedules = useCallback(() => {
+    const now = new Date();
+    setViewMode('monthly');
+    setYear(now.getFullYear());
+    setMonth(now.getMonth() + 1);
+  }, []);
+
+  // 설명 문구
+  const description = useMemo(() => {
+    switch (viewMode) {
+      case 'upcoming':
+        return '다가오는 예배 및 행사 일정입니다';
+      case 'monthly':
+        return '월별 예배 및 행사 일정을 관리합니다';
+      case 'quarterly':
+        return '분기별 예배 및 행사 일정을 관리합니다';
+    }
+  }, [viewMode]);
 
   if (authLoading) {
     return (
@@ -123,16 +164,26 @@ export default function ServiceSchedulesPage() {
               <h1 className="text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl">
                 찬양대 일정 관리
               </h1>
-              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                {viewMode === 'monthly' ? '월별' : '분기별'} 예배 및 행사 일정을 관리합니다
-              </p>
+              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{description}</p>
             </div>
 
             {/* 컨트롤 영역 */}
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               {/* 좌측: 날짜 선택기 */}
               <div>
-                {viewMode === 'monthly' ? (
+                {viewMode === 'upcoming' ? (
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="h-5 w-5 text-[var(--color-primary-500)]" />
+                    <div>
+                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                        다가오는 일정
+                      </span>
+                      <span className="ml-2 text-xs text-[var(--color-text-tertiary)]">
+                        (향후 5주)
+                      </span>
+                    </div>
+                  </div>
+                ) : viewMode === 'monthly' ? (
                   <MonthSelector
                     year={year}
                     month={month}
@@ -155,8 +206,17 @@ export default function ServiceSchedulesPage() {
 
               {/* 우측: 뷰 토글 + 액션 버튼 */}
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                {/* 뷰 전환 토글 */}
+                {/* 뷰 전환 토글 (3개) */}
                 <div className="flex items-center rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-background-secondary)] p-0.5">
+                  <Button
+                    variant={viewMode === 'upcoming' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-8 gap-1.5"
+                    onClick={() => setViewMode('upcoming')}
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                    <span className="hidden sm:inline">다가오는</span>
+                  </Button>
                   <Button
                     variant={viewMode === 'monthly' ? 'default' : 'ghost'}
                     size="sm"
@@ -243,13 +303,24 @@ export default function ServiceSchedulesPage() {
               !error &&
               !eventsError &&
               data &&
-              (viewMode === 'monthly' ? (
+              (viewMode === 'upcoming' ? (
+                <UpcomingCalendar
+                  startDate={todayStr}
+                  endDate={fiveWeeksLaterStr}
+                  schedules={data.data}
+                  events={eventsData?.data || []}
+                  onRefresh={handleRefresh}
+                  onShowPastSchedules={handleShowPastSchedules}
+                  canDeleteSchedule={canManageService}
+                />
+              ) : viewMode === 'monthly' ? (
                 <MonthlyCalendar
                   year={year}
                   month={month}
                   schedules={data.data}
                   events={eventsData?.data || []}
                   onRefresh={handleRefresh}
+                  canDeleteSchedule={canManageService}
                 />
               ) : (
                 <QuarterlyCalendar
@@ -258,6 +329,7 @@ export default function ServiceSchedulesPage() {
                   schedules={data.data}
                   events={eventsData?.data || []}
                   onRefresh={handleRefresh}
+                  canDeleteSchedule={canManageService}
                 />
               ))}
           </div>

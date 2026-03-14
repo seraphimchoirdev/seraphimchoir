@@ -20,44 +20,45 @@ const bulkSeatsSchema = z.object({
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
+  // 인증 검사
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
+  }
+
   try {
     const json = await request.json();
     const { arrangementId, seats } = bulkSeatsSchema.parse(json);
 
-    // 1. Delete existing seats for this arrangement
-    const { error: deleteError } = await supabase
-      .from('seats')
-      .delete()
-      .eq('arrangement_id', arrangementId);
+    // RPC를 사용하여 DELETE + INSERT를 단일 트랜잭션으로 처리
+    // 중간 실패 시 자동 롤백되어 데이터 손실 방지
+    const seatsForRpc = seats.map((seat) => ({
+      member_id: seat.memberId,
+      seat_row: seat.row,
+      seat_column: seat.column,
+      part: seat.part,
+      is_row_leader: seat.isRowLeader || false,
+    }));
 
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    const { data, error } = await supabase.rpc('replace_arrangement_seats', {
+      p_arrangement_id: arrangementId,
+      p_seats: seatsForRpc,
+    });
+
+    if (error) {
+      console.error('[seats/bulk] RPC 에러:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
+      return NextResponse.json(
+        { error: '좌석 저장 중 오류가 발생했습니다.', details: error.message },
+        { status: 500 }
+      );
     }
 
-    // 2. Insert new seats
-    if (seats.length > 0) {
-      const seatsToInsert = seats.map((seat) => ({
-        arrangement_id: arrangementId,
-        member_id: seat.memberId,
-        seat_row: seat.row,
-        seat_column: seat.column,
-        part: seat.part,
-        is_row_leader: seat.isRowLeader || false,
-      }));
-
-      const { data, error: insertError } = await supabase
-        .from('seats')
-        .insert(seatsToInsert)
-        .select();
-
-      if (insertError) {
-        return NextResponse.json({ error: insertError.message }, { status: 500 });
-      }
-
-      return NextResponse.json(data);
-    }
-
-    return NextResponse.json([]);
+    return NextResponse.json(data || []);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -65,6 +66,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('[seats/bulk] 예외:', error);
+    return NextResponse.json(
+      { error: '좌석 저장 중 오류가 발생했습니다.', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
   }
 }

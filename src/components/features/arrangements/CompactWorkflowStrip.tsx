@@ -14,6 +14,8 @@ interface CompactWorkflowStripProps {
   canAccessStep: (step: WorkflowStep) => boolean;
   onStepClick: (step: WorkflowStep) => void;
   onExpand: () => void;
+  /** 선택적(건너뛰기 가능) 단계 목록 */
+  optionalSteps?: WorkflowStep[];
 }
 
 /**
@@ -28,6 +30,7 @@ export default function CompactWorkflowStrip({
   canAccessStep,
   onStepClick,
   onExpand,
+  optionalSteps = [],
 }: CompactWorkflowStripProps) {
   const steps = Object.values(WORKFLOW_STEPS);
 
@@ -46,13 +49,14 @@ export default function CompactWorkflowStrip({
 
       {/* 단계 노드들 */}
       <div className="flex flex-1 min-h-0 flex-col items-center gap-1 overflow-y-auto">
-        {steps.map((stepMeta) => {
+        {steps.map((stepMeta, index) => {
           const isCompleted = completedSteps.has(stepMeta.step);
           const isCurrent = currentStep === stepMeta.step;
           const canAccess = canAccessStep(stepMeta.step);
+          const isOptional = optionalSteps.includes(stepMeta.step);
 
           return (
-            <div key={stepMeta.step} className="flex flex-col items-center gap-0.5">
+            <div key={stepMeta.step} className="flex flex-col items-center">
               <button
                 type="button"
                 onClick={() => canAccess && onStepClick(stepMeta.step)}
@@ -61,11 +65,14 @@ export default function CompactWorkflowStrip({
                   'relative flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200',
                   'border-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-400)]',
                   isCompleted
-                    ? 'border-[var(--color-primary-500)] bg-[var(--color-primary-500)] text-white'
+                    ? 'border-[var(--color-success-500)] bg-[var(--color-success-500)] text-white'
                     : isCurrent
                       ? 'border-[var(--color-primary-500)] bg-white text-[var(--color-primary-600)]'
                       : canAccess
-                        ? 'border-[var(--color-border-default)] bg-white text-[var(--color-text-tertiary)]'
+                        ? cn(
+                            'bg-white text-[var(--color-text-tertiary)]',
+                            isOptional ? 'border-dashed border-[var(--color-border-default)]' : 'border-[var(--color-border-default)]'
+                          )
                         : 'cursor-not-allowed border-[var(--color-border-subtle)] bg-[var(--color-background-secondary)] text-[var(--color-text-quaternary)]',
                   canAccess && !isCurrent && 'cursor-pointer hover:border-[var(--color-primary-300)]'
                 )}
@@ -90,7 +97,7 @@ export default function CompactWorkflowStrip({
                 className={cn(
                   'text-[10px] leading-tight select-none',
                   isCompleted
-                    ? 'text-[var(--color-primary-500)]'
+                    ? 'text-[var(--color-success-600)]'
                     : isCurrent
                       ? 'font-semibold text-[var(--color-primary-600)]'
                       : 'text-[var(--color-text-tertiary)]'
@@ -98,6 +105,18 @@ export default function CompactWorkflowStrip({
               >
                 {stepMeta.shortTitle}
               </span>
+
+              {/* 세로 연결선 (마지막 노드 제외) */}
+              {index < steps.length - 1 && (
+                <div
+                  className={cn(
+                    'my-0.5 h-3 w-0.5 rounded-full',
+                    isCompleted
+                      ? 'bg-[var(--color-success-400)]'
+                      : 'bg-[var(--color-border-subtle)]'
+                  )}
+                />
+              )}
             </div>
           );
         })}

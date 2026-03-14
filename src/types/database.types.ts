@@ -652,6 +652,96 @@ export type Database = {
           },
         ]
       }
+      newsletters: {
+        Row: {
+          announcements: string | null
+          created_at: string
+          created_by: string | null
+          editor_name: string | null
+          editor_weekly_name: string | null
+          fixed_footer_text: string | null
+          id: string
+          issue_date: string
+          issue_number: number
+          published_at: string | null
+          publisher_name: string | null
+          serial_number: number
+          status: string
+          updated_at: string
+          updated_by: string | null
+          volume: number
+          year_motto: string | null
+        }
+        Insert: {
+          announcements?: string | null
+          created_at?: string
+          created_by?: string | null
+          editor_name?: string | null
+          editor_weekly_name?: string | null
+          fixed_footer_text?: string | null
+          id?: string
+          issue_date: string
+          issue_number: number
+          published_at?: string | null
+          publisher_name?: string | null
+          serial_number: number
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          volume: number
+          year_motto?: string | null
+        }
+        Update: {
+          announcements?: string | null
+          created_at?: string
+          created_by?: string | null
+          editor_name?: string | null
+          editor_weekly_name?: string | null
+          fixed_footer_text?: string | null
+          id?: string
+          issue_date?: string
+          issue_number?: number
+          published_at?: string | null
+          publisher_name?: string | null
+          serial_number?: number
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          volume?: number
+          year_motto?: string | null
+        }
+        Relationships: []
+      }
+      prayer_assignments: {
+        Row: {
+          created_at: string
+          date: string
+          gown_part: string
+          id: string
+          prayer_names: string
+          quarter: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          gown_part?: string
+          id?: string
+          prayer_names?: string
+          quarter: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          gown_part?: string
+          id?: string
+          prayer_names?: string
+          quarter?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       row_distribution_patterns: {
         Row: {
           capacities: number[]
@@ -1076,6 +1166,25 @@ export type Database = {
         }
         Returns: string
       }
+      replace_arrangement_seats: {
+        Args: { p_arrangement_id: string; p_seats: Json }
+        Returns: {
+          arrangement_id: string
+          created_at: string
+          id: string
+          is_row_leader: boolean | null
+          member_id: string
+          part: Database["public"]["Enums"]["part"]
+          seat_column: number
+          seat_row: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "seats"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       member_status: "REGULAR" | "NEW" | "ON_LEAVE" | "RESIGNED"
@@ -1218,9 +1327,7 @@ export const Constants = {
   },
 } as const
 
-// 배치표 상태 타입 정의
-export type ArrangementStatus = 'DRAFT' | 'SHARED' | 'CONFIRMED'
-
-// 연습 참석 상태 타입 정의
-export type PracticeAttendanceType = Database["public"]["Enums"]["practice_attendance_type"]
+// 커스텀 타입 (gen types로 자동 생성되지 않는 타입)
+export type ArrangementStatus = 'DRAFT' | 'SHARED' | 'CONFIRMED';
+export type PracticeAttendanceType = 'FULL' | 'EARLY_LEAVE' | 'LATE_JOIN' | 'ABSENT';
 

@@ -46,8 +46,8 @@ const EmergencyUnavailableDialog = memo(function EmergencyUnavailableDialog({
   onComplete,
   onError,
 }: EmergencyUnavailableDialogProps) {
-  // 처리 방식 선택 상태 (기본: 자동 당기기)
-  const [processMode, setProcessMode] = useState<UnavailableProcessMode>('AUTO_PULL');
+  // 처리 방식 선택 상태 (기본: 빈 자리 유지 — 긴급 수정 시 최소 변경 철학)
+  const [processMode, setProcessMode] = useState<UnavailableProcessMode>('LEAVE_EMPTY');
 
   // Store 액션
   const removeMember = useArrangementStore((state) => state.removeMember);
@@ -86,13 +86,13 @@ const EmergencyUnavailableDialog = memo(function EmergencyUnavailableDialog({
       label: '빈 자리 유지',
       description: '자리만 비우고 이동 없음',
       movedCount: leaveEmptyPreview?.movedMemberCount ?? null,
+      isRecommended: true,
     },
     {
       mode: 'AUTO_PULL',
       label: '자동 당기기',
       description: '같은 파트만 당김',
       movedCount: autoPullPreview?.movedMemberCount ?? null,
-      isRecommended: true,
     },
     {
       mode: 'MANUAL',

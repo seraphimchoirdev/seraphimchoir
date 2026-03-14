@@ -1,4 +1,9 @@
 -- Seed data for members
+-- NOTE: INSERT 비활성화 (2026-03-01)
+-- seed.sql(prod-data.sql 기반)에서 동일한 대원 데이터를 삽입하므로
+-- db reset 시 중복(92명 x 2건) 발생. seed.sql이 정확한 UUID + FK 관계를
+-- 포함하고 있으므로 마이그레이션에서는 제거.
+/*
 INSERT INTO public.members (name, part, member_status) VALUES
 -- Soprano (33)
 ('고연주', 'SOPRANO', 'REGULAR'),
@@ -100,3 +105,4 @@ INSERT INTO public.members (name, part, member_status) VALUES
 ('임찬섭', 'BASS', 'REGULAR'),
 ('하범', 'BASS', 'REGULAR'),
 ('한만영', 'BASS', 'REGULAR');
+*/

@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronUp, Minus, Plus, RotateCcw, Zap } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, Minus, Plus, RotateCcw, Zap } from 'lucide-react';
 
 import { useEffect, useState } from 'react';
 
@@ -228,7 +228,11 @@ export default function GridSettingsPanel({
                 <input
                   type="text"
                   inputMode="numeric"
+                  role="spinbutton"
                   aria-label={`${idx + 1}줄 인원 수`}
+                  aria-valuemin={0}
+                  aria-valuemax={GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW}
+                  aria-valuenow={capacity}
                   value={capacity}
                   onChange={(e) => {
                     const raw = e.target.value;
@@ -269,7 +273,7 @@ export default function GridSettingsPanel({
                     );
                     setLocalCapacities(newCapacities);
                   }}
-                  className="flex w-10 items-center justify-center border-l border-[var(--color-border)] bg-[var(--color-primary-50)] text-[var(--color-primary-600)] transition-colors hover:bg-[var(--color-primary-100)] hover:text-[var(--color-primary-700)] active:bg-[var(--color-primary-200)] active:text-[var(--color-primary-700)] disabled:pointer-events-none disabled:opacity-40"
+                  className="flex w-10 items-center justify-center border-l border-[var(--color-border)] bg-[var(--color-primary-50)] text-[var(--color-primary-600)] transition-colors hover:bg-[var(--color-primary-100)] hover:text-[var(--color-primary-700)] active:bg-[var(--color-primary-200)] disabled:pointer-events-none disabled:opacity-40"
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </button>
@@ -422,8 +426,9 @@ export default function GridSettingsPanel({
           <span className="font-semibold text-[var(--color-primary-600)]">{totalSeats}개</span>
         </div>
         {totalSeats !== totalMembers && (
-          <p className="mt-1 text-xs text-[var(--color-warning-600)]">
-            ⚠ 출석 인원({totalMembers}명)과 총 좌석({totalSeats}개)이 일치하지 않습니다
+          <p className="mt-1 flex items-center gap-1 text-xs text-[var(--color-warning-600)]">
+            <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+            출석 인원({totalMembers}명)과 총 좌석({totalSeats}개)이 일치하지 않습니다
           </p>
         )}
       </div>

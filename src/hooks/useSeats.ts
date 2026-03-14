@@ -33,14 +33,17 @@ export function useUpdateSeats() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || '좌석 저장에 실패했습니다');
+        const msg = error.details
+          ? `${error.error}: ${error.details}`
+          : error.error || '좌석 저장에 실패했습니다';
+        throw new Error(msg);
       }
 
       return response.json() as Promise<Seat[]>;
     },
-    onSuccess: (_, variables) => {
-      // 배치표 상세 쿼리 무효화 (좌석 정보 갱신)
-      queryClient.invalidateQueries({ queryKey: ['arrangements', variables.arrangementId] });
+    onSuccess: () => {
+      // 배치표 목록+상세 쿼리 모두 무효화 (prefix 매칭)
+      queryClient.invalidateQueries({ queryKey: ['arrangements'] });
     },
   });
 }

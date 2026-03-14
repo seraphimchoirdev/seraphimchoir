@@ -46,5 +46,11 @@ Sentry.init({
     // 네트워크 에러 (사용자 인터넷 끊김 등)
     'Network request failed',
     'Failed to fetch',
+    // Next.js 내부 Performance.measure 버그 (negative timestamp)
+    /cannot have a negative time stamp/i,
+    /Given attribute end cannot be negative/i,
+    // Sentry 예제 에러 (제거됨, 혹시 남아있을 경우)
+    'SentryExampleFrontendError',
+    'SentryExampleAPIError',
   ],
 });
