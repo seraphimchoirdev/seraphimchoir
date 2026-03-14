@@ -66,25 +66,25 @@ export default function AttendanceChipGrid({
 
   // 파트별 그라데이션 배경색
   const partGradients: Record<Part, string> = {
-    SOPRANO: 'from-purple-50 to-purple-100/50',
-    ALTO: 'from-yellow-50 to-yellow-100/50',
-    TENOR: 'from-blue-50 to-blue-100/50',
-    BASS: 'from-green-50 to-green-100/50',
-    SPECIAL: 'from-gray-50 to-gray-100/50',
+    SOPRANO: 'from-[var(--color-part-soprano-50)] to-[var(--color-part-soprano-100)]/50',
+    ALTO: 'from-[var(--color-part-alto-50)] to-[var(--color-part-alto-100)]/50',
+    TENOR: 'from-[var(--color-part-tenor-50)] to-[var(--color-part-tenor-100)]/50',
+    BASS: 'from-[var(--color-part-bass-50)] to-[var(--color-part-bass-100)]/50',
+    SPECIAL: 'from-[var(--color-part-special-50)] to-[var(--color-part-special-100)]/50',
   };
 
   const partAccentColors: Record<Part, string> = {
-    SOPRANO: 'text-purple-700',
-    ALTO: 'text-yellow-700',
-    TENOR: 'text-blue-700',
-    BASS: 'text-green-700',
-    SPECIAL: 'text-gray-700',
+    SOPRANO: 'text-[var(--color-part-soprano-700)]',
+    ALTO: 'text-[var(--color-part-alto-700)]',
+    TENOR: 'text-[var(--color-part-tenor-700)]',
+    BASS: 'text-[var(--color-part-bass-700)]',
+    SPECIAL: 'text-[var(--color-part-special-700)]',
   };
 
   if (members.length === 0) return null;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--color-border-default)] bg-white shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-[var(--color-border-default)] bg-[var(--color-background-primary)] shadow-[var(--shadow-sm)]">
       {/* 파트 헤더 - 접기/펼치기 */}
       <button
         type="button"
@@ -122,7 +122,7 @@ export default function AttendanceChipGrid({
 
       {/* 펼쳐진 내용 */}
       {isExpanded && (
-        <div className="space-y-3 bg-white p-4">
+        <div className="space-y-3 bg-[var(--color-background-primary)] p-4">
           {/* 빠른 액션 버튼들 */}
           <div className="flex justify-end gap-2">
             <button
@@ -142,7 +142,7 @@ export default function AttendanceChipGrid({
                 e.stopPropagation();
                 onDeselectAll();
               }}
-              className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-[var(--color-text-tertiary)] transition-colors hover:bg-gray-200"
+              className="inline-flex items-center gap-1 rounded-md bg-[var(--color-background-tertiary)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-tertiary)] transition-colors hover:bg-[var(--color-border-default)]"
             >
               <XCircle className="h-3.5 w-3.5" />
               전체 불참
@@ -170,7 +170,7 @@ export default function AttendanceChipGrid({
 
       {/* 접힌 상태에서 미니 프리뷰 */}
       {!isExpanded && stats.absent > 0 && (
-        <div className="border-t border-[var(--color-border-default)] bg-gray-50 px-4 py-2">
+        <div className="border-t border-[var(--color-border-default)] bg-[var(--color-background-secondary)] px-4 py-2">
           <p className="text-xs text-[var(--color-text-tertiary)]">
             불참:{' '}
             {members

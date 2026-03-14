@@ -48,8 +48,8 @@ function MemberChip({ member, isAttending, isChanged, disabled, onToggle }: Memb
       disabled={disabled}
       className={cn(
         // 기본 칩 스타일 - 모바일 3열 레이아웃 + 가독성 균형
-        'flex items-center gap-1.5 px-2 py-1.5',
-        'rounded-lg border-l-4 text-[15px] font-medium',
+        'flex items-center gap-1 px-1.5 py-1',
+        'rounded-lg border-l-4 text-[13px] font-medium',
         'transition-all duration-150 ease-out',
         'focus:ring-2 focus:ring-offset-1 focus:outline-none',
         // 파트별 좌측 테두리
@@ -79,13 +79,13 @@ function MemberChip({ member, isAttending, isChanged, disabled, onToggle }: Memb
     >
       {/* 상태 아이콘 */}
       {isAttending ? (
-        <Check className="h-3.5 w-3.5 flex-shrink-0" />
+        <Check className="h-3 w-3 flex-shrink-0" />
       ) : (
-        <X className="h-3.5 w-3.5 flex-shrink-0" />
+        <X className="h-3 w-3 flex-shrink-0" />
       )}
 
       {/* 이름 */}
-      <span className="max-w-[70px] truncate">{member.name}</span>
+      <span className="min-w-0 truncate">{member.name}</span>
 
       {/* 리더 표시 */}
       {member.is_leader && (

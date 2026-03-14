@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-03-14 | fix(attendances): 출석 UI 디자인 토큰 마이그레이션 및 리팩토링 |
 | 2026-03-14 | fix(attendances): 출석 MemberChip 태블릿/노트북 반응형 그리드 레이아웃 적용 |
 | 2026-03-14 | feat(dashboard): 출석 현황 예배별 분리 표시 |
 | 2026-03-14 | feat(dashboard): 출석 현황 예배별 분리 표시 |

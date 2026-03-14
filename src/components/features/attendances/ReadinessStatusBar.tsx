@@ -80,12 +80,12 @@ export default function ReadinessStatusBar({
 
   if (isLoading) {
     return (
-      <div className="flex animate-pulse items-center gap-3 rounded-xl bg-white p-4 shadow-sm">
-        <div className="h-5 w-5 rounded bg-gray-200" />
-        <div className="h-5 w-32 rounded bg-gray-200" />
+      <div className="flex animate-pulse items-center gap-3 rounded-xl bg-[var(--color-background-primary)] p-4 shadow-[var(--shadow-sm)]">
+        <div className="h-5 w-5 rounded bg-[var(--color-background-tertiary)]" />
+        <div className="h-5 w-32 rounded bg-[var(--color-background-tertiary)]" />
         <div className="flex gap-2">
           {READINESS_PARTS.map((part) => (
-            <div key={part} className="h-8 w-14 rounded-full bg-gray-200" />
+            <div key={part} className="h-8 w-14 rounded-full bg-[var(--color-background-tertiary)]" />
           ))}
         </div>
       </div>
@@ -98,7 +98,7 @@ export default function ReadinessStatusBar({
         'rounded-xl border p-4 shadow-sm transition-colors',
         allReady
           ? 'border-[var(--color-success-200)] bg-[var(--color-success-50)]'
-          : 'border-[var(--color-border-default)] bg-white'
+          : 'border-[var(--color-border-default)] bg-[var(--color-background-primary)]'
       )}
     >
       {/* 헤더 행 */}
