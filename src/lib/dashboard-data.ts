@@ -11,7 +11,7 @@ import {
   isToday,
 } from '@/lib/dashboard-context';
 import type { MyDashboardStatusResponse, MyVote, MySeat } from '@/app/api/dashboard/my-status/route';
-import type { ConductorStatusResponse } from '@/app/api/dashboard/conductor-status/route';
+import type { ConductorStatusResponse, AttendanceSummaryItem } from '@/app/api/dashboard/conductor-status/route';
 import type { PendingApprovalsResponse, PendingApproval } from '@/app/api/dashboard/pending-approvals/route';
 import type { ArrangementStatus } from '@/types/database.types';
 
@@ -228,7 +228,7 @@ export async function fetchConductorStatus(
 ): Promise<ConductorStatusResponse> {
   const nextSunday = getNextSunday();
 
-  const [arrangementResult, activeMembersResult, attendancesResult] = await Promise.all([
+  const [arrangementResult, activeMembersResult, attendancesResult, serviceSchedulesResult] = await Promise.all([
     adminSupabase
       .from('arrangements')
       .select('id, date, title, status')
@@ -253,13 +253,20 @@ export async function fetchConductorStatus(
 
     adminSupabase
       .from('attendances')
-      .select('member_id, is_service_available')
+      .select('member_id, is_service_available, service_schedule_id')
       .eq('date', nextSunday),
+
+    adminSupabase
+      .from('service_schedules')
+      .select('id, service_type, service_start_time')
+      .eq('date', nextSunday)
+      .order('service_start_time', { ascending: true }),
   ]);
 
   const arrangement = arrangementResult;
   const { data: activeMembers } = activeMembersResult;
   const { data: attendances } = attendancesResult;
+  const { data: serviceSchedules } = serviceSchedulesResult;
 
   let seatCount = 0;
   let hasRowLeaders = false;
@@ -274,43 +281,89 @@ export async function fetchConductorStatus(
     hasRowLeaders = seats?.some((s: { is_row_leader: boolean | null }) => s.is_row_leader) || false;
   }
 
-  const attendanceMap = new Map(
-    attendances?.map((a: { member_id: string; is_service_available: boolean }) => [a.member_id, a.is_service_available]) || []
-  );
-
-  const partCounts: Record<
-    string,
-    { total: number; available: number; unavailable: number; noResponse: number }
-  > = {};
   const parts = ['SOPRANO', 'ALTO', 'TENOR', 'BASS'];
+  const totalMembers = activeMembers?.length || 0;
 
-  parts.forEach((part) => {
-    partCounts[part] = { total: 0, available: 0, unavailable: 0, noResponse: 0 };
-  });
+  function aggregateAttendance(
+    filteredAttendances: { member_id: string; is_service_available: boolean }[]
+  ) {
+    const attendanceMap = new Map(
+      filteredAttendances.map((a: { member_id: string; is_service_available: boolean }) => [a.member_id, a.is_service_available])
+    );
 
-  let totalAvailable = 0;
-  let totalUnavailable = 0;
-
-  activeMembers?.forEach((member: { id: string; part: string }) => {
-    const part = member.part;
-    if (!partCounts[part]) {
+    const partCounts: Record<
+      string,
+      { total: number; available: number; unavailable: number; noResponse: number }
+    > = {};
+    parts.forEach((part) => {
       partCounts[part] = { total: 0, available: 0, unavailable: 0, noResponse: 0 };
-    }
+    });
 
-    partCounts[part].total++;
+    let totalAvailable = 0;
+    let totalUnavailable = 0;
 
-    const isAvailable = attendanceMap.has(member.id)
-      ? attendanceMap.get(member.id)
-      : true;
+    activeMembers?.forEach((member: { id: string; part: string }) => {
+      const part = member.part;
+      if (!partCounts[part]) {
+        partCounts[part] = { total: 0, available: 0, unavailable: 0, noResponse: 0 };
+      }
+      partCounts[part].total++;
 
-    if (isAvailable) {
-      partCounts[part].available++;
-      totalAvailable++;
-    } else {
-      partCounts[part].unavailable++;
-      totalUnavailable++;
-    }
-  });
+      const isAvailable = attendanceMap.has(member.id)
+        ? attendanceMap.get(member.id)
+        : true;
+
+      if (isAvailable) {
+        partCounts[part].available++;
+        totalAvailable++;
+      } else {
+        partCounts[part].unavailable++;
+        totalUnavailable++;
+      }
+    });
+
+    return {
+      totalMembers,
+      availableCount: totalAvailable,
+      unavailableCount: totalUnavailable,
+      noResponseCount: 0,
+      byPart: parts.map((part) => ({
+        part,
+        total: partCounts[part]?.total || 0,
+        available: partCounts[part]?.available || 0,
+        unavailable: partCounts[part]?.unavailable || 0,
+        noResponse: partCounts[part]?.noResponse || 0,
+      })),
+    };
+  }
+
+  const allAttendances = attendances || [];
+  let attendanceSummaries: AttendanceSummaryItem[];
+
+  if (serviceSchedules && serviceSchedules.length > 0) {
+    attendanceSummaries = serviceSchedules.map((schedule: { id: string; service_type: string; service_start_time: string | null }) => {
+      const filtered = allAttendances.filter(
+        (a: { service_schedule_id: string | null }) => a.service_schedule_id === schedule.id || a.service_schedule_id === null
+      );
+      const agg = aggregateAttendance(filtered);
+      return {
+        serviceScheduleId: schedule.id,
+        serviceType: schedule.service_type,
+        serviceStartTime: schedule.service_start_time,
+        ...agg,
+      };
+    });
+  } else {
+    const agg = aggregateAttendance(allAttendances);
+    attendanceSummaries = [{
+      serviceScheduleId: null,
+      serviceType: '예배',
+      serviceStartTime: null,
+      ...agg,
+    }];
+  }
+
+  const firstSummary = attendanceSummaries[0];
 
   return {
     latestArrangement: arrangement
@@ -324,18 +377,13 @@ export async function fetchConductorStatus(
         }
       : null,
     attendanceSummary: {
-      totalMembers: activeMembers?.length || 0,
-      availableCount: totalAvailable,
-      unavailableCount: totalUnavailable,
-      noResponseCount: 0,
-      byPart: parts.map((part) => ({
-        part,
-        total: partCounts[part]?.total || 0,
-        available: partCounts[part]?.available || 0,
-        unavailable: partCounts[part]?.unavailable || 0,
-        noResponse: partCounts[part]?.noResponse || 0,
-      })),
+      totalMembers: firstSummary.totalMembers,
+      availableCount: firstSummary.availableCount,
+      unavailableCount: firstSummary.unavailableCount,
+      noResponseCount: firstSummary.noResponseCount,
+      byPart: firstSummary.byPart,
     },
+    attendanceSummaries,
     nextServiceDate: nextSunday,
   };
 }

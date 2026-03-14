@@ -102,10 +102,10 @@ export function ConductorDashboard() {
               nextServiceDate={status?.nextServiceDate || context?.nextServiceDate || ''}
             />
 
-            {status?.attendanceSummary && (
+            {status?.attendanceSummaries && status.attendanceSummaries.length > 0 && (
               <AttendanceSummaryCard
                 nextServiceDate={status.nextServiceDate}
-                summary={status.attendanceSummary}
+                summaries={status.attendanceSummaries}
               />
             )}
           </div>

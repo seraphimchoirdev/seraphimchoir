@@ -4,6 +4,25 @@ import { formatDate, getNextSunday } from '@/lib/dashboard-context';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import type { ArrangementStatus } from '@/types/database.types';
 
+export interface PartSummary {
+  part: string;
+  total: number;
+  available: number;
+  unavailable: number;
+  noResponse: number;
+}
+
+export interface AttendanceSummaryItem {
+  serviceScheduleId: string | null;
+  serviceType: string;
+  serviceStartTime: string | null;
+  totalMembers: number;
+  availableCount: number;
+  unavailableCount: number;
+  noResponseCount: number;
+  byPart: PartSummary[];
+}
+
 export interface ConductorStatusResponse {
   latestArrangement: {
     id: string;
@@ -13,19 +32,16 @@ export interface ConductorStatusResponse {
     seatCount: number;
     hasRowLeaders: boolean;
   } | null;
+  /** @deprecated 하위 호환용 — 첫 번째 예배 기준. attendanceSummaries 사용 권장 */
   attendanceSummary: {
     totalMembers: number;
     availableCount: number;
     unavailableCount: number;
     noResponseCount: number;
-    byPart: {
-      part: string;
-      total: number;
-      available: number;
-      unavailable: number;
-      noResponse: number;
-    }[];
+    byPart: PartSummary[];
   };
+  /** 예배별 출석 요약 (예배가 여러 개일 때 각각 독립 집계) */
+  attendanceSummaries: AttendanceSummaryItem[];
   nextServiceDate: string;
 }
 
@@ -51,8 +67,8 @@ export async function GET() {
     const adminSupabase = await createAdminClient();
     const nextSunday = getNextSunday();
 
-    // 독립 쿼리 3개를 병렬 실행
-    const [arrangementResult, activeMembersResult, attendancesResult] = await Promise.all([
+    // 독립 쿼리 4개를 병렬 실행
+    const [arrangementResult, activeMembersResult, attendancesResult, serviceSchedulesResult] = await Promise.all([
       // 1. 배치표 조회 (다음 주일 우선, 없으면 최근)
       adminSupabase
         .from('arrangements')
@@ -77,16 +93,24 @@ export async function GET() {
         .in('member_status', ['REGULAR', 'NEW'])
         .eq('is_singer', true),
 
-      // 3. 출석 투표 데이터
+      // 3. 출석 투표 데이터 (service_schedule_id 포함)
       adminSupabase
         .from('attendances')
-        .select('member_id, is_service_available')
+        .select('member_id, is_service_available, service_schedule_id')
         .eq('date', nextSunday),
+
+      // 4. 해당 날짜 예배 일정
+      adminSupabase
+        .from('service_schedules')
+        .select('id, service_type, service_start_time')
+        .eq('date', nextSunday)
+        .order('service_start_time', { ascending: true }),
     ]);
 
     const arrangement = arrangementResult;
     const { data: activeMembers } = activeMembersResult;
     const { data: attendances } = attendancesResult;
+    const { data: serviceSchedules } = serviceSchedulesResult;
 
     // 배치표가 있으면 좌석 정보 조회 (arrangement.id에 의존)
     let seatCount = 0;
@@ -102,47 +126,95 @@ export async function GET() {
       hasRowLeaders = seats?.some((s) => s.is_row_leader) || false;
     }
 
-    // 출석 맵 생성
-    const attendanceMap = new Map(
-      attendances?.map((a) => [a.member_id, a.is_service_available]) || []
-    );
-
-    // 파트별 집계
-    const partCounts: Record<
-      string,
-      { total: number; available: number; unavailable: number; noResponse: number }
-    > = {};
     const parts = ['SOPRANO', 'ALTO', 'TENOR', 'BASS'];
+    const totalMembers = activeMembers?.length || 0;
 
-    parts.forEach((part) => {
-      partCounts[part] = { total: 0, available: 0, unavailable: 0, noResponse: 0 };
-    });
+    // 예배별 출석 집계 함수
+    function aggregateAttendance(
+      filteredAttendances: { member_id: string; is_service_available: boolean }[]
+    ) {
+      const attendanceMap = new Map(
+        filteredAttendances.map((a) => [a.member_id, a.is_service_available])
+      );
 
-    let totalAvailable = 0;
-    let totalUnavailable = 0;
-
-    activeMembers?.forEach((member) => {
-      const part = member.part;
-      if (!partCounts[part]) {
+      const partCounts: Record<
+        string,
+        { total: number; available: number; unavailable: number; noResponse: number }
+      > = {};
+      parts.forEach((part) => {
         partCounts[part] = { total: 0, available: 0, unavailable: 0, noResponse: 0 };
-      }
+      });
 
-      partCounts[part].total++;
+      let totalAvailable = 0;
+      let totalUnavailable = 0;
 
-      // 레코드 없음 = 기본 출석 (출석 관리 페이지와 동일한 로직)
-      // 파트장이 불참자만 해제하므로 레코드 없는 대원은 출석으로 간주
-      const isAvailable = attendanceMap.has(member.id)
-        ? attendanceMap.get(member.id)
-        : true;
+      activeMembers?.forEach((member) => {
+        const part = member.part;
+        if (!partCounts[part]) {
+          partCounts[part] = { total: 0, available: 0, unavailable: 0, noResponse: 0 };
+        }
+        partCounts[part].total++;
 
-      if (isAvailable) {
-        partCounts[part].available++;
-        totalAvailable++;
-      } else {
-        partCounts[part].unavailable++;
-        totalUnavailable++;
-      }
-    });
+        // 레코드 없음 = 기본 출석 (출석 관리 페이지와 동일한 로직)
+        const isAvailable = attendanceMap.has(member.id)
+          ? attendanceMap.get(member.id)
+          : true;
+
+        if (isAvailable) {
+          partCounts[part].available++;
+          totalAvailable++;
+        } else {
+          partCounts[part].unavailable++;
+          totalUnavailable++;
+        }
+      });
+
+      return {
+        totalMembers,
+        availableCount: totalAvailable,
+        unavailableCount: totalUnavailable,
+        noResponseCount: 0,
+        byPart: parts.map((part) => ({
+          part,
+          total: partCounts[part]?.total || 0,
+          available: partCounts[part]?.available || 0,
+          unavailable: partCounts[part]?.unavailable || 0,
+          noResponse: partCounts[part]?.noResponse || 0,
+        })),
+      };
+    }
+
+    // 예배별 출석 요약 생성
+    const allAttendances = attendances || [];
+    let attendanceSummaries: AttendanceSummaryItem[];
+
+    if (serviceSchedules && serviceSchedules.length > 0) {
+      attendanceSummaries = serviceSchedules.map((schedule) => {
+        // 해당 예배의 출석 데이터 필터 (service_schedule_id가 null인 레코드는 모든 예배에 포함)
+        const filtered = allAttendances.filter(
+          (a) => a.service_schedule_id === schedule.id || a.service_schedule_id === null
+        );
+        const agg = aggregateAttendance(filtered);
+        return {
+          serviceScheduleId: schedule.id,
+          serviceType: schedule.service_type,
+          serviceStartTime: schedule.service_start_time,
+          ...agg,
+        };
+      });
+    } else {
+      // 예배 일정이 없으면 기존처럼 날짜 기준 단일 집계
+      const agg = aggregateAttendance(allAttendances);
+      attendanceSummaries = [{
+        serviceScheduleId: null,
+        serviceType: '예배',
+        serviceStartTime: null,
+        ...agg,
+      }];
+    }
+
+    // 하위 호환용: 첫 번째 예배 기준 attendanceSummary
+    const firstSummary = attendanceSummaries[0];
 
     const response: ConductorStatusResponse = {
       latestArrangement: arrangement
@@ -156,18 +228,13 @@ export async function GET() {
           }
         : null,
       attendanceSummary: {
-        totalMembers: activeMembers?.length || 0,
-        availableCount: totalAvailable,
-        unavailableCount: totalUnavailable,
-        noResponseCount: 0,
-        byPart: parts.map((part) => ({
-          part,
-          total: partCounts[part]?.total || 0,
-          available: partCounts[part]?.available || 0,
-          unavailable: partCounts[part]?.unavailable || 0,
-          noResponse: partCounts[part]?.noResponse || 0,
-        })),
+        totalMembers: firstSummary.totalMembers,
+        availableCount: firstSummary.availableCount,
+        unavailableCount: firstSummary.unavailableCount,
+        noResponseCount: firstSummary.noResponseCount,
+        byPart: firstSummary.byPart,
       },
+      attendanceSummaries,
       nextServiceDate: nextSunday,
     };
 

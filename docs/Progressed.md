@@ -218,8 +218,32 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-03-14 | feat(dashboard): 출석 현황 예배별 분리 표시 |
+| 2026-03-14 | feat(dashboard): 출석 현황 예배별 분리 표시 |
+| 2026-03-14 | fix(attendances): MemberChip 반응형 3열 고정 레이아웃으로 변경 |
 | 2026-03-14 | fix(members): 새 대원 등록 서버 에러 수정 |
 | 2026-03-10 | fix(attendances): 관리자 출석 관리 날짜 이동을 예배 일정 기반으로 변경 |
+| 2026-03-05 | feat(newsletters): 알림 고정(pin) 기능 + 하단 글자 크기 개선 |
+| 2026-03-04 | feat(newsletters): 후원계좌 하단 이동, 계좌 복사/송금, 찬양곡 정렬, 기도 담당 개선 |
+| 2026-03-04 | feat(newsletters): 알림 항목별 입력 UI + 발행인/편집인 자동 채움 indicator |
+| 2026-03-01 | fix(db): 마이그레이션 seed INSERT 비활성화로 members 중복 해소 |
+| 2026-02-28 | feat(emergency): 긴급 수정 모드 통합 — EmergencyEditPanel 연동 + 모바일 지원 |
+| 2026-02-28 | feat(ui): EmergencyEditPanel 섹션 시각적 구분 개선 |
+| 2026-02-28 | feat(ui): 배치표 워크플로우 UX 개선 + 출석/마이페이지 UI 리팩토링 |
+| 2026-02-28 | fix(seats): RPC 에러 로깅 추가 + 로컬 Supabase 설정 수정 |
+| 2026-02-28 | fix(ui): 줄별 인원수 스피너 -/+ 버튼 색상 구분 + 접근성 개선 |
+| 2026-02-28 | feat(service-schedules): "다가오는 일정" 기본 뷰 추가 + DateCard 중복 제거 |
+| 2026-02-28 | feat(ui): 내 출석 투표 마감시한 표시 + 대시보드 UX 개선 |
+| 2026-02-28 | fix(ui): 모바일 토스트 하단 네비 겹침 수정 + 내 출석 페이지 리팩토링 |
+| 2026-02-26 | fix(sentry): 보안 개선 + 불필요한 에러/예제 코드 정리 |
+| 2026-02-24 | fix(ui): 모바일 다이얼로그 스크롤 버그 수정 + E2E 테스트 |
+| 2026-02-22 | test: Phase 8 Playwright E2E 테스트 환경 구축 (17 Suites, 512 Tests, 8 Devices) |
+| 2026-02-20 | test: Phase 6 커버리지 부스트 + 신규 유틸/API 테스트 (44 Suites, 582 Tests, 81.49% Stmt) |
+| 2026-02-20 | test: Phase 4 service-schedules CRUD + Hook 테스트 추가 (32 Suites, 404 Tests) |
+| 2026-02-20 | test: Phase 2 통합 테스트 + Hook 테스트 추가 (22 Suites, 319 Tests) |
+| 2026-02-19 | test: Phase 1 테스트 인프라 강화 및 유닛 테스트 11개 파일 추가 |
+| 2026-02-19 | refactor: 3순위 코드 리뷰 이슈 7건 수정 (아키텍처/성능) |
+| 2026-02-19 | fix(security,store): API 인증 강화, Emergency 롤백 추가, CSRF 데드코드 삭제 |
 | 2026-02-14 | fix(dashboard): getSession() → getUser()로 복원하여 보안 경고 해소 |
 | 2026-02-14 | perf(dashboard): TTFB/FCP/CLS 성능 최적화 |
 | 2026-02-14 | fix(dashboard): 임원 대시보드 환영 메시지에서 소속 파트명 제거 |
