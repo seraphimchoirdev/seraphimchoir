@@ -28,7 +28,7 @@ interface UserProfileWithMember {
   } | null;
 }
 
-const ROLES: UserRole[] = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER'];
+const ROLES: UserRole[] = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER', 'PART_LEADER', 'MEMBER'];
 
 const COMMON_TITLES = [
   '총무',

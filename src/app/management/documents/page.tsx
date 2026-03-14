@@ -77,8 +77,8 @@ export default function ManagementDocumentsPage() {
   const uploadMutation = useUploadDocument();
   const deleteMutation = useDeleteDocument();
 
-  // 권한 확인: 조회는 STAFF까지, 업로드/삭제는 MANAGER까지
-  const canView = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF']);
+  // 권한 확인: 조회는 SECRETARY/TREASURER까지, 업로드/삭제는 MANAGER까지
+  const canView = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER']);
   const canManage = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER']);
 
   if (authLoading) {

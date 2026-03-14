@@ -127,7 +127,9 @@ export const ROLE_LABELS: Record<string, string> = {
   ADMIN: '관리자',
   CONDUCTOR: '지휘자',
   ACCOMPANIST: '반주자',
-  MANAGER: '매니저',
+  MANAGER: '총무',
+  SECRETARY: '서기',
+  TREASURER: '회계',
   PART_LEADER: '파트장',
 } as const;
 
@@ -140,9 +142,11 @@ export const ROLE_LABELS: Record<string, string> = {
 export const ROLE_HIERARCHY: Record<string, number> = {
   ADMIN: 100,
   CONDUCTOR: 80,
-  ACCOMPANIST: 30,
   MANAGER: 60,
   PART_LEADER: 40,
+  SECRETARY: 35,
+  TREASURER: 35,
+  ACCOMPANIST: 30,
 } as const;
 
 /**

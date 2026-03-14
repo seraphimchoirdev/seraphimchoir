@@ -18,7 +18,7 @@ export default function ManagementStatisticsPage() {
   const [activeTab, setActiveTab] = useState<string>('part-stats');
 
   // 통계 조회 권한: ADMIN, CONDUCTOR, MANAGER, PART_LEADER
-  // 참고: 임원 포털은 STAFF까지 접근하지만, 통계는 PART_LEADER까지만 조회 가능
+  // 참고: 임원 포털은 SECRETARY/TREASURER까지 접근하지만, 통계는 PART_LEADER까지만 조회 가능
   const hasPermission = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']);
 
   if (authLoading) {

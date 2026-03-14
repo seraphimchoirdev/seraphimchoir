@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-03-14
+- [x] **refactor(auth): STAFF 역할을 SECRETARY/TREASURER로 분리**
+  - 커밋: `b269584`
+
 - [x] **feat(dashboard): 출석 현황 예배별 분리 표시**
   - 커밋: `69a798e`
 

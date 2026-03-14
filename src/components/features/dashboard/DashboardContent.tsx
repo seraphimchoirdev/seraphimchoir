@@ -62,7 +62,7 @@ export default function DashboardContent({ role }: DashboardContentProps) {
     );
   }
 
-  if (role === 'ADMIN' || role === 'MANAGER' || role === 'STAFF') {
+  if (role === 'ADMIN' || role === 'MANAGER' || role === 'SECRETARY' || role === 'TREASURER') {
     return (
       <DashboardContainer>
         <StaffDashboard />

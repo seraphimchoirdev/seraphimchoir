@@ -47,7 +47,8 @@ export default function ServiceSchedulesPage() {
     'ADMIN',
     'CONDUCTOR',
     'MANAGER',
-    'STAFF',
+    'SECRETARY',
+    'TREASURER',
     'PART_LEADER',
     'MEMBER',
   ]);
@@ -310,6 +311,7 @@ export default function ServiceSchedulesPage() {
                   events={eventsData?.data || []}
                   onRefresh={handleRefresh}
                   onShowPastSchedules={handleShowPastSchedules}
+                  canDeleteSchedule={canManageService}
                 />
               ) : viewMode === 'monthly' ? (
                 <MonthlyCalendar
@@ -318,6 +320,7 @@ export default function ServiceSchedulesPage() {
                   schedules={data.data}
                   events={eventsData?.data || []}
                   onRefresh={handleRefresh}
+                  canDeleteSchedule={canManageService}
                 />
               ) : (
                 <QuarterlyCalendar
@@ -326,6 +329,7 @@ export default function ServiceSchedulesPage() {
                   schedules={data.data}
                   events={eventsData?.data || []}
                   onRefresh={handleRefresh}
+                  canDeleteSchedule={canManageService}
                 />
               ))}
           </div>

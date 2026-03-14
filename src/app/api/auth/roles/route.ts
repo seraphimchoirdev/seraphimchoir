@@ -21,7 +21,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // role 유효성 검증 (role이 제공된 경우에만)
-    const validRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'STAFF', 'PART_LEADER', 'MEMBER'];
+    const validRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER', 'PART_LEADER', 'MEMBER'];
     if (role && !validRoles.includes(role)) {
       return NextResponse.json(
         {

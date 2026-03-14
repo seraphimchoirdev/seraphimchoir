@@ -11,12 +11,13 @@ export type UserProfile = Tables<'user_profiles'>;
  * 사용자 역할
  * - ADMIN: 시스템 관리자 (모든 권한)
  * - CONDUCTOR: 지휘자 (자리배치 편집, 대원 관리, 출석 관리)
- * - MANAGER: 총무/부총무 (대원 관리, 출석 관리, 문서 관리)
- * - STAFF: 대장, 서기, 회계 등 (조회 위주)
+ * - MANAGER: 총무/부총무/대장 (대원 관리, 출석 관리, 문서 관리)
+ * - SECRETARY: 서기 (소식지 편집/발행, 기도 담당 관리)
+ * - TREASURER: 회계 (조회 위주)
  * - PART_LEADER: 파트장 (자기 파트 출석 관리)
  * - MEMBER: 일반 대원 (내 출석, 자리배치표 조회)
  */
-export type UserRole = 'ADMIN' | 'CONDUCTOR' | 'MANAGER' | 'STAFF' | 'PART_LEADER' | 'MEMBER';
+export type UserRole = 'ADMIN' | 'CONDUCTOR' | 'MANAGER' | 'SECRETARY' | 'TREASURER' | 'PART_LEADER' | 'MEMBER';
 
 /**
  * 회원가입 요청 바디
@@ -132,6 +133,12 @@ export interface RolePermissionSet {
 
   // 지휘자 메모
   canViewConductorNotes: boolean;
+
+  // 소식지 관리
+  canEditNewsletters: boolean;
+  canPublishNewsletters: boolean;
+  canEditAnnouncements: boolean;
+  canManagePrayers: boolean;
 }
 
 /**
@@ -156,6 +163,10 @@ export const RolePermissions: Record<UserRole, RolePermissionSet> = {
     canManageDocuments: true,
     canViewDocuments: true,
     canViewConductorNotes: false, // 지휘자 메모는 CONDUCTOR만 접근 가능
+    canEditNewsletters: true,
+    canPublishNewsletters: true,
+    canEditAnnouncements: true,
+    canManagePrayers: true,
   },
   CONDUCTOR: {
     canManageUsers: false,
@@ -175,6 +186,10 @@ export const RolePermissions: Record<UserRole, RolePermissionSet> = {
     canManageDocuments: true,
     canViewDocuments: true,
     canViewConductorNotes: true,
+    canEditNewsletters: false,
+    canPublishNewsletters: false,
+    canEditAnnouncements: false,
+    canManagePrayers: false,
   },
   MANAGER: {
     canManageUsers: false,
@@ -194,8 +209,12 @@ export const RolePermissions: Record<UserRole, RolePermissionSet> = {
     canManageDocuments: true,
     canViewDocuments: true,
     canViewConductorNotes: false,
+    canEditNewsletters: false,
+    canPublishNewsletters: false,
+    canEditAnnouncements: true,
+    canManagePrayers: false,
   },
-  STAFF: {
+  SECRETARY: {
     canManageUsers: false,
     canManageRoles: false,
     canApproveLinks: false,
@@ -213,6 +232,33 @@ export const RolePermissions: Record<UserRole, RolePermissionSet> = {
     canManageDocuments: false,
     canViewDocuments: true,
     canViewConductorNotes: false,
+    canEditNewsletters: true,
+    canPublishNewsletters: true,
+    canEditAnnouncements: true,
+    canManagePrayers: true,
+  },
+  TREASURER: {
+    canManageUsers: false,
+    canManageRoles: false,
+    canApproveLinks: false,
+    canAccessAdmin: false,
+    canManageMembers: false,
+    canViewMembers: true,
+    canManageAttendance: false,
+    canManageOwnAttendance: true,
+    partRestricted: false,
+    canCreateArrangements: false,
+    canEditArrangements: false,
+    canDeleteArrangements: false,
+    canEmergencyEditArrangements: false,
+    canViewArrangements: true,
+    canManageDocuments: false,
+    canViewDocuments: true,
+    canViewConductorNotes: false,
+    canEditNewsletters: false,
+    canPublishNewsletters: false,
+    canEditAnnouncements: false,
+    canManagePrayers: false,
   },
   PART_LEADER: {
     canManageUsers: false,
@@ -232,6 +278,10 @@ export const RolePermissions: Record<UserRole, RolePermissionSet> = {
     canManageDocuments: false,
     canViewDocuments: true,
     canViewConductorNotes: false,
+    canEditNewsletters: false,
+    canPublishNewsletters: false,
+    canEditAnnouncements: false,
+    canManagePrayers: false,
   },
   MEMBER: {
     canManageUsers: false,
@@ -251,6 +301,10 @@ export const RolePermissions: Record<UserRole, RolePermissionSet> = {
     canManageDocuments: false,
     canViewDocuments: false,
     canViewConductorNotes: false,
+    canEditNewsletters: false,
+    canPublishNewsletters: false,
+    canEditAnnouncements: false,
+    canManagePrayers: false,
   },
 };
 
@@ -270,7 +324,8 @@ export const RoleLabels: Record<UserRole, string> = {
   ADMIN: '관리자',
   CONDUCTOR: '지휘자',
   MANAGER: '총무',
-  STAFF: '임원',
+  SECRETARY: '서기',
+  TREASURER: '회계',
   PART_LEADER: '파트장',
   MEMBER: '대원',
 };
