@@ -457,10 +457,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         }
       }
 
-      // Load seats (등단 불가능한 멤버 필터링)
+      // Load seats (DRAFT에서만 등단 불가능한 멤버 필터링)
       if (arrangement.seats && arrangement.seats.length > 0) {
+        const isCompletedArrangement =
+          arrangement.status === 'SHARED' || arrangement.status === 'CONFIRMED';
+
         const formattedSeats = arrangement.seats
-          .filter((seat) => isServiceAvailable(seat.member_id)) // 등단 가능 멤버만
+          .filter((seat) => isCompletedArrangement || isServiceAvailable(seat.member_id))
           .map((seat) => ({
             memberId: seat.member_id,
             memberName: seat.member?.name || 'Unknown',
@@ -524,13 +527,17 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       setTimeout(() => {
         compactAllRows({ silent: true });
 
-        // 등단 불가 멤버 필터링으로 빈 좌석이 생긴 경우, rowCapacities를 실제 멤버 수에 맞게 축소
-        const filteredCount = (arrangement?.seats?.length ?? 0) - (arrangement?.seats?.filter((seat) => isServiceAvailable(seat.member_id))?.length ?? 0);
-        if (filteredCount > 0) {
+        // 실제 배치된 멤버 수에 맞게 rowCapacities 축소 (빈 좌석 제거)
+        // 모든 상태에서 실행 — DB에 저장된 rowCapacities가 실제 배치보다 클 수 있음
+        const currentAssignments = useArrangementStore.getState().assignments;
+        const assignmentCount = Object.values(currentAssignments).length;
+        const currentLayout = useArrangementStore.getState().gridLayout;
+        const totalCapacity = currentLayout?.rowCapacities?.reduce((a, b) => a + b, 0) ?? 0;
+        if (totalCapacity > assignmentCount) {
           shrinkRowCapacitiesToFit({ silent: true });
         }
 
-        clearHistory(); // 컴팩션 후 히스토리 클리어
+        clearHistory();
       }, 0);
     }
   }, [
