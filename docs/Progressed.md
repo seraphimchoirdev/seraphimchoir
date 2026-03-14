@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-03-14 | fix(attendances): 출석 MemberChip 태블릿/노트북 반응형 그리드 레이아웃 적용 |
 | 2026-03-14 | feat(dashboard): 출석 현황 예배별 분리 표시 |
 | 2026-03-14 | feat(dashboard): 출석 현황 예배별 분리 표시 |
 | 2026-03-14 | fix(attendances): MemberChip 반응형 3열 고정 레이아웃으로 변경 |

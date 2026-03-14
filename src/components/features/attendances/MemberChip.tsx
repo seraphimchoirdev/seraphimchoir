@@ -48,7 +48,7 @@ function MemberChip({ member, isAttending, isChanged, disabled, onToggle }: Memb
       disabled={disabled}
       className={cn(
         // 기본 칩 스타일 - 모바일 3열 레이아웃 + 가독성 균형
-        'inline-flex items-center gap-1.5 px-2 py-1.5',
+        'flex items-center gap-1.5 px-2 py-1.5',
         'rounded-lg border-l-4 text-[15px] font-medium',
         'transition-all duration-150 ease-out',
         'focus:ring-2 focus:ring-offset-1 focus:outline-none',

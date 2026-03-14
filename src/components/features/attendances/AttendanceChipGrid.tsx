@@ -150,7 +150,7 @@ export default function AttendanceChipGrid({
           </div>
 
           {/* 칩 그리드 */}
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
             {members.map((member) => {
               const state = attendanceStates.get(member.id);
               const isAttending = state?.is_service_available ?? true;
