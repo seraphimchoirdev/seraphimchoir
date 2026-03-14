@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-03-14 | fix(attendances): MemberChip 반응형 3열 고정 레이아웃으로 변경 |
 | 2026-03-14 | fix(members): 새 대원 등록 서버 에러 수정 |
 | 2026-03-10 | fix(attendances): 관리자 출석 관리 날짜 이동을 예배 일정 기반으로 변경 |
 | 2026-03-05 | feat(newsletters): 알림 고정(pin) 기능 + 하단 글자 크기 개선 |

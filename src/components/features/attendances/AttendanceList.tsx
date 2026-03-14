@@ -601,7 +601,7 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
                         </div>
 
                         {/* 칩 그리드 */}
-                        <div className="flex flex-wrap gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                           {partMembers.map((member) => {
                             const attendance = attendances?.find((a) => a.member_id === member.id);
                             const dbValue =
