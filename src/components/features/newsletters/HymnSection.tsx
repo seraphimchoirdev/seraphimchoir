@@ -71,25 +71,25 @@ export default function HymnSection({ issueDate, weekCount = 4 }: HymnSectionPro
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[var(--color-primary-50)]">
-                <th className="px-4 py-2 text-left font-medium text-[var(--color-primary-700)]">날짜</th>
-                <th className="px-4 py-2 text-left font-medium text-[var(--color-primary-700)]">예배</th>
-                <th className="px-4 py-2 text-left font-medium text-[var(--color-primary-700)]">찬양곡</th>
-                <th className="px-4 py-2 text-left font-medium text-[var(--color-primary-700)]">봉헌</th>
+                <th className="px-2 sm:px-4 py-2 text-left font-medium text-[var(--color-primary-700)]">날짜</th>
+                <th className="px-2 sm:px-4 py-2 text-left font-medium text-[var(--color-primary-700)]">후드</th>
+                <th className="px-2 sm:px-4 py-2 text-left font-medium text-[var(--color-primary-700)]">찬양곡</th>
+                <th className="px-2 sm:px-4 py-2 text-left font-medium text-[var(--color-primary-700)]">봉헌</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-border)]">
               {schedules.map(schedule => (
                 <tr key={schedule.id}>
-                  <td className="px-4 py-2 font-medium whitespace-nowrap">
+                  <td className="px-2 sm:px-4 py-2 font-medium whitespace-nowrap">
                     {formatShortDate(schedule.date)}
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    {schedule.service_type || '주일예배'}
+                  <td className="px-2 sm:px-4 py-2 whitespace-nowrap">
+                    {schedule.hood_color || '-'}
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="px-2 sm:px-4 py-2">
                     {schedule.hymn_name || '-'}
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="px-2 sm:px-4 py-2">
                     {schedule.offertory_performer || '-'}
                   </td>
                 </tr>

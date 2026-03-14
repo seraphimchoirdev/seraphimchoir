@@ -46,7 +46,34 @@ export async function updateSession(request: NextRequest) {
   // getSession()은 클라이언트 측에서만 사용해야 합니다
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
+
+  // DB reset 등으로 JWT가 가리키는 사용자가 존재하지 않는 경우
+  // 쿠키를 클리어하고 로그인 페이지로 리다이렉트
+  if (userError && !user) {
+    // Supabase 관련 쿠키 모두 삭제
+    const cookieNames = request.cookies.getAll().map((c) => c.name);
+    for (const name of cookieNames) {
+      if (name.startsWith('sb-')) {
+        supabaseResponse.cookies.delete(name);
+      }
+    }
+
+    const protectedCheck = [
+      '/dashboard', '/members', '/attendances', '/arrangements',
+      '/statistics', '/service-schedules', '/my-attendance',
+      '/documents', '/member-link', '/admin', '/mypage',
+      '/management', '/newsletters',
+    ];
+    if (protectedCheck.some((path) => request.nextUrl.pathname.startsWith(path))) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+
+    return supabaseResponse;
+  }
 
   // 인증이 필요한 페이지 보호
   const protectedPaths = [
@@ -56,11 +83,13 @@ export async function updateSession(request: NextRequest) {
     '/arrangements',
     '/statistics',
     '/service-schedules',
-    // 새로운 경로들
     '/my-attendance',
     '/documents',
     '/member-link',
     '/admin',
+    '/mypage',
+    '/management',
+    '/newsletters',
   ];
   const isProtectedPath = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 

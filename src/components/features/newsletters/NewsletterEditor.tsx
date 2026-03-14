@@ -168,7 +168,10 @@ export default function NewsletterEditor({ newsletterId, announcementsOnly }: Ne
     setEditorName(existing.editor_name || '');
     setEditorWeeklyName(existing.editor_weekly_name || '');
     const items = existing.announcements?.split('\n').filter(Boolean) ?? [];
-    setAnnouncementItems(items.length > 0 ? items : ['']);
+    // pin 항목이 없으면 기본 pin 항목 자동 추가
+    const hasPinned = items.some(item => item.startsWith(PIN_PREFIX));
+    const finalItems = hasPinned ? items : [...items, DEFAULT_PINNED_ANNOUNCEMENT];
+    setAnnouncementItems(finalItems.length > 0 ? finalItems : ['']);
     setFixedFooterText(existing.fixed_footer_text || DEFAULT_FOOTER);
   }, [existing]);
 
@@ -412,7 +415,7 @@ export default function NewsletterEditor({ newsletterId, announcementsOnly }: Ne
                     <button
                       type="button"
                       onClick={() => moveAnnouncementItem(idx, 'up')}
-                      disabled={idx === 0}
+                      disabled={idx === 0 || isPinned(item)}
                       className="rounded p-0.5 text-[var(--color-text-tertiary)] hover:bg-[var(--color-background-secondary)] disabled:opacity-30"
                       aria-label="위로 이동"
                     >
@@ -421,7 +424,7 @@ export default function NewsletterEditor({ newsletterId, announcementsOnly }: Ne
                     <button
                       type="button"
                       onClick={() => moveAnnouncementItem(idx, 'down')}
-                      disabled={idx === announcementItems.length - 1}
+                      disabled={idx === announcementItems.length - 1 || isPinned(item)}
                       className="rounded p-0.5 text-[var(--color-text-tertiary)] hover:bg-[var(--color-background-secondary)] disabled:opacity-30"
                       aria-label="아래로 이동"
                     >
@@ -448,15 +451,17 @@ export default function NewsletterEditor({ newsletterId, announcementsOnly }: Ne
                   >
                     <Pin className="h-4 w-4" />
                   </button>
-                  {/* 삭제 버튼 */}
-                  <button
-                    type="button"
-                    onClick={() => removeAnnouncementItem(idx)}
-                    className="rounded p-1 text-[var(--color-text-tertiary)] hover:bg-[var(--color-error-50)] hover:text-[var(--color-error-600)]"
-                    aria-label="항목 삭제"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  {/* 삭제 버튼 — pin 항목은 삭제 불가 */}
+                  {!isPinned(item) && (
+                    <button
+                      type="button"
+                      onClick={() => removeAnnouncementItem(idx)}
+                      className="rounded p-1 text-[var(--color-text-tertiary)] hover:bg-[var(--color-error-50)] hover:text-[var(--color-error-600)]"
+                      aria-label="항목 삭제"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

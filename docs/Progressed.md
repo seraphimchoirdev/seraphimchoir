@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-03-14 | feat(newsletters): 새로핌지(소식지) 및 기도 담당 관리 기능 추가 |
 | 2026-03-14 | feat(service-schedules): 일정 삭제 기능 및 임포터 인라인 편집 추가 |
 | 2026-03-14 | fix(date): toISOString() UTC 기준 날짜 버그 수정 |
 | 2026-03-14 | refactor(auth): STAFF 역할을 SECRETARY/TREASURER로 분리 |
