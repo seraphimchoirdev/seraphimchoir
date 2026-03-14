@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-03-14
+- [x] **fix(date): toISOString() UTC 기준 날짜 버그 수정**
+  - 커밋: `805a8a7`
+
 - [x] **refactor(auth): STAFF 역할을 SECRETARY/TREASURER로 분리**
   - 커밋: `b269584`
 

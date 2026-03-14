@@ -69,10 +69,16 @@ export function getCurrentWeekSunday(from: Date = new Date()): string {
 }
 
 /**
- * 날짜를 YYYY-MM-DD 형식으로 포맷
+ * 날짜를 YYYY-MM-DD 형식으로 포맷 (로컬 타임존 기준)
+ *
+ * toISOString()은 UTC 기준이므로, KST(UTC+9)에서 자정~오전 9시 사이에
+ * 호출하면 전날 날짜가 반환되는 버그가 있었음. 로컬 기준으로 수정.
  */
 export function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**

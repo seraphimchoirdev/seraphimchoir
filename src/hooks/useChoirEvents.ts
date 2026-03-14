@@ -8,6 +8,8 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { formatDate } from '@/lib/dashboard-context';
+
 import { STALE_TIME } from '@/lib/constants';
 import { createClient } from '@/lib/supabase/client';
 
@@ -52,8 +54,8 @@ function getQuarterDateRange(year: number, quarter: number) {
   const endDate = new Date(year, startMonth + 3, 0);
 
   return {
-    startDate: startDate.toISOString().split('T')[0],
-    endDate: endDate.toISOString().split('T')[0],
+    startDate: formatDate(startDate),
+    endDate: formatDate(endDate),
   };
 }
 
@@ -68,8 +70,8 @@ function getMonthDateRange(year: number, month: number) {
   const endDate = new Date(year, month, 0); // 해당 월의 마지막 날
 
   return {
-    startDate: startDate.toISOString().split('T')[0],
-    endDate: endDate.toISOString().split('T')[0],
+    startDate: formatDate(startDate),
+    endDate: formatDate(endDate),
   };
 }
 
