@@ -48,7 +48,7 @@ function MemberChip({ member, isAttending, isChanged, disabled, onToggle }: Memb
       disabled={disabled}
       className={cn(
         // 기본 칩 스타일 - 모바일 3열 레이아웃 + 가독성 균형
-        'flex items-center gap-1 px-1.5 py-1',
+        'relative flex items-center gap-1 px-1.5 py-1',
         'rounded-lg border-l-4 text-[13px] font-medium',
         'transition-all duration-150 ease-out',
         'focus:ring-2 focus:ring-offset-1 focus:outline-none',
@@ -87,9 +87,11 @@ function MemberChip({ member, isAttending, isChanged, disabled, onToggle }: Memb
       {/* 이름 */}
       <span className="min-w-0 truncate">{member.name}</span>
 
-      {/* 리더 표시 */}
+      {/* 리더 뱃지 (칩 외부 absolute overlay) */}
       {member.is_leader && (
-        <Star className="h-3 w-3 flex-shrink-0 fill-[var(--color-warning-500)] text-[var(--color-warning-500)]" />
+        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--color-warning-100)] ring-1 ring-[var(--color-background-primary)]">
+          <Star className="h-2 w-2 fill-[var(--color-warning-500)] text-[var(--color-warning-500)]" />
+        </span>
       )}
     </button>
   );
