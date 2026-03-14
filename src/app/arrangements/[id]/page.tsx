@@ -188,10 +188,11 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     }
   }, [isEmergencyMode, emergencyChanges.sharedSnapshot, assignments, saveSharedSnapshot]);
 
-  // 해당 날짜의 출석 데이터 조회 (필터 없이 전체)
+  // 해당 날짜+예배의 출석 데이터 조회 (service_schedule_id로 예배별 분리)
   // ⭐ 긴급 모드에서는 탭 포커스 시 자동 갱신 (출석 관리에서 변경 후 돌아올 때)
   const { data: attendances } = useAttendances({
     date: arrangement?.date,
+    service_schedule_id: arrangement?.service_schedule_id ?? undefined,
     refetchOnWindowFocus: isEmergencyMode,
   });
 
@@ -1186,6 +1187,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           <div data-print-hide>
             <MemberSidebar
               date={arrangement.date}
+              serviceScheduleId={arrangement.service_schedule_id ?? undefined}
               hidePlaced={true}
               isEmergencyMode={isEmergencyMode}
               arrangementId={id}
@@ -1309,6 +1311,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             <div className={`flex-1 overflow-hidden ${!showMobileSidebar && 'hidden'}`}>
               <MemberSidebar
                 date={arrangement.date}
+                serviceScheduleId={arrangement.service_schedule_id ?? undefined}
                 hidePlaced={true}
                 compact={true}
                 isEmergencyMode={isEmergencyMode}
