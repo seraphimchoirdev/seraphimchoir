@@ -68,6 +68,12 @@ const createMemberSchema = z.object({
     .nullable()
     .optional()
     .transform((v) => (v ? sanitizers.sanitizeTextNote(v, 1000) : null)), // XSS 방어: HTML 태그 제거, 길이 제한
+  height: z.number().int().min(100).max(250).nullable().optional(),
+  // 휴직 관련 필드
+  leave_reason: z.string().max(500).nullable().optional(),
+  leave_start_date: z.string().nullable().optional(),
+  leave_duration_months: z.number().int().min(1).max(24).nullable().optional(),
+  expected_return_date: z.string().nullable().optional(),
 });
 
 /**
@@ -248,14 +254,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Rate Limiting: 대량 데이터 생성 방지 (100회/분)
-    const { apiRateLimiter, getClientIp, createRateLimitErrorResponse } =
-      await import('@/lib/security/rate-limiter');
-    const ip = getClientIp(request);
-    const { success, reset } = await apiRateLimiter.limit(ip);
+    // Redis 연결 실패 시에도 핵심 기능(대원 등록)은 계속 동작하도록 graceful fallback
+    try {
+      const { apiRateLimiter, getClientIp, createRateLimitErrorResponse } =
+        await import('@/lib/security/rate-limiter');
+      const ip = getClientIp(request);
+      const { success, reset } = await apiRateLimiter.limit(ip);
 
-    if (!success) {
-      logger.warn(`Rate limit exceeded for member creation from IP: ${ip}`);
-      return NextResponse.json(createRateLimitErrorResponse(reset), { status: 429 });
+      if (!success) {
+        logger.warn(`Rate limit exceeded for member creation from IP: ${ip}`);
+        return NextResponse.json(createRateLimitErrorResponse(reset), { status: 429 });
+      }
+    } catch (rateLimitError) {
+      logger.warn('Rate limiter unavailable, proceeding without rate limiting:', rateLimitError);
     }
 
     const supabase = await createClient();
