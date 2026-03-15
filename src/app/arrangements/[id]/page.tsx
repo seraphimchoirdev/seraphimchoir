@@ -1145,6 +1145,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             <EmergencyEditPanel
               arrangementId={id}
               date={arrangement?.date || ''}
+              serviceScheduleId={arrangement?.service_schedule_id ?? undefined}
               gridLayout={gridLayout}
               onGridLayoutChange={setGridLayout}
               onOpenUnavailableDialog={handleEmergencyUnavailable}
@@ -1388,6 +1389,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   <EmergencyEditPanel
                     arrangementId={id}
                     date={arrangement?.date || ''}
+                    serviceScheduleId={arrangement?.service_schedule_id ?? undefined}
                     gridLayout={gridLayout}
                     onGridLayoutChange={setGridLayout}
                     onOpenUnavailableDialog={handleEmergencyUnavailable}
@@ -1451,6 +1453,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         onOpenChange={setEmergencyAvailableDialogOpen}
         arrangementId={id}
         date={arrangement?.date || ''}
+        serviceScheduleId={arrangement?.service_schedule_id ?? undefined}
         onComplete={(message) => showSuccess(message)}
         onError={(message) => showError(`오류: ${message}`)}
       />

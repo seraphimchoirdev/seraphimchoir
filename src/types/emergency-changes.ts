@@ -201,6 +201,8 @@ export interface EmergencyAvailableDialogProps {
   /** 배치표 정보 */
   arrangementId: string;
   date: string;
+  /** 예배 일정 ID (같은 날짜에 여러 예배가 있을 때 정확한 식별을 위해 필요) */
+  serviceScheduleId?: string;
   /** 처리 완료 콜백 */
   onComplete?: (message: string) => void;
   /** 오류 콜백 */

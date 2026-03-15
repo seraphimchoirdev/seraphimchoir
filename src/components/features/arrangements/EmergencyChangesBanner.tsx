@@ -23,6 +23,7 @@ import { useArrangementStore } from '@/store/arrangement-store';
 interface EmergencyChangesBannerProps {
   arrangementId: string;
   date: string;
+  serviceScheduleId?: string;
   /** 인라인 모드: EmergencyEditPanel 내부에서 사용 시 배경/테두리 없이 렌더링 */
   inline?: boolean;
 }
@@ -37,6 +38,7 @@ interface EmergencyChangesBannerProps {
 const EmergencyChangesBanner = memo(function EmergencyChangesBanner({
   arrangementId,
   date,
+  serviceScheduleId,
   inline = false,
 }: EmergencyChangesBannerProps) {
   const [isExpanded, setIsExpanded] = useState(inline); // 인라인 모드에서는 기본 펼침
@@ -49,6 +51,7 @@ const EmergencyChangesBanner = memo(function EmergencyChangesBanner({
   const { handleUndo, canUndo, isLoading: isUndoing } = useEmergencyUndo({
     arrangementId,
     date,
+    serviceScheduleId,
     onSuccess: (message) => showSuccess(message),
     onError: (message) => showError(message),
   });

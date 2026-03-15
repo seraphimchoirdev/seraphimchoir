@@ -48,6 +48,7 @@ const EmergencyAvailableDialog = memo(function EmergencyAvailableDialog({
   onOpenChange,
   arrangementId,
   date,
+  serviceScheduleId,
   onComplete,
   onError,
 }: EmergencyAvailableDialogProps) {
@@ -69,6 +70,7 @@ const EmergencyAvailableDialog = memo(function EmergencyAvailableDialog({
   // 해당 날짜의 출석 데이터 조회
   const { data: attendances, isLoading: attendancesLoading } = useAttendances({
     date,
+    service_schedule_id: serviceScheduleId,
     refetchOnWindowFocus: true,
   });
 
@@ -76,6 +78,7 @@ const EmergencyAvailableDialog = memo(function EmergencyAvailableDialog({
   const { handleAutoPlace, handleManualPlace, isLoading } = useEmergencyAvailable({
     arrangementId,
     date,
+    serviceScheduleId,
     onSuccess: (message) => {
       onOpenChange(false);
       setSelectedMemberId(null);
