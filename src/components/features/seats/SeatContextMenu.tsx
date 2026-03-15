@@ -21,6 +21,8 @@ interface SeatContextMenuProps {
   disabled?: boolean;
   /** 긴급 수정 모드 (SHARED 상태에서만 true) - 컨텍스트 메뉴 표시 조건 */
   isEmergencyMode?: boolean;
+  /** 줄반장 수동 지정 모드 - true이면 컨텍스트 메뉴 비활성화 */
+  rowLeaderMode?: boolean;
 }
 
 /**
@@ -38,6 +40,7 @@ const SeatContextMenu = memo(function SeatContextMenu({
   onEmergencyUnavailable,
   disabled = false,
   isEmergencyMode = false,
+  rowLeaderMode = false,
 }: SeatContextMenuProps) {
   const [open, setOpen] = useState(false);
 
@@ -52,7 +55,7 @@ const SeatContextMenu = memo(function SeatContextMenu({
   }, [onRemoveFromSeat]);
 
   // 빈 좌석이거나 비활성화된 경우 컨텍스트 메뉴 없이 children만 렌더링
-  if (!isOccupied || disabled) {
+  if (!isOccupied || disabled || rowLeaderMode) {
     return <>{children}</>;
   }
 
