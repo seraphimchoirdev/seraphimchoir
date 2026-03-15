@@ -1862,6 +1862,8 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
           expandedSections: newExpanded,
         },
         assignments: newAssignments,
+        // Step 5 완료 시 수동 줄반장 지정 모드 해제
+        ...(step === 5 && state.rowLeaderMode ? { rowLeaderMode: false } : {}),
       };
     }),
 
