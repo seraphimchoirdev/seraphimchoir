@@ -59,6 +59,7 @@ const SeatSlot = memo(function SeatSlot({
   const assignment = useArrangementStore((state) => state.assignments[seatKey]);
   const selectedMemberId = useArrangementStore((state) => state.selectedMemberId);
   const rowLeaderMode = useArrangementStore((state) => state.rowLeaderMode);
+  const currentStep = useArrangementStore((state) => state.workflow.currentStep);
 
   // 긴급 변동 하이라이트 (해당 멤버에 대한 하이라이트 여부)
   const changeHighlight = useArrangementStore((state) => {
@@ -90,21 +91,21 @@ const SeatSlot = memo(function SeatSlot({
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (assignment && !rowLeaderMode) {
+      if (assignment && !rowLeaderMode && currentStep <= 4) {
         removeMemberAction(row, col);
       }
     },
-    [assignment, rowLeaderMode, removeMemberAction, row, col]
+    [assignment, rowLeaderMode, currentStep, removeMemberAction, row, col]
   );
 
   // Click handler - either toggle row leader or normal seat click (메모이제이션)
   const handleClick = useCallback(() => {
     if (rowLeaderMode && assignment) {
       toggleRowLeaderAction(row, col);
-    } else {
+    } else if (currentStep <= 4) {
       handleSeatClickAction(row, col);
     }
-  }, [rowLeaderMode, assignment, toggleRowLeaderAction, handleSeatClickAction, row, col]);
+  }, [rowLeaderMode, assignment, currentStep, toggleRowLeaderAction, handleSeatClickAction, row, col]);
 
   // 컨텍스트 메뉴: 좌석에서 제거
   const handleRemoveFromSeat = useCallback(() => {
@@ -135,6 +136,7 @@ const SeatSlot = memo(function SeatSlot({
       onEmergencyUnavailable={onEmergencyUnavailable ? handleEmergencyUnavailable : undefined}
       disabled={isReadOnly}
       isEmergencyMode={isEmergencyMode}
+      rowLeaderMode={rowLeaderMode}
     >
       <button
         type="button"

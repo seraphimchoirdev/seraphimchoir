@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-03-15 | fix(arrangements): 줄반장 수동 지정 모드에서 컨텍스트 메뉴 억제 및 Step 5 이후 좌석 조작 차단 |
 | 2026-03-15 | fix(arrangements): SHARED→DRAFT 전환 시 긴급 변동 하이라이트 잔존 버그 수정 |
 | 2026-03-15 | fix(arrangements): Step 5 완료 시 수동 줄반장 지정 모드 자동 해제 |
 | 2026-03-15 | fix(arrangements): 긴급 등단 처리 시 service_schedule_id 전달 누락 수정 |

@@ -940,6 +940,10 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
   handleSeatClick: (row, col) => {
     const state = get();
+
+    // Step 4 이후에는 자리 이동 불가
+    if (state.workflow.currentStep > 4) return;
+
     const seatKey = `${row}-${col}`;
     const existingAssignment = state.assignments[seatKey];
 
