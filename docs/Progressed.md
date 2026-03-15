@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-03-15 | fix(arrangements): Step 5 완료 시 수동 줄반장 지정 모드 자동 해제 |
 | 2026-03-15 | fix(arrangements): 긴급 등단 처리 시 service_schedule_id 전달 누락 수정 |
 | 2026-03-15 | fix(arrangements): 긴급 등단 불가 처리 시 service_schedule_id 누락 버그 수정 |
 | 2026-03-15 | fix(arrangements): SHARED/CONFIRMED 배치표 로드 시 빈 좌석 표시 버그 수정 |
