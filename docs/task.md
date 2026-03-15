@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-03-15
+- [x] **fix(arrangements): 긴급 등단 불가 처리 시 service_schedule_id 누락 버그 수정**
+  - 커밋: `7cd46bf`
+
 - [x] **fix(arrangements): SHARED/CONFIRMED 배치표 로드 시 빈 좌석 표시 버그 수정**
   - 커밋: `c5f8cd7`
 

@@ -32,6 +32,8 @@ interface UseEmergencyUnavailableOptions {
   /** 배치표 ID (gridLayout 자동 저장용) */
   arrangementId: string;
   date: string;
+  /** 예배 일정 ID (같은 날짜에 여러 예배가 있을 때 정확한 식별을 위해 필요) */
+  serviceScheduleId?: string;
   onSuccess?: (message: string) => void;
   onError?: (message: string) => void;
   /** 크로스-행 이동 사용 여부 (기본: true) */
@@ -59,6 +61,7 @@ interface UseEmergencyUnavailableOptions {
 export function useEmergencyUnavailable({
   arrangementId,
   date,
+  serviceScheduleId,
   onSuccess,
   onError,
   enableCrossRowMove = true,
@@ -89,6 +92,7 @@ export function useEmergencyUnavailable({
             {
               member_id: memberId,
               date,
+              ...(serviceScheduleId && { service_schedule_id: serviceScheduleId }),
               is_service_available: false,
               is_practice_attended: true, // 연습 참석 여부는 변경하지 않음
             },
