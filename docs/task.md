@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-03-15
+- [x] **fix(arrangements): 긴급 등단 처리 시 service_schedule_id 전달 누락 수정**
+  - 커밋: `6fae3d0`
+
 - [x] **fix(arrangements): 긴급 등단 불가 처리 시 service_schedule_id 누락 버그 수정**
   - 커밋: `7cd46bf`
 

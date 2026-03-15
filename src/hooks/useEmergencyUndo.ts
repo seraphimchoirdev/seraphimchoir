@@ -24,6 +24,7 @@ const logger = createLogger({ prefix: 'EmergencyUndo' });
 interface UseEmergencyUndoOptions {
   arrangementId: string;
   date: string;
+  serviceScheduleId?: string;
   onSuccess?: (message: string) => void;
   onError?: (message: string) => void;
 }
@@ -31,6 +32,7 @@ interface UseEmergencyUndoOptions {
 export function useEmergencyUndo({
   arrangementId,
   date,
+  serviceScheduleId,
   onSuccess,
   onError,
 }: UseEmergencyUndoOptions) {
@@ -61,6 +63,7 @@ export function useEmergencyUndo({
               date,
               is_service_available: isServiceAvailable,
               is_practice_attended: true,
+              ...(serviceScheduleId && { service_schedule_id: serviceScheduleId }),
             },
           ],
         }),

@@ -38,6 +38,8 @@ interface EmergencyEditPanelProps {
   arrangementId: string;
   /** 배치표 날짜 */
   date: string;
+  /** 예배 일정 ID (같은 날짜에 여러 예배가 있을 때 식별용) */
+  serviceScheduleId?: string;
   /** 그리드 레이아웃 */
   gridLayout: GridLayout | null;
   /** 그리드 레이아웃 변경 핸들러 */
@@ -85,6 +87,7 @@ interface EmergencyEditPanelProps {
 export default function EmergencyEditPanel({
   arrangementId,
   date,
+  serviceScheduleId,
   gridLayout,
   onGridLayoutChange,
   onOpenAvailableDialog,
@@ -647,6 +650,7 @@ export default function EmergencyEditPanel({
               <EmergencyChangesBanner
                 arrangementId={arrangementId}
                 date={date}
+                serviceScheduleId={serviceScheduleId}
                 inline
               />
             </div>

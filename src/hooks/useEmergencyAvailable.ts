@@ -36,6 +36,8 @@ interface UseEmergencyAvailableOptions {
   /** 배치표 ID */
   arrangementId: string;
   date: string;
+  /** 예배 일정 ID (같은 날짜에 여러 예배가 있을 때 정확한 식별을 위해 필요) */
+  serviceScheduleId?: string;
   onSuccess?: (message: string) => void;
   onError?: (message: string) => void;
 }
@@ -51,6 +53,7 @@ interface UseEmergencyAvailableOptions {
 export function useEmergencyAvailable({
   arrangementId,
   date,
+  serviceScheduleId,
   onSuccess,
   onError,
 }: UseEmergencyAvailableOptions) {
@@ -76,6 +79,7 @@ export function useEmergencyAvailable({
               date,
               is_service_available: true,
               is_practice_attended: true,
+              ...(serviceScheduleId && { service_schedule_id: serviceScheduleId }),
             },
           ],
         }),
