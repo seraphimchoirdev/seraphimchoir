@@ -43,6 +43,7 @@ const EmergencyUnavailableDialog = memo(function EmergencyUnavailableDialog({
   targetMember,
   arrangementId,
   date,
+  serviceScheduleId,
   onComplete,
   onError,
 }: EmergencyUnavailableDialogProps) {
@@ -64,6 +65,7 @@ const EmergencyUnavailableDialog = memo(function EmergencyUnavailableDialog({
   const { handleEmergencyUnavailable, isLoading } = useEmergencyUnavailable({
     arrangementId,
     date,
+    serviceScheduleId,
     onSuccess: (message) => {
       onOpenChange(false);
       onComplete?.(message);

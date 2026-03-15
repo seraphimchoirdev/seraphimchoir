@@ -1119,6 +1119,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         targetMember={emergencyTargetMember}
         arrangementId={id}
         date={arrangement?.date || ''}
+        serviceScheduleId={arrangement?.service_schedule_id ?? undefined}
         onComplete={(message) => {
           showSuccess(message);
           setEmergencyTargetMember(null);
