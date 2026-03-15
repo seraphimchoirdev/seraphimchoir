@@ -87,6 +87,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     clearAllRowLeaders,
     assignments,
     saveSharedSnapshot,
+    clearSharedSnapshot,
     emergencyChanges,
   } = useArrangementStore();
 
@@ -187,6 +188,14 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       setEmergencyOffsetEditing(false);
     }
   }, [isEmergencyMode]);
+
+  // ⭐ DRAFT 상태에서 긴급 변동 상태 정리
+  // (SHARED → DRAFT 전환 시 경쟁 조건으로 sharedSnapshot이 남을 수 있음)
+  useEffect(() => {
+    if (!isEmergencyMode && emergencyChanges.sharedSnapshot) {
+      clearSharedSnapshot();
+    }
+  }, [isEmergencyMode, emergencyChanges.sharedSnapshot, clearSharedSnapshot]);
 
   // ⭐ SHARED 배치표 진입 시 sharedSnapshot이 없으면 자동 저장
   // (편집 완료 시점에만 저장되므로, 페이지 재진입 시 복원 필요)
