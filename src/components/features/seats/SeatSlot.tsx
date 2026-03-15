@@ -91,21 +91,21 @@ const SeatSlot = memo(function SeatSlot({
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (assignment && !rowLeaderMode && currentStep <= 4) {
+      if (assignment && !rowLeaderMode && (currentStep <= 4 || isEmergencyMode)) {
         removeMemberAction(row, col);
       }
     },
-    [assignment, rowLeaderMode, currentStep, removeMemberAction, row, col]
+    [assignment, rowLeaderMode, currentStep, isEmergencyMode, removeMemberAction, row, col]
   );
 
   // Click handler - either toggle row leader or normal seat click (메모이제이션)
   const handleClick = useCallback(() => {
     if (rowLeaderMode && assignment) {
       toggleRowLeaderAction(row, col);
-    } else if (currentStep <= 4) {
+    } else if (currentStep <= 4 || isEmergencyMode) {
       handleSeatClickAction(row, col);
     }
-  }, [rowLeaderMode, assignment, currentStep, toggleRowLeaderAction, handleSeatClickAction, row, col]);
+  }, [rowLeaderMode, assignment, currentStep, isEmergencyMode, toggleRowLeaderAction, handleSeatClickAction, row, col]);
 
   // 컨텍스트 메뉴: 좌석에서 제거
   const handleRemoveFromSeat = useCallback(() => {
