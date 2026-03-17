@@ -43,7 +43,7 @@ export function ArrangementActionCard({ arrangement, nextServiceDate }: Arrangem
             </p>
           </div>
           <Button asChild className="w-full">
-            <Link href="/arrangements/new">
+            <Link href="/arrangements">
               <Sparkles className="mr-2 h-4 w-4" />
               새 배치 만들기
             </Link>
@@ -120,14 +120,14 @@ export function ArrangementActionCard({ arrangement, nextServiceDate }: Arrangem
         {/* 액션 버튼 */}
         <div className="flex gap-2">
           <Button asChild variant="default" className="flex-1">
-            <Link href={`/arrangements/${arrangement.id}/edit`}>
+            <Link href={`/arrangements/${arrangement.id}`}>
               <Edit className="mr-2 h-4 w-4" />
               편집 계속하기
             </Link>
           </Button>
           {status === 'DRAFT' && (
             <Button asChild variant="outline">
-              <Link href={`/arrangements/${arrangement.id}/recommend`}>
+              <Link href={`/arrangements/${arrangement.id}`}>
                 <Sparkles className="h-4 w-4" />
               </Link>
             </Button>
