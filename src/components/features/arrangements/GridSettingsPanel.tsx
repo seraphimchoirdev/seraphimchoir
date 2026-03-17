@@ -2,7 +2,7 @@
 
 import { AlertTriangle, ChevronDown, ChevronUp, Minus, Plus, RotateCcw, Zap } from 'lucide-react';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,6 +45,12 @@ export default function GridSettingsPanel({
   const currentZigzag = gridLayout?.zigzagPattern ?? 'even';
   const currentRowOffsets = gridLayout?.rowOffsets ?? {};
 
+  // 마운트 직후 초기화 기간 스킵 (외부 상태와 로컬 상태 동기화 완료 전)
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    mountedRef.current = true;
+  }, []);
+
   // 디바운스: 줄 수 로컬 state
   const [localRows, setLocalRows] = useState(currentRows);
   const [localCapacities, setLocalCapacities] = useState(currentCapacities);
@@ -72,6 +78,7 @@ export default function GridSettingsPanel({
 
   // 줄 수 디바운스: 로컬 값이 바뀌면 400ms 후 반영
   useEffect(() => {
+    if (!mountedRef.current) return; // 초기 마운트 스킵
     if (localRows === currentRows) return;
     const timer = setTimeout(() => {
       handleRowsChange(localRows);
@@ -82,6 +89,7 @@ export default function GridSettingsPanel({
 
   // 줄별 인원 디바운스: 로컬 값이 바뀌면 400ms 후 한 번에 반영
   useEffect(() => {
+    if (!mountedRef.current) return; // 초기 마운트 스킵
     const changed =
       localCapacities.some((v, i) => v !== currentCapacities[i]) ||
       localCapacities.length !== currentCapacities.length;
