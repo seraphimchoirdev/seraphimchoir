@@ -69,22 +69,13 @@ export async function GET() {
 
     // 독립 쿼리 4개를 병렬 실행
     const [arrangementResult, activeMembersResult, attendancesResult, serviceSchedulesResult] = await Promise.all([
-      // 1. 배치표 조회 (다음 주일 우선, 없으면 최근)
+      // 1. 배치표 조회 (다음 주일만)
       adminSupabase
         .from('arrangements')
         .select('id, date, title, status')
         .eq('date', nextSunday)
         .maybeSingle()
-        .then(async ({ data: nextArrangement }) => {
-          if (nextArrangement) return nextArrangement;
-          const { data: latestArrangement } = await adminSupabase
-            .from('arrangements')
-            .select('id, date, title, status')
-            .order('date', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          return latestArrangement;
-        }),
+        .then(({ data }) => data),
 
       // 2. 활동 중인 대원 목록
       adminSupabase

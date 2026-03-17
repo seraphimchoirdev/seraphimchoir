@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-03-17 | fix(dashboard): 다음 주일 배치표 없을 때 과거 배치표 표시 버그 수정 |
 | 2026-03-17 | fix(dashboard): 배치표 링크 404 오류 수정 |
 | 2026-03-17 | fix(arrangements): 긴급 수정 모드에서 대원 목록(MemberSidebar) 표시 |
 | 2026-03-15 | fix(arrangements): 긴급 수정 모드에서 좌석 클릭/배치 차단 해제 |
