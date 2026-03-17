@@ -536,14 +536,16 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       setTimeout(() => {
         compactAllRows({ silent: true });
 
-        // 실제 배치된 멤버 수에 맞게 rowCapacities 축소 (빈 좌석 제거)
-        // 모든 상태에서 실행 — DB에 저장된 rowCapacities가 실제 배치보다 클 수 있음
+        // 실제 배치된 멤버가 있는 경우에만 rowCapacities 축소
+        // (새 배치표에서는 스킵 — AI 추천이 적절한 값을 설정함)
         const currentAssignments = useArrangementStore.getState().assignments;
         const assignmentCount = Object.values(currentAssignments).length;
-        const currentLayout = useArrangementStore.getState().gridLayout;
-        const totalCapacity = currentLayout?.rowCapacities?.reduce((a, b) => a + b, 0) ?? 0;
-        if (totalCapacity > assignmentCount) {
-          shrinkRowCapacitiesToFit({ silent: true });
+        if (assignmentCount > 0) {
+          const currentLayout = useArrangementStore.getState().gridLayout;
+          const totalCapacity = currentLayout?.rowCapacities?.reduce((a, b) => a + b, 0) ?? 0;
+          if (totalCapacity > assignmentCount) {
+            shrinkRowCapacitiesToFit({ silent: true });
+          }
         }
 
         clearHistory();
