@@ -30,7 +30,7 @@ export default function QuickActions() {
     },
     {
       label: '새 배치 만들기',
-      href: '/arrangements/new',
+      href: '/arrangements',
       icon: <LayoutGrid className="h-4 w-4" />,
       variant: 'outline' as const,
     },
