@@ -263,8 +263,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     }
   }, [workflow.currentStep, assignments]);
 
-  // 대원 목록 표시 여부: 4단계(수동 배치 조정)에서만
-  const showMemberSidebar = workflow.currentStep === 4;
+  // 대원 목록 표시 여부: 4단계(수동 배치 조정) 또는 긴급 수정 모드에서 표시
+  const showMemberSidebar = workflow.currentStep === 4 || isEmergencyMode;
 
   // 배치표 상태 및 권한에 따른 읽기 전용 모드
   // - CONFIRMED 상태: 모두 읽기 전용
@@ -1211,8 +1211,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           </>
         )}
 
-        {/* Member Sidebar - 수동 배치 조정 단계(4단계)에서만 표시 */}
-        {/* 긴급 수정 모드에서는 EmergencyEditPanel의 "등단 가능 추가" 버튼이 다이얼로그를 열어주므로 상시 표시 불필요 */}
+        {/* Member Sidebar - 수동 배치 조정 단계(4단계) 또는 긴급 수정 모드에서 표시 */}
         {showMemberSidebar && (
           <div data-print-hide>
             <MemberSidebar
