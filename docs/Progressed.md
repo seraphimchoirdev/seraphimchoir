@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-03-17 | fix(arrangements): 긴급 수정 모드에서 대원 목록(MemberSidebar) 표시 |
 | 2026-03-15 | fix(arrangements): 긴급 수정 모드에서 좌석 클릭/배치 차단 해제 |
 | 2026-03-15 | fix(arrangements): 줄반장 수동 지정 모드에서 컨텍스트 메뉴 억제 및 Step 5 이후 좌석 조작 차단 |
 | 2026-03-15 | fix(arrangements): SHARED→DRAFT 전환 시 긴급 변동 하이라이트 잔존 버그 수정 |
