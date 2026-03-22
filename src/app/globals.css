@@ -302,6 +302,7 @@
     line-height: var(--line-height-tight);
     letter-spacing: var(--letter-spacing-tight);
     color: var(--color-text-primary);
+    text-wrap: balance;
   }
 
   .heading-2 {
@@ -309,6 +310,7 @@
     font-weight: var(--font-weight-bold);
     line-height: var(--line-height-tight);
     color: var(--color-text-primary);
+    text-wrap: balance;
   }
 
   .heading-3 {
@@ -316,6 +318,7 @@
     font-weight: var(--font-weight-semibold);
     line-height: var(--line-height-snug);
     color: var(--color-text-primary);
+    text-wrap: balance;
   }
 
   .heading-4 {
@@ -323,6 +326,7 @@
     font-weight: var(--font-weight-semibold);
     line-height: var(--line-height-snug);
     color: var(--color-text-primary);
+    text-wrap: balance;
   }
 
   .body-large {
@@ -361,10 +365,35 @@
   }
 }
 
+/* Next.js 라우터와 충돌 방지를 위해 html이 아닌 컨테이너 단위로 적용 */
+[data-smooth-scroll] {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-smooth-scroll] {
+    scroll-behavior: auto;
+  }
+}
+
 body {
   background: var(--color-background-primary);
   color: var(--color-text-primary);
   font-family: var(--font-family-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 숫자 정렬을 위한 tabular figures (데이터 UI) */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 데이터 관련 요소에 자동 적용 */
+[data-numeric],
+table td,
+.stat-value {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Seat grid center alignment with zigzag support */
@@ -660,4 +689,44 @@ body {
     width: 11px !important;
     height: 11px !important;
   }
+}
+
+/* === 스켈레톤 시머 효과 === */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-background-tertiary) 25%,
+    var(--color-border-subtle) 50%,
+    var(--color-background-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
+  }
+}
+
+/* === 인터랙티브 카드 호버 효과 === */
+.card-interactive {
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.card-interactive:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card-interactive:active {
+  transform: scale(0.995);
 }

@@ -64,17 +64,17 @@ export function VoteActionCard({
   // 투표 완료
   if (timeContext === 'VOTE_COMPLETED') {
     return (
-      <Card className="border-green-200 bg-green-50">
+      <Card className="border-[var(--color-success-200)] bg-[var(--color-success-50)]">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <div className="rounded-full bg-green-100 p-2">
-              <Check className="h-5 w-5 text-green-600" />
+            <div className="rounded-full bg-[var(--color-success-100)] p-2">
+              <Check className="h-5 w-5 text-[var(--color-success-600)]" />
             </div>
             <div className="flex-1">
-              <h3 className="font-medium text-green-900">
-                {displayDate} 출석 투표 완료!
+              <h3 className="font-medium text-[var(--color-success-700)]">
+                {displayDate} 출석 투표 완료
               </h3>
-              <p className="mt-1 text-sm text-green-700">
+              <p className="mt-1 text-sm text-[var(--color-success-600)]">
                 {isAvailable ? '출석 예정' : '불참 예정'}으로 등록되었습니다.
                 {voteDeadlineDisplay && ` (마감: ${voteDeadlineDisplay})`}
               </p>

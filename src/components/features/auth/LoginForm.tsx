@@ -4,6 +4,7 @@ import { Loader2, MessageCircle } from 'lucide-react';
 
 import { useState } from 'react';
 
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -83,119 +84,130 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md space-y-8">
-      <div className="text-center">
-        <h2 className="mt-6 text-3xl font-bold tracking-tight text-[var(--color-text-primary)]">
-          로그인
-        </h2>
-        <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-          새로핌On에 오신 것을 환영합니다
+    <div className="w-full max-w-md">
+      {/* 로고 + 브랜드 */}
+      <div className="mb-8 flex flex-col items-center">
+        <Image
+          src="/title_logo.png"
+          alt="새로핌:On"
+          width={3200}
+          height={1344}
+          className="h-16 w-auto object-contain"
+          priority
+        />
+        <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
+          새문안교회 새로핌찬양대
         </p>
       </div>
 
-      {/* 카카오 로그인 섹션 */}
-      <div className="mt-8 space-y-4">
-        {(error || errorMessage) && (
-          <Alert variant="error">
-            <AlertDescription>{error || errorMessage}</AlertDescription>
-          </Alert>
-        )}
+      {/* 카드 래퍼 */}
+      <div className="rounded-[var(--radius-xl)] border border-[var(--color-border-default)] bg-[var(--color-background-primary)] p-8 shadow-[var(--shadow-md)]">
+        <h2 className="text-center text-xl font-semibold text-[var(--color-text-primary)]">
+          로그인
+        </h2>
 
-        {/* 다중 기기 로그인 안내 */}
-        {(urlError === 'session_required' || urlError === 'no_code') && (
-          <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-[var(--color-text-secondary)] dark:border-blue-800 dark:bg-blue-900/20">
-            <p className="mb-1 font-medium text-blue-900 dark:text-blue-100">
-              💡 다른 기기에서 로그인하시나요?
+        <div className="mt-6 space-y-4">
+          {(error || errorMessage) && (
+            <Alert variant="error">
+              <AlertDescription>{error || errorMessage}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* 다중 기기 로그인 안내 */}
+          {(urlError === 'session_required' || urlError === 'no_code') && (
+            <div className="rounded-[var(--radius-base)] border border-[var(--color-primary-200)] bg-[var(--color-primary-50)] p-3 text-sm">
+              <p className="mb-1 font-medium text-[var(--color-primary-900)]">
+                다른 기기에서 로그인하시나요?
+              </p>
+              <p className="text-[var(--color-primary-700)]">
+                다른 기기나 브라우저에서 로그인하려면 아래 카카오 로그인 버튼을 다시 눌러주세요.
+              </p>
+            </div>
+          )}
+
+          {/* 카카오 로그인 */}
+          <div className="text-center">
+            <p className="mb-3 text-sm text-[var(--color-text-secondary)]">
+              찬양대원이신가요? 카카오로 간편하게 로그인하세요
             </p>
-            <p className="text-blue-800 dark:text-blue-200">
-              다른 기기나 브라우저에서 로그인하려면 아래 카카오 로그인 버튼을 다시 눌러주세요.
-            </p>
+            <Button
+              type="button"
+              onClick={handleKakaoLogin}
+              disabled={isKakaoLoading || isLoading}
+              className="w-full bg-[#FEE500] font-medium text-[#191919] shadow-none hover:bg-[#FDD835]"
+            >
+              {isKakaoLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  카카오 로그인 중...
+                </>
+              ) : (
+                <>
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  카카오 로그인
+                </>
+              )}
+            </Button>
           </div>
-        )}
 
-        <div className="text-center">
-          <p className="mb-3 text-sm text-[var(--color-text-secondary)]">
-            찬양대원이신가요? 카카오로 간편하게 로그인하세요
-          </p>
-          <Button
-            type="button"
-            onClick={handleKakaoLogin}
-            disabled={isKakaoLoading || isLoading}
-            className="w-full bg-[#FEE500] font-medium text-[#191919] hover:bg-[#FDD835]"
-          >
-            {isKakaoLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                카카오 로그인 중...
-              </>
-            ) : (
-              <>
-                <MessageCircle className="mr-2 h-4 w-4" />
-                카카오 로그인
-              </>
-            )}
-          </Button>
-        </div>
+          {/* 구분선 */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-[var(--color-border-default)]" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-[var(--color-background-primary)] px-3 text-[var(--color-text-tertiary)]">
+                또는
+              </span>
+            </div>
+          </div>
 
-        {/* 구분선 */}
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-[var(--color-border)]" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-[var(--color-background-tertiary)] px-2 text-[var(--color-text-secondary)]">
-              또는
-            </span>
-          </div>
+          {/* 이메일/비밀번호 로그인 폼 */}
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="email">이메일</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">비밀번호</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  로그인 중...
+                </>
+              ) : (
+                '로그인'
+              )}
+            </Button>
+          </form>
         </div>
       </div>
-
-      {/* 이메일/비밀번호 로그인 폼 */}
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <div className="space-y-4 rounded-md shadow-sm">
-          <div className="space-y-2">
-            <Label htmlFor="email">이메일</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@example.com"
-              disabled={isLoading}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">비밀번호</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              disabled={isLoading}
-            />
-          </div>
-        </div>
-
-        <div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                로그인 중...
-              </>
-            ) : (
-              '로그인'
-            )}
-          </Button>
-        </div>
-      </form>
     </div>
   );
 }

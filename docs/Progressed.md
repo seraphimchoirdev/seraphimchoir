@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-03-22 | refactor(ui): 디자인 품질 개선 (redesign phase 1) |
 | 2026-03-22 | fix(ai-seat): 소규모 그리드에서 좌석 배치 초과 및 fallback 개선 |
 | 2026-03-17 | fix(arrangements): 새 배치표 생성 시 줄별 인원수 0 표시 버그 수정 |
 | 2026-03-17 | fix(dashboard): 다음 주일 배치표 없을 때 과거 배치표 표시 버그 수정 |
