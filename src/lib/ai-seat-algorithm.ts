@@ -837,6 +837,25 @@ function assignSeatsToRows(
           }
         }
       }
+      // === Fallback: 중앙 분할로 좌석이 부족하면 같은 행의 나머지 빈좌석 추가 ===
+      // 소규모 그리드(10~13열)에서 중앙 분할 범위가 좁아 배치 불가능한 경우 대비
+      const targetCount = part === 'TENOR' ? tenorCount : bassCount;
+      if (availableSeats.length < targetCount) {
+        for (const row of [6, 5, 4]) {
+          if (row > numRows) continue;
+          const rowCap = rowCapacities[row - 1];
+          for (let col = 1; col <= rowCap; col++) {
+            const key = seatKey(row, col);
+            if (!occupiedSeats.has(key) && !availableSeats.some(s => s.row === row && s.col === col)) {
+              // 다른 파트 영역 침범하지 않는 좌석만 추가
+              if (!isInOtherPartTerritory(row, col, part, rowCap)) {
+                availableSeats.push({ row, col, priority: 2 });
+              }
+            }
+          }
+        }
+      }
+
       return availableSeats; // 이미 원하는 순서로 정렬됨
     }
 
@@ -1278,19 +1297,18 @@ function assignSeatsToRows(
       }
 
       // 4-3: 정말 좌석이 없으면 아무 빈좌석 (최후의 수단)
-      // MAX_ROW_CAPACITY 사용: distribution이 rowCapacities 초과 배분할 수 있음
+      // 실제 행 용량 사용: 그리드 밖 배치 방지
       // 좌우 분할 규칙 유지: SOPRANO/TENOR는 왼쪽부터, ALTO/BASS는 오른쪽부터 탐색
       const isLeftPart = part === 'SOPRANO' || part === 'TENOR';
 
       for (const row of lastResortRows) {
-        const maxCap = MAX_ROW_CAPACITY; // rowCapacities 초과 허용
         const rowCap = rowCapacities[row - 1];
 
         if (isLeftPart) {
           // 왼쪽 파트: col 1부터 순차 탐색
           // 이미 배치된 오른쪽 파트보다 오른쪽으로 가지 않음
           const minRightCol = findMinRightPartCol(row);
-          for (let col = 1; col <= maxCap; col++) {
+          for (let col = 1; col <= rowCap; col++) {
             if (occupiedSeats.has(seatKey(row, col))) continue;
             // 기존 오른쪽 파트보다 오른쪽에 배치하지 않음
             if (col >= minRightCol) continue;
@@ -1303,10 +1321,10 @@ function assignSeatsToRows(
             return { row, col };
           }
         } else {
-          // 오른쪽 파트: col maxCap부터 역순 탐색
+          // 오른쪽 파트: col rowCap부터 역순 탐색
           // 이미 배치된 왼쪽 파트보다 왼쪽으로 가지 않음
           const maxLeftCol = findMaxLeftPartCol(row);
-          for (let col = maxCap; col >= 1; col--) {
+          for (let col = rowCap; col >= 1; col--) {
             if (occupiedSeats.has(seatKey(row, col))) continue;
             // 기존 왼쪽 파트보다 왼쪽에 배치하지 않음
             if (col <= maxLeftCol) continue;
@@ -1357,7 +1375,7 @@ function assignSeatsToRows(
           if (part === 'TENOR') {
             // TENOR: 왼쪽부터 탐색, 기존 오른쪽 파트보다 오른쪽으로 가지 않음
             const minRightCol = findMinRightPartCol(row);
-            const maxCol = Math.min(row <= 3 ? midPoint : MAX_ROW_CAPACITY, minRightCol - 1);
+            const maxCol = Math.min(row <= 3 ? midPoint : rowCap, minRightCol - 1);
             for (let col = 1; col <= maxCol; col++) {
               if (!occupiedSeats.has(seatKey(row, col))) {
                 logger.warn(`${member.name}(${part}) 최후의 최후 배치: ${row}행 ${col}열`);
@@ -1368,7 +1386,7 @@ function assignSeatsToRows(
             // BASS: 오른쪽부터 탐색, 기존 왼쪽 파트보다 왼쪽으로 가지 않음
             const maxLeftCol = findMaxLeftPartCol(row);
             const minCol = Math.max(row <= 3 ? midPoint + 1 : 1, maxLeftCol + 1);
-            for (let col = MAX_ROW_CAPACITY; col >= minCol; col--) {
+            for (let col = rowCap; col >= minCol; col--) {
               if (!occupiedSeats.has(seatKey(row, col))) {
                 logger.warn(`${member.name}(${part}) 최후의 최후 배치: ${row}행 ${col}열`);
                 return { row, col };
@@ -1391,7 +1409,8 @@ function assignSeatsToRows(
         : Array.from({ length: numRows }, (_, i) => i + 1);
 
       for (const row of rows46) {
-        for (let col = 1; col <= MAX_ROW_CAPACITY; col++) {
+        const rowCap = rowCapacities[row - 1];
+        for (let col = 1; col <= rowCap; col++) {
           if (!occupiedSeats.has(seatKey(row, col))) {
             logger.warn(`${member.name}(${part}) 절대 최후 배치: ${row}행 ${col}열 (제약 무시)`);
             return { row, col };
