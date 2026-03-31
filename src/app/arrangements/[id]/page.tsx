@@ -176,6 +176,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     limit: 100,
   });
 
+  // 게스트 멤버 조회 (총 좌석 수에 포함)
+  const { data: guestMembersData } = useMembers({
+    member_status: 'GUEST',
+    is_singer: true,
+    limit: 100,
+  });
+
   // 긴급 수정 모드 (SHARED 상태에서 canEmergencyEdit 권한이 있을 때만)
   // DRAFT: 일반 편집 모드 (더블클릭으로 제거)
   // SHARED: 긴급 수정 모드 (컨텍스트 메뉴 표시) - 권한 필요
@@ -233,18 +240,20 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     [attendanceMap]
   );
 
-  // 등단 가능한 멤버 수 계산
+  // 등단 가능한 멤버 수 계산 (정대원 + 게스트)
   const arrangementDate = arrangement?.date;
   const totalMembers = useMemo(() => {
     const members = membersData?.data || [];
-    return members.filter((member) => {
+    const regularCount = members.filter((member) => {
       // 배치표 날짜 이전에 입단한 대원만 포함 (MemberSidebar와 동일 기준)
       if (arrangementDate && member.joined_date && member.joined_date > arrangementDate) return false;
       const attendance = attendanceMap.get(member.id);
       if (!attendance) return true;
       return attendance.is_service_available === true;
     }).length;
-  }, [membersData, attendanceMap, arrangementDate]);
+    const guestCount = guestMembersData?.data?.length || 0;
+    return regularCount + guestCount;
+  }, [membersData, guestMembersData, attendanceMap, arrangementDate]);
 
   // 워크플로우 자동 진행 훅 (위자드 모드에서 단계 완료 조건 자동 감지)
   useWorkflowAutoAdvance(totalMembers, arrangement?.status ?? undefined);
