@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, ChevronDown, ChevronRight, Search, UserPlus } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronRight, Search, UserPlus, Users } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { memo, useCallback, useMemo, useState } from 'react';
@@ -22,6 +22,7 @@ import type { Database } from '@/types/database.types';
 
 import ClickableMember from './ClickableMember';
 import EmergencyAvailableDialog from './EmergencyAvailableDialog';
+import GuestManageDialog from './GuestManageDialog';
 
 type Part = Database['public']['Enums']['part'];
 
@@ -66,6 +67,7 @@ const MemberSidebar = memo(function MemberSidebar({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPart, setSelectedPart] = useState<Part | 'ALL'>('ALL');
   const [emergencyAvailableDialogOpen, setEmergencyAvailableDialogOpen] = useState(false);
+  const [guestManageDialogOpen, setGuestManageDialogOpen] = useState(false);
 
   // 선택적 상태 구독 - 배치된 멤버 ID 배열 추적 (useShallow로 shallow 비교)
   const placedMemberIdsArray = useArrangementStore(useShallow(selectPlacedMemberIdsArray));
@@ -119,6 +121,13 @@ const MemberSidebar = memo(function MemberSidebar({
     limit: 100,
   });
 
+  // 게스트 멤버 전체 조회 (매핑 없이 GUEST 상태 멤버를 모든 배치표에서 표시)
+  const { data: guestMembersData, isLoading: guestsLoading } = useMembers({
+    member_status: 'GUEST',
+    is_singer: true,
+    limit: 100,
+  });
+
   // 해당 날짜+예배의 출석 데이터 조회 (service_schedule_id로 예배별 분리)
   // ⭐ 긴급 모드에서는 탭 포커스 시 자동 갱신 (출석 관리에서 변경 후 돌아올 때)
   const { data: attendances, isLoading: attendancesLoading } = useAttendances({
@@ -127,7 +136,7 @@ const MemberSidebar = memo(function MemberSidebar({
     refetchOnWindowFocus: isEmergencyMode,
   });
 
-  const isLoading = membersLoading || attendancesLoading;
+  const isLoading = membersLoading || attendancesLoading || guestsLoading;
 
   // Check if member is already placed (Set 기반으로 O(1) 조회)
   const isMemberPlaced = useCallback(
@@ -136,6 +145,32 @@ const MemberSidebar = memo(function MemberSidebar({
     },
     [placedMemberIds]
   );
+
+  // 게스트 멤버 리스트
+  const guestMembers = useMemo(() => {
+    const guests = guestMembersData?.data || [];
+    return guests.map((g) => ({
+      id: g.id,
+      name: g.name,
+      part: g.part,
+      isGuest: true as const,
+    }));
+  }, [guestMembersData?.data]);
+
+  const groupedGuests = useMemo(() => {
+    if (!guestMembers.length) return {};
+    const groups: Record<string, typeof guestMembers> = {};
+    guestMembers.forEach((guest) => {
+      if (searchTerm && !guest.name.includes(searchTerm)) return;
+      if (hidePlaced && isMemberPlaced(guest.id)) return;
+      if (!groups[guest.part]) groups[guest.part] = [];
+      groups[guest.part].push(guest);
+    });
+    Object.values(groups).forEach((group) => {
+      group.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+    });
+    return groups;
+  }, [guestMembers, searchTerm, hidePlaced, isMemberPlaced]);
 
   // 출석 데이터를 memberId로 빠르게 조회하기 위한 Map
   const attendanceMap = useMemo(() => {
@@ -185,13 +220,16 @@ const MemberSidebar = memo(function MemberSidebar({
       groups[member.part].push(member);
     });
 
+    // 파트별 가나다순 정렬
+    Object.values(groups).forEach((group) => {
+      group.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+    });
+
     return groups;
   }, [members, isServiceAvailable, searchTerm, hidePlaced, isMemberPlaced, date]);
 
-  // Calculate unplaced members count (기존 미배치 + 경계 밖 멤버)
+  // Calculate unplaced members count (기존 미배치 + 경계 밖 멤버 + 게스트)
   const unplacedCount = useMemo(() => {
-    if (!members.length) return outOfBoundsMembers.length;
-
     // 기존 미배치 멤버 수 계산
     const baseUnplaced = members.filter((member) => {
       // 정대원 임명일 기준 필터링
@@ -203,10 +241,16 @@ const MemberSidebar = memo(function MemberSidebar({
       return !isMemberPlaced(member.id);
     }).length;
 
+    // 미배치 게스트 수
+    const unplacedGuests = guestMembers.filter((g) => {
+      if (searchTerm && !g.name.includes(searchTerm)) return false;
+      return !isMemberPlaced(g.id);
+    }).length;
+
     // 경계 밖 멤버는 assignments에 아직 있으므로 isMemberPlaced가 true
     // 따라서 별도로 경계 밖 멤버 수를 더해줌
-    return baseUnplaced + outOfBoundsMembers.length;
-  }, [members, isServiceAvailable, searchTerm, isMemberPlaced, date, outOfBoundsMembers.length]);
+    return baseUnplaced + unplacedGuests + outOfBoundsMembers.length;
+  }, [members, guestMembers, isServiceAvailable, searchTerm, isMemberPlaced, date, outOfBoundsMembers.length]);
 
   if (isLoading) {
     return (
@@ -227,6 +271,22 @@ const MemberSidebar = memo(function MemberSidebar({
               대원 목록
             </h3>
             <div className="flex items-center gap-2">
+              {arrangementId && (
+                <button
+                  type="button"
+                  onClick={() => setGuestManageDialogOpen(true)}
+                  className="inline-flex items-center gap-1 rounded-md border border-dashed border-neutral-300 px-2 py-1 text-xs text-neutral-600 transition-colors hover:border-neutral-400 hover:bg-neutral-50"
+                  title="게스트 관리"
+                >
+                  <Users className="h-3 w-3" />
+                  게스트
+                  {guestMembers.length > 0 && (
+                    <span className="font-medium text-[var(--color-primary-600)]">
+                      {guestMembers.length}
+                    </span>
+                  )}
+                </button>
+              )}
               <span className="text-xs text-[var(--color-text-secondary)] sm:text-sm">
                 미배치:{' '}
                 <span className="font-semibold text-[var(--color-primary-600)]">
@@ -291,6 +351,15 @@ const MemberSidebar = memo(function MemberSidebar({
           />
         )}
 
+        {/* 게스트 관리 다이얼로그 */}
+        {arrangementId && (
+          <GuestManageDialog
+            open={guestManageDialogOpen}
+            onOpenChange={setGuestManageDialogOpen}
+            arrangementId={arrangementId}
+          />
+        )}
+
         {/* 재배치 필요 섹션 (경계 밖 멤버가 있을 때만 표시) */}
         {outOfBoundsMembers.length > 0 && (
           <Alert variant="error" icon={AlertTriangle} className="mb-4">
@@ -351,10 +420,12 @@ const MemberSidebar = memo(function MemberSidebar({
           </Alert>
         )}
 
-        {/* 파트별 칩 리스트 (헤더 클릭으로 필터 토글) */}
+        {/* 파트별 칩 리스트 (헤더 클릭으로 필터 토글) — 정대원 + 게스트 통합 표시 */}
         {PARTS.map((part) => {
-          const partMembers = groupedMembers[part];
-          if (!partMembers?.length) return null;
+          const partMembers = groupedMembers[part] || [];
+          const partGuests = groupedGuests[part] || [];
+          const totalCount = partMembers.length + partGuests.length;
+          if (!totalCount) return null;
 
           const isExpanded = selectedPart === 'ALL' || selectedPart === part;
           const isActive = selectedPart === part;
@@ -376,7 +447,7 @@ const MemberSidebar = memo(function MemberSidebar({
                 ) : (
                   <ChevronRight className="h-3.5 w-3.5 shrink-0" />
                 )}
-                {partLabel} ({partMembers.length})
+                {partLabel} ({totalCount})
               </button>
               {isExpanded && (
                 <div className={`flex flex-wrap ${compact ? 'gap-1' : 'gap-1.5'}`}>
@@ -389,13 +460,23 @@ const MemberSidebar = memo(function MemberSidebar({
                       isPlaced={isMemberPlaced(m.id)}
                     />
                   ))}
+                  {partGuests.map((g) => (
+                    <ClickableMember
+                      key={g.id}
+                      memberId={g.id}
+                      name={g.name}
+                      part={g.part}
+                      isPlaced={isMemberPlaced(g.id)}
+                      isGuest
+                    />
+                  ))}
                 </div>
               )}
             </div>
           );
         })}
 
-        {(!members || members.length === 0) && (
+        {(!members || members.length === 0) && guestMembers.length === 0 && (
           <div className="mt-8 text-center text-sm text-[var(--color-text-secondary)]">
             등록된 대원이 없습니다.
           </div>
@@ -403,6 +484,7 @@ const MemberSidebar = memo(function MemberSidebar({
 
         {members.length > 0 &&
           Object.keys(groupedMembers).length === 0 &&
+          Object.keys(groupedGuests).length === 0 &&
           outOfBoundsMembers.length === 0 && (
             <div className="mt-8 text-center text-sm text-[var(--color-text-secondary)]">
               모든 대원이 배치되었습니다.

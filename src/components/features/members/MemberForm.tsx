@@ -48,6 +48,7 @@ const MEMBER_STATUSES: { value: MemberStatus; label: string }[] = [
   { value: 'REGULAR', label: '정대원' },
   { value: 'ON_LEAVE', label: '휴직대원' },
   { value: 'RESIGNED', label: '사직대원' },
+  { value: 'GUEST', label: '게스트' },
 ];
 
 export default function MemberForm({ member, onSuccess, onCancel }: MemberFormProps) {

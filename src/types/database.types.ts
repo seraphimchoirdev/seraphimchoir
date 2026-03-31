@@ -90,6 +90,42 @@ export type Database = {
           },
         ]
       }
+      arrangement_guests: {
+        Row: {
+          id: string
+          arrangement_id: string
+          member_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          arrangement_id: string
+          member_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          arrangement_id?: string
+          member_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arrangement_guests_arrangement_id_fkey"
+            columns: ["arrangement_id"]
+            isOneToOne: false
+            referencedRelation: "arrangements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arrangement_guests_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_deadlines: {
         Row: {
           closed_at: string
@@ -1187,7 +1223,7 @@ export type Database = {
       }
     }
     Enums: {
-      member_status: "REGULAR" | "NEW" | "ON_LEAVE" | "RESIGNED"
+      member_status: "REGULAR" | "NEW" | "ON_LEAVE" | "RESIGNED" | "GUEST"
       part: "SOPRANO" | "ALTO" | "TENOR" | "BASS" | "SPECIAL"
       practice_attendance_type: "FULL" | "EARLY_LEAVE" | "LATE_JOIN" | "ABSENT"
     }
@@ -1320,7 +1356,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      member_status: ["REGULAR", "NEW", "ON_LEAVE", "RESIGNED"],
+      member_status: ["REGULAR", "NEW", "ON_LEAVE", "RESIGNED", "GUEST"],
       part: ["SOPRANO", "ALTO", "TENOR", "BASS", "SPECIAL"],
       practice_attendance_type: ["FULL", "EARLY_LEAVE", "LATE_JOIN", "ABSENT"],
     },
