@@ -126,7 +126,7 @@ export default function Navigation() {
 
   return (
     <>
-      <nav className="sticky top-0 z-[var(--z-sticky)] border-b border-[var(--color-border-default)] bg-[var(--color-background-primary)] shadow-[var(--shadow-sm)]">
+      <nav className="sticky top-0 z-[var(--z-sticky)] border-b border-[var(--color-border-default)] bg-[var(--color-background-primary)]/95 shadow-[var(--shadow-sm)] backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 justify-between">
             {/* 로고 및 데스크톱 메뉴 */}
@@ -149,13 +149,16 @@ export default function Navigation() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`rounded-[var(--radius-base)] px-3 py-2 text-sm font-medium transition-colors ${
+                      className={`relative rounded-[var(--radius-base)] px-3 py-2 text-sm font-medium transition-all duration-200 ${
                         isActive
                           ? 'bg-[var(--color-primary-50)] text-[var(--color-primary-600)]'
                           : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-text-primary)]'
                       }`}
                     >
                       {link.label}
+                      {isActive && (
+                        <span className="absolute bottom-0 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-[var(--color-primary-500)]" />
+                      )}
                     </Link>
                   );
                 })}

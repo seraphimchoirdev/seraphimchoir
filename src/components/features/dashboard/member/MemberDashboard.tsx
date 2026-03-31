@@ -49,9 +49,9 @@ export function MemberDashboard() {
     return (
       <div className="space-y-6">
         {/* 환영 메시지 */}
-        <div>
+        <div className="rounded-[var(--radius-xl)] bg-gradient-to-br from-[var(--color-primary-50)] via-[var(--color-background-primary)] to-[var(--color-accent-50)] p-6">
           <h2 className="heading-2 text-[var(--color-text-primary)]">
-            안녕하세요, {displayName}님!
+            안녕하세요, {displayName}님
           </h2>
           <p className="body-base mt-1 text-[var(--color-text-secondary)]">
             새로핌찬양대에 오신 것을 환영합니다.
@@ -90,8 +90,8 @@ export function MemberDashboard() {
   return (
     <div className="space-y-6">
       {/* 환영 메시지 */}
-      <div>
-        <h2 className="heading-2 text-[var(--color-text-primary)]">안녕하세요, {displayName}님!</h2>
+      <div className="rounded-[var(--radius-xl)] bg-gradient-to-br from-[var(--color-primary-50)] via-[var(--color-background-primary)] to-[var(--color-accent-50)] p-6">
+        <h2 className="heading-2 text-[var(--color-text-primary)]">안녕하세요, {displayName}님</h2>
         <p className="body-base mt-1 text-[var(--color-text-secondary)]">
           오늘도 찬양대와 함께 은혜로운 시간 되세요.
         </p>
@@ -109,7 +109,7 @@ export function MemberDashboard() {
             <div className="flex flex-col gap-2">
               <Link
                 href="/attendances"
-                className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-[var(--color-background-secondary)]"
+                className="flex items-center gap-3 rounded-lg p-2 transition-all duration-200 hover:bg-[var(--color-background-tertiary)] active:scale-[0.99]"
               >
                 <div className="rounded-full bg-[var(--color-primary-100)] p-2">
                   <ClipboardList className="h-4 w-4 text-[var(--color-primary-600)]" />
@@ -124,7 +124,7 @@ export function MemberDashboard() {
               </Link>
               <Link
                 href="/management/members"
-                className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-[var(--color-background-secondary)]"
+                className="flex items-center gap-3 rounded-lg p-2 transition-all duration-200 hover:bg-[var(--color-background-tertiary)] active:scale-[0.99]"
               >
                 <div className="rounded-full bg-[var(--color-primary-100)] p-2">
                   <Users className="h-4 w-4 text-[var(--color-primary-600)]" />

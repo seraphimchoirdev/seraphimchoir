@@ -147,7 +147,7 @@ export default function BottomNavigation() {
       <Link
         href={item.href}
         onClick={onClick}
-        className={`flex min-w-[64px] flex-col items-center justify-center gap-0.5 px-1 py-2 transition-colors ${
+        className={`flex min-w-[64px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-2 transition-all duration-200 active:scale-95 ${
           active
             ? 'text-[var(--color-primary-600)]'
             : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
@@ -162,7 +162,7 @@ export default function BottomNavigation() {
   return (
     <>
       {/* 하단 내비게이션 바 - 모바일만 표시 */}
-      <nav className="safe-area-bottom fixed right-0 bottom-0 left-0 z-[var(--z-fixed)] border-t border-[var(--color-border-default)] bg-[var(--color-background-primary)] lg:hidden">
+      <nav className="safe-area-bottom fixed right-0 bottom-0 left-0 z-[var(--z-fixed)] border-t border-[var(--color-border-default)] bg-[var(--color-background-primary)]/95 backdrop-blur-md lg:hidden">
         <div className="mx-auto flex h-16 max-w-lg items-center justify-around">
           {mainNav.map((item) => (
             <NavButton key={item.href} item={item} />
@@ -172,7 +172,7 @@ export default function BottomNavigation() {
           {moreNav.length > 0 && (
             <button
               onClick={() => setMoreSheetOpen(true)}
-              className={`flex min-w-[64px] flex-col items-center justify-center gap-0.5 px-1 py-2 transition-colors ${
+              className={`flex min-w-[64px] flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-2 transition-all duration-200 active:scale-95 ${
                 moreSheetOpen
                   ? 'text-[var(--color-primary-600)]'
                   : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'

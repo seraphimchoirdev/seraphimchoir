@@ -68,8 +68,8 @@ export function StaffDashboard() {
   return (
     <div className="space-y-6">
       {/* 환영 메시지 */}
-      <div>
-        <h2 className="heading-2 text-[var(--color-text-primary)]">안녕하세요, {displayName}님!</h2>
+      <div className="rounded-[var(--radius-xl)] bg-gradient-to-br from-[var(--color-primary-50)] via-[var(--color-background-primary)] to-[var(--color-accent-50)] p-6">
+        <h2 className="heading-2 text-[var(--color-text-primary)]">안녕하세요, {displayName}님</h2>
         <p className="body-base mt-1 text-[var(--color-text-secondary)]">
           오늘도 찬양대와 함께 은혜로운 시간 되세요.
         </p>
