@@ -39,6 +39,7 @@ const STATUS_LABELS: Record<MemberStatus, string> = {
   NEW: '신입대원',
   ON_LEAVE: '휴직대원',
   RESIGNED: '사직대원',
+  GUEST: '게스트',
 };
 
 export default function MemberDetail({ memberId }: MemberDetailProps) {

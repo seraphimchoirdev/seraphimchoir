@@ -49,6 +49,7 @@ const _MEMBER_STATUSES: { value: MemberStatus | 'ALL'; label: string }[] = [
   { value: 'REGULAR', label: '정대원' },
   { value: 'ON_LEAVE', label: '휴직대원' },
   { value: 'RESIGNED', label: '사직대원' },
+  { value: 'GUEST', label: '게스트' },
 ];
 
 const LIMIT_OPTIONS = [

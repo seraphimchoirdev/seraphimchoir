@@ -14,7 +14,7 @@ const logger = createLogger({ prefix: 'MembersAPI' });
 const PartEnum = z.enum(['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL']);
 
 // Member Status enum validation
-const MemberStatusEnum = z.enum(['REGULAR', 'NEW', 'ON_LEAVE', 'RESIGNED']);
+const MemberStatusEnum = z.enum(['REGULAR', 'NEW', 'ON_LEAVE', 'RESIGNED', 'GUEST']);
 
 // Query parameters validation schema
 const queryParamsSchema = z.object({

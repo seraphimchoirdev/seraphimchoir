@@ -78,6 +78,7 @@ const STATUS_LABELS: Record<MemberStatus, string> = {
   NEW: '신입대원',
   ON_LEAVE: '휴직대원',
   RESIGNED: '사직대원',
+  GUEST: '게스트',
 };
 
 // 상태별 색상
@@ -89,10 +90,12 @@ const STATUS_COLORS: Record<MemberStatus, string> = {
     'bg-[var(--color-part-special-100)] text-[var(--color-part-special-700)] border-[var(--color-part-special-200)]',
   RESIGNED:
     'bg-[var(--color-error-100)] text-[var(--color-error-700)] border-[var(--color-error-200)]',
+  GUEST:
+    'bg-neutral-100 text-neutral-600 border-neutral-300',
 };
 
 // 상태 옵션
-const STATUS_OPTIONS: MemberStatus[] = ['REGULAR', 'NEW', 'ON_LEAVE', 'RESIGNED'];
+const STATUS_OPTIONS: MemberStatus[] = ['REGULAR', 'NEW', 'ON_LEAVE', 'RESIGNED', 'GUEST'];
 
 // 휴직 정보 폼 데이터
 interface LeaveInfoFormData {
@@ -349,7 +352,7 @@ function MemberListItem({ member, onDelete }: MemberListItemProps) {
                 className={`cursor-pointer text-xs ${status === member.member_status ? 'bg-[var(--color-background-tertiary)] font-semibold' : ''} `}
               >
                 <span
-                  className={`mr-2 inline-block h-2 w-2 rounded-full ${status === 'REGULAR' ? 'bg-[var(--color-success-500)]' : ''} ${status === 'NEW' ? 'bg-[var(--color-primary-500)]' : ''} ${status === 'ON_LEAVE' ? 'bg-[var(--color-part-special-500)]' : ''} ${status === 'RESIGNED' ? 'bg-[var(--color-error-500)]' : ''} `}
+                  className={`mr-2 inline-block h-2 w-2 rounded-full ${status === 'REGULAR' ? 'bg-[var(--color-success-500)]' : ''} ${status === 'NEW' ? 'bg-[var(--color-primary-500)]' : ''} ${status === 'ON_LEAVE' ? 'bg-[var(--color-part-special-500)]' : ''} ${status === 'RESIGNED' ? 'bg-[var(--color-error-500)]' : ''} ${status === 'GUEST' ? 'bg-neutral-400' : ''} `}
                 />
                 {STATUS_LABELS[status]}
               </DropdownMenuItem>

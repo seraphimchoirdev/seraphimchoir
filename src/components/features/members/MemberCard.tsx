@@ -88,6 +88,7 @@ const STATUS_LABELS: Record<MemberStatus, string> = {
   NEW: '신입대원',
   ON_LEAVE: '휴직대원',
   RESIGNED: '사직대원',
+  GUEST: '게스트',
 };
 
 // 상태별 색상 (시맨틱 컬러)
@@ -99,6 +100,8 @@ const STATUS_COLORS: Record<MemberStatus, string> = {
     'bg-[var(--color-part-special-100)] text-[var(--color-part-special-700)] border-[var(--color-part-special-200)]',
   RESIGNED:
     'bg-[var(--color-error-100)] text-[var(--color-error-700)] border-[var(--color-error-200)]',
+  GUEST:
+    'bg-neutral-100 text-neutral-600 border-neutral-300',
 };
 
 function MemberCard({ member, onDelete }: MemberCardProps) {
