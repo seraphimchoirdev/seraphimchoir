@@ -132,9 +132,16 @@ export function useWorkflowAutoAdvance(totalMembers: number, arrangementStatus?:
         reason: '수동 완료 필요',
       });
 
-      // 6단계: 편집 완료 (SHARED 또는 CONFIRMED 상태)
+      // 6단계: 안내 메모 - 항상 완료 가능 (선택적)
       results.push({
         step: 6,
+        isCompleted: false,
+        reason: '선택사항',
+      });
+
+      // 7단계: 편집 완료 (SHARED 또는 CONFIRMED 상태)
+      results.push({
+        step: 7,
         isCompleted: arrangementStatus === 'SHARED' || arrangementStatus === 'CONFIRMED',
         reason:
           arrangementStatus === 'SHARED'
@@ -209,7 +216,7 @@ export function useSkipStep() {
 
   const skip = (step: WorkflowStep) => {
     completeStep(step);
-    if (workflow.currentStep === step && step < 6) {
+    if (workflow.currentStep === step && step < 7) {
       setTimeout(() => nextStep(), 300);
     }
   };

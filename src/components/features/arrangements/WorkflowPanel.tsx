@@ -64,7 +64,7 @@ export default function WorkflowPanel({
   const steps = Object.values(WORKFLOW_STEPS);
 
   // 선택적 단계 (건너뛰기 가능)
-  const optionalSteps: WorkflowStep[] = [2, 3]; // 줄 정렬 조정, AI 자동배치
+  const optionalSteps: WorkflowStep[] = [2, 3, 6]; // 줄 정렬 조정, AI 자동배치, 지시사항 작성
 
   // 배치 상태 계산
   const assignmentsCount = Object.keys(assignments).length;
@@ -97,7 +97,11 @@ export default function WorkflowPanel({
         canComplete: true,
       },
       6: {
-        // 6단계: 내보내기 및 확정 - 항상 완료 가능
+        // 6단계: 지시사항 작성 - 선택적 단계 - 항상 완료 가능
+        canComplete: true,
+      },
+      7: {
+        // 7단계: 내보내기 및 확정 - 항상 완료 가능
         canComplete: true,
       },
     };
@@ -116,7 +120,7 @@ export default function WorkflowPanel({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="max-h-[calc(100vh-180px)] space-y-4 overflow-x-hidden overflow-y-auto">
         {/* Progress Indicator */}
         <WorkflowProgress optionalSteps={optionalSteps} />
 
@@ -152,7 +156,7 @@ export default function WorkflowPanel({
                 variant="ghost"
                 size="sm"
                 onClick={nextStep}
-                disabled={currentStep >= 6}
+                disabled={currentStep >= 7}
                 className="gap-1"
               >
                 다음
@@ -163,7 +167,7 @@ export default function WorkflowPanel({
         )}
 
         {/* 워크플로우 섹션들 */}
-        <div className="max-h-[calc(100vh-400px)] space-y-3 overflow-y-auto">
+        <div className="space-y-3">
           {steps.map((stepMeta) => {
             const config = stepCompletionConfigs[stepMeta.step];
             return (

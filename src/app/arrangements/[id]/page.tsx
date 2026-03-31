@@ -8,6 +8,7 @@ import { ReactNode, use, useCallback, useEffect, useMemo, useRef, useState } fro
 import ArrangementHeader from '@/components/features/arrangements/ArrangementHeader';
 import CompactWorkflowStrip from '@/components/features/arrangements/CompactWorkflowStrip';
 import EmergencyEditPanel from '@/components/features/arrangements/EmergencyEditPanel';
+import NotesEditor from '@/components/features/arrangements/NotesEditor';
 import GridSettingsPanel from '@/components/features/arrangements/GridSettingsPanel';
 import RecommendButton from '@/components/features/arrangements/RecommendButton';
 import RestoreDialog from '@/components/features/arrangements/RestoreDialog';
@@ -22,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 
-import { useArrangement } from '@/hooks/useArrangements';
+import { useArrangement, useUpdateArrangement } from '@/hooks/useArrangements';
 import { useImageExportHandlers } from '@/hooks/useImageExportHandlers';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useServiceSchedule } from '@/hooks/useServiceSchedules';
@@ -97,6 +98,10 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   const [showSettingsSheet, setShowSettingsSheet] = useState(false);
   const [panelMode, setPanelMode] = useState<'expanded' | 'compact'>('expanded');
   const [showMobileSidebar, setShowMobileSidebar] = useState(true);
+  const [notesValue, setNotesValue] = useState<string>('');
+  const [isNotesSaving, setIsNotesSaving] = useState(false);
+  const notesInitialized = useRef(false);
+  const updateArrangementForNotes = useUpdateArrangement();
 
   // 긴급 수정 패널 접기/펼치기 상태 (데스크톱)
   const [emergencyPanelCollapsed, setEmergencyPanelCollapsed] = useState(false);
@@ -195,6 +200,14 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
       setEmergencyOffsetEditing(false);
     }
   }, [isEmergencyMode]);
+
+  // arrangement 로드 시 notes 초기화
+  useEffect(() => {
+    if (arrangement?.notes !== undefined && !notesInitialized.current) {
+      setNotesValue(arrangement.notes || '');
+      notesInitialized.current = true;
+    }
+  }, [arrangement?.notes]);
 
   // ⭐ DRAFT 상태에서 긴급 변동 상태 정리
   // (SHARED → DRAFT 전환 시 경쟁 조건으로 sharedSnapshot이 남을 수 있음)
@@ -814,7 +827,20 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             )}
           </div>
         );
-      case 6: {
+      case 6:
+        // 지시사항 작성 (에디터는 배치표 하단 인라인으로 표시)
+        return (
+          <div className="space-y-2">
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              아래 배치표 하단에서 안내 메모를 작성하세요.
+              대원 이동 동선, 대형 변경 등 특이사항을 기록할 수 있습니다.
+            </p>
+            <p className="text-xs text-[var(--color-text-tertiary)]">
+              작성된 내용은 이미지 내보내기에 포함됩니다.
+            </p>
+          </div>
+        );
+      case 7: {
         // 내보내기 및 확정
         const noAssignmentsExpanded = Object.keys(assignments).length === 0;
         const currentArrangementStatus = arrangement.status ?? 'DRAFT';
@@ -1058,7 +1084,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
             )}
           </div>
         );
-      case 6: {
+      case 6:
+        return (
+          <p className="text-xs text-[var(--color-text-secondary)]">
+            아래 배치표 하단에서 안내 메모를 작성하세요.
+          </p>
+        );
+      case 7: {
         const noAssignments = Object.keys(assignments).length === 0;
         return (
           <div className="space-y-2">
@@ -1152,6 +1184,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         arrangement={arrangement}
         desktopCaptureRef={desktopCaptureRef}
         mobileCaptureRef={mobileCaptureRef}
+        notes={notesValue}
       />
 
       {/* 데스크톱: 3패널 가로 배치 (640px 이상 - Z Fold 펼침 대응) */}
@@ -1188,7 +1221,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   renderStepContent={renderWorkflowStepContent}
                   totalMembers={totalMembers}
                   arrangementStatus={arrangement.status ?? undefined}
-                  className="h-full overflow-hidden"
+                  className="h-full overflow-y-auto"
                 />
                 {/* 접기 버튼 → Compact 전환 */}
                 <Button
@@ -1235,26 +1268,73 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           </div>
         )}
 
-        {/* Seats Grid */}
-        <SeatsGrid
-          ref={desktopCaptureRef}
-          gridLayout={gridLayout}
-          arrangementInfo={{
-            date: arrangement.date,
-            title: arrangement.title,
-            conductor: arrangement.conductor || undefined,
-            serviceType: serviceSchedule?.service_type || undefined,
-            hymnName: serviceSchedule?.hymn_name,
-            offertoryPerformer: serviceSchedule?.offertory_performer,
-          }}
-          showCaptureInfo={true}
-          onEmergencyUnavailable={handleEmergencyUnavailable}
-          isReadOnly={isReadOnly}
-          isEmergencyMode={isEmergencyMode}
-          workflowStep={workflow.currentStep}
-          highlightMemberId={highlightMemberId}
-          showOffsetControls={emergencyOffsetEditing}
-        />
+        {/* Seats Grid + 안내 메모 (세로 배치) */}
+        <div className="flex min-w-0 flex-1 flex-col overflow-auto">
+          <SeatsGrid
+            ref={desktopCaptureRef}
+            gridLayout={gridLayout}
+            arrangementInfo={{
+              date: arrangement.date,
+              title: arrangement.title,
+              conductor: arrangement.conductor || undefined,
+              serviceType: serviceSchedule?.service_type || undefined,
+              hymnName: serviceSchedule?.hymn_name,
+              offertoryPerformer: serviceSchedule?.offertory_performer,
+            }}
+            showCaptureInfo={true}
+            notes={arrangement.notes}
+            onEmergencyUnavailable={handleEmergencyUnavailable}
+            isReadOnly={isReadOnly}
+            isEmergencyMode={isEmergencyMode}
+            workflowStep={workflow.currentStep}
+            highlightMemberId={highlightMemberId}
+            showOffsetControls={emergencyOffsetEditing}
+          />
+
+          {/* 안내 메모 에디터 (6단계에서만 표시, 배치표 하단) */}
+          {workflow.currentStep === 6 && !isReadOnly && (
+            <div data-print-hide className="border-t-2 border-[var(--color-primary-200)] bg-[var(--color-background-secondary)] p-4">
+              <div className="mx-auto max-w-3xl rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface)] p-4 shadow-sm">
+                <h3 className="mb-2 text-sm font-bold text-[var(--color-text-primary)]">
+                  📋 안내 메모
+                </h3>
+                <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
+                  대원 이동 동선, 대형 변경 등 안내사항을 기록하세요. 이미지 내보내기에 포함됩니다.
+                </p>
+                <NotesEditor
+                  value={notesValue}
+                  onChange={setNotesValue}
+                />
+                <div className="mt-3 flex justify-end">
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      setIsNotesSaving(true);
+                      try {
+                        await updateArrangementForNotes.mutateAsync({
+                          id: arrangement.id,
+                          data: { notes: notesValue || null },
+                        });
+                        showSuccess('안내 메모가 저장되었습니다.');
+                      } catch {
+                        showError('안내 메모 저장에 실패했습니다.');
+                      } finally {
+                        setIsNotesSaving(false);
+                      }
+                    }}
+                    disabled={isNotesSaving}
+                  >
+                    {isNotesSaving ? (
+                      <><Loader2 className="mr-1 h-4 w-4 animate-spin" />저장 중...</>
+                    ) : (
+                      '메모 저장'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Compact 모드용 플로팅 액션 바 (데스크톱에서만, 긴급 수정 모드에서는 숨김) */}
@@ -1299,6 +1379,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
               offertoryPerformer: serviceSchedule?.offertory_performer,
             }}
             showCaptureInfo={true}
+            notes={arrangement.notes}
             onEmergencyUnavailable={handleEmergencyUnavailable}
             isReadOnly={isReadOnly}
             isEmergencyMode={isEmergencyMode}

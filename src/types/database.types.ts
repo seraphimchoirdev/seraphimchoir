@@ -44,6 +44,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_published: boolean
+          notes: string | null
           service_info: string | null
           service_schedule_id: string | null
           status: string | null
@@ -59,6 +60,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_published?: boolean
+          notes?: string | null
           service_info?: string | null
           service_schedule_id?: string | null
           status?: string | null
@@ -74,6 +76,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_published?: boolean
+          notes?: string | null
           service_info?: string | null
           service_schedule_id?: string | null
           status?: string | null

@@ -13,6 +13,7 @@ import { DEFAULT_GRID_LAYOUT, GridLayout } from '@/types/grid';
 
 import CaptureFooter from './CaptureFooter';
 import CaptureHeader from './CaptureHeader';
+import CaptureNotes from './CaptureNotes';
 import InlineRowOffsetControl from './InlineRowOffsetControl';
 import SeatSlot from './SeatSlot';
 
@@ -39,6 +40,8 @@ interface SeatsGridProps {
   gridLayout?: GridLayout | null;
   arrangementInfo?: ArrangementInfo;
   showCaptureInfo?: boolean;
+  /** 배치표 지시사항/메모 (이미지 캡처에 포함) */
+  notes?: string | null;
   onEmergencyUnavailable?: (params: EmergencyUnavailableParams) => void;
   isReadOnly?: boolean;
   /** 긴급 수정 모드 (SHARED 상태에서만 true) - 컨텍스트 메뉴 표시 조건 */
@@ -56,6 +59,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
     gridLayout,
     arrangementInfo,
     showCaptureInfo = false,
+    notes,
     onEmergencyUnavailable,
     isReadOnly = false,
     isEmergencyMode = false,
@@ -233,6 +237,9 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
 
           {/* 캡처용 푸터: 파트별 인원수 (캡처 모드에서만 표시) */}
           {showCaptureInfo && <CaptureFooter assignments={assignments} />}
+
+          {/* 캡처용 지시사항/메모 */}
+          {showCaptureInfo && notes && <CaptureNotes notes={notes} />}
         </div>
 
         {/* 안내 메시지 (캡처 영역 밖) */}

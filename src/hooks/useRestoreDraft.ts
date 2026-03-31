@@ -57,7 +57,8 @@ const STEP_TITLES: Record<WorkflowStep, string> = {
   3: 'AI 자동배치',
   4: '수동 배치 조정',
   5: '줄반장 지정',
-  6: '내보내기 및 확정',
+  6: '안내 메모 작성',
+  7: '내보내기 및 확정',
 };
 
 /**

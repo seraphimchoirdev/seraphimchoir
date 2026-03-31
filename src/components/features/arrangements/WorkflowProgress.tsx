@@ -34,14 +34,14 @@ export default function WorkflowProgress({ optionalSteps = [] }: WorkflowProgres
         <span className="text-xs text-[var(--color-text-tertiary)]">
           {isWizardMode ? '가이드 모드' : '자유 편집 모드'}
         </span>
-        <span className="text-xs text-[var(--color-text-tertiary)]">{completedSteps.size} / 6 완료</span>
+        <span className="text-xs text-[var(--color-text-tertiary)]">{completedSteps.size} / {steps.length} 완료</span>
       </div>
 
       {/* 전체 진행률 바 */}
       <div className="mb-2 h-1 w-full overflow-hidden rounded-full bg-[var(--color-border-subtle)]">
         <div
           className="h-full rounded-full bg-[var(--color-success-500)] transition-all duration-500"
-          style={{ width: `${(completedSteps.size / 6) * 100}%` }}
+          style={{ width: `${(completedSteps.size / steps.length) * 100}%` }}
         />
       </div>
 
@@ -54,7 +54,7 @@ export default function WorkflowProgress({ optionalSteps = [] }: WorkflowProgres
         <div
           className="absolute top-4 left-6 h-0.5 bg-[var(--color-success-500)] transition-all duration-300"
           style={{
-            width: `${((currentStep - 1) / 5) * (100 - (12 * 100) / 100)}%`,
+            width: `${((currentStep - 1) / (steps.length - 1)) * (100 - (12 * 100) / 100)}%`,
           }}
         />
 
@@ -174,7 +174,7 @@ function StepNode({ step, title, isCompleted, isCurrent, canAccess, isOptional, 
       {/* 라벨 */}
       <span
         className={cn(
-          'max-w-[50px] text-center text-[10px] leading-tight font-medium',
+          'max-w-[40px] truncate text-center text-[10px] leading-tight font-medium',
           isCurrent
             ? 'text-[var(--color-primary-600)]'
             : isCompleted

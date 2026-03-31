@@ -38,9 +38,10 @@ const logger = createLogger({ prefix: 'ArrangementStore' });
  * 3: AI 자동배치
  * 4: 수동 배치 조정
  * 5: 줄반장 지정
- * 6: 내보내기 및 확정
+ * 6: 지시사항 작성
+ * 7: 내보내기 및 확정
  */
-export type WorkflowStep = 1 | 2 | 3 | 4 | 5 | 6;
+export type WorkflowStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 /**
  * 워크플로우 단계 메타데이터
@@ -88,6 +89,12 @@ export const WORKFLOW_STEPS: Record<WorkflowStep, WorkflowStepMeta> = {
   },
   6: {
     step: 6,
+    title: '안내 메모 작성',
+    shortTitle: '메모',
+    description: '대원 이동 동선, 대형 변경 등 안내사항을 기록합니다.',
+  },
+  7: {
+    step: 7,
     title: '내보내기 및 확정',
     shortTitle: '내보내기',
     description: '배치표를 이미지로 내보내고 편집을 완료합니다.',
@@ -1736,7 +1743,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
       // 완료된 단계로 돌아가면 해당 단계를 미완료로 변경
       // 단, 전체 완료 상태(긴급 수정 모드)에서는 완료 해제하지 않음
-      const allStepsCompleted = newCompleted.size === 6;
+      const allStepsCompleted = newCompleted.size === 7;
       if (newCompleted.has(step) && !allStepsCompleted) {
         newCompleted.delete(step);
         logger.debug(`단계 ${step}로 돌아감 - 완료 상태 해제`);
@@ -1770,7 +1777,7 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
   nextStep: () =>
     set((state) => {
       const { currentStep } = state.workflow;
-      if (currentStep >= 6) return state;
+      if (currentStep >= 7) return state;
 
       const nextStep = (currentStep + 1) as WorkflowStep;
       const newExpanded = new Set(state.workflow.expandedSections);
@@ -1832,11 +1839,11 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
 
       logger.debug(`단계 ${step} 완료 표시`);
 
-      // 마지막 단계(6)가 아니면 다음 단계로 이동
-      const nextStep = step < 6 ? ((step + 1) as WorkflowStep) : step;
+      // 마지막 단계(7)가 아니면 다음 단계로 이동
+      const nextStep = step < 7 ? ((step + 1) as WorkflowStep) : step;
       const newExpanded = new Set(state.workflow.expandedSections);
 
-      if (step < 6 && state.workflow.isWizardMode) {
+      if (step < 7 && state.workflow.isWizardMode) {
         // 위자드 모드: 현재 단계 접고 다음 단계 펼침
         newExpanded.clear();
         newExpanded.add(nextStep);
@@ -1997,13 +2004,13 @@ export const useArrangementStore = create<ArrangementState>((set, get) => ({
    * 기존 7단계 데이터 호환을 위한 클램프 처리 포함
    */
   restoreWorkflowState: (state) => {
-    // 기존 7단계 데이터 호환 처리: 6 초과 값을 6으로 클램프
-    const clampedStep = Math.min(state.currentStep, 6) as WorkflowStep;
+    // 기존 데이터 호환 처리: 7 초과 값을 7로 클램프
+    const clampedStep = Math.min(state.currentStep, 7) as WorkflowStep;
     const clampedCompleted = new Set(
-      Array.from(state.completedSteps).filter((s) => s <= 6)
+      Array.from(state.completedSteps).filter((s) => s <= 7)
     ) as Set<WorkflowStep>;
     const clampedExpanded = new Set(
-      Array.from(state.expandedSections).filter((s) => s <= 6)
+      Array.from(state.expandedSections).filter((s) => s <= 7)
     ) as Set<WorkflowStep>;
 
     logger.debug(
