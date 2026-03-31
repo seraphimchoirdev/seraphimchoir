@@ -57,12 +57,15 @@ interface ArrangementHeaderProps {
   arrangement: Arrangement;
   desktopCaptureRef?: RefObject<HTMLDivElement | null>;
   mobileCaptureRef?: RefObject<HTMLDivElement | null>;
+  /** 지시사항/메모 (저장 시 함께 전송) */
+  notes?: string;
 }
 
 export default function ArrangementHeader({
   arrangement,
   desktopCaptureRef,
   mobileCaptureRef,
+  notes,
 }: ArrangementHeaderProps) {
   const router = useRouter();
   const { hasRole } = useAuth();
@@ -227,6 +230,7 @@ export default function ArrangementHeader({
           conductor: conductor || null,
           grid_layout: gridLayoutWithWorkflow as Json,
           grid_rows: gridLayout?.rows || 6,
+          ...(notes !== undefined ? { notes: notes || null } : {}),
           ...(options.newStatus ? { status: options.newStatus } : {}),
           ...options.extraFields,
         },

@@ -139,9 +139,9 @@ export const useArrangementDraftStore = create<DraftStore>()(
           ...draft,
           workflow: {
             ...draft.workflow,
-            currentStep: Math.min(draft.workflow.currentStep, 6) as WorkflowStep,
-            completedSteps: draft.workflow.completedSteps.filter(s => s <= 6) as WorkflowStep[],
-            expandedSections: draft.workflow.expandedSections.filter(s => s <= 6) as WorkflowStep[],
+            currentStep: Math.min(draft.workflow.currentStep, 7) as WorkflowStep,
+            completedSteps: draft.workflow.completedSteps.filter(s => s <= 7) as WorkflowStep[],
+            expandedSections: draft.workflow.expandedSections.filter(s => s <= 7) as WorkflowStep[],
           },
         };
       },
@@ -231,9 +231,9 @@ export function deserializeWorkflowState(serialized: SerializableWorkflowState):
   expandedSections: Set<WorkflowStep>;
 } {
   // 기존 7단계 데이터 호환: 6 초과 값을 클램프
-  const clampedStep = Math.min(serialized.currentStep, 6) as WorkflowStep;
-  const clampedCompleted = serialized.completedSteps.filter(s => s <= 6) as WorkflowStep[];
-  const clampedExpanded = serialized.expandedSections.filter(s => s <= 6) as WorkflowStep[];
+  const clampedStep = Math.min(serialized.currentStep, 7) as WorkflowStep;
+  const clampedCompleted = serialized.completedSteps.filter(s => s <= 7) as WorkflowStep[];
+  const clampedExpanded = serialized.expandedSections.filter(s => s <= 7) as WorkflowStep[];
 
   return {
     currentStep: clampedStep,

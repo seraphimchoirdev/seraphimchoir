@@ -23,6 +23,7 @@ const updateArrangementSchema = z.object({
     .optional(),
   conductor: z.string().nullable().optional(), // null 값 허용
   serviceInfo: z.string().nullable().optional(), // null 값 허용
+  notes: z.string().nullable().optional(), // 지시사항/메모
   isPublished: z.boolean().optional(),
   is_published: z.boolean().optional(), // snake_case 직접 지원
   status: arrangementStatusSchema.optional(),
