@@ -181,8 +181,8 @@ describe('arrangement-draft-store', () => {
     });
   });
 
-  describe('7→6단계 호환성', () => {
-    it('currentStep이 7이면 6으로 클램프한다', () => {
+  describe('8→7단계 호환성', () => {
+    it('currentStep이 8이면 7로 클램프한다', () => {
       const recentDate = new Date().toISOString();
 
       useArrangementDraftStore.setState({
@@ -192,10 +192,10 @@ describe('arrangement-draft-store', () => {
             savedAt: recentDate,
             version: 1,
             workflow: {
-              currentStep: 7 as WorkflowStep,
-              completedSteps: [1, 2, 3, 7 as WorkflowStep],
+              currentStep: 8 as WorkflowStep,
+              completedSteps: [1, 2, 3, 8 as WorkflowStep],
               isWizardMode: true,
-              expandedSections: [7 as WorkflowStep],
+              expandedSections: [8 as WorkflowStep],
             },
             gridLayout: null,
             assignments: {},
@@ -205,9 +205,9 @@ describe('arrangement-draft-store', () => {
 
       const draft = useArrangementDraftStore.getState().loadDraft('arr-old-format');
       expect(draft).not.toBeNull();
-      expect(draft!.workflow.currentStep).toBe(6);
-      expect(draft!.workflow.completedSteps).not.toContain(7);
-      expect(draft!.workflow.expandedSections).not.toContain(7);
+      expect(draft!.workflow.currentStep).toBe(7);
+      expect(draft!.workflow.completedSteps).not.toContain(8);
+      expect(draft!.workflow.expandedSections).not.toContain(8);
     });
 
     it('6 이하 데이터는 변경하지 않는다', () => {

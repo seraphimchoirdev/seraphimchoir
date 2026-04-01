@@ -64,7 +64,8 @@ describe('useAttendances', () => {
       json: async () => mockData,
     });
 
-    const { result } = renderHook(() => useAttendances(), {
+    // 필터를 전달해야 enabled: true가 됨 (hasAnyFilter 조건)
+    const { result } = renderHook(() => useAttendances({ date: '2024-01-01' }), {
       wrapper: createWrapper(),
     });
 
