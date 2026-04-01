@@ -43,10 +43,10 @@ describe('arrangement-store: 워크플로우', () => {
       expect(useArrangementStore.getState().workflow.completedSteps.has(1)).toBe(false);
     });
 
-    it('전체 완료(6단계) 상태에서는 완료 해제하지 않는다', () => {
+    it('전체 완료(7단계) 상태에서는 완료 해제하지 않는다', () => {
       const store = useArrangementStore.getState();
-      // 모든 단계 완료
-      for (let s = 1; s <= 6; s++) {
+      // 모든 단계 완료 (1~7)
+      for (let s = 1; s <= 7; s++) {
         store.completeStep(s as WorkflowStep);
       }
 
@@ -68,10 +68,10 @@ describe('arrangement-store: 워크플로우', () => {
       expect(useArrangementStore.getState().workflow.currentStep).toBe(2);
     });
 
-    it('6단계에서 nextStep은 아무 일도 안 한다', () => {
-      useArrangementStore.getState().goToStep(6);
+    it('7단계에서 nextStep은 아무 일도 안 한다', () => {
+      useArrangementStore.getState().goToStep(7);
       useArrangementStore.getState().nextStep();
-      expect(useArrangementStore.getState().workflow.currentStep).toBe(6);
+      expect(useArrangementStore.getState().workflow.currentStep).toBe(7);
     });
 
     it('prevStep은 이전 단계로 이동한다', () => {
@@ -97,10 +97,10 @@ describe('arrangement-store: 워크플로우', () => {
       expect(useArrangementStore.getState().workflow.currentStep).toBe(2);
     });
 
-    it('6단계 완료 시 currentStep은 6을 유지한다', () => {
-      useArrangementStore.getState().goToStep(6);
-      useArrangementStore.getState().completeStep(6);
-      expect(useArrangementStore.getState().workflow.currentStep).toBe(6);
+    it('7단계 완료 시 currentStep은 7을 유지한다', () => {
+      useArrangementStore.getState().goToStep(7);
+      useArrangementStore.getState().completeStep(7);
+      expect(useArrangementStore.getState().workflow.currentStep).toBe(7);
     });
   });
 
@@ -209,17 +209,17 @@ describe('arrangement-store: 워크플로우', () => {
       expect(workflow.isWizardMode).toBe(false);
     });
 
-    it('7단계 이상 데이터를 6으로 클램프한다', () => {
+    it('8단계 이상 데이터를 7로 클램프한다', () => {
       useArrangementStore.getState().restoreWorkflowState({
-        currentStep: 7 as WorkflowStep,
-        completedSteps: new Set<WorkflowStep>([1, 2, 3, 7 as WorkflowStep]),
+        currentStep: 8 as WorkflowStep,
+        completedSteps: new Set<WorkflowStep>([1, 2, 3, 8 as WorkflowStep]),
         isWizardMode: true,
-        expandedSections: new Set<WorkflowStep>([7 as WorkflowStep]),
+        expandedSections: new Set<WorkflowStep>([8 as WorkflowStep]),
       });
 
       const { workflow } = useArrangementStore.getState();
-      expect(workflow.currentStep).toBe(6);
-      expect(workflow.completedSteps.has(7 as WorkflowStep)).toBe(false);
+      expect(workflow.currentStep).toBe(7);
+      expect(workflow.completedSteps.has(8 as WorkflowStep)).toBe(false);
     });
   });
 
