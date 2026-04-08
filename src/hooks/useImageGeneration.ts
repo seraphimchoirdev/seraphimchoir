@@ -1,11 +1,19 @@
 'use client';
 
-import { toPng } from 'html-to-image';
+import { toBlob } from 'html-to-image';
 
 import { useCallback, useState } from 'react';
 
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger({ prefix: 'ImageGeneration' });
+
 // lg 기준 zigzag offset: (72px seat + 8px gap) / 2 = 40px
 const CAPTURE_ZIGZAG_OFFSET = 40;
+
+// Android에서 안전한 캔버스 최대 픽셀 수 (너비 × 높이)
+// Samsung Internet / Chrome on Android: ~16384×16384 이지만 메모리 제한이 더 빡빡
+const MAX_CANVAS_PIXELS = 16_777_216; // 4096 × 4096
 
 interface UseImageGenerationOptions {
   scale?: number;
@@ -21,10 +29,6 @@ interface UseImageGenerationReturn {
   isMobile: boolean;
 }
 
-/**
- * DOM 요소를 이미지로 캡처하여 다운로드하거나 클립보드에 복사하는 훅
- * html-to-image 라이브러리 사용 (oklch 등 현대 CSS 지원)
- */
 /**
  * 모바일 기기 감지
  */
@@ -49,10 +53,36 @@ const checkIsIOSSafari = (): boolean => {
  */
 const checkCanShare = (): boolean => {
   if (typeof navigator === 'undefined') return false;
-  // navigator.share 존재 여부와 canShare (파일 공유 지원) 확인
   return !!navigator.share && !!navigator.canShare;
 };
 
+/**
+ * 요소 크기와 scale로부터 안전한 pixelRatio를 계산
+ * 캔버스 최대 크기 제한을 넘지 않도록 scale을 자동 조정
+ */
+function getSafeScale(element: HTMLElement, desiredScale: number): number {
+  const rect = element.getBoundingClientRect();
+  const width = rect.width * desiredScale;
+  const height = rect.height * desiredScale;
+  const pixels = width * height;
+
+  if (pixels <= MAX_CANVAS_PIXELS) {
+    return desiredScale;
+  }
+
+  // 캔버스 크기 초과 시 scale을 줄여서 제한 내로 맞춤
+  const safeScale = Math.sqrt(MAX_CANVAS_PIXELS / (rect.width * rect.height));
+  const clamped = Math.max(1, Math.floor(safeScale * 10) / 10); // 0.1 단위로 내림
+  logger.warn(
+    `캔버스 크기 제한: ${Math.round(width)}×${Math.round(height)} → scale ${desiredScale} → ${clamped}`
+  );
+  return clamped;
+}
+
+/**
+ * DOM 요소를 이미지로 캡처하여 다운로드하거나 클립보드에 복사하는 훅
+ * html-to-image 라이브러리 사용 (oklch 등 현대 CSS 지원)
+ */
 export function useImageGeneration(
   options: UseImageGenerationOptions = {}
 ): UseImageGenerationReturn {
@@ -64,6 +94,10 @@ export function useImageGeneration(
 
   /**
    * DOM 요소를 PNG Blob으로 변환
+   * 갤럭시 폴드 등 고해상도 대형 기기 대응:
+   * - toBlob 직접 사용 (toPng의 base64 중간 변환 제거로 메모리 절약)
+   * - 캔버스 크기 초과 시 scale 자동 조정
+   * - 첫 시도 실패 시 scale을 낮춰 재시도
    */
   const captureToBlob = useCallback(
     async (element: HTMLElement): Promise<Blob> => {
@@ -80,7 +114,6 @@ export function useImageGeneration(
       });
 
       // 3. 캡처 모드: data-seat-slot 요소들의 배경만 투명화 (테두리는 유지)
-      // html-to-image는 computed style을 inline으로 복사하므로 CSS 클래스로는 불가
       const seatSlots = element.querySelectorAll<HTMLElement>('[data-seat-slot]');
       const originalStyles: { backgroundColor: string }[] = [];
       seatSlots.forEach((slot) => {
@@ -90,43 +123,40 @@ export function useImageGeneration(
         slot.style.backgroundColor = 'transparent';
       });
 
-      try {
-        // html-to-image로 PNG Data URL 생성
-        const dataUrl = await toPng(element, {
-          pixelRatio: scale,
-          backgroundColor,
-          cacheBust: true,
-          // 외부 폰트 및 이미지 처리
-          includeQueryParams: true,
-          // 한글 폰트 렌더링 문제 해결을 위한 시스템 폰트 지정
-          style: {
-            fontFamily:
-              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Malgun Gothic", "맑은 고딕", sans-serif',
-          },
-          // 외부 폰트 로딩 건너뛰기 (CSP 정책으로 인해 cdn.jsdelivr.net 등 외부 폰트 로딩 차단됨)
-          // 시스템 폰트를 사용하여 렌더링
-          skipFonts: true,
-          // data-capture-ignore 속성을 가진 요소 제외 (인라인 컨트롤 등)
-          filter: (node) => {
-            if (node instanceof HTMLElement && node.dataset.captureIgnore !== undefined) {
-              return false;
-            }
-            return true;
-          },
-        });
+      const toBlobOptions = (pixelRatio: number) => ({
+        pixelRatio,
+        backgroundColor,
+        cacheBust: true,
+        includeQueryParams: true,
+        style: {
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Malgun Gothic", "맑은 고딕", sans-serif',
+        },
+        skipFonts: true,
+        filter: (node: Element) => {
+          if (node instanceof HTMLElement && node.dataset.captureIgnore !== undefined) {
+            return false;
+          }
+          return true;
+        },
+      });
 
-        // Data URL을 Blob으로 변환 (fetch 사용 시 CSP connect-src 위반 가능)
-        // Base64 직접 디코딩 방식으로 CSP 우회
-        const base64Data = dataUrl.split(',')[1];
-        const binaryString = atob(base64Data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
+      try {
+        // 안전한 scale 계산 (캔버스 최대 크기 제한)
+        const safeScale = getSafeScale(element, scale);
+
+        // toBlob 직접 사용 — toPng의 base64 → atob → Uint8Array 중간 과정을 제거하여
+        // 메모리 사용량 대폭 절감 (특히 대형 이미지에서 효과적)
+        let blob = await toBlob(element, toBlobOptions(safeScale));
+
+        // 첫 시도 실패 시 scale을 낮춰 재시도
+        if (!blob && safeScale > 1) {
+          logger.warn(`scale ${safeScale}에서 실패, scale 1로 재시도`);
+          blob = await toBlob(element, toBlobOptions(1));
         }
-        const blob = new Blob([bytes], { type: 'image/png' });
 
         if (!blob) {
-          throw new Error('이미지 생성에 실패했습니다');
+          throw new Error('이미지 생성에 실패했습니다. 다시 시도해주세요.');
         }
 
         return blob;
@@ -156,35 +186,33 @@ export function useImageGeneration(
         const url = URL.createObjectURL(blob);
 
         // iOS Safari는 download 속성을 지원하지 않음
-        // 모바일에서는 새 탭에서 열어서 길게 눌러 저장하도록 유도
         if (checkIsIOSSafari()) {
-          // iOS Safari: 새 탭에서 이미지 열기
           const newWindow = window.open();
           if (newWindow) {
             newWindow.document.write(`
-                            <!DOCTYPE html>
-                            <html>
-                            <head>
-                                <meta name="viewport" content="width=device-width, initial-scale=1">
-                                <title>${filename}</title>
-                                <style>
-                                    body { margin: 0; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; background: #f5f5f5; padding: 20px; }
-                                    img { max-width: 100%; height: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-                                    .hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; text-align: center; }
-                                </style>
-                            </head>
-                            <body>
-                                <img src="${url}" alt="${filename}">
-                                <div class="hint">이미지를 길게 눌러 저장하세요</div>
-                            </body>
-                            </html>
-                        `);
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>${filename}</title>
+                <style>
+                  body { margin: 0; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; background: #f5f5f5; padding: 20px; }
+                  img { max-width: 100%; height: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                  .hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; text-align: center; }
+                </style>
+              </head>
+              <body>
+                <img src="${url}" alt="${filename}">
+                <div class="hint">이미지를 길게 눌러 저장하세요</div>
+              </body>
+              </html>
+            `);
             newWindow.document.close();
           }
           return;
         }
 
-        // 기타 브라우저: 일반 다운로드 시도
+        // 기타 브라우저: 일반 다운로드
         const link = document.createElement('a');
         link.href = url;
         link.download = `${filename}.png`;
@@ -192,7 +220,6 @@ export function useImageGeneration(
         link.click();
         document.body.removeChild(link);
 
-        // Android에서 다운로드가 실패할 수 있으므로 약간의 지연 후 URL 해제
         setTimeout(() => {
           URL.revokeObjectURL(url);
         }, 1000);
@@ -205,7 +232,6 @@ export function useImageGeneration(
 
   /**
    * DOM 요소를 이미지로 캡처하여 클립보드에 복사
-   * 모바일에서는 Clipboard API 지원이 제한적이므로 에러 처리 강화
    */
   const copyToClipboard = useCallback(
     async (element: HTMLElement): Promise<void> => {
@@ -213,25 +239,21 @@ export function useImageGeneration(
       try {
         const blob = await captureToBlob(element);
 
-        // Clipboard API 지원 여부 확인
         if (!navigator.clipboard?.write) {
           throw new Error('CLIPBOARD_NOT_SUPPORTED');
         }
 
-        // Clipboard API를 사용하여 이미지 복사
         await navigator.clipboard.write([
           new ClipboardItem({
             'image/png': blob,
           }),
         ]);
       } catch (error) {
-        // 에러 타입에 따라 구체적인 메시지 전달
         if (error instanceof Error && error.message === 'CLIPBOARD_NOT_SUPPORTED') {
           throw new Error(
             '이 브라우저에서는 클립보드 복사를 지원하지 않습니다. "공유하기"를 사용해주세요.'
           );
         }
-        // NotAllowedError: 권한 문제 (HTTPS 필요 또는 사용자 제스처 필요)
         if (error instanceof DOMException && error.name === 'NotAllowedError') {
           throw new Error('클립보드 접근이 거부되었습니다. HTTPS 환경에서 다시 시도해주세요.');
         }
@@ -245,7 +267,6 @@ export function useImageGeneration(
 
   /**
    * Web Share API를 사용하여 이미지 공유 (모바일 최적화)
-   * 카카오톡, 메시지, 이메일 등으로 직접 공유 가능
    */
   const shareImage = useCallback(
     async (element: HTMLElement, filename: string): Promise<void> => {
@@ -254,7 +275,6 @@ export function useImageGeneration(
         const blob = await captureToBlob(element);
         const file = new File([blob], `${filename}.png`, { type: 'image/png' });
 
-        // canShare로 파일 공유 가능 여부 확인
         if (navigator.canShare && !navigator.canShare({ files: [file] })) {
           throw new Error('SHARE_NOT_SUPPORTED');
         }
@@ -265,14 +285,11 @@ export function useImageGeneration(
           text: '자리배치표',
         });
       } catch (error) {
-        // 사용자가 공유를 취소한 경우
         if (error instanceof DOMException && error.name === 'AbortError') {
-          // 취소는 에러로 처리하지 않음
           return;
         }
-        // 공유 미지원
         if (error instanceof Error && error.message === 'SHARE_NOT_SUPPORTED') {
-          throw new Error('이 기기에서는 파일 공유를 지원하지 않습니다.');
+          throw new Error('이 기기에서는 파일 공유를 지원하지 않습니다. "이미지 저장"을 사용해주세요.');
         }
         throw error;
       } finally {
