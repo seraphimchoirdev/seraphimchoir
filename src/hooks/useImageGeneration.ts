@@ -1,6 +1,6 @@
 'use client';
 
-import { toBlob } from 'html-to-image';
+import { toBlob, toPng } from 'html-to-image';
 
 import { useCallback, useState } from 'react';
 
@@ -145,14 +145,36 @@ export function useImageGeneration(
         // 안전한 scale 계산 (캔버스 최대 크기 제한)
         const safeScale = getSafeScale(element, scale);
 
-        // toBlob 직접 사용 — toPng의 base64 → atob → Uint8Array 중간 과정을 제거하여
-        // 메모리 사용량 대폭 절감 (특히 대형 이미지에서 효과적)
-        let blob = await toBlob(element, toBlobOptions(safeScale));
+        // 전략 1: toBlob 직접 사용 (메모리 효율적)
+        let blob: Blob | null = null;
+        try {
+          blob = await toBlob(element, toBlobOptions(safeScale));
+        } catch (e) {
+          logger.warn('toBlob 실패, toPng fallback으로 전환:', e);
+        }
 
-        // 첫 시도 실패 시 scale을 낮춰 재시도
+        // 전략 2: toBlob 실패 시 scale 낮춰 재시도
         if (!blob && safeScale > 1) {
           logger.warn(`scale ${safeScale}에서 실패, scale 1로 재시도`);
-          blob = await toBlob(element, toBlobOptions(1));
+          try {
+            blob = await toBlob(element, toBlobOptions(1));
+          } catch {
+            // 다음 전략으로 진행
+          }
+        }
+
+        // 전략 3: toBlob이 모두 실패하면 toPng + 수동 Blob 변환 (기존 방식)
+        if (!blob) {
+          logger.warn('toBlob 모두 실패, toPng fallback 사용');
+          const fallbackScale = Math.min(safeScale, 1.5);
+          const dataUrl = await toPng(element, toBlobOptions(fallbackScale));
+          const base64Data = dataUrl.split(',')[1];
+          const binaryString = atob(base64Data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          blob = new Blob([bytes], { type: 'image/png' });
         }
 
         if (!blob) {
