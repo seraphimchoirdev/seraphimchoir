@@ -219,7 +219,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                   {(() => {
                     const count = Object.values(assignments).filter((a) => a.row === rowData.rowIndex).length;
                     return count > 0 ? (
-                      <div data-row-count className="ml-1.5 flex w-5 flex-shrink-0 items-center justify-center text-[10px] font-semibold text-[var(--color-text-tertiary)] sm:ml-2 sm:w-7 sm:text-xs">
+                      <div data-row-count className="ml-1.5 flex w-6 flex-shrink-0 items-center justify-center text-xs font-semibold text-[var(--color-text-secondary)] sm:ml-2 sm:w-8 sm:text-sm">
                         {count}
                       </div>
                     ) : null;
