@@ -83,7 +83,7 @@ export function DonutChart({ data }: DonutChartProps) {
           ))}
         </Pie>
         <Tooltip
-          formatter={(value: number) => [`${value}건`, '']}
+          formatter={(value) => [`${value}건`, '']}
           contentStyle={{
             backgroundColor: 'white',
             border: '1px solid #e5e7eb',
@@ -161,7 +161,7 @@ export function PartBarChart({ data }: BarChartProps) {
             border: '1px solid #e5e7eb',
             borderRadius: '0.5rem',
           }}
-          formatter={(value: number, name: string) => {
+          formatter={(value, name) => {
             if (name === '출석률') return [`${value}%`, name];
             return [`${value}건`, name];
           }}
@@ -225,7 +225,7 @@ export function TrendLineChart({ data }: TrendLineChartProps) {
             border: '1px solid #e5e7eb',
             borderRadius: '0.5rem',
           }}
-          formatter={(value: number, name: string) => {
+          formatter={(value, name) => {
             if (name === '출석률') return [`${value}%`, name];
             return [`${value}건`, name];
           }}
