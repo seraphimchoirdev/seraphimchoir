@@ -155,8 +155,8 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                     </div>
                   )}
 
-                  {/* 열 라벨 (줄 왼쪽) */}
-                  <div data-row-label className="mr-1.5 flex w-5 flex-shrink-0 items-center justify-center text-[10px] font-semibold text-[var(--color-text-tertiary)] sm:mr-2 sm:w-7 sm:text-xs">
+                  {/* 열 라벨 (줄 왼쪽) — 가로 스크롤 시에도 고정 표시 */}
+                  <div data-row-label className="sticky left-0 z-[1] mr-1.5 flex w-5 flex-shrink-0 items-center justify-center bg-white text-[10px] font-semibold text-[var(--color-text-tertiary)] sm:mr-2 sm:w-7 sm:text-xs">
                     {rowData.rowIndex}열
                   </div>
 
@@ -219,7 +219,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                   {(() => {
                     const count = Object.values(assignments).filter((a) => a.row === rowData.rowIndex).length;
                     return count > 0 ? (
-                      <div data-row-count className="ml-1.5 flex w-5 flex-shrink-0 items-center justify-center text-[10px] font-semibold text-[var(--color-text-tertiary)] sm:ml-2 sm:w-7 sm:text-xs">
+                      <div data-row-count className="ml-1.5 flex w-6 flex-shrink-0 items-center justify-center text-xs font-semibold text-[var(--color-text-secondary)] sm:ml-2 sm:w-8 sm:text-sm">
                         {count}
                       </div>
                     ) : null;
