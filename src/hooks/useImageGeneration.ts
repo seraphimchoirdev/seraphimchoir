@@ -288,7 +288,22 @@ export function useImageGeneration(
   );
 
   /**
+   * Blob을 다운로드 링크로 저장하는 내부 헬퍼
+   */
+  const saveBlobAsDownload = useCallback((blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, []);
+
+  /**
    * Web Share API를 사용하여 이미지 공유 (모바일 최적화)
+   * 이미지 생성이 오래 걸려 user gesture가 만료되면 다운로드로 fallback
    */
   const shareImage = useCallback(
     async (element: HTMLElement, filename: string): Promise<void> => {
@@ -301,11 +316,22 @@ export function useImageGeneration(
           throw new Error('SHARE_NOT_SUPPORTED');
         }
 
-        await navigator.share({
-          files: [file],
-          title: filename,
-          text: '자리배치표',
-        });
+        try {
+          await navigator.share({
+            files: [file],
+            title: filename,
+            text: '자리배치표',
+          });
+        } catch (shareError) {
+          // NotAllowedError: 이미지 생성이 오래 걸려 user gesture 만료
+          // → 다운로드로 자동 fallback
+          if (shareError instanceof DOMException && shareError.name === 'NotAllowedError') {
+            logger.warn('공유 user gesture 만료, 다운로드로 fallback');
+            saveBlobAsDownload(blob, filename);
+            return;
+          }
+          throw shareError;
+        }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
