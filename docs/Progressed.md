@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-04-08 | fix(export): 빈 이미지 생성 문제 근본 수정 |
 | 2026-04-08 | fix(export): 갤럭시 폴드 공유 시 user gesture 만료 대응 |
 | 2026-04-08 | fix(auth): Supabase Auth lock 경쟁 에러 수정 |
 | 2026-04-08 | fix(export): toBlob 실패 시 toPng fallback 추가 |

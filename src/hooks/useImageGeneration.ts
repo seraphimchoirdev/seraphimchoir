@@ -1,6 +1,6 @@
 'use client';
 
-import { toBlob, toPng } from 'html-to-image';
+import { toPng } from 'html-to-image';
 
 import { useCallback, useState } from 'react';
 
@@ -10,6 +10,20 @@ const logger = createLogger({ prefix: 'ImageGeneration' });
 
 // lg 기준 zigzag offset: (72px seat + 8px gap) / 2 = 40px
 const CAPTURE_ZIGZAG_OFFSET = 40;
+
+/**
+ * Data URL을 Blob으로 변환
+ * fetch(dataUrl)은 CSP connect-src 위반 가능하므로 수동 디코딩
+ */
+function dataUrlToBlob(dataUrl: string): Blob {
+  const base64Data = dataUrl.split(',')[1];
+  const binaryString = atob(base64Data);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: 'image/png' });
+}
 
 // Android에서 안전한 캔버스 최대 픽셀 수 (너비 × 높이)
 // Samsung Internet / Chrome on Android: ~16384×16384 이지만 메모리 제한이 더 빡빡
@@ -94,10 +108,12 @@ export function useImageGeneration(
 
   /**
    * DOM 요소를 PNG Blob으로 변환
-   * 갤럭시 폴드 등 고해상도 대형 기기 대응:
-   * - toBlob 직접 사용 (toPng의 base64 중간 변환 제거로 메모리 절약)
-   * - 캔버스 크기 초과 시 scale 자동 조정
-   * - 첫 시도 실패 시 scale을 낮춰 재시도
+   *
+   * html-to-image는 SVG foreignObject 기반 렌더링을 사용하므로:
+   * 1. 캡처 모드 CSS 적용 후 브라우저 리플로우 대기 필수
+   * 2. 명시적 width/height 전달로 inline-flex 크기 계산 불안정 방지
+   * 3. 대형 기기(갤럭시 폴드 등)에서 캔버스 크기 초과 시 scale 자동 축소
+   * 4. toPng 사용 (toBlob은 일부 환경에서 null 반환)
    */
   const captureToBlob = useCallback(
     async (element: HTMLElement): Promise<Blob> => {
@@ -123,8 +139,25 @@ export function useImageGeneration(
         slot.style.backgroundColor = 'transparent';
       });
 
-      const toBlobOptions = (pixelRatio: number) => ({
+      // 4. 브라우저 리플로우 대기 (capture-mode CSS 적용 + marginLeft 변경 반영)
+      // 2프레임 대기로 레이아웃 안정화 (특히 inline-flex 크기 재계산)
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      );
+
+      // 5. 명시적 크기 측정 (inline-flex의 clientWidth/Height 불안정 방지)
+      const rect = element.getBoundingClientRect();
+      const measuredWidth = Math.ceil(rect.width);
+      const measuredHeight = Math.ceil(rect.height);
+
+      if (measuredWidth === 0 || measuredHeight === 0) {
+        logger.error('캡처 대상 크기가 0:', { measuredWidth, measuredHeight });
+      }
+
+      const buildOptions = (pixelRatio: number) => ({
         pixelRatio,
+        width: measuredWidth,
+        height: measuredHeight,
         backgroundColor,
         cacheBust: true,
         includeQueryParams: true,
@@ -142,46 +175,22 @@ export function useImageGeneration(
       });
 
       try {
-        // 안전한 scale 계산 (캔버스 최대 크기 제한)
         const safeScale = getSafeScale(element, scale);
 
-        // 전략 1: toBlob 직접 사용 (메모리 효율적)
-        let blob: Blob | null = null;
-        try {
-          blob = await toBlob(element, toBlobOptions(safeScale));
-        } catch (e) {
-          logger.warn('toBlob 실패, toPng fallback으로 전환:', e);
-        }
+        // toPng → 수동 Blob 변환 (toBlob은 일부 모바일 환경에서 null 반환)
+        const dataUrl = await toPng(element, buildOptions(safeScale));
 
-        // 전략 2: toBlob 실패 시 scale 낮춰 재시도
-        if (!blob && safeScale > 1) {
-          logger.warn(`scale ${safeScale}에서 실패, scale 1로 재시도`);
-          try {
-            blob = await toBlob(element, toBlobOptions(1));
-          } catch {
-            // 다음 전략으로 진행
+        // Data URL 유효성 검사 (빈 이미지 감지)
+        if (!dataUrl || dataUrl.length < 100) {
+          logger.warn(`scale ${safeScale}에서 빈 이미지, scale 1로 재시도`);
+          const retryDataUrl = await toPng(element, buildOptions(1));
+          if (!retryDataUrl || retryDataUrl.length < 100) {
+            throw new Error('이미지 생성에 실패했습니다. 다시 시도해주세요.');
           }
+          return dataUrlToBlob(retryDataUrl);
         }
 
-        // 전략 3: toBlob이 모두 실패하면 toPng + 수동 Blob 변환 (기존 방식)
-        if (!blob) {
-          logger.warn('toBlob 모두 실패, toPng fallback 사용');
-          const fallbackScale = Math.min(safeScale, 1.5);
-          const dataUrl = await toPng(element, toBlobOptions(fallbackScale));
-          const base64Data = dataUrl.split(',')[1];
-          const binaryString = atob(base64Data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          blob = new Blob([bytes], { type: 'image/png' });
-        }
-
-        if (!blob) {
-          throw new Error('이미지 생성에 실패했습니다. 다시 시도해주세요.');
-        }
-
-        return blob;
+        return dataUrlToBlob(dataUrl);
       } finally {
         // 원래 스타일 복원
         element.removeAttribute('data-capture-mode');
