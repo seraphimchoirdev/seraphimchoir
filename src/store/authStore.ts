@@ -17,6 +17,9 @@ import { createClient } from '@/lib/supabase/client';
 
 const logger = createLogger({ prefix: 'AuthStore' });
 
+// fetchUser 동시 실행 방지 (lock 경쟁 회피)
+let fetchUserInProgress = false;
+
 /**
  * Supabase Auth 에러 메시지를 한글로 변환
  */
@@ -281,6 +284,13 @@ export const useAuthStore = create<AuthStore>()(
 
         // 현재 사용자 정보 가져오기
         fetchUser: async () => {
+          // 동시 실행 방지: 이미 진행 중이면 스킵 (lock 경쟁 회피)
+          if (fetchUserInProgress) {
+            logger.debug('[fetchUser] 이미 진행 중, 스킵');
+            return;
+          }
+          fetchUserInProgress = true;
+
           const supabase = createClient();
           logger.debug('[fetchUser] 시작');
 
@@ -399,6 +409,8 @@ export const useAuthStore = create<AuthStore>()(
               false,
               'auth/fetchUser/catch'
             );
+          } finally {
+            fetchUserInProgress = false;
           }
         },
 
