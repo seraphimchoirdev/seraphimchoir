@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, Crown, Download, GripHorizontal, Loader2, Lock, MousePointer2, Settings, Share2, SkipForward, Sparkles, Trash2 } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, Crown, Download, GripHorizontal, Loader2, Lock, MousePointer2, Settings, Share2, SkipForward, Sparkles, Trash2, Users } from 'lucide-react';
 
 import { useSearchParams } from 'next/navigation';
 import { ReactNode, use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -106,6 +106,8 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   // 긴급 수정 패널 접기/펼치기 상태 (데스크톱)
   const [emergencyPanelCollapsed, setEmergencyPanelCollapsed] = useState(false);
   const [emergencyOffsetEditing, setEmergencyOffsetEditing] = useState(false);
+  // 긴급 수정 모드 대원 목록 사이드바 숨김 상태
+  const [memberSidebarHidden, setMemberSidebarHidden] = useState(false);
 
   // 모바일 좌석 선택 모드 (긴급 수정 시 "등단 불가 처리" 좌석 선택)
   const [seatSelectionMode, setSeatSelectionMode] = useState<'unavailable' | null>(null);
@@ -1264,14 +1266,40 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
         {/* Member Sidebar - 수동 배치 조정 단계(4단계) 또는 긴급 수정 모드에서 표시 */}
         {showMemberSidebar && (
-          <div data-print-hide>
-            <MemberSidebar
-              date={arrangement.date}
-              serviceScheduleId={arrangement.service_schedule_id ?? undefined}
-              hidePlaced={true}
-              isEmergencyMode={isEmergencyMode}
-              arrangementId={id}
-            />
+          <div data-print-hide className="relative flex-shrink-0">
+            {isEmergencyMode && memberSidebarHidden ? (
+              <Button
+                onClick={() => setMemberSidebarHidden(false)}
+                variant="outline"
+                size="sm"
+                className="h-8 border-[var(--color-border-default)] bg-[var(--color-surface)] shadow-sm"
+                title="대원 목록 표시"
+              >
+                <Users className="mr-1 h-4 w-4" />
+                대원 목록
+              </Button>
+            ) : (
+              <div className="relative">
+                {isEmergencyMode && (
+                  <Button
+                    onClick={() => setMemberSidebarHidden(true)}
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-1 right-1 z-10 h-6 w-6 p-0 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]"
+                    title="대원 목록 숨기기"
+                  >
+                    <ChevronDown className="h-4 w-4 rotate-90" />
+                  </Button>
+                )}
+                <MemberSidebar
+                  date={arrangement.date}
+                  serviceScheduleId={arrangement.service_schedule_id ?? undefined}
+                  hidePlaced={true}
+                  isEmergencyMode={isEmergencyMode}
+                  arrangementId={id}
+                />
+              </div>
+            )}
           </div>
         )}
 
