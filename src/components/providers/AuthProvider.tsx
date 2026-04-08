@@ -71,9 +71,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } = supabase.auth.onAuthStateChange((event, session) => {
       logger.debug('Auth 상태 변경:', event, session ? '세션 있음' : '세션 없음');
 
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if (event === 'SIGNED_IN') {
         // 로그인 시 fetchUser를 호출하여 프로필 로드
-        // setTimeout으로 다음 틱에서 실행하여 세션이 완전히 설정된 후 실행
+        // TOKEN_REFRESHED는 initAuth의 fetchUser와 동시 실행되어 lock 경쟁을 일으키므로 제외
         setTimeout(() => {
           fetchUser();
         }, 0);

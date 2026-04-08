@@ -68,6 +68,12 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-04-08
+- [x] **fix(export): 갤럭시 폴드 공유 시 user gesture 만료 대응**
+  - 커밋: `821c32b`
+
+- [x] **fix(auth): Supabase Auth lock 경쟁 에러 수정**
+  - 커밋: `3475af8`
+
 - [x] **fix(export): toBlob 실패 시 toPng fallback 추가**
   - 커밋: `8c55316`
 
