@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-04-10
+- [x] **fix(build): RowOffsetValue null 타입으로 인한 빌드 에러 수정**
+  - 커밋: `a4a5c7e`
+
 - [x] **fix(grid): 디바운스 race condition으로 좌석 수 불일치 수정**
   - 커밋: `09a3b2d`
 
