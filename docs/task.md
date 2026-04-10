@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-04-10
+- [x] **fix(attendance): 파트장 준비완료 권한 검증을 user_profiles 기반으로 변경**
+  - 커밋: `518ec25`
+
 - [x] **fix(build): RowOffsetValue null 타입으로 인한 빌드 에러 수정**
   - 커밋: `a4a5c7e`
 

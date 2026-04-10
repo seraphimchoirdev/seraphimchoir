@@ -167,15 +167,22 @@ export async function POST(request: NextRequest) {
       // 파트 마감인 경우
       // PART_LEADER는 자기 파트만 마감 가능
       if (userRole === 'PART_LEADER') {
-        // 파트장의 파트 확인 (members 테이블에서 이메일로 조회)
-        const { data: member } = await supabase
-          .from('members')
-          .select('part, is_leader')
-          .eq('email', userEmail)
-          .eq('is_leader', true)
+        // 파트장의 파트 확인 (user_profiles.linked_member_id → members.part)
+        const { data: profileData } = await supabase
+          .from('user_profiles')
+          .select('linked_member_id, members:linked_member_id(part)')
+          .eq('id', user.id)
           .single();
 
-        if (!member || member.part !== validatedData.part) {
+        const membersResult = profileData?.members;
+        let memberPart: string | undefined;
+        if (Array.isArray(membersResult) && membersResult.length > 0) {
+          memberPart = (membersResult[0] as { part: string }).part;
+        } else if (membersResult && typeof membersResult === 'object' && 'part' in membersResult) {
+          memberPart = (membersResult as { part: string }).part;
+        }
+
+        if (!memberPart || memberPart !== validatedData.part) {
           return NextResponse.json({ error: '자신의 파트만 준비 완료 처리할 수 있습니다' }, { status: 403 });
         }
       }
