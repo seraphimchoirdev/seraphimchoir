@@ -92,7 +92,8 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
   // 최소 오프셋의 절대값만큼 전체 행을 오른쪽으로 보정
   const minRowOffset = useMemo(() => {
     if (!layout.rowOffsets) return 0;
-    return Math.min(0, ...Object.values(layout.rowOffsets));
+    const offsets = Object.values(layout.rowOffsets).filter((v): v is NonNullable<typeof v> => v != null);
+    return offsets.length > 0 ? Math.min(0, ...offsets) : 0;
   }, [layout.rowOffsets]);
 
   // 하이라이트 대상 좌석으로 자동 스크롤
