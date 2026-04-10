@@ -94,6 +94,10 @@ export default function GridSettingsPanel({
       localCapacities.some((v, i) => v !== currentCapacities[i]) ||
       localCapacities.length !== currentCapacities.length;
     if (!changed) return;
+    // AI 추천에 의한 외부 변경 시 디바운스 스킵 (동기화 지연으로 인한 race condition 방지)
+    // localCapacities가 아직 이전 값인 상태에서 currentCapacities가 AI 추천으로 바뀌면
+    // 이전 값으로 onChange가 호출되어 isManuallyConfigured: true가 잘못 설정됨
+    if (gridLayout?.isAIRecommended && !gridLayout?.isManuallyConfigured) return;
     const timer = setTimeout(() => {
       onChange({
         rows: currentRows,
