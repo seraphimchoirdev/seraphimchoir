@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-04-10
+- [x] **fix(attendance): linked_member_id 없는 계정의 파트 조회 fallback 추가**
+  - 커밋: `50d278b`
+
 - [x] **fix(attendance): 파트장 준비완료 권한 검증을 user_profiles 기반으로 변경**
   - 커밋: `518ec25`
 

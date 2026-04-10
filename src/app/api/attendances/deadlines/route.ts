@@ -167,7 +167,11 @@ export async function POST(request: NextRequest) {
       // 파트 마감인 경우
       // PART_LEADER는 자기 파트만 마감 가능
       if (userRole === 'PART_LEADER') {
-        // 파트장의 파트 확인 (user_profiles.linked_member_id → members.part)
+        // 파트장의 파트 확인
+        // 1차: user_profiles.linked_member_id → members.part
+        // 2차 (linked_member_id가 null인 경우): 이메일로 members 테이블 조회
+        let memberPart: string | undefined;
+
         const { data: profileData } = await supabase
           .from('user_profiles')
           .select('linked_member_id, members:linked_member_id(part)')
@@ -175,11 +179,20 @@ export async function POST(request: NextRequest) {
           .single();
 
         const membersResult = profileData?.members;
-        let memberPart: string | undefined;
         if (Array.isArray(membersResult) && membersResult.length > 0) {
           memberPart = (membersResult[0] as { part: string }).part;
         } else if (membersResult && typeof membersResult === 'object' && 'part' in membersResult) {
           memberPart = (membersResult as { part: string }).part;
+        }
+
+        // linked_member_id가 없으면 이메일로 fallback
+        if (!memberPart && userEmail) {
+          const { data: memberByEmail } = await supabase
+            .from('members')
+            .select('part')
+            .eq('email', userEmail)
+            .single();
+          memberPart = memberByEmail?.part;
         }
 
         if (!memberPart || memberPart !== validatedData.part) {
