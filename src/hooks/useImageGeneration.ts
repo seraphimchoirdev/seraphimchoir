@@ -123,10 +123,21 @@ export function useImageGeneration(
       // 2. zigzag offset을 lg 기준(40px)으로 재계산
       const seatRows = element.querySelectorAll<HTMLElement>('[data-seat-row]');
       const originalMargins: string[] = [];
+
+      // 모든 행의 오프셋 중 최솟값을 구해 음수 margin 방지
+      // 음수 offset 행이 있으면 좌석 행이 행 라벨 위로 겹치므로,
+      // 최소 오프셋의 절대값만큼 전체 행을 오른쪽으로 보정
+      let minOffset = 0;
+      seatRows.forEach((row) => {
+        const rowOffset = parseFloat(row.dataset.rowOffset || '0');
+        if (rowOffset < minOffset) minOffset = rowOffset;
+      });
+      const captureBaseMargin = minOffset < 0 ? Math.abs(minOffset) * 2 * CAPTURE_ZIGZAG_OFFSET : 0;
+
       seatRows.forEach((row) => {
         originalMargins.push(row.style.marginLeft);
         const rowOffset = parseFloat(row.dataset.rowOffset || '0');
-        row.style.marginLeft = `${rowOffset * 2 * CAPTURE_ZIGZAG_OFFSET}px`;
+        row.style.marginLeft = `${captureBaseMargin + rowOffset * 2 * CAPTURE_ZIGZAG_OFFSET}px`;
       });
 
       // 3. 캡처 모드: data-seat-slot 요소들의 배경만 투명화 (테두리는 유지)
