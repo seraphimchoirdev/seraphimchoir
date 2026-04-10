@@ -569,11 +569,11 @@ table td,
   padding: 0.25rem !important;
 }
 
-/* 좌석번호 라벨: lg 기준 */
+/* 좌석번호 라벨: lg 기준 (이름과 겹침 방지를 위해 축소) */
 [data-capture-mode] [data-seat-slot] > span:first-child {
-  top: 2px !important;
-  left: 2px !important;
-  font-size: 11px !important;
+  top: 1px !important;
+  left: 1px !important;
+  font-size: 10px !important;
 }
 
 /* 이름 텍스트: lg 기준 */
