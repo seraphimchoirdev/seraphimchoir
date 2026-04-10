@@ -177,9 +177,9 @@ const SeatSlot = memo(function SeatSlot({
         <span
           className={cn(
             'pointer-events-none absolute top-px left-px z-10 leading-none',
-            'text-[9px] sm:top-0.5 sm:left-0.5 sm:text-[10px] lg:text-[11px]',
+            'text-[8px] sm:top-0.5 sm:left-0.5 sm:text-[9px] lg:text-[10px]',
             isOccupied
-              ? 'rounded-sm bg-white/80 px-0.5 font-semibold text-[var(--color-text-secondary)]'
+              ? 'rounded-sm bg-white/60 px-0.5 font-medium text-[var(--color-text-tertiary)]'
               : 'font-medium text-[var(--color-text-secondary)]'
           )}
         >
