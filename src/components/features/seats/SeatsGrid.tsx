@@ -88,6 +88,13 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
   // 행별로 그룹화된 좌석 데이터
   const seatsByRow = useMemo(() => calculateSeatsByRow(layout), [layout]);
 
+  // 음수 오프셋 행의 행 라벨 겹침 방지를 위한 baseMargin 계산
+  // 최소 오프셋의 절대값만큼 전체 행을 오른쪽으로 보정
+  const minRowOffset = useMemo(() => {
+    if (!layout.rowOffsets) return 0;
+    return Math.min(0, ...Object.values(layout.rowOffsets));
+  }, [layout.rowOffsets]);
+
   // 하이라이트 대상 좌석으로 자동 스크롤
   // scrollIntoView는 중첩 overflow 컨테이너(모바일)에서 실패하므로
   // 가장 가까운 스크롤 가능 부모를 찾아 직접 scrollTo 사용
@@ -191,7 +198,9 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
                       // Step 2에서는 기준점(baseMargin)을 설정하고 offset으로 상대 이동
                       // 기준점: 3 * zigzagOffset으로 여백 축소 (기존 4배 → 3배)
                       // offset -1.5까지 점프 없이 안정적, 여백 25% 감소
-                      const baseMargin = showInlineOffsetControls ? zigzagOffset * 3 : 0;
+                      const baseMargin = showInlineOffsetControls
+                        ? zigzagOffset * 3
+                        : minRowOffset < 0 ? Math.abs(minRowOffset) * 2 * zigzagOffset : 0;
                       return {
                         marginLeft: baseMargin + offsetPx,
                       };
