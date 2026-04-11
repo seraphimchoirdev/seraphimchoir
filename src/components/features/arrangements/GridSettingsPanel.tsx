@@ -47,6 +47,8 @@ export default function GridSettingsPanel({
 
   // 마운트 직후 초기화 기간 스킵 (외부 상태와 로컬 상태 동기화 완료 전)
   const mountedRef = useRef(false);
+  // 사용자가 +/- 버튼 등으로 명시적으로 편집했는지 추적
+  const userEditedRef = useRef(false);
   useEffect(() => {
     mountedRef.current = true;
   }, []);
@@ -97,7 +99,8 @@ export default function GridSettingsPanel({
     // AI 추천에 의한 외부 변경 시 디바운스 스킵 (동기화 지연으로 인한 race condition 방지)
     // localCapacities가 아직 이전 값인 상태에서 currentCapacities가 AI 추천으로 바뀌면
     // 이전 값으로 onChange가 호출되어 isManuallyConfigured: true가 잘못 설정됨
-    if (gridLayout?.isAIRecommended && !gridLayout?.isManuallyConfigured) return;
+    // 단, 사용자가 명시적으로 편집한 경우(userEditedRef)는 반드시 반영
+    if (gridLayout?.isAIRecommended && !gridLayout?.isManuallyConfigured && !userEditedRef.current) return;
     const timer = setTimeout(() => {
       onChange({
         rows: currentRows,
@@ -106,6 +109,7 @@ export default function GridSettingsPanel({
         rowOffsets: currentRowOffsets,
         isManuallyConfigured: true,
       });
+      userEditedRef.current = false;
     }, 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -231,6 +235,7 @@ export default function GridSettingsPanel({
                   onClick={() => {
                     const newCapacities = [...localCapacities];
                     newCapacities[idx] = Math.max(0, capacity - 1);
+                    userEditedRef.current = true;
                     setLocalCapacities(newCapacities);
                   }}
                   className="flex w-10 items-center justify-center border-r border-[var(--color-border)] bg-[var(--color-background-tertiary)] text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-border-default)] hover:text-[var(--color-text-primary)] active:bg-[var(--color-border-strong)] active:text-[var(--color-text-primary)] disabled:pointer-events-none disabled:opacity-40"
@@ -251,12 +256,14 @@ export default function GridSettingsPanel({
                     if (raw === '') {
                       const newCapacities = [...localCapacities];
                       newCapacities[idx] = 0;
+                      userEditedRef.current = true;
                       setLocalCapacities(newCapacities);
                       return;
                     }
                     if (!/^\d+$/.test(raw)) return;
                     const newCapacities = [...localCapacities];
                     newCapacities[idx] = parseInt(raw, 10);
+                    userEditedRef.current = true;
                     setLocalCapacities(newCapacities);
                   }}
                   onBlur={(e) => {
@@ -268,6 +275,7 @@ export default function GridSettingsPanel({
                     if (clamped !== capacity) {
                       const newCapacities = [...localCapacities];
                       newCapacities[idx] = clamped;
+                      userEditedRef.current = true;
                       setLocalCapacities(newCapacities);
                     }
                   }}
@@ -283,6 +291,7 @@ export default function GridSettingsPanel({
                       GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW,
                       capacity + 1
                     );
+                    userEditedRef.current = true;
                     setLocalCapacities(newCapacities);
                   }}
                   className="flex w-10 items-center justify-center border-l border-[var(--color-border)] bg-[var(--color-primary-50)] text-[var(--color-primary-600)] transition-colors hover:bg-[var(--color-primary-100)] hover:text-[var(--color-primary-700)] active:bg-[var(--color-primary-200)] disabled:pointer-events-none disabled:opacity-40"
