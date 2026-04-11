@@ -2,7 +2,10 @@ import { z } from 'zod';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { createLogger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
+
+const logger = createLogger({ prefix: 'ArrangementsAPI' });
 
 const gridLayoutSchema = z
   .object({
@@ -159,6 +162,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         { error: '배치표를 수정할 권한이 없습니다. ADMIN 또는 CONDUCTOR 역할이 필요합니다.' },
         { status: 403 }
       );
+    }
+
+    // 상태가 SHARED 또는 CONFIRMED로 변경 시 ML 이력 자동 기록
+    // (행 분배 패턴 학습 + 배치 이력 저장)
+    if (body.status === 'SHARED' || body.status === 'CONFIRMED') {
+      try {
+        const { error: rpcError } = await supabase.rpc('record_arrangement_to_ml_history', {
+          p_arrangement_id: id,
+        });
+        if (rpcError) {
+          logger.warn('ML 이력 기록 실패 (배치표 저장은 정상):', rpcError.message);
+        } else {
+          logger.debug('ML 이력 기록 완료:', id);
+        }
+      } catch (rpcErr) {
+        logger.warn('ML 이력 기록 중 예외 (배치표 저장은 정상):', rpcErr);
+      }
     }
 
     return NextResponse.json(data);
