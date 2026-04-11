@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-04-11 | fix(grid): 줄별 인원 수동 조정이 그리드에 반영되지 않는 문제 수정 |
 | 2026-04-11 | fix(seed): bass@test.com 테스트 계정에 김철우 대원 연결 |
 | 2026-04-10 | fix(attendance): linked_member_id 없는 계정의 파트 조회 fallback 추가 |
 | 2026-04-10 | fix(attendance): 파트장 준비완료 권한 검증을 user_profiles 기반으로 변경 |
