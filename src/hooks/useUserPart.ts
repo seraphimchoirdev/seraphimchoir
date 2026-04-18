@@ -50,6 +50,18 @@ export function useUserPart() {
         partValue = (membersResult as { part: Part }).part;
       }
 
+      // linked_member_id가 없으면 이메일로 fallback (API 측과 동일)
+      if (!partValue && user.email) {
+        const { data: memberByEmail } = await supabase
+          .from('members')
+          .select('part')
+          .eq('email', user.email)
+          .single();
+        if (memberByEmail?.part) {
+          partValue = memberByEmail.part as Part;
+        }
+      }
+
       setUserPart(partValue);
       setIsLoading(false);
     }

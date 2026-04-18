@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 
-import { useAttendanceDeadlines, useToggleReadiness } from '@/hooks/useAttendanceDeadlines';
+import { useAttendanceDeadlines, useCloseAttendance } from '@/hooks/useAttendanceDeadlines';
 import { useAuth } from '@/hooks/useAuth';
 import { useServiceDateNavigation } from '@/hooks/useServiceDateNavigation';
 import { useServiceSchedules, useServiceSchedulesByDate } from '@/hooks/useServiceSchedules';
@@ -37,9 +37,9 @@ export default function AttendancesPage() {
   // 예배 일정 기반 날짜 네비게이션
   const { selectedDate: dateStr, hasPrev, hasNext, goToPrev, goToNext, setDate } = useServiceDateNavigation();
 
-  // 준비 완료 상태 조회 및 토글
+  // 준비 완료 상태 조회 및 마크
   const { data: deadlines, isLoading: deadlinesLoading } = useAttendanceDeadlines(dateStr);
-  const { toggleReadiness } = useToggleReadiness();
+  const closeMutation = useCloseAttendance();
 
   // 선택된 예배 일정 ID (사용자가 드롭다운에서 선택한 값, 없으면 자동 선택)
   const [manualServiceScheduleId, setManualServiceScheduleId] = useState<string | undefined>();
@@ -264,8 +264,7 @@ export default function AttendancesPage() {
                 serviceScheduleId={selectedServiceScheduleId}
                 deadlines={deadlines}
                 onMarkReady={async (part) => {
-                  const deadline = deadlines?.partDeadlines?.[part] ?? null;
-                  await toggleReadiness({ date: dateStr, part, currentDeadline: deadline });
+                  await closeMutation.mutateAsync({ date: dateStr, part });
                 }}
               />
             </div>
