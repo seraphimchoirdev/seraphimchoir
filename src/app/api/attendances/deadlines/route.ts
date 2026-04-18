@@ -202,12 +202,31 @@ export async function POST(request: NextRequest) {
       // MANAGER, CONDUCTOR, ADMIN은 모든 파트 마감 가능
     }
 
+    // 기존 레코드 확인 (멱등성: 이미 존재하면 그대로 반환)
+    const partValue = isFullDeadline ? null : (validatedData.part as Part);
+    let existingQuery = supabase
+      .from('attendance_deadlines')
+      .select()
+      .eq('date', validatedData.date);
+
+    if (partValue === null) {
+      existingQuery = existingQuery.is('part', null);
+    } else {
+      existingQuery = existingQuery.eq('part', partValue);
+    }
+
+    const { data: existing } = await existingQuery.maybeSingle();
+
+    if (existing) {
+      return NextResponse.json(existing, { status: 200 });
+    }
+
     // 마감 생성
     const { data, error } = await supabase
       .from('attendance_deadlines')
       .insert({
         date: validatedData.date,
-        part: isFullDeadline ? null : (validatedData.part as Part),
+        part: partValue,
         closed_by: user.id,
       })
       .select()
@@ -215,14 +234,12 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       logger.error('Supabase error:', error);
-      // 중복 에러 처리 (UNIQUE constraint)
+      // 레이스 컨디션으로 인한 중복 에러 시 기존 레코드 반환
       if (error.code === '23505') {
-        return NextResponse.json(
-          {
-            error: isFullDeadline ? '이미 전체 준비 완료되었습니다' : '해당 파트가 이미 준비 완료되었습니다',
-          },
-          { status: 409 }
-        );
+        const { data: raceExisting } = await existingQuery.maybeSingle();
+        if (raceExisting) {
+          return NextResponse.json(raceExisting, { status: 200 });
+        }
       }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }

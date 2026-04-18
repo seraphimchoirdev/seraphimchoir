@@ -12,7 +12,7 @@ interface Params {
 /**
  * DELETE /api/attendances/deadlines/[id]
  * 준비 완료 해제
- * 권한: ADMIN/CONDUCTOR는 모든 레코드, PART_LEADER는 본인이 마크한 레코드만
+ * 권한: ADMIN/CONDUCTOR는 모든 레코드, PART_LEADER는 자기 파트 레코드만 (마크 주체 무관)
  */
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
@@ -31,7 +31,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     // 권한 확인 (ADMIN/CONDUCTOR/PART_LEADER)
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('role')
+      .select('role, email, linked_member_id, members:linked_member_id(part)')
       .eq('id', user.id)
       .single();
 
@@ -54,12 +54,33 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: '해당 준비 완료 레코드를 찾을 수 없습니다' }, { status: 404 });
     }
 
-    // PART_LEADER인 경우 본인이 마크한 레코드만 해제 가능
-    if (profile.role === 'PART_LEADER' && deadline.closed_by !== user.id) {
-      return NextResponse.json(
-        { error: '본인이 표시한 준비 완료만 해제할 수 있습니다.' },
-        { status: 403 }
-      );
+    // PART_LEADER인 경우: 자기 파트의 레코드면 누가 마크했든 해제 가능
+    if (profile.role === 'PART_LEADER') {
+      let memberPart: string | undefined;
+
+      const membersResult = profile.members;
+      if (Array.isArray(membersResult) && membersResult.length > 0) {
+        memberPart = (membersResult[0] as { part: string }).part;
+      } else if (membersResult && typeof membersResult === 'object' && 'part' in membersResult) {
+        memberPart = (membersResult as { part: string }).part;
+      }
+
+      // linked_member_id가 없으면 이메일 fallback
+      if (!memberPart && profile.email) {
+        const { data: memberByEmail } = await supabase
+          .from('members')
+          .select('part')
+          .eq('email', profile.email)
+          .single();
+        memberPart = memberByEmail?.part;
+      }
+
+      if (!memberPart || memberPart !== deadline.part) {
+        return NextResponse.json(
+          { error: '자신의 파트 준비 완료만 해제할 수 있습니다.' },
+          { status: 403 }
+        );
+      }
     }
 
     // 해당 날짜에 자리배치표가 존재하는지 확인

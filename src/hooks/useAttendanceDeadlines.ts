@@ -112,7 +112,6 @@ export function useReopenAttendance() {
  * 파트별 준비 완료 토글 훅 (마크/언마크 통합)
  */
 export function useToggleReadiness() {
-  const queryClient = useQueryClient();
   const closeMutation = useCloseAttendance();
   const reopenMutation = useReopenAttendance();
 
@@ -132,10 +131,6 @@ export function useToggleReadiness() {
         part: params.part,
       });
     }
-    // mutation onSuccess의 invalidate와 별개로, 리페치 완료를 명시적으로 보장
-    await queryClient.invalidateQueries({
-      queryKey: ['attendanceDeadlines', params.date],
-    });
   };
 
   return {
