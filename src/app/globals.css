@@ -282,6 +282,15 @@
     }
   }
 
+  /* 스크롤바 숨김 (가로 스크롤 영역에서 스크롤바를 시각적으로 숨김) */
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE, Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
   /* Screen reader only - 스크린 리더 전용 텍스트 */
   .sr-only {
     position: absolute;

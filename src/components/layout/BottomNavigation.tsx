@@ -7,6 +7,7 @@ import {
   ClipboardCheck,
   Home,
   LayoutGrid,
+  MessageSquare,
   MoreHorizontal,
   Newspaper,
   Settings,
@@ -27,6 +28,7 @@ import {
 } from '@/components/ui/sheet';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useUnreadNoticeCount } from '@/hooks/useConfirmations';
 import { useMounted } from '@/hooks/useMounted';
 
 type NavItem = {
@@ -41,6 +43,7 @@ export default function BottomNavigation() {
   const { profile } = useAuth();
   const mounted = useMounted();
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
+  const { data: unreadCount } = useUnreadNoticeCount(!!profile);
 
   // 역할 확인 헬퍼
   const hasRole = (roles: string[]) => {
@@ -64,12 +67,13 @@ export default function BottomNavigation() {
       icon: <ClipboardCheck className="h-5 w-5" />,
       show: true,
     },
-    { href: '/arrangements', label: '자리', icon: <LayoutGrid className="h-5 w-5" />, show: true },
+    { href: '/community', label: '커뮤니티', icon: <MessageSquare className="h-5 w-5" />, show: true },
     { href: '/management', label: '임원', icon: <Briefcase className="h-5 w-5" />, show: true },
   ];
 
   // 관리자용 더보기 메뉴
   const managerMoreNav: NavItem[] = [
+    { href: '/arrangements', label: '배치표', icon: <LayoutGrid className="h-5 w-5" />, show: true },
     {
       href: '/service-schedules',
       label: '찬양대 일정',
@@ -88,19 +92,19 @@ export default function BottomNavigation() {
       icon: <Settings className="h-5 w-5" />,
       show: hasRole(['ADMIN']),
     },
-    { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: true }, // 모든 로그인 사용자 접근 가능
+    { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: true },
   ].filter((item) => item.show);
 
   // 일반 대원용 메인 메뉴 (4개 + 더보기)
   const memberMainNav: NavItem[] = [
     { href: '/dashboard', label: '홈', icon: <Home className="h-5 w-5" />, show: true },
+    { href: '/community', label: '커뮤니티', icon: <MessageSquare className="h-5 w-5" />, show: true },
     {
       href: '/service-schedules',
       label: '일정',
       icon: <Calendar className="h-5 w-5" />,
       show: true,
     },
-    { href: '/arrangements', label: '자리', icon: <LayoutGrid className="h-5 w-5" />, show: true },
     {
       href: '/my-attendance',
       label: '내 출석',
@@ -111,6 +115,7 @@ export default function BottomNavigation() {
 
   // 일반 대원용 더보기 메뉴
   const memberMoreNav: NavItem[] = [
+    { href: '/arrangements', label: '배치표', icon: <LayoutGrid className="h-5 w-5" />, show: true },
     {
       href: '/newsletters',
       label: '새로핌지',
@@ -123,7 +128,7 @@ export default function BottomNavigation() {
       icon: <Briefcase className="h-5 w-5" />,
       show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER', 'PART_LEADER']),
     },
-    { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: true }, // 모든 로그인 사용자 접근 가능
+    { href: '/mypage', label: '마이페이지', icon: <User className="h-5 w-5" />, show: true },
   ].filter((item) => item.show);
 
   const mainNav = isManager ? managerMainNav : memberMainNav;
@@ -143,6 +148,7 @@ export default function BottomNavigation() {
 
   const NavButton = ({ item, onClick }: { item: NavItem; onClick?: () => void }) => {
     const active = isActive(item.href);
+    const showBadge = item.href === '/community' && unreadCount != null && unreadCount > 0;
     return (
       <Link
         href={item.href}
@@ -153,7 +159,12 @@ export default function BottomNavigation() {
             : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
         }`}
       >
-        {item.icon}
+        <span className="relative">
+          {item.icon}
+          {showBadge && (
+            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+          )}
+        </span>
         <span className="text-[10px] leading-tight font-medium">{item.label}</span>
       </Link>
     );

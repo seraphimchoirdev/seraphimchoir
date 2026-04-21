@@ -34,6 +34,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      album_photos: {
+        Row: {
+          album_id: string
+          caption: string | null
+          created_at: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          thumbnail_path: string | null
+          uploaded_by: string
+        }
+        Insert: {
+          album_id: string
+          caption?: string | null
+          created_at?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          thumbnail_path?: string | null
+          uploaded_by: string
+        }
+        Update: {
+          album_id?: string
+          caption?: string | null
+          created_at?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          thumbnail_path?: string | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "album_photos_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "photo_albums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arrangement_guests: {
+        Row: {
+          arrangement_id: string
+          created_at: string | null
+          id: string
+          member_id: string
+        }
+        Insert: {
+          arrangement_id: string
+          created_at?: string | null
+          id?: string
+          member_id: string
+        }
+        Update: {
+          arrangement_id?: string
+          created_at?: string | null
+          id?: string
+          member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arrangement_guests_arrangement_id_fkey"
+            columns: ["arrangement_id"]
+            isOneToOne: false
+            referencedRelation: "arrangements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arrangement_guests_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "member_last_attendance"
+            referencedColumns: ["member_id"]
+          },
+          {
+            foreignKeyName: "arrangement_guests_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arrangement_guests_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arrangement_guests_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members_with_attendance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       arrangements: {
         Row: {
           conductor: string | null
@@ -89,42 +187,6 @@ export type Database = {
             columns: ["service_schedule_id"]
             isOneToOne: true
             referencedRelation: "service_schedules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      arrangement_guests: {
-        Row: {
-          id: string
-          arrangement_id: string
-          member_id: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          arrangement_id: string
-          member_id: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          arrangement_id?: string
-          member_id?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "arrangement_guests_arrangement_id_fkey"
-            columns: ["arrangement_id"]
-            isOneToOne: false
-            referencedRelation: "arrangements"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "arrangement_guests_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "members"
             referencedColumns: ["id"]
           },
         ]
@@ -368,6 +430,57 @@ export type Database = {
           location?: string | null
           start_time?: string | null
           title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      community_posts: {
+        Row: {
+          author_id: string
+          category: string | null
+          comment_count: number | null
+          content: string
+          created_at: string | null
+          id: string
+          is_deleted: boolean | null
+          is_pinned: boolean | null
+          like_count: number | null
+          post_type: string
+          priority: string | null
+          requires_confirmation: boolean | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          category?: string | null
+          comment_count?: number | null
+          content: string
+          created_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          is_pinned?: boolean | null
+          like_count?: number | null
+          post_type: string
+          priority?: string | null
+          requires_confirmation?: boolean | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          category?: string | null
+          comment_count?: number | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          is_pinned?: boolean | null
+          like_count?: number | null
+          post_type?: string
+          priority?: string | null
+          requires_confirmation?: boolean | null
+          title?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -750,6 +863,334 @@ export type Database = {
           year_motto?: string | null
         }
         Relationships: []
+      }
+      notice_confirmations: {
+        Row: {
+          confirmed_at: string | null
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notice_confirmations_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photo_albums: {
+        Row: {
+          choir_event_id: string | null
+          cover_image_path: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          event_date: string
+          id: string
+          is_deleted: boolean | null
+          photo_count: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          choir_event_id?: string | null
+          cover_image_path?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          event_date: string
+          id?: string
+          is_deleted?: boolean | null
+          photo_count?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          choir_event_id?: string | null
+          cover_image_path?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          event_date?: string
+          id?: string
+          is_deleted?: boolean | null
+          photo_count?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_albums_choir_event_id_fkey"
+            columns: ["choir_event_id"]
+            isOneToOne: false
+            referencedRelation: "choir_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poll_options: {
+        Row: {
+          id: string
+          label: string
+          poll_id: string
+          sort_order: number | null
+          vote_count: number | null
+        }
+        Insert: {
+          id?: string
+          label: string
+          poll_id: string
+          sort_order?: number | null
+          vote_count?: number | null
+        }
+        Update: {
+          id?: string
+          label?: string
+          poll_id?: string
+          sort_order?: number | null
+          vote_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_options_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poll_responses: {
+        Row: {
+          attendance_status: string | null
+          created_at: string | null
+          id: string
+          poll_id: string
+          selected_option_id: string | null
+          text_response: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attendance_status?: string | null
+          created_at?: string | null
+          id?: string
+          poll_id: string
+          selected_option_id?: string | null
+          text_response?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attendance_status?: string | null
+          created_at?: string | null
+          id?: string
+          poll_id?: string
+          selected_option_id?: string | null
+          text_response?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_responses_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poll_responses_selected_option_id_fkey"
+            columns: ["selected_option_id"]
+            isOneToOne: false
+            referencedRelation: "poll_options"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polls: {
+        Row: {
+          allow_multiple: boolean | null
+          created_at: string | null
+          created_by: string
+          deadline_at: string | null
+          description: string | null
+          id: string
+          is_anonymous: boolean | null
+          is_closed: boolean | null
+          is_deleted: boolean | null
+          poll_type: string
+          response_count: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          allow_multiple?: boolean | null
+          created_at?: string | null
+          created_by: string
+          deadline_at?: string | null
+          description?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          is_closed?: boolean | null
+          is_deleted?: boolean | null
+          poll_type: string
+          response_count?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          allow_multiple?: boolean | null
+          created_at?: string | null
+          created_by?: string
+          deadline_at?: string | null
+          description?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          is_closed?: boolean | null
+          is_deleted?: boolean | null
+          poll_type?: string
+          response_count?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      post_attachments: {
+        Row: {
+          created_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          post_id: string
+          sort_order: number | null
+          thumbnail_path: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          post_id: string
+          sort_order?: number | null
+          thumbnail_path?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          post_id?: string
+          sort_order?: number | null
+          thumbnail_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_attachments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string | null
+          id: string
+          is_deleted: boolean | null
+          parent_id: string | null
+          post_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          parent_id?: string | null
+          post_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          parent_id?: string | null
+          post_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prayer_assignments: {
         Row: {
@@ -1366,7 +1807,11 @@ export const Constants = {
   },
 } as const
 
-// 커스텀 타입 (gen types로 자동 생성되지 않는 타입)
+// ─── 커스텀 타입 별칭 (자동 생성 타입에서 파생) ───
+
+/** 배치표 상태: DB에서 TEXT CHECK로 정의됨 */
 export type ArrangementStatus = 'DRAFT' | 'SHARED' | 'CONFIRMED';
-export type PracticeAttendanceType = 'FULL' | 'EARLY_LEAVE' | 'LATE_JOIN' | 'ABSENT';
+
+/** 연습 출석 타입: DB enum practice_attendance_type */
+export type PracticeAttendanceType = Database['public']['Enums']['practice_attendance_type'];
 
