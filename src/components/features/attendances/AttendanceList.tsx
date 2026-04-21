@@ -4,10 +4,10 @@ import { Part } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns/format';
 import { ko } from 'date-fns/locale/ko';
-import { Check, ChevronsDown, ChevronsUp, Lock, LockKeyhole, RotateCcw, Save } from 'lucide-react';
+import { ChevronsDown, ChevronsUp, Lock, LockKeyhole, RotateCcw, Save } from 'lucide-react';
 import { CheckCheck, ChevronDown, ChevronRight, XCircle } from 'lucide-react';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -71,17 +71,6 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
   const { userPart, isLoading: isPartLoading } = useUserPart();
   const queryClient = useQueryClient();
 
-  // 저장 후 준비완료 제안 상태
-  const [showReadinessPrompt, setShowReadinessPrompt] = useState(false);
-  const [isMarkingReady, setIsMarkingReady] = useState(false);
-  const readinessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // 타이머 정리
-  useEffect(() => {
-    return () => {
-      if (readinessTimerRef.current) clearTimeout(readinessTimerRef.current);
-    };
-  }, []);
 
   // 해당 예배의 has_post_practice 조회
   const [hasPostPractice, setHasPostPractice] = useState<boolean>(true);
@@ -362,17 +351,22 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
 
       setPendingChanges({});
       queryClient.invalidateQueries({ queryKey: ['attendances'] });
-      showSuccess('저장되었습니다.');
 
-      // 저장 성공 후 준비완료 제안 조건 확인
+      // 파트장이면 저장과 동시에 준비완료 자동 처리
       if (
         userPart &&
         profile?.role === 'PART_LEADER' &&
         deadlines?.partDeadlines?.[userPart as Part] === null
       ) {
-        setShowReadinessPrompt(true);
-        if (readinessTimerRef.current) clearTimeout(readinessTimerRef.current);
-        readinessTimerRef.current = setTimeout(() => setShowReadinessPrompt(false), 5000);
+        try {
+          await onMarkReady?.(userPart as Part);
+          showSuccess('저장 및 준비완료 처리되었습니다.');
+        } catch {
+          showSuccess('저장되었습니다.');
+          showError('준비완료 자동 처리에 실패했습니다. 수동으로 체크해주세요.');
+        }
+      } else {
+        showSuccess('저장되었습니다.');
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
@@ -720,46 +714,6 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
         </div>
       )}
 
-      {/* 저장 후 준비완료 제안 플로팅 바 */}
-      {showReadinessPrompt && !hasChanges && userPart && (
-        <div className="animate-in slide-in-from-bottom-4 fixed right-0 bottom-20 left-0 z-40 px-4 duration-300 lg:bottom-6">
-          <div className="mx-auto flex max-w-lg items-center gap-3 rounded-xl border border-[var(--color-success-200)] bg-[var(--color-success-50)] p-3 shadow-lg">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setShowReadinessPrompt(false);
-                if (readinessTimerRef.current) clearTimeout(readinessTimerRef.current);
-              }}
-              className="flex-shrink-0 text-[var(--color-text-secondary)]"
-            >
-              나중에
-            </Button>
-            <Button
-              size="sm"
-              disabled={isMarkingReady}
-              onClick={async () => {
-                setIsMarkingReady(true);
-                try {
-                  await onMarkReady?.(userPart as Part);
-                  setShowReadinessPrompt(false);
-                  if (readinessTimerRef.current) clearTimeout(readinessTimerRef.current);
-                } finally {
-                  setIsMarkingReady(false);
-                }
-              }}
-              className="flex-1 bg-[var(--color-success-600)] text-white hover:bg-[var(--color-success-700)]"
-            >
-              {isMarkingReady ? (
-                <Spinner size="sm" className="mr-1.5" />
-              ) : (
-                <Check className="mr-1.5 h-4 w-4" />
-              )}
-              {getPartLabel(userPart as Part)} 준비완료
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* 변경사항 취소 확인 다이얼로그 */}
       <ConfirmDialog
