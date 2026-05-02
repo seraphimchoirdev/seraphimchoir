@@ -69,7 +69,7 @@
 
 ### 2026-05-02
 - [x] **fix(seats): 5단계 대원 목록 사이드바 스크롤 복구**
-  - 커밋: `02b5cfb`
+  - 커밋: `02b5cfb` (develop) / `f611253` (hotfix/v0.2.3 → main)
 
 - [x] **fix(recommend): rowCapacities 행당 max=20 가드로 합동 찬양 시 400 해결**
   - 커밋: `6848402`
