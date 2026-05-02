@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/server';
 const PartEnum = z.enum(['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL']);
 
 // Member Status enum validation
-const MemberStatusEnum = z.enum(['REGULAR', 'NEW', 'ON_LEAVE', 'RESIGNED']);
+const MemberStatusEnum = z.enum(['REGULAR', 'NEW', 'ON_LEAVE', 'RESIGNED', 'GUEST']);
 
 // Member update schema (모든 필드 optional)
 const updateMemberSchema = z.object({
@@ -20,8 +20,10 @@ const updateMemberSchema = z.object({
   is_singer: z.boolean().optional(), // 등단 여부 (false=지휘자/반주자 등 비등단)
   member_status: MemberStatusEnum.optional(),
   phone_number: z.string().nullable().optional(),
-  email: z.string().email().nullable().optional(),
+  email: z.string().email().nullable().optional().or(z.literal('').transform(() => null)),
   notes: z.string().nullable().optional(),
+  height: z.number().int().min(100).max(250).nullable().optional(),
+  height_cm: z.number().int().min(100).max(250).nullable().optional(),
   version: z.number().int().positive().optional(), // 낙관적 잠금을 위한 버전
   // 휴직 관련 필드
   leave_reason: z.string().nullable().optional(),
