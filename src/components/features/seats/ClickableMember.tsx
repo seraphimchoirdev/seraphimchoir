@@ -16,6 +16,7 @@ interface ClickableMemberProps {
   part: Part;
   isPlaced?: boolean;
   isGuest?: boolean;
+  heightCm?: number | null;
 }
 
 // 파트별 파스텔 배경색 (GridClickableMember와 동일 팔레트)
@@ -34,7 +35,7 @@ const getPartColor = (p: Part) => {
   }
 };
 
-function ClickableMember({ memberId, name, part, isPlaced, isGuest }: ClickableMemberProps) {
+function ClickableMember({ memberId, name, part, isPlaced, isGuest, heightCm }: ClickableMemberProps) {
   const { selectedMemberId, selectedSource, selectMemberFromSidebar } = useArrangementStore();
 
   const isSelected = selectedMemberId === memberId && selectedSource === 'sidebar';
@@ -64,10 +65,15 @@ function ClickableMember({ memberId, name, part, isPlaced, isGuest }: ClickableM
         // 기본 호버
         !isPlaced && !isSelected && 'hover:shadow-sm hover:brightness-95 active:scale-[0.97]'
       )}
-      aria-label={`${name} - ${part} 파트${isGuest ? ' (게스트)' : ''} ${isPlaced ? '(이미 배치됨)' : isSelected ? '(선택됨)' : '클릭하여 선택'}`}
+      aria-label={`${name}${heightCm != null ? ` ${heightCm}cm` : ''} - ${part} 파트${isGuest ? ' (게스트)' : ''} ${isPlaced ? '(이미 배치됨)' : isSelected ? '(선택됨)' : '클릭하여 선택'}`}
       aria-pressed={isSelected}
     >
       {name}
+      {heightCm != null && (
+        <span className="ml-1 text-[10px] font-normal text-[var(--color-text-tertiary)]">
+          {heightCm}cm
+        </span>
+      )}
       {isGuest && (
         <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-neutral-500 text-[9px] font-bold text-white shadow-sm">
           G
