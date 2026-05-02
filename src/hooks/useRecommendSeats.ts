@@ -4,7 +4,7 @@
  */
 import { useMutation } from '@tanstack/react-query';
 
-import { GridLayout } from '@/types/grid';
+import { GRID_CONSTRAINTS, GridLayout } from '@/types/grid';
 
 interface RecommendSeatsParams {
   arrangementId: string;
@@ -66,7 +66,14 @@ export function useRecommendSeats() {
           gridLayout: gridLayout
             ? {
                 rows: gridLayout.rows,
-                rowCapacities: gridLayout.rowCapacities,
+                // 서버 zod max=20과 계약 일치를 위해 clamp.
+                // 분배 함수가 21+를 만든 케이스(중고등부 합동 등)도 여기서 한 번 더 안전 차단.
+                rowCapacities: gridLayout.rowCapacities.map((c) =>
+                  Math.min(
+                    Math.max(c, GRID_CONSTRAINTS.MIN_CAPACITY_PER_ROW),
+                    GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW
+                  )
+                ),
                 zigzagPattern: gridLayout.zigzagPattern,
               }
             : undefined,
