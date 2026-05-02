@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-05-02 | fix(members): PATCH 스키마에 GUEST/height/height_cm 추가 (DB·POST와 동기화) |
 | 2026-05-02 | fix(attendance): 파트장 저장 시 준비완료 자동 처리 제거 (a51356c 회귀) |
 | 2026-04-21 | feat(attendance): 파트장 출석 저장 시 준비완료 자동 처리 |
 | 2026-04-18 | fix(attendance): 준비완료 해제 권한 수정 및 자동 체크 race condition 해결 |

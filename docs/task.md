@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-05-02
+- [x] **fix(members): PATCH 스키마에 GUEST/height/height_cm 추가 (DB·POST와 동기화)**
+  - 커밋: `822d9b5`
+
 
 - [x] **fix(attendance): 파트장 저장 시 준비완료 자동 처리 제거 (a51356c 회귀)**
   - 커밋: `a8369a4`
