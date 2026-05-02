@@ -14,6 +14,41 @@
  */
 import rowDistributionPatterns from '@/data/row_distribution_patterns.json';
 
+import { GRID_CONSTRAINTS } from '@/types/grid';
+
+/** 행당 최대 인원 (서버 zod / UI 슬라이더와 동일) */
+const ROW_MAX = GRID_CONSTRAINTS.MAX_CAPACITY_PER_ROW;
+
+/**
+ * 행당 인원이 ROW_MAX를 넘지 않도록 강제하고, 잉여는 여유 있는 행에 균등 재분배.
+ * 모든 행이 ROW_MAX에 도달하면 잉여를 버림(호출자가 행 수 증가로 처리해야 함).
+ *
+ * 인원이 평소 임계를 넘는 경우(예: 합동 찬양으로 게스트 추가)에 21+ 행이
+ * 만들어져 서버 zod에 의해 거절되는 것을 막는다.
+ */
+function clampRowCapacities(caps: number[]): number[] {
+  let overflow = 0;
+  const clamped = caps.map((c) => {
+    if (c > ROW_MAX) {
+      overflow += c - ROW_MAX;
+      return ROW_MAX;
+    }
+    return c;
+  });
+  while (overflow > 0) {
+    let placed = false;
+    for (let i = 0; i < clamped.length && overflow > 0; i++) {
+      if (clamped[i] < ROW_MAX) {
+        clamped[i]++;
+        overflow--;
+        placed = true;
+      }
+    }
+    if (!placed) break;
+  }
+  return clamped;
+}
+
 export interface RowDistributionRecommendation {
   rows: number;
   rowCapacities: number[];
@@ -132,7 +167,7 @@ export function recommendRowDistribution(
   if (exactPattern) {
     const result: RowDistributionRecommendation = {
       rows: exactPattern.rows,
-      rowCapacities: exactPattern.capacities,
+      rowCapacities: clampRowCapacities(exactPattern.capacities),
       confidence: 'high',
       source: 'learned',
       similarPattern: {
@@ -189,7 +224,7 @@ export function recommendRowDistribution(
 
     const interpolatedResult: RowDistributionRecommendation = {
       rows: closestPattern.rows,
-      rowCapacities: adjustedCapacities,
+      rowCapacities: clampRowCapacities(adjustedCapacities),
       confidence: 'medium',
       source: 'interpolated',
       similarPattern: {
@@ -271,7 +306,7 @@ function calculate5RowDistribution(
 
   return {
     rows: 5,
-    rowCapacities,
+    rowCapacities: clampRowCapacities(rowCapacities),
     confidence: 'medium',
     source: 'calculated',
     similarPattern: {
@@ -325,7 +360,7 @@ function calculate6RowDistribution(
 
   return {
     rows: 6,
-    rowCapacities,
+    rowCapacities: clampRowCapacities(rowCapacities),
     confidence: 'medium',
     source: 'calculated',
     similarPattern: {
@@ -529,7 +564,7 @@ export function adjustRecommendationForPartConstraints(
 
   return {
     ...base,
-    rowCapacities: rebalanced,
+    rowCapacities: clampRowCapacities(rebalanced),
     source: 'adjusted',
     adjustments: {
       reason: 'alto_constraint',

@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-05-02 | fix(recommend): rowCapacities 행당 max=20 가드로 합동 찬양 시 400 해결 |
 | 2026-05-02 | feat(seats): 자리배치표 출력/내보내기 시 키(cm) 표시 숨김 |
 | 2026-05-02 | fix(recommend): 빈 행(capacity=0) 그리드를 허용하도록 zod 스키마 완화 |
 | 2026-05-02 | fix(members): PATCH 스키마에 GUEST/height/height_cm 추가 (DB·POST와 동기화) |
