@@ -69,6 +69,7 @@ const createMemberSchema = z.object({
     .optional()
     .transform((v) => (v ? sanitizers.sanitizeTextNote(v, 1000) : null)), // XSS 방어: HTML 태그 제거, 길이 제한
   height: z.number().int().min(100).max(250).nullable().optional(),
+  height_cm: z.number().int().min(100).max(250).nullable().optional(), // 정식 컬럼 (members_public view 노출)
   // 휴직 관련 필드
   leave_reason: z.string().max(500).nullable().optional(),
   leave_start_date: z.string().nullable().optional(),
