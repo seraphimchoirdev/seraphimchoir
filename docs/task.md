@@ -68,8 +68,8 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-05-02
-- [x] **feat(seats): 게스트 30명 등록 + 자리배치 카드에 키(cm) 표시**
-  - 커밋: `8e39a2d`
+- [x] **fix(recommend): 빈 행(capacity=0) 그리드를 허용하도록 zod 스키마 완화**
+  - 커밋: `78a688c`
 
 - [x] **fix(members): PATCH 스키마에 GUEST/height/height_cm 추가 (DB·POST와 동기화)**
   - 커밋: `822d9b5`
