@@ -65,7 +65,7 @@ const partAccentColors: Record<Part, string> = {
   SPECIAL: 'text-[var(--color-part-special-700)]',
 };
 
-export default function AttendanceList({ date, serviceScheduleId, deadlines, onMarkReady }: AttendanceListProps) {
+export default function AttendanceList({ date, serviceScheduleId, deadlines }: AttendanceListProps) {
   const dateStr = format(date, 'yyyy-MM-dd');
   const { profile } = useAuth();
   const { userPart, isLoading: isPartLoading } = useUserPart();
@@ -352,22 +352,7 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines, onM
       setPendingChanges({});
       queryClient.invalidateQueries({ queryKey: ['attendances'] });
 
-      // 파트장이면 저장과 동시에 준비완료 자동 처리
-      if (
-        userPart &&
-        profile?.role === 'PART_LEADER' &&
-        deadlines?.partDeadlines?.[userPart as Part] === null
-      ) {
-        try {
-          await onMarkReady?.(userPart as Part);
-          showSuccess('저장 및 준비완료 처리되었습니다.');
-        } catch {
-          showSuccess('저장되었습니다.');
-          showError('준비완료 자동 처리에 실패했습니다. 수동으로 체크해주세요.');
-        }
-      } else {
-        showSuccess('저장되었습니다.');
-      }
+      showSuccess('저장되었습니다.');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       logger.error('Failed to save attendances:', error);
