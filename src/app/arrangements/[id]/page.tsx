@@ -1266,7 +1266,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
         {/* Member Sidebar - 수동 배치 조정 단계(4단계) 또는 긴급 수정 모드에서 표시 */}
         {showMemberSidebar && (
-          <div data-print-hide className="relative flex-shrink-0">
+          <div data-print-hide className="relative h-full flex-shrink-0">
             {isEmergencyMode && memberSidebarHidden ? (
               <Button
                 onClick={() => setMemberSidebarHidden(false)}
@@ -1279,7 +1279,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 대원 목록
               </Button>
             ) : (
-              <div className="relative">
+              <div className="relative h-full">
                 {isEmergencyMode && (
                   <Button
                     onClick={() => setMemberSidebarHidden(true)}
