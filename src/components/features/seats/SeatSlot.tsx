@@ -297,7 +297,10 @@ const GridClickableMember = memo(function GridClickableMember({
         {name}
       </span>
       {heightCm != null && (
-        <span className="mt-0.5 text-[8px] leading-none text-[var(--color-text-tertiary)] sm:text-[9px] lg:text-[10px]">
+        <span
+          data-height-badge
+          className="mt-0.5 text-[8px] leading-none text-[var(--color-text-tertiary)] sm:text-[9px] lg:text-[10px]"
+        >
           {heightCm}cm
         </span>
       )}
