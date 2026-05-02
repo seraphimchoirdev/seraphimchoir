@@ -153,6 +153,7 @@ const MemberSidebar = memo(function MemberSidebar({
       id: g.id,
       name: g.name,
       part: g.part,
+      height_cm: g.height_cm,
       isGuest: true as const,
     }));
   }, [guestMembersData?.data]);
@@ -458,6 +459,7 @@ const MemberSidebar = memo(function MemberSidebar({
                       name={m.name}
                       part={m.part}
                       isPlaced={isMemberPlaced(m.id)}
+                      heightCm={m.height_cm}
                     />
                   ))}
                   {partGuests.map((g) => (
@@ -467,6 +469,7 @@ const MemberSidebar = memo(function MemberSidebar({
                       name={g.name}
                       part={g.part}
                       isPlaced={isMemberPlaced(g.id)}
+                      heightCm={g.height_cm}
                       isGuest
                     />
                   ))}
