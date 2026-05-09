@@ -1,29 +1,25 @@
 'use client';
 
-import { Check, Users } from 'lucide-react';
+import { format, isToday } from 'date-fns';
+import { Users } from 'lucide-react';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  READINESS_PARTS,
-  getReadyPartsCount,
-  useAttendanceDeadlines,
-} from '@/hooks/useAttendanceDeadlines';
 import { formatDisplayDate } from '@/lib/dashboard-context';
 import type { AttendanceSummaryItem } from '@/app/api/dashboard/conductor-status/route';
-
-interface PartSummary {
-  part: string;
-  total: number;
-  available: number;
-  unavailable: number;
-  noResponse: number;
-}
 
 interface AttendanceSummaryCardProps {
   nextServiceDate: string;
   summaries: AttendanceSummaryItem[];
+}
+
+/** 파트별 마지막 저장 시각 표시 — 당일이면 HH:mm, 그 외에는 M/d HH:mm */
+function formatLastUpdated(iso: string | null): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return isToday(d) ? format(d, 'HH:mm') : format(d, 'M/d HH:mm');
 }
 
 const PART_LABELS: Record<string, string> = {
@@ -66,12 +62,10 @@ function ServiceAttendanceSection({
   summary,
   showLabel,
   nextServiceDate,
-  deadlines,
 }: {
   summary: AttendanceSummaryItem;
   showLabel: boolean;
   nextServiceDate: string;
-  deadlines: ReturnType<typeof useAttendanceDeadlines>['data'];
 }) {
   const { availableCount, unavailableCount, byPart, serviceType } = summary;
 
@@ -121,17 +115,11 @@ function ServiceAttendanceSection({
           .filter((p) => PART_LABELS[p.part])
           .map((part) => {
             const colors = PART_CARD_COLORS[part.part];
-            const isReady = deadlines?.partDeadlines?.[part.part as keyof typeof deadlines.partDeadlines] !== null;
             return (
               <div
                 key={part.part}
-                className={`relative rounded-md border p-2 text-center ${colors?.bg ?? ''} ${colors?.border ?? 'border-[var(--color-border-subtle)]'}`}
+                className={`rounded-md border p-2 text-center ${colors?.bg ?? ''} ${colors?.border ?? 'border-[var(--color-border-subtle)]'}`}
               >
-                {isReady && (
-                  <div className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-success-500)]">
-                    <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
-                  </div>
-                )}
                 <div className={`text-xs font-semibold ${colors?.label ?? 'text-[var(--color-text-tertiary)]'}`}>
                   {PART_LABELS[part.part]}
                 </div>
@@ -140,6 +128,12 @@ function ServiceAttendanceSection({
                   <span className="text-sm font-normal text-[var(--color-text-tertiary)]">
                     /{part.total}
                   </span>
+                </div>
+                <div
+                  className="mt-1 text-[10px] leading-tight text-[var(--color-text-tertiary)]"
+                  title={part.lastUpdatedAt ?? '저장 이력 없음'}
+                >
+                  {formatLastUpdated(part.lastUpdatedAt)}
                 </div>
               </div>
             );
@@ -156,11 +150,6 @@ function ServiceAttendanceSection({
  * 같은 날에 여러 예배가 있으면 각각 독립적으로 표시합니다.
  */
 export function AttendanceSummaryCard({ nextServiceDate, summaries }: AttendanceSummaryCardProps) {
-  // 준비 완료 현황 조회
-  const { data: deadlines } = useAttendanceDeadlines(nextServiceDate || undefined);
-  const readyCount = getReadyPartsCount(deadlines);
-  const totalParts = READINESS_PARTS.length;
-
   const showLabels = summaries.length > 1;
 
   return (
@@ -178,17 +167,8 @@ export function AttendanceSummaryCard({ nextServiceDate, summaries }: Attendance
             summary={summary}
             showLabel={showLabels}
             nextServiceDate={nextServiceDate}
-            deadlines={deadlines}
           />
         ))}
-
-        {/* 준비 완료 현황 */}
-        <div className="flex items-center justify-between rounded-md bg-[var(--color-background-tertiary)] px-3 py-2 text-xs">
-          <span className="text-[var(--color-text-secondary)]">파트 준비 현황</span>
-          <span className={readyCount === totalParts ? 'font-semibold text-[var(--color-success-600)]' : 'font-medium text-[var(--color-text-tertiary)]'}>
-            {readyCount}/{totalParts} 완료
-          </span>
-        </div>
 
         {/* 액션 버튼 */}
         <Button asChild variant="outline" className="w-full">

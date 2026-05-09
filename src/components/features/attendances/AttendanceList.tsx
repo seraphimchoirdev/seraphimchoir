@@ -40,7 +40,6 @@ interface AttendanceListProps {
   date: Date;
   serviceScheduleId?: string;
   deadlines?: DeadlinesResponse;
-  onMarkReady?: (part: Part) => Promise<void>;
 }
 
 // Supabase Database 타입 사용
