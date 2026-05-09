@@ -14,12 +14,30 @@ interface AttendanceSummaryCardProps {
   summaries: AttendanceSummaryItem[];
 }
 
-/** 파트별 마지막 저장 시각 표시 — 당일이면 HH:mm, 그 외에는 M/d HH:mm */
+/**
+ * 파트별 마지막 저장 시각 표시 (간결 모드).
+ * - 당일: HH:mm (예: 14:23) — 시·분 정밀도
+ * - 그 외: M/d (예: 5/1) — 일자만, 분 정밀도는 title 툴팁의 raw ISO에서 확인
+ */
 function formatLastUpdated(iso: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
-  return isToday(d) ? format(d, 'HH:mm') : format(d, 'M/d HH:mm');
+  return isToday(d) ? format(d, 'HH:mm') : format(d, 'M/d');
+}
+
+/**
+ * 응답 활성도 색 점 — "파트장이 최근 입력했는가"를 한눈에.
+ * 임계값: 24h 이내(녹색), 24-72h(호박색), 그 외 또는 저장 없음(회색)
+ */
+function getRecencyDotClass(iso: string | null): string {
+  if (!iso) return 'bg-[var(--color-text-tertiary)]';
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return 'bg-[var(--color-text-tertiary)]';
+  const hours = (Date.now() - t) / 36e5;
+  if (hours <= 24) return 'bg-[var(--color-success-500)]';
+  if (hours <= 72) return 'bg-[var(--color-warning-500)]';
+  return 'bg-[var(--color-text-tertiary)]';
 }
 
 const PART_LABELS: Record<string, string> = {
@@ -115,6 +133,10 @@ function ServiceAttendanceSection({
           .filter((p) => PART_LABELS[p.part])
           .map((part) => {
             const colors = PART_CARD_COLORS[part.part];
+            const hasSaved = !!part.lastUpdatedAt;
+            const tooltip = hasSaved
+              ? `파트장 마지막 저장: ${part.lastUpdatedAt}`
+              : '이번 주 파트장 저장 이력 없음';
             return (
               <div
                 key={part.part}
@@ -130,10 +152,20 @@ function ServiceAttendanceSection({
                   </span>
                 </div>
                 <div
-                  className="mt-1 text-[10px] leading-tight text-[var(--color-text-tertiary)]"
-                  title={part.lastUpdatedAt ?? '저장 이력 없음'}
+                  className="mt-1 flex items-center justify-center gap-1 text-[10px] leading-tight"
+                  title={tooltip}
                 >
-                  {formatLastUpdated(part.lastUpdatedAt)}
+                  <span
+                    aria-hidden
+                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${getRecencyDotClass(part.lastUpdatedAt)}`}
+                  />
+                  {hasSaved ? (
+                    <span className="text-[var(--color-text-tertiary)]">
+                      {formatLastUpdated(part.lastUpdatedAt)} 저장됨
+                    </span>
+                  ) : (
+                    <span className="font-medium text-[var(--color-warning-600)]">미입력</span>
+                  )}
                 </div>
               </div>
             );
