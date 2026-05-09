@@ -160,11 +160,11 @@ function ServiceAttendanceSection({
                     className={`h-1.5 w-1.5 shrink-0 rounded-full ${getRecencyDotClass(part.lastUpdatedAt)}`}
                   />
                   {hasSaved ? (
-                    <span className="text-[var(--color-text-tertiary)]">
+                    <span className="font-semibold text-[var(--color-text-secondary)]">
                       {formatLastUpdated(part.lastUpdatedAt)} 저장됨
                     </span>
                   ) : (
-                    <span className="font-medium text-[var(--color-warning-600)]">미입력</span>
+                    <span className="font-semibold text-[var(--color-warning-700)]">미입력</span>
                   )}
                 </div>
               </div>
