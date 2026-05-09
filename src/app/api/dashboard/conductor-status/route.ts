@@ -10,6 +10,8 @@ export interface PartSummary {
   available: number;
   unavailable: number;
   noResponse: number;
+  /** 해당 파트의 마지막 출석 저장 시각 (ISO 문자열). 응답 없음(=행 없음)이면 null */
+  lastUpdatedAt: string | null;
 }
 
 export interface AttendanceSummaryItem {
@@ -84,10 +86,10 @@ export async function GET() {
         .in('member_status', ['REGULAR', 'NEW'])
         .eq('is_singer', true),
 
-      // 3. 출석 투표 데이터 (service_schedule_id 포함)
+      // 3. 출석 투표 데이터 (service_schedule_id 포함, updated_at으로 마지막 저장 시각 집계)
       adminSupabase
         .from('attendances')
-        .select('member_id, is_service_available, service_schedule_id')
+        .select('member_id, is_service_available, service_schedule_id, updated_at')
         .eq('date', nextSunday),
 
       // 4. 해당 날짜 예배 일정
@@ -120,9 +122,17 @@ export async function GET() {
     const parts = ['SOPRANO', 'ALTO', 'TENOR', 'BASS'];
     const totalMembers = activeMembers?.length || 0;
 
+    // member_id → part 매핑 (파트별 lastUpdatedAt 계산용)
+    const memberPartById = new Map<string, string>();
+    activeMembers?.forEach((m) => memberPartById.set(m.id, m.part));
+
     // 예배별 출석 집계 함수
     function aggregateAttendance(
-      filteredAttendances: { member_id: string; is_service_available: boolean }[]
+      filteredAttendances: {
+        member_id: string;
+        is_service_available: boolean;
+        updated_at?: string | null;
+      }[]
     ) {
       const attendanceMap = new Map(
         filteredAttendances.map((a) => [a.member_id, a.is_service_available])
@@ -134,6 +144,23 @@ export async function GET() {
       > = {};
       parts.forEach((part) => {
         partCounts[part] = { total: 0, available: 0, unavailable: 0, noResponse: 0 };
+      });
+
+      // 파트별 MAX(updated_at) — 활성 대원의 응답만 집계 (다른 파트 옮긴 과거 응답 등 제외)
+      const partLastUpdated: Record<string, string | null> = {
+        SOPRANO: null,
+        ALTO: null,
+        TENOR: null,
+        BASS: null,
+      };
+      filteredAttendances.forEach((a) => {
+        const part = memberPartById.get(a.member_id);
+        if (!part || !(part in partLastUpdated)) return;
+        if (!a.updated_at) return;
+        const prev = partLastUpdated[part];
+        if (prev === null || a.updated_at > prev) {
+          partLastUpdated[part] = a.updated_at;
+        }
       });
 
       let totalAvailable = 0;
@@ -171,6 +198,7 @@ export async function GET() {
           available: partCounts[part]?.available || 0,
           unavailable: partCounts[part]?.unavailable || 0,
           noResponse: partCounts[part]?.noResponse || 0,
+          lastUpdatedAt: partLastUpdated[part] ?? null,
         })),
       };
     }
