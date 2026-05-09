@@ -9,11 +9,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import useConductorStatus from '@/hooks/dashboard/useConductorStatus';
 import useDashboardContext from '@/hooks/dashboard/useDashboardContext';
-import {
-  READINESS_PARTS,
-  getReadyPartsCount,
-  useAttendanceDeadlines,
-} from '@/hooks/useAttendanceDeadlines';
 
 import UpcomingService from '../common/UpcomingService';
 import ArrangementActionCard from './ArrangementActionCard';
@@ -23,28 +18,13 @@ type SubtitleColor = 'success' | 'primary' | 'default';
 
 function getWelcomeSubtitle(
   hasArrangement: boolean | undefined,
-  readyCount: number,
-  totalParts: number,
   isSaturday: boolean,
 ): { text: string; color: SubtitleColor } {
   if (hasArrangement) {
     return { text: '이번 주 자리배치가 완료되었습니다.', color: 'success' };
   }
-
-  if (readyCount === totalParts) {
-    return isSaturday
-      ? { text: '모든 파트 준비 완료! 자리배치를 시작하세요.', color: 'success' }
-      : { text: '모든 파트 준비가 완료되었습니다.', color: 'success' };
-  }
-
-  if (readyCount > 0) {
-    return isSaturday
-      ? { text: `파트 준비 현황: ${readyCount}/${totalParts} 완료. 나머지 파트를 기다리고 있습니다.`, color: 'primary' }
-      : { text: `파트 준비 현황: ${readyCount}/${totalParts} 완료`, color: 'primary' };
-  }
-
   return isSaturday
-    ? { text: '아직 파트 준비가 시작되지 않았습니다.', color: 'default' }
+    ? { text: '오늘은 자리배치를 마감하는 날입니다.', color: 'primary' }
     : { text: '이번 주 현황을 확인하세요.', color: 'default' };
 }
 
@@ -65,13 +45,10 @@ export function ConductorDashboard() {
   const displayName = profile?.linked_member?.name || profile?.name || '지휘자';
   const isLoading = contextLoading || statusLoading;
 
-  const nextServiceDate = status?.nextServiceDate || context?.nextServiceDate || '';
-  const { data: deadlines } = useAttendanceDeadlines(nextServiceDate || undefined);
-  const readyCount = getReadyPartsCount(deadlines);
-  const totalParts = READINESS_PARTS.length;
   const isSaturday = new Date().getDay() === 6;
+  const hasArrangement = !!status?.latestArrangement;
 
-  const subtitle = getWelcomeSubtitle(deadlines?.hasArrangement, readyCount, totalParts, isSaturday);
+  const subtitle = getWelcomeSubtitle(hasArrangement, isSaturday);
 
   const subtitleColorClass =
     subtitle.color === 'success'
