@@ -135,6 +135,33 @@ export function normalizeDateString(dateStr: string, year: number): string | nul
 }
 
 /**
+ * 컬럼 텍스트 앞부분에서 날짜를 추출하여 YYYY-MM-DD로 정규화
+ *
+ * OCR이 좁은 칸을 합쳐 "7/5 녹", "1/7(수) 백"처럼 날짜+후드색을 한 컬럼으로
+ * 묶는 경우가 있다. 이때 normalizeDateString은 전체 문자열이 날짜가 아니므로
+ * null을 반환한다. 이 함수는 컬럼 맨 앞의 날짜 토큰만 떼어내 정규화한다.
+ *
+ * @returns { date, rest } 정규화된 날짜와 날짜를 제거한 나머지 텍스트
+ */
+function extractLeadingDate(
+  columnText: string | undefined,
+  year: number
+): { date: string | null; rest: string } {
+  if (!columnText) return { date: null, rest: '' };
+  const trimmed = columnText.trim();
+
+  // 맨 앞의 M/D, M.D, M-D (선택적 요일 포함) 토큰 매칭
+  const match = trimmed.match(/^(\d{1,2})[\/.\-](\d{1,2})(\([^)]*\))?/);
+  if (!match) return { date: null, rest: trimmed };
+
+  const normalized = normalizeDateString(match[0], year);
+  if (!normalized) return { date: null, rest: trimmed };
+
+  const rest = trimmed.slice(match[0].length).trim();
+  return { date: normalized, rest };
+}
+
+/**
  * "XXX" 또는 빈 값을 null로 변환
  */
 function normalizeEmptyValue(value: string | undefined): string | null {
@@ -390,13 +417,17 @@ export function parseScheduleFromWords(
     // 날짜가 있는 데이터 행인지 확인
     const hasDateRow = isDataRowWithDate(columns);
 
-    // 날짜 컬럼 찾기 (첫 번째 비어있지 않은 날짜 패턴 컬럼)
+    // 날짜 컬럼 찾기 (첫 번째 날짜로 시작하는 컬럼)
+    // OCR이 좁은 칸을 합쳐 "7/5 녹"처럼 날짜+후드색을 한 컬럼으로 묶을 수 있어
+    // extractLeadingDate로 컬럼 앞부분의 날짜만 떼어낸다.
     let dateColumnIndex = 0;
-    let dateStr = columns[0]?.trim();
+    let dateStr = columns[0]?.trim() ?? '';
+    let leading = extractLeadingDate(dateStr, year);
 
-    // 컬럼 0이 비어있거나 날짜가 아니면 컬럼 1 시도
-    if (!dateStr || !normalizeDateString(dateStr, year)) {
-      dateStr = columns[1]?.trim();
+    // 컬럼 0이 날짜로 시작하지 않으면 컬럼 1 시도
+    if (!leading.date) {
+      dateStr = columns[1]?.trim() ?? '';
+      leading = extractLeadingDate(dateStr, year);
       dateColumnIndex = 1;
     }
 
@@ -405,7 +436,7 @@ export function parseScheduleFromWords(
 
     // 날짜가 있는 행 처리
     if (hasDateRow) {
-      const normalizedDate = normalizeDateString(dateStr || '', year);
+      const normalizedDate = leading.date;
 
       if (!normalizedDate) {
         warnings.push(`행 ${rowIndex + 1}: 날짜 형식을 인식할 수 없음 - "${dateStr}"`);
@@ -423,8 +454,17 @@ export function parseScheduleFromWords(
         isSunday = dateObj.getDay() === 0;
       }
 
+      // 날짜와 후드색이 한 컬럼으로 합쳐진 레이아웃("7/5 녹")인지 판단.
+      // 이 경우 후드 전용 컬럼이 없고, 곡명이 두 컬럼(col1, col2)으로 쪼개진다.
+      // 곡명 = col1 + col2를 합치고, 작곡가부터는 col3에서 읽는다.
+      const mergedHood = extractHoodColor(leading.rest);
+      const isMergedDateHood = !!mergedHood;
+
       // 후드 색상 추출
-      let hoodColor = extractHoodColor(columns[1 + offset] || '');
+      let hoodColor = mergedHood;
+      if (!hoodColor) {
+        hoodColor = extractHoodColor(columns[1 + offset] || '');
+      }
       if (!hoodColor) {
         hoodColor = findHoodColorInRow(row);
       }
@@ -438,20 +478,40 @@ export function parseScheduleFromWords(
       lastOffset = offset;
       lastIsSunday = isSunday;
 
-      // 각 필드 추출
-      const notesText = normalizeEmptyValue(columns[7 + offset] || columns[6 + offset]);
-      const serviceType = inferServiceType(notesText, isSunday);
-
-      const schedule: ParsedSchedule = {
-        date: normalizedDate,
-        hood_color: hoodColor,
-        hymn_name: normalizeEmptyValue(columns[2 + offset]),
-        composer: normalizeEmptyValue(columns[3 + offset]),
-        music_source: normalizeEmptyValue(columns[4 + offset]),
-        offertory_performer: normalizeEmptyValue(columns[5 + offset]),
-        notes: notesText,
-        service_type: serviceType,
-      };
+      let schedule: ParsedSchedule;
+      if (isMergedDateHood) {
+        // 후드 전용 컬럼이 없는 레이아웃: 곡명은 col1+col2 병합
+        const hymnName =
+          [columns[1 + offset], columns[2 + offset]]
+            .map((c) => c?.trim())
+            .filter(Boolean)
+            .join(' ') || '';
+        // 비고는 col6 전용 (col5는 봉헌송이므로 폴백하면 값이 중복됨)
+        const notesText = normalizeEmptyValue(columns[6 + offset]);
+        schedule = {
+          date: normalizedDate,
+          hood_color: hoodColor,
+          hymn_name: normalizeEmptyValue(hymnName),
+          composer: normalizeEmptyValue(columns[3 + offset]),
+          music_source: normalizeEmptyValue(columns[4 + offset]),
+          offertory_performer: normalizeEmptyValue(columns[5 + offset]),
+          notes: notesText,
+          service_type: inferServiceType(notesText, isSunday),
+        };
+      } else {
+        // 표준 레이아웃(날짜/후드/곡명/작곡가/출처/봉헌송/비고가 각각 컬럼)
+        const notesText = normalizeEmptyValue(columns[7 + offset] || columns[6 + offset]);
+        schedule = {
+          date: normalizedDate,
+          hood_color: hoodColor,
+          hymn_name: normalizeEmptyValue(columns[2 + offset]),
+          composer: normalizeEmptyValue(columns[3 + offset]),
+          music_source: normalizeEmptyValue(columns[4 + offset]),
+          offertory_performer: normalizeEmptyValue(columns[5 + offset]),
+          notes: notesText,
+          service_type: inferServiceType(notesText, isSunday),
+        };
+      }
 
       schedules.push(schedule);
     }
