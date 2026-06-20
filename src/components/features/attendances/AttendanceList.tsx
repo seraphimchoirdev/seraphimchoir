@@ -315,18 +315,25 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
 
   // 변경사항 저장
   const handleSubmit = async () => {
-    if (Object.keys(pendingChanges).length === 0) return;
-
     setIsSubmitting(true);
     try {
-      const payload = Object.entries(pendingChanges).map(([memberId, changes]) => {
+      // 화면에 표시된 전체 멤버(파트장은 본인 파트)의 현재 상태를 모두 기록한다.
+      // 변경분(pendingChanges)만 저장하면 기본 true로 표시된 등단자가 DB에 남지 않아
+      // 마이페이지 최근 등단일·출석 통계가 부정확해진다. 전체 스냅샷을 upsert해
+      // "레코드 없음=등단" 암묵 규약을 명시적 레코드로 확정한다.
+      const visibleMembers = Object.values(membersByPart).flat();
+
+      const payload = visibleMembers.map((member) => {
+        const memberId = member.id;
+        const changes = pendingChanges[memberId];
         const existing = attendances?.find((a) => a.member_id === memberId);
 
+        // 표시 우선순위: 사용자 변경 > 기존 DB 값 > 기본 true(등단/연습 가능)
         const is_service_available =
-          changes.is_service_available ?? existing?.is_service_available ?? true;
+          changes?.is_service_available ?? existing?.is_service_available ?? true;
 
         const is_practice_attended =
-          changes.is_practice_attended ?? existing?.is_practice_attended ?? true;
+          changes?.is_practice_attended ?? existing?.is_practice_attended ?? true;
 
         return {
           member_id: memberId,
@@ -336,6 +343,11 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
           is_practice_attended,
         };
       });
+
+      if (payload.length === 0) {
+        setIsSubmitting(false);
+        return;
+      }
 
       const res = await fetch('/api/attendances/batch', {
         method: 'POST',
@@ -370,7 +382,16 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
     setResetDialog(false);
   };
 
-  const hasChanges = Object.keys(pendingChanges).length > 0;
+  // 화면에 보이는 멤버 중 이 예배에 아직 출석 레코드가 없는 사람이 있는지
+  // (전원 등단이라 아무도 토글하지 않아도 첫 저장으로 등단 기록을 남길 수 있어야 함)
+  const hasUnsavedMembers = useMemo(() => {
+    const visibleMembers = Object.values(membersByPart).flat();
+    return visibleMembers.some(
+      (member) => !attendances?.some((a) => a.member_id === member.id)
+    );
+  }, [membersByPart, attendances]);
+
+  const hasChanges = Object.keys(pendingChanges).length > 0 || hasUnsavedMembers;
 
   if (isLoading) {
     return (
@@ -691,7 +712,9 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
                 ) : (
                   <Save className="mr-1.5 h-4 w-4" />
                 )}
-                저장 ({Object.keys(pendingChanges).length}건)
+                {Object.keys(pendingChanges).length > 0
+                  ? `저장 (${Object.keys(pendingChanges).length}건)`
+                  : '전체 저장'}
               </Button>
             </div>
           </div>
