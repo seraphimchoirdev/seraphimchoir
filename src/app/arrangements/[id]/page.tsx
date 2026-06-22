@@ -41,6 +41,8 @@ import { showError, showInfo, showSuccess } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { calculateGridLayoutFromSeats } from '@/lib/utils/gridUtils';
 
+import { useEmergencyUnavailable } from '@/hooks/useEmergencyUnavailable';
+
 import { WorkflowStep, useArrangementStore } from '@/store/arrangement-store';
 
 import type { Database } from '@/types/database.types';
@@ -90,6 +92,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     saveSharedSnapshot,
     clearSharedSnapshot,
     emergencyChanges,
+    addEmergencyChange,
   } = useArrangementStore();
 
   // 키보드 단축키 훅 초기화 (Ctrl+Z/Y for Undo/Redo)
@@ -350,15 +353,53 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
     [setGridLayout, setAssignments, workflow.isWizardMode, workflow.currentStep, completeStep, goToStep]
   );
 
-  // 긴급 등단 불가 처리 핸들러 (다이얼로그 열기)
-  // - 컨텍스트 메뉴에서 클릭 시 다이얼로그를 열어 처리 방식 선택
-  // - 빈 자리 유지 / 자동 당기기 / 수동 처리 중 선택 가능
-  const handleEmergencyUnavailable = useCallback(
-    (params: { memberId: string; memberName: string; part: Part; row: number; col: number }) => {
-      setEmergencyTargetMember(params);
-      setEmergencyDialogOpen(true);
+  // 긴급 등단 불가 처리 훅 (모달 없이 즉시 "빈 자리 유지"로 처리)
+  const { handleEmergencyUnavailable: runEmergencyUnavailable } = useEmergencyUnavailable({
+    arrangementId: id,
+    date: arrangement?.date || '',
+    serviceScheduleId: arrangement?.service_schedule_id ?? undefined,
+    onSuccess: (message) => {
+      showSuccess(message);
+      setEmergencyTargetMember(null);
+      setSeatSelectionMode(null);
     },
-    []
+    onError: (message) => showError(`오류: ${message}`),
+  });
+
+  // 긴급 등단 불가 처리 핸들러 (모달 없이 즉시 빈 자리 처리 + 완료 토스트)
+  // - 컨텍스트 메뉴 클릭 시 모달 없이 곧바로 LEAVE_EMPTY(빈 자리 유지) 방식으로 처리
+  // - 실제 대형 조정은 사용자가 눈으로 보며 수동으로 하므로 자동당기기/수동처리 옵션은 비노출
+  //   (EmergencyUnavailableDialog 코드는 유지 — 추후 재활성화 가능)
+  // - 되돌리기 보존: simulateLeaveEmpty로 cascade를 미리 캡처 후 addEmergencyChange 기록
+  const handleEmergencyUnavailable = useCallback(
+    async (params: { memberId: string; memberName: string; part: Part; row: number; col: number }) => {
+      // (순서 중요) 상태 변경 전에 시뮬레이션으로 cascadeChanges 캡처
+      const sim = useArrangementStore.getState().simulateLeaveEmpty(params.row, params.col);
+
+      let result;
+      try {
+        result = await runEmergencyUnavailable({ ...params, processMode: 'LEAVE_EMPTY' });
+      } catch {
+        // 실패 시 훅이 onError 토스트 + store 롤백을 처리하므로 이력은 남기지 않음
+        return;
+      }
+
+      // 변동 이력 기록 (되돌리기용) — EmergencyUnavailableDialog와 동일 구조
+      addEmergencyChange({
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        type: 'UNAVAILABLE',
+        memberId: params.memberId,
+        memberName: params.memberName,
+        part: params.part,
+        processMode: 'LEAVE_EMPTY',
+        removedFrom: { row: params.row, col: params.col },
+        cascadeChanges: sim.cascadeChanges,
+        movedMemberCount: sim.movedMemberCount,
+        beforeSnapshot: result?.beforeSnapshot,
+      });
+    },
+    [runEmergencyUnavailable, addEmergencyChange]
   );
 
   // 패널에서 "등단 불가 처리" 클릭 시 래퍼 (모바일: 바텀시트 닫고 좌석 선택 모드 진입)
