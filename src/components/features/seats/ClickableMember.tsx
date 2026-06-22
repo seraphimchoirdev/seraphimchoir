@@ -65,11 +65,12 @@ function ClickableMember({ memberId, name, part, isPlaced, isGuest, heightCm }: 
         // 기본 호버
         !isPlaced && !isSelected && 'hover:shadow-sm hover:brightness-95 active:scale-[0.97]'
       )}
-      aria-label={`${name}${heightCm != null ? ` ${heightCm}cm` : ''} - ${part} 파트${isGuest ? ' (게스트)' : ''} ${isPlaced ? '(이미 배치됨)' : isSelected ? '(선택됨)' : '클릭하여 선택'}`}
+      aria-label={`${name} - ${part} 파트${isGuest ? ' (게스트)' : ''} ${isPlaced ? '(이미 배치됨)' : isSelected ? '(선택됨)' : '클릭하여 선택'}`}
       aria-pressed={isSelected}
     >
       {name}
-      {heightCm != null && (
+      {/* 키(cm) 표시는 일시적으로 비활성화 (요청에 따라 숨김). heightCm prop은 유지. */}
+      {false && heightCm != null && (
         <span className="ml-1 text-[10px] font-normal text-[var(--color-text-tertiary)]">
           {heightCm}cm
         </span>

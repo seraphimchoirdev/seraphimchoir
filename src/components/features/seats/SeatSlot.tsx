@@ -296,7 +296,8 @@ const GridClickableMember = memo(function GridClickableMember({
       >
         {name}
       </span>
-      {heightCm != null && (
+      {/* 키(cm) 표시는 일시적으로 비활성화 (요청에 따라 숨김). heightCm prop은 유지. */}
+      {false && heightCm != null && (
         <span
           data-height-badge
           className="mt-0.5 text-[8px] leading-none text-[var(--color-text-tertiary)] sm:text-[9px] lg:text-[10px]"
