@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-06-22 | fix(arrangements): 빈자리 정리 되돌리기 실패 및 hydration 에러 수정 |
 | 2026-06-22 | feat(arrangements): 긴급 등단 불가 처리를 모달 없이 즉시 처리 |
 | 2026-06-20 | fix(attendances): 출석 저장 시 전체 멤버 상태 기록하도록 수정 |
 | 2026-06-20 | fix(service-schedules): 선곡표 일괄 등록 PDF/JPG 파싱 실패 수정 |

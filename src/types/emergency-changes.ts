@@ -126,6 +126,9 @@ export interface EmergencyChange {
     assignments: Record<string, SeatAssignment>;
     gridLayout: GridLayout;
   };
+
+  /** 좌석 전용 변동(예: 빈자리 정리): 되돌리기 시 출석 복원을 건너뜀 */
+  skipAttendanceRestore?: boolean;
 }
 
 /**

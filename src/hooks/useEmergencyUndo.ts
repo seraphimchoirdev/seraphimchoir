@@ -95,14 +95,18 @@ export function useEmergencyUndo({
       logger.debug(`[Undo] 되돌리기 시작: ${lastChange.type} - ${lastChange.memberName}`);
 
       // 2. DB 복원 먼저 (실패 시 Store 변경 없이 종료)
-      const restoreAvailable = lastChange.type === 'UNAVAILABLE';
-      await restoreAttendanceMutation.mutateAsync({
-        memberId: lastChange.memberId,
-        isServiceAvailable: restoreAvailable,
-      });
+      // 좌석 전용 변동(빈자리 정리 등)은 출석을 바꾸지 않았으므로 출석 복원을 건너뜀.
+      // (가짜 memberId를 출석 API에 보내 검증 실패하는 것을 방지)
+      if (!lastChange.skipAttendanceRestore) {
+        const restoreAvailable = lastChange.type === 'UNAVAILABLE';
+        await restoreAttendanceMutation.mutateAsync({
+          memberId: lastChange.memberId,
+          isServiceAvailable: restoreAvailable,
+        });
 
-      // 3. 캐시 무효화
-      await queryClient.invalidateQueries({ queryKey: ['attendances', { date }] });
+        // 3. 출석 캐시 무효화 (출석을 실제로 복원한 경우에만)
+        await queryClient.invalidateQueries({ queryKey: ['attendances', { date }] });
+      }
 
       // 4. beforeSnapshot 데이터로 DB에 저장 (gridLayout + seats)
       const { beforeSnapshot } = lastChange;
@@ -140,7 +144,9 @@ export function useEmergencyUndo({
       await queryClient.invalidateQueries({ queryKey: ['arrangements'] });
 
       const typeLabel = removedChange.type === 'UNAVAILABLE' ? '등단 불가' : '등단 가능';
-      const message = `${removedChange.memberName}님의 ${typeLabel} 처리가 되돌려졌습니다.`;
+      const message = removedChange.skipAttendanceRestore
+        ? `${removedChange.memberName}이(가) 되돌려졌습니다.`
+        : `${removedChange.memberName}님의 ${typeLabel} 처리가 되돌려졌습니다.`;
       logger.debug(`[Undo] 완료: ${message}`);
       onSuccess?.(message);
     } catch (error) {

@@ -33,6 +33,9 @@ import EmergencyChangesBanner from './EmergencyChangesBanner';
 
 type Part = Database['public']['Enums']['part'];
 
+// 빈자리 정리 변동의 가짜 멤버 식별자 (실제 대원이 아님 → 출석 복원 대상 아님)
+const COMPACT_SENTINEL_ID = '__COMPACT__';
+
 interface EmergencyEditPanelProps {
   /** 배치표 ID */
   arrangementId: string;
@@ -212,10 +215,12 @@ export default function EmergencyEditPanel({
       id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
       type: 'UNAVAILABLE',
-      memberId: '__COMPACT__',
+      memberId: COMPACT_SENTINEL_ID,
       memberName: '빈자리 정리',
       part: 'SPECIAL' as Part,
       processMode: 'LEAVE_EMPTY',
+      // 좌석 전용 변동 → 되돌리기 시 출석 복원 스킵 (가짜 memberId가 출석 API 검증 실패하는 것 방지)
+      skipAttendanceRestore: true,
       cascadeChanges: [{
         step: 1,
         type: 'SHRINK',
@@ -664,16 +669,21 @@ export default function EmergencyEditPanel({
         onOpenChange={setCompactDialogOpen}
         title="빈자리 정리"
         description={
-          <div className="space-y-2">
-            <p>줄 끝의 빈자리를 정리하고, 빈 칸을 왼쪽으로 당깁니다.</p>
-            <div className="rounded-lg bg-[var(--color-background-secondary)] p-3 text-sm">
-              <p><strong>{compactPreview.movedCount}명</strong> 이동 예정</p>
-              <p><strong>{compactPreview.emptyRemoved}개</strong> 빈자리 제거 예정</p>
-            </div>
-            <p className="text-xs text-[var(--color-text-tertiary)]">
+          // ConfirmDialog는 description을 <p>로 감싸므로 <div>/<p> 중첩 금지 → <span className="block"> 사용
+          <span className="block space-y-2">
+            <span className="block">줄 끝의 빈자리를 정리하고, 빈 칸을 왼쪽으로 당깁니다.</span>
+            <span className="block rounded-lg bg-[var(--color-background-secondary)] p-3 text-sm">
+              <span className="block">
+                <strong>{compactPreview.movedCount}명</strong> 이동 예정
+              </span>
+              <span className="block">
+                <strong>{compactPreview.emptyRemoved}개</strong> 빈자리 제거 예정
+              </span>
+            </span>
+            <span className="block text-xs text-[var(--color-text-tertiary)]">
               이 작업은 변동 이력에 기록되며, 되돌리기가 가능합니다.
-            </p>
-          </div>
+            </span>
+          </span>
         }
         confirmLabel="정리하기"
         variant="warning"
