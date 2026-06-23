@@ -9,7 +9,7 @@ import { hasPermission, type UserRole } from '@/app/api/auth/types';
 /**
  * GET /api/files/download?path=documents/2026/xxx.pdf
  *
- * 비공개 R2 버킷(seraphim-private)에서 파일을 다운로드합니다.
+ * 비공개 R2 버킷(saeropim-private)에서 파일을 다운로드합니다.
  * MANAGER 이상 권한이 필요합니다.
  */
 export async function GET(request: NextRequest) {

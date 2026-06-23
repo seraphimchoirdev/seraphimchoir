@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { canParticipateInCommunity } from '@/lib/community/album-constants';
-import { DOCUMENT_ALLOWED_TYPES, IMAGE_ALLOWED_TYPES, R2_LIMITS } from '@/lib/r2/constants';
+import {
+  DOCUMENT_ALLOWED_TYPES,
+  IMAGE_ALLOWED_TYPES,
+  R2_LIMITS,
+  R2_PRIVATE_BUCKET,
+  R2_PUBLIC_BUCKET,
+} from '@/lib/r2/constants';
 import { generateFileKey, uploadToR2 } from '@/lib/r2/upload';
 import { createClient } from '@/lib/supabase/server';
 
@@ -81,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     // R2 업로드
-    const bucket = bucketType === 'private' ? 'seraphim-private' : 'seraphim-public';
+    const bucket = bucketType === 'private' ? R2_PRIVATE_BUCKET : R2_PUBLIC_BUCKET;
     const key = generateFileKey(prefix, file.name);
     const buffer = Buffer.from(await file.arrayBuffer());
 
