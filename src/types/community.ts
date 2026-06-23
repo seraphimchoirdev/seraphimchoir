@@ -82,6 +82,53 @@ export interface CursorPage<T> {
   hasMore: boolean;
 }
 
+// ============================================================
+// 앨범 관련 Rich types
+// ============================================================
+
+export interface AlbumCreator {
+  id: string;
+  name: string;
+  role: string | null;
+}
+
+/** 앨범 + 작성자 + 커버 (목록/상세용) */
+export interface AlbumWithMeta extends PhotoAlbum {
+  creator: AlbumCreator | null;
+  cover_url: string | null;
+  event?: { id: string; title: string; event_date: string } | null;
+}
+
+/** 앨범 사진 + 업로더 */
+export interface AlbumPhotoWithUploader extends AlbumPhoto {
+  uploader: AlbumCreator | null;
+}
+
+export interface CreateAlbumRequest {
+  title: string;
+  description?: string;
+  event_date: string;
+  cover_image_path?: string;
+  choir_event_id?: string;
+}
+
+export interface UpdateAlbumRequest {
+  title?: string;
+  description?: string;
+  event_date?: string;
+  cover_image_path?: string;
+  choir_event_id?: string | null;
+}
+
+export interface UploadAlbumPhotosRequest {
+  photos: Array<{
+    file_path: string;
+    thumbnail_path?: string;
+    caption?: string;
+    file_size?: number;
+  }>;
+}
+
 /** 공지 목록 응답 (pinned 분리) */
 export interface NoticeListResponse {
   pinned: PostWithAuthor[];
