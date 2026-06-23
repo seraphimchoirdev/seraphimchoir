@@ -35,3 +35,16 @@ export function canParticipateInCommunity(profile: {
   if (profile.linked_member_id) return true;
   return ALBUM_STAFF_ROLES.includes(profile.role || '');
 }
+
+/**
+ * 사진 이모지 반응 프리셋 (좋아요/웃음/놀람/감사·기도/박수).
+ * API와 프론트엔드가 이 배열을 공유하여 반응 유효성을 검증한다.
+ * 프리셋 변경 시 DB 마이그레이션 없이 이 상수만 수정하면 된다.
+ */
+export const PHOTO_REACTION_EMOJIS = ['❤️', '😂', '😮', '🙏', '👏'] as const;
+export type PhotoReactionEmoji = (typeof PHOTO_REACTION_EMOJIS)[number];
+
+/** 주어진 문자열이 허용된 반응 이모지인지 검증 */
+export function isValidReactionEmoji(emoji: string): emoji is PhotoReactionEmoji {
+  return (PHOTO_REACTION_EMOJIS as readonly string[]).includes(emoji);
+}

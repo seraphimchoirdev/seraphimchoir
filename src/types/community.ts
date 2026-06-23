@@ -10,6 +10,8 @@ export type PostLike = Tables<'post_likes'>;
 export type NoticeConfirmation = Tables<'notice_confirmations'>;
 export type PhotoAlbum = Tables<'photo_albums'>;
 export type AlbumPhoto = Tables<'album_photos'>;
+export type AlbumPhotoComment = Tables<'album_photo_comments'>;
+export type AlbumPhotoReaction = Tables<'album_photo_reactions'>;
 export type Poll = Tables<'polls'>;
 export type PollOption = Tables<'poll_options'>;
 export type PollResponse = Tables<'poll_responses'>;
@@ -99,9 +101,30 @@ export interface AlbumWithMeta extends PhotoAlbum {
   event?: { id: string; title: string; event_date: string } | null;
 }
 
-/** 앨범 사진 + 업로더 */
+/** 이모지별 반응 집계 (예: { '❤️': 3, '😂': 1 }) */
+export type PhotoReactionCounts = Record<string, number>;
+
+/** 앨범 사진 + 업로더 + 상호작용(반응/댓글) 정보 */
 export interface AlbumPhotoWithUploader extends AlbumPhoto {
   uploader: AlbumCreator | null;
+  /** 현재 사용자가 남긴 반응 이모지 (없으면 null) */
+  my_reaction: string | null;
+  /** 이모지별 반응 수 집계 */
+  reaction_counts: PhotoReactionCounts;
+  /** 댓글 수 (album_photos.comment_count 캐시) */
+  comment_count: number;
+}
+
+/** 사진 댓글 + author + 대댓글 (CommentWithAuthor 패턴 복제) */
+export interface PhotoCommentWithAuthor extends AlbumPhotoComment {
+  author: PostAuthor | null;
+  replies?: PhotoCommentWithAuthor[];
+}
+
+/** 반응 토글 응답 */
+export interface TogglePhotoReactionResponse {
+  my_reaction: string | null;
+  reaction_counts: PhotoReactionCounts;
 }
 
 export interface CreateAlbumRequest {

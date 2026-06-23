@@ -79,9 +79,35 @@ export async function GET(
     });
   }
 
+  // 반응 enrich: 내 반응 + 이모지별 집계 (배치 조회로 N+1 회피)
+  const photoIds = (photos || []).map((p) => p.id);
+  const myReactionMap = new Map<string, string>();
+  const reactionCountMap = new Map<string, Record<string, number>>();
+
+  if (photoIds.length) {
+    const { data: reactions } = await adminClient
+      .from('album_photo_reactions')
+      .select('photo_id, user_id, emoji')
+      .in('photo_id', photoIds);
+
+    for (const r of reactions || []) {
+      // 이모지별 집계
+      const counts = reactionCountMap.get(r.photo_id) ?? {};
+      counts[r.emoji] = (counts[r.emoji] ?? 0) + 1;
+      reactionCountMap.set(r.photo_id, counts);
+      // 현재 사용자의 반응
+      if (r.user_id === user.id) {
+        myReactionMap.set(r.photo_id, r.emoji);
+      }
+    }
+  }
+
   const enriched: AlbumPhotoWithUploader[] = (photos || []).map((p) => ({
     ...p,
     uploader: uploaderMap.get(p.uploaded_by) || null,
+    my_reaction: myReactionMap.get(p.id) ?? null,
+    reaction_counts: reactionCountMap.get(p.id) ?? {},
+    comment_count: p.comment_count ?? 0,
   }));
 
   const hasMore = (photos?.length || 0) === limit;

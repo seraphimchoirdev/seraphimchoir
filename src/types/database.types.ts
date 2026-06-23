@@ -34,10 +34,91 @@ export type Database = {
   }
   public: {
     Tables: {
+      album_photo_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string | null
+          id: string
+          is_deleted: boolean | null
+          parent_id: string | null
+          photo_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          parent_id?: string | null
+          photo_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          parent_id?: string | null
+          photo_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "album_photo_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "album_photo_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "album_photo_comments_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "album_photos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      album_photo_reactions: {
+        Row: {
+          created_at: string | null
+          emoji: string
+          id: string
+          photo_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          emoji: string
+          id?: string
+          photo_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          emoji?: string
+          id?: string
+          photo_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "album_photo_reactions_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "album_photos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       album_photos: {
         Row: {
           album_id: string
           caption: string | null
+          comment_count: number | null
           created_at: string | null
           file_path: string
           file_size: number | null
@@ -48,6 +129,7 @@ export type Database = {
         Insert: {
           album_id: string
           caption?: string | null
+          comment_count?: number | null
           created_at?: string | null
           file_path: string
           file_size?: number | null
@@ -58,6 +140,7 @@ export type Database = {
         Update: {
           album_id?: string
           caption?: string | null
+          comment_count?: number | null
           created_at?: string | null
           file_path?: string
           file_size?: number | null
@@ -1806,12 +1889,4 @@ export const Constants = {
     },
   },
 } as const
-
-// ─── 커스텀 타입 별칭 (자동 생성 타입에서 파생) ───
-
-/** 배치표 상태: DB에서 TEXT CHECK로 정의됨 */
-export type ArrangementStatus = 'DRAFT' | 'SHARED' | 'CONFIRMED';
-
-/** 연습 출석 타입: DB enum practice_attendance_type */
-export type PracticeAttendanceType = Database['public']['Enums']['practice_attendance_type'];
 

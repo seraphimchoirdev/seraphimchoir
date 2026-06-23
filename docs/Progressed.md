@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-06-23 | feat(community): 앨범 사진 반응·댓글·다운로드 백엔드 추가 |
 | 2026-06-23 | fix(community): 파일 업로드 버킷명 오타 수정 (seraphim → saeropim) |
 | 2026-06-23 | fix(community): linked_member 없는 운영진의 앨범/업로드 권한 차단 수정 |
 | 2026-06-23 | feat(community): 사진첩(앨범) 구현 복원 (stash → 정식 커밋, 검증 예정) |
