@@ -225,14 +225,15 @@ export default function PhotoGrid({
           >
             {/* row 1: 반응 + 다운로드 + 댓글 + 삭제 */}
             <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1 overflow-x-auto">
-                <PhotoReactionBar
-                  albumId={albumId}
-                  photoId={current.id}
-                  myReaction={current.my_reaction}
-                  reactionCounts={current.reaction_counts}
-                />
-              </div>
+              <PhotoReactionBar
+                albumId={albumId}
+                photoId={current.id}
+                myReaction={current.my_reaction}
+                reactionCounts={current.reaction_counts}
+              />
+
+              {/* spacer: 반응(좌) ↔ 액션 버튼(우) 양끝 정렬 */}
+              <div className="flex-1" />
 
               <button
                 onClick={handleDownload}
