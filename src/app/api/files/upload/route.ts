@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { canParticipateInCommunity } from '@/lib/community/album-constants';
 import { DOCUMENT_ALLOWED_TYPES, IMAGE_ALLOWED_TYPES, R2_LIMITS } from '@/lib/r2/constants';
 import { generateFileKey, uploadToR2 } from '@/lib/r2/upload';
 import { createClient } from '@/lib/supabase/server';
@@ -34,8 +35,9 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!profile?.linked_member_id) {
-      return NextResponse.json({ error: '대원 연결이 필요합니다.' }, { status: 403 });
+    // 연결된 대원이거나 운영진(linked 없는 관리자 계정 등)이면 업로드 허용
+    if (!profile || !canParticipateInCommunity(profile)) {
+      return NextResponse.json({ error: '업로드 권한이 없습니다.' }, { status: 403 });
     }
 
     const formData = await request.formData();

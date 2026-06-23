@@ -2,7 +2,10 @@ import { z } from 'zod';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { AUTO_ALBUM_SENTINEL } from '@/lib/community/album-constants';
+import {
+  AUTO_ALBUM_SENTINEL,
+  canParticipateInCommunity,
+} from '@/lib/community/album-constants';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 const quickUploadSchema = z.object({
@@ -47,15 +50,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
   }
 
-  // 대원 연동 확인 (RLS와 동일한 정책)
+  // 대원 연동 확인: 연결된 대원이거나 운영진(linked 없는 관리자 계정 등)이면 허용
   const { data: profile } = await supabase
     .from('user_profiles')
-    .select('linked_member_id')
+    .select('linked_member_id, role')
     .eq('id', user.id)
     .single();
-  if (!profile?.linked_member_id) {
+  if (!profile || !canParticipateInCommunity(profile)) {
     return NextResponse.json(
-      { error: '연결된 대원 정보가 필요합니다.' },
+      { error: '사진 업로드 권한이 없습니다.' },
       { status: 403 }
     );
   }

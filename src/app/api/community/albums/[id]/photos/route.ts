@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { canParticipateInCommunity } from '@/lib/community/album-constants';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import type { AlbumPhotoWithUploader } from '@/types/community';
@@ -110,12 +111,13 @@ export async function POST(
 
   const { data: profile } = await supabase
     .from('user_profiles')
-    .select('linked_member_id')
+    .select('linked_member_id, role')
     .eq('id', user.id)
     .single();
-  if (!profile?.linked_member_id) {
+  // 연결된 대원이거나 운영진(linked 없는 관리자 계정 등)이면 업로드 허용
+  if (!profile || !canParticipateInCommunity(profile)) {
     return NextResponse.json(
-      { error: '연결된 대원 정보가 필요합니다.' },
+      { error: '사진 업로드 권한이 없습니다.' },
       { status: 403 }
     );
   }

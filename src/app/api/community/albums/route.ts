@@ -98,13 +98,10 @@ export async function POST(request: NextRequest) {
     .eq('id', user.id)
     .single();
 
-  if (!profile?.linked_member_id) {
-    return NextResponse.json(
-      { error: '연결된 대원 정보가 필요합니다.' },
-      { status: 403 }
-    );
-  }
-  if (!ALLOWED_CREATE_ROLES.includes(profile.role || '')) {
+  // 앨범 생성은 운영진(ALLOWED_CREATE_ROLES) 권한이 필요하다.
+  // 운영진은 연결된 대원(linked_member)이 없을 수 있으므로(예: 시스템 관리자 계정)
+  // 역할만으로 허용한다.
+  if (!ALLOWED_CREATE_ROLES.includes(profile?.role || '')) {
     return NextResponse.json(
       { error: '앨범 생성 권한이 없습니다.' },
       { status: 403 }
@@ -120,7 +117,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data: album, error: insertError } = await supabase
+  // 권한은 위에서 검증 완료. insert는 adminClient로 수행한다.
+  // (RLS의 'Albums insertable by leaders'가 is_member_linked()를 요구해
+  //  linked_member 없는 운영진 계정이 사용자 클라이언트로는 막히기 때문 —
+  //  사진 insert 등 다른 앨범 작업과 동일하게 adminClient 사용)
+  const adminClient = await createAdminClient();
+  const { data: album, error: insertError } = await adminClient
     .from('photo_albums')
     .insert({
       title: parsed.data.title,
