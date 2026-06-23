@@ -1,6 +1,13 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Trash2, X } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  MessageCircle,
+  Trash2,
+  X,
+} from 'lucide-react';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -11,6 +18,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { showError, showSuccess } from '@/lib/toast';
 
 import type { AlbumPhotoWithUploader } from '@/types/community';
+
+import PhotoCommentSheet from './PhotoCommentSheet';
+import PhotoReactionBar from './PhotoReactionBar';
 
 interface PhotoGridProps {
   albumId: string;
@@ -32,6 +42,7 @@ export default function PhotoGrid({
 }: PhotoGridProps) {
   const { profile } = useAuth();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [showComments, setShowComments] = useState(false);
   const deletePhoto = useDeleteAlbumPhoto(albumId);
 
   // 무한 스크롤
@@ -85,6 +96,17 @@ export default function PhotoGrid({
     return current.uploader?.id === profile.id;
   }, [current, profile, canManageAlbum]);
 
+  const handleDownload = () => {
+    if (!current) return;
+    // 프록시 라우트를 통해 Content-Disposition: attachment로 다운로드
+    const link = document.createElement('a');
+    link.href = `/api/community/albums/${albumId}/photos/${current.id}/download`;
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleDelete = async () => {
     if (!current) return;
     if (!confirm('이 사진을 삭제할까요?')) return;
@@ -135,7 +157,7 @@ export default function PhotoGrid({
       {/* 라이트박스 */}
       {current && openIndex !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
+          className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center bg-black/95"
           onClick={closeLightbox}
         >
           {/* 닫기 */}
@@ -196,33 +218,82 @@ export default function PhotoGrid({
             />
           </div>
 
-          {/* 하단 정보 + 삭제 */}
+          {/* 하단 액션 바 + 정보 */}
           <div
-            className="absolute right-0 bottom-0 left-0 flex items-center justify-between gap-3 bg-gradient-to-t from-black/80 to-transparent px-4 py-4 text-white"
+            className="absolute right-0 bottom-0 left-0 flex flex-col gap-2 bg-gradient-to-t from-black/80 to-transparent px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))] text-white"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="min-w-0 flex-1">
-              {current.caption && (
-                <p className="line-clamp-2 text-sm">{current.caption}</p>
-              )}
-              {current.uploader && (
-                <p className="mt-0.5 text-xs text-white/70">
-                  업로더: {current.uploader.name}
-                </p>
+            {/* row 1: 반응 + 다운로드 + 댓글 + 삭제 */}
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1 overflow-x-auto">
+                <PhotoReactionBar
+                  albumId={albumId}
+                  photoId={current.id}
+                  myReaction={current.my_reaction}
+                  reactionCounts={current.reaction_counts}
+                />
+              </div>
+
+              <button
+                onClick={handleDownload}
+                className="flex shrink-0 items-center gap-1 rounded-full bg-white/10 px-3 py-2 text-sm backdrop-blur-sm transition-colors hover:bg-white/20"
+                aria-label="사진 다운로드"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">저장</span>
+              </button>
+
+              <button
+                onClick={() => setShowComments(true)}
+                className="flex shrink-0 items-center gap-1 rounded-full bg-white/10 px-3 py-2 text-sm backdrop-blur-sm transition-colors hover:bg-white/20"
+                aria-label="댓글"
+              >
+                <MessageCircle className="h-4 w-4" />
+                {current.comment_count > 0 && (
+                  <span className="text-xs tabular-nums">
+                    {current.comment_count}
+                  </span>
+                )}
+              </button>
+
+              {canDeleteCurrent && (
+                <button
+                  onClick={handleDelete}
+                  disabled={deletePhoto.isPending}
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--color-error-500)] px-3 py-2 text-sm font-medium transition-colors hover:bg-[var(--color-error-600)] disabled:opacity-50"
+                  aria-label="사진 삭제"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">삭제</span>
+                </button>
               )}
             </div>
-            {canDeleteCurrent && (
-              <button
-                onClick={handleDelete}
-                disabled={deletePhoto.isPending}
-                className="flex shrink-0 items-center gap-1 rounded-md bg-[var(--color-error-500)] px-3 py-2 text-sm font-medium hover:bg-[var(--color-error-600)] disabled:opacity-50"
-              >
-                <Trash2 className="h-4 w-4" />
-                삭제
-              </button>
+
+            {/* row 2: 캡션 + 업로더 */}
+            {(current.caption || current.uploader) && (
+              <div className="min-w-0">
+                {current.caption && (
+                  <p className="line-clamp-2 text-sm">{current.caption}</p>
+                )}
+                {current.uploader && (
+                  <p className="mt-0.5 text-xs text-white/70">
+                    업로더: {current.uploader.name}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>
+      )}
+
+      {/* 사진 댓글 시트 (라이트박스와 독립적으로 제어) */}
+      {current && (
+        <PhotoCommentSheet
+          albumId={albumId}
+          photoId={current.id}
+          open={showComments}
+          onOpenChange={setShowComments}
+        />
       )}
     </>
   );
