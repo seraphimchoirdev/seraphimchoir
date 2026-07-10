@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-07-11 | fix(dashboard): 출석 투표 카드 링크를 /my-attendance로 정정 |
 | 2026-07-11 | feat(my-attendance): 투표 명시적 저장 + 마감 전 자유 수정 UX |
 | 2026-07-11 | fix(api): 일반 대원 출석 투표 API 허용 + 서버 마감 검증 추가 |
 | 2026-07-11 | refactor(navigation): 데스크톱 상단 네비 '핵심 + 더보기' 구조로 정리 |

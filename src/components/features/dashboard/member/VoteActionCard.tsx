@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircle, Calendar, Check, Clock } from 'lucide-react';
+import { AlertCircle, Check, Clock } from 'lucide-react';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -52,7 +52,7 @@ export function VoteActionCard({
                 </p>
               )}
               <Button asChild size="sm" className="mt-3">
-                <Link href="/attendances">지금 투표하기</Link>
+                <Link href="/my-attendance">지금 투표하기</Link>
               </Button>
             </div>
           </div>
@@ -79,7 +79,7 @@ export function VoteActionCard({
                 {voteDeadlineDisplay && ` (마감: ${voteDeadlineDisplay})`}
               </p>
               <Button asChild variant="outline" size="sm" className="mt-3">
-                <Link href="/attendances">투표 수정</Link>
+                <Link href="/my-attendance">투표 수정</Link>
               </Button>
             </div>
           </div>
