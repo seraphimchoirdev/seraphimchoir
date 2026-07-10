@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { validateMemberSelfVote } from '@/lib/attendance-vote-guard';
 import { createLogger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 
@@ -178,13 +179,28 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER'];
+    // MEMBER는 본인 투표용으로 허용 (본인 레코드 + 마감 검증은 아래 가드에서)
+    const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER', 'MEMBER'];
     if (!profile?.role || !allowedRoles.includes(profile.role)) {
       return NextResponse.json({ error: '출석 기록 생성 권한이 없습니다' }, { status: 403 });
     }
 
     const body = await request.json();
     const validatedData = createAttendanceSchema.parse(body);
+
+    // 일반 대원: 본인 레코드만 + 마감 전에만 (클라이언트가 보낸 필드만 검증)
+    if (profile.role === 'MEMBER') {
+      const guard = await validateMemberSelfVote(supabase, user.id, {
+        memberId: validatedData.member_id,
+        date: validatedData.date,
+        serviceScheduleId: validatedData.service_schedule_id ?? null,
+        votesService: 'is_service_available' in body,
+        votesPractice: 'practice_status' in body || 'is_practice_attended' in body,
+      });
+      if (!guard.ok) {
+        return NextResponse.json({ error: guard.error }, { status: guard.status });
+      }
+    }
 
     const { data, error } = await supabase
       .from('attendances')

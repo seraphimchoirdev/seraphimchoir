@@ -192,37 +192,13 @@ export function getDefaultDeadline(serviceDate: string): Date {
   return friday;
 }
 
-// 등단 투표 마감 시간 계산 (토요일 15:00 KST)
-export function getServiceDeadline(serviceDate: string): Date {
-  const date = new Date(serviceDate);
-
-  // 토요일 계산 (주일 -1일)
-  const saturday = new Date(date);
-  saturday.setDate(date.getDate() - 1);
-
-  // 15:00 KST 설정
-  saturday.setHours(15, 0, 0, 0);
-
-  return saturday;
-}
-
-// 연습 참석 투표 마감 시간 계산 (연습 시작 10분 전, 폴백: 당일 09:00)
-export function getPracticeDeadline(
-  serviceDate: string,
-  postPracticeStartTime?: string | null
-): Date {
-  const date = new Date(serviceDate);
-
-  if (postPracticeStartTime) {
-    const [hours, minutes] = postPracticeStartTime.split(':').map(Number);
-    date.setHours(hours, minutes, 0, 0);
-    date.setMinutes(date.getMinutes() - 10); // 시작 10분 전 마감
-  } else {
-    date.setHours(9, 0, 0, 0); // 폴백
-  }
-
-  return date;
-}
+// 마감 계산 순수 함수는 서버 API에서도 동일 규칙을 쓰도록
+// src/lib/vote-deadlines.ts로 이동 (여기서는 하위 호환 re-export)
+export {
+  getPracticeDeadline,
+  getServiceDeadline,
+  isDeadlinePassed,
+} from '@/lib/vote-deadlines';
 
 // 마감 시간을 "토요일 15:00" 형태로 포맷
 export function formatDeadlineDisplay(deadline: Date): string {
@@ -249,11 +225,6 @@ export function formatTimeLeft(deadline: Date): string {
   }
   if (hours > 0) return `${hours}시간 ${minutes}분 남음`;
   return `${minutes}분 남음`;
-}
-
-// 마감 여부 확인
-export function isDeadlinePassed(deadline: Date): boolean {
-  return new Date() > deadline;
 }
 
 // 마감까지 남은 시간 계산

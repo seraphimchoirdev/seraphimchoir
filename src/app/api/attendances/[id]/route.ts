@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { validateMemberSelfVote } from '@/lib/attendance-vote-guard';
 import { createLogger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 
@@ -85,13 +86,40 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .eq('id', user.id)
       .single();
 
-    const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER'];
+    // MEMBER는 본인 투표용으로 허용 (본인 레코드 + 마감 검증은 아래 가드에서)
+    const allowedRoles = ['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER', 'MEMBER'];
     if (!profile?.role || !allowedRoles.includes(profile.role)) {
       return NextResponse.json({ error: '출석 기록 수정 권한이 없습니다' }, { status: 403 });
     }
 
     const body = await request.json();
     const validatedData = updateAttendanceSchema.parse(body);
+
+    // 일반 대원: 본인 레코드만 + 마감 전에만 (변경하려는 필드만 검증)
+    if (profile.role === 'MEMBER') {
+      const { data: existing } = await supabase
+        .from('attendances')
+        .select('member_id, date, service_schedule_id')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (!existing) {
+        return NextResponse.json({ error: '출석 기록을 찾을 수 없습니다' }, { status: 404 });
+      }
+
+      const guard = await validateMemberSelfVote(supabase, user.id, {
+        memberId: existing.member_id,
+        date: existing.date,
+        serviceScheduleId: existing.service_schedule_id,
+        votesService: validatedData.is_service_available !== undefined,
+        votesPractice:
+          validatedData.practice_status !== undefined ||
+          validatedData.is_practice_attended !== undefined,
+      });
+      if (!guard.ok) {
+        return NextResponse.json({ error: guard.error }, { status: guard.status });
+      }
+    }
 
     const { data, error } = await supabase
       .from('attendances')
