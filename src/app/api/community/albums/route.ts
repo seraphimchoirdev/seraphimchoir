@@ -2,18 +2,10 @@ import { z } from 'zod';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { ALBUM_STAFF_ROLES } from '@/lib/community/album-constants';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import type { AlbumWithMeta } from '@/types/community';
-
-const ALLOWED_CREATE_ROLES = [
-  'ADMIN',
-  'CONDUCTOR',
-  'MANAGER',
-  'SECRETARY',
-  'TREASURER',
-  'PART_LEADER',
-];
 
 const createAlbumSchema = z.object({
   title: z.string().min(1).max(100),
@@ -98,10 +90,10 @@ export async function POST(request: NextRequest) {
     .eq('id', user.id)
     .single();
 
-  // 앨범 생성은 운영진(ALLOWED_CREATE_ROLES) 권한이 필요하다.
+  // 앨범 생성은 운영진(ALBUM_STAFF_ROLES) 권한이 필요하다.
   // 운영진은 연결된 대원(linked_member)이 없을 수 있으므로(예: 시스템 관리자 계정)
   // 역할만으로 허용한다.
-  if (!ALLOWED_CREATE_ROLES.includes(profile?.role || '')) {
+  if (!ALBUM_STAFF_ROLES.includes(profile?.role || '')) {
     return NextResponse.json(
       { error: '앨범 생성 권한이 없습니다.' },
       { status: 403 }
@@ -118,9 +110,8 @@ export async function POST(request: NextRequest) {
   }
 
   // 권한은 위에서 검증 완료. insert는 adminClient로 수행한다.
-  // (RLS의 'Albums insertable by leaders'가 is_member_linked()를 요구해
-  //  linked_member 없는 운영진 계정이 사용자 클라이언트로는 막히기 때문 —
-  //  사진 insert 등 다른 앨범 작업과 동일하게 adminClient 사용)
+  // (20260710100000 마이그레이션으로 RLS도 운영진을 허용하지만,
+  //  기존 앨범 작업들과의 일관성을 위해 adminClient를 유지)
   const adminClient = await createAdminClient();
   const { data: album, error: insertError } = await adminClient
     .from('photo_albums')

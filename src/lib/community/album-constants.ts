@@ -25,14 +25,20 @@ export const ALBUM_STAFF_ROLES = [
 
 /**
  * 커뮤니티 활동 권한 판정.
- * - 연결된 대원(linked_member)이 있으면 승인된 대원 → 허용
+ * - 승인된(approved) 대원 연결이 있으면 → 허용
  * - 또는 운영진 역할이면(linked_member가 없어도, 예: 시스템 관리자) → 허용
+ *
+ * RLS의 is_member_linked()(approved 요구)와 동일한 기준을 쓰므로
+ * 이 함수를 통과하면 DB INSERT도 성공한다. 기준 변경 시 RLS도 함께 수정할 것.
  */
 export function canParticipateInCommunity(profile: {
   linked_member_id?: string | null;
+  link_status?: string | null;
   role?: string | null;
 }): boolean {
-  if (profile.linked_member_id) return true;
+  if (profile.linked_member_id && profile.link_status === 'approved') {
+    return true;
+  }
   return ALBUM_STAFF_ROLES.includes(profile.role || '');
 }
 

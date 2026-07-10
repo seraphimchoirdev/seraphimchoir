@@ -62,6 +62,22 @@ export async function GET(
       },
     });
   } catch (error) {
+    // R2에 파일이 없는 경우(레코드만 남은 유실 데이터 등)는 서버 오류가 아니므로
+    // 404로 구분해 응답하고, 로그에도 원인을 구분해 남긴다
+    const isNotFound =
+      error instanceof Error &&
+      (error.name === 'NoSuchKey' ||
+        error.name === 'NotFound' ||
+        error.message === '파일을 찾을 수 없습니다.');
+
+    if (isNotFound) {
+      console.error('사진 다운로드 실패 (R2에 파일 없음):', error);
+      return NextResponse.json(
+        { error: '사진 파일을 찾을 수 없습니다. 삭제되었거나 이동된 파일입니다.' },
+        { status: 404 }
+      );
+    }
+
     console.error('사진 다운로드 실패:', error);
     return NextResponse.json(
       { error: '사진 다운로드에 실패했습니다.' },

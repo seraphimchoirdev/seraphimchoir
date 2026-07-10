@@ -27,24 +27,58 @@ function todayKST(): string {
 }
 
 export default function AlbumForm({ editId }: AlbumFormProps) {
+  const isEdit = !!editId;
+  const { data: existing, error } = useAlbum(editId);
+
+  // edit 모드: 기존 값 로드가 끝난 뒤에 폼을 마운트한다.
+  // 로드 전에 폼을 열어두면 뒤늦게 도착한 데이터가
+  // 사용자가 입력 중이던 값을 통째로 덮어쓸 수 있다.
+  if (isEdit && !existing) {
+    return (
+      <div className="flex justify-center py-12">
+        {error ? (
+          <p className="text-base text-[var(--color-text-secondary)]">
+            앨범을 불러오지 못했습니다.
+          </p>
+        ) : (
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <AlbumFormFields
+      key={editId ?? 'new'}
+      editId={editId}
+      initialTitle={existing?.title || ''}
+      initialDescription={existing?.description || ''}
+      initialEventDate={existing?.event_date || todayKST()}
+    />
+  );
+}
+
+interface AlbumFormFieldsProps {
+  editId?: string;
+  initialTitle: string;
+  initialDescription: string;
+  initialEventDate: string;
+}
+
+function AlbumFormFields({
+  editId,
+  initialTitle,
+  initialDescription,
+  initialEventDate,
+}: AlbumFormFieldsProps) {
   const router = useRouter();
   const isEdit = !!editId;
-  const { data: existing } = useAlbum(editId);
   const createAlbum = useCreateAlbum();
   const updateAlbum = useUpdateAlbum(editId || '');
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [eventDate, setEventDate] = useState(todayKST());
-  const [initialized, setInitialized] = useState(!isEdit);
-
-  // edit 모드: 기존 데이터 로드 (PostForm 패턴 — 렌더 도중 1회 setState)
-  if (isEdit && existing && !initialized) {
-    setTitle(existing.title || '');
-    setDescription(existing.description || '');
-    setEventDate(existing.event_date || todayKST());
-    setInitialized(true);
-  }
+  const [title, setTitle] = useState(initialTitle);
+  const [description, setDescription] = useState(initialDescription);
+  const [eventDate, setEventDate] = useState(initialEventDate);
 
   const handleSubmit = async () => {
     if (!title.trim()) {

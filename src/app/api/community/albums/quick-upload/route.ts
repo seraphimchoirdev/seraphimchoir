@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   // 대원 연동 확인: 연결된 대원이거나 운영진(linked 없는 관리자 계정 등)이면 허용
   const { data: profile } = await supabase
     .from('user_profiles')
-    .select('linked_member_id, role')
+    .select('linked_member_id, link_status, role')
     .eq('id', user.id)
     .single();
   if (!profile || !canParticipateInCommunity(profile)) {

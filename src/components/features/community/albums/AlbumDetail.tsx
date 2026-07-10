@@ -15,7 +15,7 @@ import {
   useAlbumPhotos,
   useDeleteAlbum,
 } from '@/hooks/useAlbums';
-import { ALBUM_STAFF_ROLES } from '@/lib/community/album-constants';
+import { canParticipateInCommunity } from '@/lib/community/album-constants';
 import { useAuth } from '@/hooks/useAuth';
 import { showError, showSuccess } from '@/lib/toast';
 
@@ -60,11 +60,8 @@ export default function AlbumDetail({ albumId }: AlbumDetailProps) {
     return album.created_by === profile.id;
   }, [album, profile]);
 
-  // 사진 업로드: 승인된 일반 대원이거나, 운영진(linked 없는 관리자 계정 등)이면 허용
-  // (API의 canParticipateInCommunity와 동일한 정책)
-  const canUpload =
-    (!!profile?.linked_member_id && profile?.link_status === 'approved') ||
-    (!!profile?.role && ALBUM_STAFF_ROLES.includes(profile.role));
+  // 사진 업로드: API·RLS와 같은 판정 함수를 공유해 UI만 다르게 판단하는 일이 없게 한다
+  const canUpload = !!profile && canParticipateInCommunity(profile);
 
   const handleDelete = async () => {
     try {

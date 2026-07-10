@@ -101,10 +101,14 @@ export async function GET(request: NextRequest) {
   }
 
   if (date) {
-    const dayStart = `${date}T00:00:00.000Z`;
+    // 프론트(FeedFilters)가 보내는 date는 KST 로컬 날짜(YYYY-MM-DD)이므로
+    // KST 자정(+09:00) 기준으로 하루 범위를 계산해야 UTC와 9시간 어긋나지 않는다
+    const dayStart = new Date(`${date}T00:00:00+09:00`);
     const nextDay = new Date(dayStart);
     nextDay.setUTCDate(nextDay.getUTCDate() + 1);
-    query = query.gte('created_at', dayStart).lt('created_at', nextDay.toISOString());
+    query = query
+      .gte('created_at', dayStart.toISOString())
+      .lt('created_at', nextDay.toISOString());
   }
 
   if (cursor) {

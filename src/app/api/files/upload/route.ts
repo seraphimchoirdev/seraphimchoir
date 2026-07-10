@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     // 역할 확인
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('role, linked_member_id')
+      .select('role, linked_member_id, link_status')
       .eq('id', user.id)
       .single();
 

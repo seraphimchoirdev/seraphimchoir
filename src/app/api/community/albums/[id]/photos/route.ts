@@ -137,7 +137,7 @@ export async function POST(
 
   const { data: profile } = await supabase
     .from('user_profiles')
-    .select('linked_member_id, role')
+    .select('linked_member_id, link_status, role')
     .eq('id', user.id)
     .single();
   // 연결된 대원이거나 운영진(linked 없는 관리자 계정 등)이면 업로드 허용
