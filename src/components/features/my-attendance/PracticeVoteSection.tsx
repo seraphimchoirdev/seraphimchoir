@@ -2,7 +2,7 @@
 
 import { CheckCircle, Clock, LogIn, LogOut, XCircle } from 'lucide-react';
 
-import { PracticeAttendanceType } from '@/types/database.types';
+import type { PracticeAttendanceType } from '@/types';
 
 import type { DeadlineInfo } from './ServiceVoteSection';
 import { VoteButton } from './VoteButton';

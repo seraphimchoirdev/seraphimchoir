@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-07-11 | fix(types): ArrangementStatus·PracticeAttendanceType 유실 타입 복구 |
 | 2026-07-11 | fix(community): 코드 리뷰 발견 7건 수정 |
 | 2026-07-10 | feat(community): 설문/투표 기능 구현 (대상 지정 + 결과 공개 시점 제어) |
 | 2026-07-10 | docs(handoff): 핸드오프 문서 및 매니페스트 업데이트 (2026-02-19 ~ 2026-06-23) |

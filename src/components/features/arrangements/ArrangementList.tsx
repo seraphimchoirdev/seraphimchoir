@@ -26,7 +26,7 @@ import { ArrangementWithSchedule, useDeleteArrangement } from '@/hooks/useArrang
 import { createLogger } from '@/lib/logger';
 import { showError } from '@/lib/toast';
 
-import type { ArrangementStatus } from '@/types/database.types';
+import type { ArrangementStatus } from '@/types';
 
 const logger = createLogger({ prefix: 'ArrangementList' });
 

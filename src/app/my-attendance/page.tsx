@@ -25,7 +25,7 @@ import {
 } from '@/hooks/useVoteDeadlines';
 import { createLogger } from '@/lib/logger';
 import { showError, showSuccess } from '@/lib/toast';
-import { PracticeAttendanceType } from '@/types/database.types';
+import type { PracticeAttendanceType } from '@/types';
 
 import type { DeadlineInfo } from '@/components/features/my-attendance/ServiceVoteSection';
 

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDisplayDate } from '@/lib/dashboard-context';
-import type { ArrangementStatus } from '@/types/database.types';
+import type { ArrangementStatus } from '@/types';
 
 interface MySeatCardProps {
   seat: {

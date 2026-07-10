@@ -11,6 +11,16 @@ export type UserProfile = Tables<'user_profiles'>;
 export type Part = Enums<'part'>;
 export type MemberStatus = Enums<'member_status'>;
 
+// 자동 생성 파일(database.types.ts)에 직접 추가하면 `npx supabase gen types`
+// 재생성 시 유실되므로, 수동 타입은 반드시 이 파일에 정의한다.
+// (실제로 20260623 재생성 때 아래 두 타입이 유실되어 빌드가 깨진 적 있음)
+
+/** 배치표 상태: DB에서 TEXT CHECK 제약으로 정의됨 (arrangements.status) */
+export type ArrangementStatus = 'DRAFT' | 'SHARED' | 'CONFIRMED';
+
+/** 연습 출석 타입: DB enum practice_attendance_type */
+export type PracticeAttendanceType = Enums<'practice_attendance_type'>;
+
 // Extended types
 
 /**

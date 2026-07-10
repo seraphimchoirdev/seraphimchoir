@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { formatDate, getNextSunday } from '@/lib/dashboard-context';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import type { ArrangementStatus } from '@/types/database.types';
+import type { ArrangementStatus } from '@/types';
 
 export interface PartSummary {
   part: string;

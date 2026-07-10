@@ -13,7 +13,7 @@ import {
 import type { MyDashboardStatusResponse, MyVote, MySeat } from '@/app/api/dashboard/my-status/route';
 import type { ConductorStatusResponse, AttendanceSummaryItem } from '@/app/api/dashboard/conductor-status/route';
 import type { PendingApprovalsResponse, PendingApproval } from '@/app/api/dashboard/pending-approvals/route';
-import type { ArrangementStatus } from '@/types/database.types';
+import type { ArrangementStatus } from '@/types';
 
 interface UserProfile {
   id: string;

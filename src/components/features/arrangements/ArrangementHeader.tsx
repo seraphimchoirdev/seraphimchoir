@@ -47,7 +47,8 @@ import { useArrangementDraftStore } from '@/store/arrangement-draft-store';
 import { useArrangementStore } from '@/store/arrangement-store';
 import { WORKFLOW_STEPS } from '@/store/arrangement-store';
 
-import type { ArrangementStatus, Database, Json } from '@/types/database.types';
+import type { ArrangementStatus } from '@/types';
+import type { Database, Json } from '@/types/database.types';
 
 const logger = createLogger({ prefix: 'ArrangementHeader' });
 
