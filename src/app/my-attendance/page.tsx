@@ -1,11 +1,12 @@
 'use client';
 
-import { AlertTriangle, Calendar, Loader2, Music } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { AlertTriangle, Calendar, Clock, Loader2, Music, Save } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
 
 import AppShell from '@/components/layout/AppShell';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { DateNavigator } from '@/components/features/my-attendance/DateNavigator';
@@ -70,62 +71,120 @@ export default function MyAttendancePage() {
   const [activeTab, setActiveTab] = useState<string>('');
   const currentTab = activeTab || services[0]?.id || '';
 
-  const handleServiceVote = async (serviceId: string, serviceDate: string, value: boolean) => {
+  // ===== 초안(draft) 상태: 클릭은 선택만 하고, '저장' 버튼으로 명시 저장 =====
+  interface VoteDraft {
+    isAvailable: boolean | null;
+    practiceStatus: PracticeAttendanceType | null;
+  }
+  // draft는 serviceId 단위로만 존재하며, dirty 상태의 날짜 이동은
+  // ConfirmDialog 확인 시 전체 폐기하므로 별도 리셋 이펙트가 필요 없다
+  const [drafts, setDrafts] = useState<Record<string, VoteDraft>>({});
+
+  /** 저장된 값 위에 draft를 얹은 현재 표시값 */
+  const getDraft = (serviceId: string): VoteDraft => {
+    const saved = getAttendance(serviceId);
+    return (
+      drafts[serviceId] ?? {
+        isAvailable: saved ? saved.is_service_available : null,
+        practiceStatus: saved?.practice_status ?? null,
+      }
+    );
+  };
+
+  const isDirty = (serviceId: string): boolean => {
+    const draft = drafts[serviceId];
+    if (!draft) return false;
+    const saved = getAttendance(serviceId);
+    const savedAvailable = saved ? saved.is_service_available : null;
+    const savedPractice = saved?.practice_status ?? null;
+    return (
+      draft.isAvailable !== savedAvailable ||
+      draft.practiceStatus !== savedPractice
+    );
+  };
+
+  const anyDirty = services.some((s) => isDirty(s.id));
+
+  const setServiceDraft = (serviceId: string, value: boolean) => {
+    setDrafts((prev) => ({
+      ...prev,
+      [serviceId]: { ...getDraft(serviceId), isAvailable: value },
+    }));
+  };
+
+  const setPracticeDraft = (serviceId: string, status: PracticeAttendanceType) => {
+    setDrafts((prev) => ({
+      ...prev,
+      [serviceId]: { ...getDraft(serviceId), practiceStatus: status },
+    }));
+  };
+
+  /**
+   * 명시적 저장: 등단+연습을 한 번의 mutate로 저장.
+   * 부분 마감 시 마감되지 않은 항목만 payload에 포함한다.
+   */
+  const handleSave = async (
+    service: (typeof services)[number],
+    serviceOpen: boolean,
+    practiceOpen: boolean
+  ) => {
     if (!linkedMemberId) return;
-    const attendance = getAttendance(serviceId);
+    const attendance = getAttendance(service.id);
+    const draft = getDraft(service.id);
+
+    // 등단 투표가 열려 있는데 아직 선택하지 않았으면 안내
+    if (serviceOpen && draft.isAvailable === null) {
+      showError('예배 등단 여부를 선택해주세요.');
+      return;
+    }
 
     try {
       if (attendance) {
-        await updateMutation.mutateAsync({
-          id: attendance.id,
-          data: { is_service_available: value },
-        });
+        const data: Record<string, unknown> = {};
+        if (serviceOpen && draft.isAvailable !== null) {
+          data.is_service_available = draft.isAvailable;
+        }
+        if (practiceOpen && draft.practiceStatus !== null) {
+          data.practice_status = draft.practiceStatus;
+          data.is_practice_attended = draft.practiceStatus !== 'ABSENT';
+        }
+        await updateMutation.mutateAsync({ id: attendance.id, data });
       } else {
+        const practiceStatus =
+          practiceOpen && draft.practiceStatus !== null
+            ? draft.practiceStatus
+            : 'ABSENT';
         await createMutation.mutateAsync({
           member_id: linkedMemberId,
-          date: serviceDate,
-          service_schedule_id: serviceId,
-          is_service_available: value,
-          is_practice_attended: false,
-          practice_status: 'ABSENT',
+          date: service.date,
+          service_schedule_id: service.id,
+          ...(serviceOpen && draft.isAvailable !== null
+            ? { is_service_available: draft.isAvailable }
+            : {}),
+          is_practice_attended: practiceStatus !== 'ABSENT',
+          practice_status: practiceStatus,
         });
       }
-      showSuccess('저장되었습니다.');
+      // 저장 성공 → 초안을 저장값 기준으로 리셋
+      setDrafts((prev) => {
+        const next = { ...prev };
+        delete next[service.id];
+        return next;
+      });
+      showSuccess('투표가 저장되었습니다.');
     } catch (err) {
       logger.error('투표 저장 실패:', err);
-      showError('투표 저장에 실패했습니다.');
+      showError(err instanceof Error ? err.message : '투표 저장에 실패했습니다.');
     }
   };
 
-  const handlePracticeVote = async (
-    serviceId: string,
-    serviceDate: string,
-    status: PracticeAttendanceType
-  ) => {
-    if (!linkedMemberId) return;
-    const attendance = getAttendance(serviceId);
-    const isPracticeAttended = status !== 'ABSENT';
-
-    try {
-      if (attendance) {
-        await updateMutation.mutateAsync({
-          id: attendance.id,
-          data: { practice_status: status, is_practice_attended: isPracticeAttended },
-        });
-      } else {
-        await createMutation.mutateAsync({
-          member_id: linkedMemberId,
-          date: serviceDate,
-          service_schedule_id: serviceId,
-          is_service_available: true,
-          is_practice_attended: isPracticeAttended,
-          practice_status: status,
-        });
-      }
-      showSuccess('저장되었습니다.');
-    } catch (err) {
-      logger.error('연습 참석 투표 저장 실패:', err);
-      showError('투표 저장에 실패했습니다.');
+  // 미저장 상태에서 날짜 이동 시 확인
+  const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
+  const guardedNav = (nav: () => void) => {
+    if (anyDirty) {
+      setPendingNav(() => nav);
+    } else {
+      nav();
     }
   };
 
@@ -175,9 +234,8 @@ export default function MyAttendancePage() {
   // 개별 예배의 투표 UI 렌더링
   const renderServiceVote = (service: (typeof services)[number]) => {
     const attendance = getAttendance(service.id);
-    const isAvailable = attendance ? attendance.is_service_available : null;
-    const practiceStatus = attendance?.practice_status ?? null;
-    const isPracticeAttended = attendance?.is_practice_attended ?? false;
+    const draft = getDraft(service.id);
+    const dirty = isDirty(service.id);
 
     // 마감시한 계산
     const serviceDeadline = buildDeadlineInfo(getServiceDeadline(service.date));
@@ -186,6 +244,12 @@ export default function MyAttendancePage() {
           getPracticeDeadline(service.date, service.post_practice_start_time)
         )
       : null;
+
+    const serviceOpen = !serviceDeadline.isPassed;
+    const practiceOpen = practiceDeadline ? !practiceDeadline.isPassed : false;
+    const allClosed = !serviceOpen && !practiceOpen;
+    const isPracticeAttendedDraft =
+      draft.practiceStatus !== null && draft.practiceStatus !== 'ABSENT';
 
     return (
       <div className="space-y-5">
@@ -210,19 +274,58 @@ export default function MyAttendancePage() {
         )}
 
         <ServiceVoteSection
-          isAvailable={isAvailable}
-          onVote={(value) => handleServiceVote(service.id, service.date, value)}
+          isAvailable={draft.isAvailable}
+          onVote={(value) => setServiceDraft(service.id, value)}
           disabled={isMutating}
           deadline={serviceDeadline}
         />
         {service.has_post_practice && (
           <PracticeVoteSection
-            currentStatus={practiceStatus}
-            isPracticeAttended={isPracticeAttended}
-            onVote={(status) => handlePracticeVote(service.id, service.date, status)}
+            currentStatus={draft.practiceStatus}
+            isPracticeAttended={isPracticeAttendedDraft}
+            onVote={(status) => setPracticeDraft(service.id, status)}
             disabled={isMutating}
             deadline={practiceDeadline}
           />
+        )}
+
+        {/* 명시적 저장 — 선택은 초안일 뿐, 이 버튼을 눌러야 반영된다 */}
+        {allClosed ? (
+          <div className="flex items-center justify-center gap-1.5 rounded-lg bg-[var(--color-background-secondary)] py-3 text-sm text-[var(--color-text-disabled)]">
+            <Clock className="h-4 w-4" />
+            투표가 마감되었습니다
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {dirty && (
+              <p className="text-center text-sm text-[var(--color-warning-600)]">
+                저장하지 않은 변경사항이 있습니다
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => handleSave(service, serviceOpen, practiceOpen)}
+              disabled={!dirty || isMutating}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary-600)] py-3 text-base font-semibold text-white transition-colors hover:bg-[var(--color-primary-700)] disabled:cursor-not-allowed disabled:bg-[var(--color-background-tertiary)] disabled:text-[var(--color-text-disabled)]"
+            >
+              {isMutating ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  저장 중...
+                </>
+              ) : (
+                <>
+                  <Save className="h-5 w-5" />
+                  {attendance ? '수정 내용 저장' : '투표 저장'}
+                </>
+              )}
+            </button>
+            {!dirty && attendance && (
+              <p className="text-center text-xs text-[var(--color-text-tertiary)]">
+                저장된 투표가 있습니다. 선택을 바꾸면 다시 저장할 수 있습니다.
+              </p>
+            )}
+          </div>
         )}
       </div>
     );
@@ -243,8 +346,8 @@ export default function MyAttendancePage() {
               }
               hasPrev={hasPrev}
               hasNext={hasNext}
-              onPrev={goToPrev}
-              onNext={goToNext}
+              onPrev={() => guardedNav(goToPrev)}
+              onNext={() => guardedNav(goToNext)}
             />
           </div>
 
@@ -283,12 +386,27 @@ export default function MyAttendancePage() {
 
               {/* 간결한 안내 */}
               <p className="text-center text-sm text-[var(--color-text-tertiary)]">
-                변경이 필요하면 언제든 다시 투표할 수 있습니다
+                마감 전까지 자유롭게 수정할 수 있습니다
               </p>
             </div>
           )}
         </div>
       </div>
+
+      {/* 미저장 변경사항이 있을 때 날짜 이동 확인 */}
+      <ConfirmDialog
+        open={pendingNav !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingNav(null);
+        }}
+        title="저장하지 않은 변경사항"
+        description="저장하지 않은 투표 변경사항이 있습니다. 저장하지 않고 이동할까요?"
+        onConfirm={() => {
+          setDrafts({});
+          pendingNav?.();
+          setPendingNav(null);
+        }}
+      />
     </AppShell>
   );
 }
