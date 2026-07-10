@@ -976,6 +976,39 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          link: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       photo_albums: {
         Row: {
           choir_event_id: string | null
@@ -1311,6 +1344,39 @@ export type Database = {
           prayer_names?: string
           quarter?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_used_at: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_used_at?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_used_at?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1660,6 +1726,7 @@ export type Database = {
     }
     Functions: {
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
+      cleanup_old_notifications: { Args: never; Returns: number }
       get_all_document_tags: { Args: never; Returns: string[] }
       get_arrangement_status: {
         Args: { arrangement_id: string }
@@ -1716,6 +1783,7 @@ export type Database = {
       }
       get_user_role: { Args: never; Returns: string }
       has_role: { Args: { required_roles: string[] }; Returns: boolean }
+      invoke_vote_reminder: { Args: never; Returns: undefined }
       is_in_poll_audience: {
         Args: {
           p_audience_type: string

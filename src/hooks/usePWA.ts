@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { isIOSPushSupported, isPushSupported } from '@/lib/push-notifications';
+import { isIOSPushSupported, isPushSupported, subscribeToPush } from '@/lib/push-notifications';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -164,6 +164,10 @@ export function usePWA(): UsePWAResult {
       const result = await Notification.requestPermission();
       const permission = result as PushPermission;
       setPushPermission(permission);
+      if (permission === 'granted') {
+        // 웹푸시 구독 생성 + 서버 저장 (실패해도 권한 상태는 유지)
+        await subscribeToPush();
+      }
       return permission;
     } catch {
       return 'denied';

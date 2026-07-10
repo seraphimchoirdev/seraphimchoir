@@ -72,7 +72,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(fetch(request));
 });
 
-// 푸시 알림 수신 (향후 FCM 연동용)
+// 푸시 알림 수신 (Web Push / VAPID — 발송: src/lib/notifications/notify.ts)
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 

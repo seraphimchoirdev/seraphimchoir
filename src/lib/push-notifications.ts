@@ -1,131 +1,102 @@
 /**
- * 푸시 알림 유틸리티
+ * 웹푸시(Web Push, VAPID) 클라이언트 유틸리티
  *
- * FCM 서비스 세팅 후 실제 연동을 위해 주석 해제하세요.
- * 현재는 준비 코드만 포함되어 있습니다.
+ * 표준 Push API(pushManager.subscribe)로 브라우저 구독을 생성하고
+ * /api/push/subscriptions에 저장한다. 수신은 public/sw.js의 push 핸들러가 처리.
  */
 
-// import { getToken, onMessage, MessagePayload } from 'firebase/messaging';
-// import { getFirebaseMessaging, vapidKey } from './firebase';
-
-export interface PushNotificationPayload {
-  title: string;
-  body: string;
-  icon?: string;
-  url?: string;
-  data?: Record<string, string>;
+/** VAPID 공개 키(base64url)를 applicationServerKey용 Uint8Array로 변환 */
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
 }
 
 /**
- * FCM 토큰 발급
- * 푸시 알림 권한이 승인된 후 호출합니다.
+ * 웹푸시 구독 생성 + 서버 저장
+ * Notification 권한이 'granted'인 상태에서 호출해야 한다.
  *
- * @returns FCM 토큰 또는 null
+ * @returns 구독 성공 여부
  */
-export async function requestFCMToken(): Promise<string | null> {
-  // FCM 서비스 세팅 후 주석 해제
+export async function subscribeToPush(): Promise<boolean> {
+  if (!isPushSupported()) return false;
 
-  // const messaging = getFirebaseMessaging();
-  // if (!messaging) {
-  //   console.warn('[Push] Firebase Messaging이 초기화되지 않았습니다.');
-  //   return null;
-  // }
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  if (!vapidPublicKey) {
+    console.warn('[Push] NEXT_PUBLIC_VAPID_PUBLIC_KEY가 설정되지 않았습니다.');
+    return false;
+  }
 
-  // try {
-  //   // 서비스 워커 등록 확인
-  //   const registration = await navigator.serviceWorker.ready;
+  try {
+    const registration = await navigator.serviceWorker.ready;
 
-  //   const token = await getToken(messaging, {
-  //     vapidKey,
-  //     serviceWorkerRegistration: registration,
-  //   });
+    const subscription =
+      (await registration.pushManager.getSubscription()) ??
+      (await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
+      }));
 
-  //   if (token) {
-  //     console.log('[Push] FCM 토큰 발급 성공');
-  //     // TODO: 서버에 토큰 저장
-  //     // await saveTokenToServer(token);
-  //     return token;
-  //   } else {
-  //     console.warn('[Push] FCM 토큰을 가져올 수 없습니다.');
-  //     return null;
-  //   }
-  // } catch (error) {
-  //   console.error('[Push] FCM 토큰 발급 실패:', error);
-  //   return null;
-  // }
+    const response = await fetch('/api/push/subscriptions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subscription: subscription.toJSON(),
+        userAgent: navigator.userAgent,
+      }),
+    });
 
-  console.log('[Push] FCM 연동이 아직 설정되지 않았습니다.');
-  return null;
+    return response.ok;
+  } catch (error) {
+    console.error('[Push] 웹푸시 구독 실패:', error);
+    return false;
+  }
 }
 
 /**
- * 포그라운드 메시지 리스너 설정
- * 앱이 활성화된 상태에서 푸시를 받을 때 호출됩니다.
- *
- * @param callback 메시지 수신 시 호출될 콜백
- * @returns 구독 해제 함수
+ * 웹푸시 구독 해지 (브라우저 구독 취소 + 서버 삭제)
+ * 알림 비활성화 시 호출한다.
  */
-export function onForegroundMessage(
-  _callback: (payload: PushNotificationPayload) => void
-): () => void {
-  // FCM 서비스 세팅 후 주석 해제
+export async function unsubscribeFromPush(): Promise<boolean> {
+  if (!isPushSupported()) return false;
 
-  // const messaging = getFirebaseMessaging();
-  // if (!messaging) {
-  //   return () => {};
-  // }
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return true;
 
-  // return onMessage(messaging, (payload: MessagePayload) => {
-  //   console.log('[Push] 포그라운드 메시지 수신:', payload);
+    const endpoint = subscription.endpoint;
+    await subscription.unsubscribe();
 
-  //   const notification: PushNotificationPayload = {
-  //     title: payload.notification?.title || '새로핌On',
-  //     body: payload.notification?.body || '',
-  //     icon: payload.notification?.icon || '/icon-192x192.png',
-  //     url: payload.data?.url || '/',
-  //     data: payload.data,
-  //   };
+    const response = await fetch('/api/push/subscriptions', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint }),
+    });
 
-  //   callback(notification);
-  // });
-
-  console.log('[Push] FCM 포그라운드 리스너가 아직 설정되지 않았습니다.');
-  return () => {};
+    return response.ok;
+  } catch (error) {
+    console.error('[Push] 웹푸시 구독 해지 실패:', error);
+    return false;
+  }
 }
 
-/**
- * FCM 토큰을 서버에 저장
- * Supabase에 토큰을 저장하여 서버에서 푸시를 보낼 수 있게 합니다.
- *
- * @param token FCM 토큰
- * @param userId 사용자 ID (선택)
- */
-export async function saveTokenToServer(token: string, userId?: string): Promise<boolean> {
-  // TODO: Supabase에 토큰 저장 구현
-  // 필요한 테이블 스키마:
-  // CREATE TABLE push_subscriptions (
-  //   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  //   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  //   token TEXT NOT NULL UNIQUE,
-  //   device_type TEXT,
-  //   created_at TIMESTAMPTZ DEFAULT NOW(),
-  //   updated_at TIMESTAMPTZ DEFAULT NOW()
-  // );
+/** 현재 브라우저에 활성 푸시 구독이 있는지 확인 */
+export async function hasActivePushSubscription(): Promise<boolean> {
+  if (!isPushSupported()) return false;
 
-  console.log('[Push] 토큰 저장 (미구현):', { token: token.slice(0, 20) + '...', userId });
-  return false;
-}
-
-/**
- * FCM 토큰을 서버에서 삭제
- * 로그아웃 또는 알림 비활성화 시 호출합니다.
- *
- * @param token FCM 토큰
- */
-export async function removeTokenFromServer(token: string): Promise<boolean> {
-  // TODO: Supabase에서 토큰 삭제 구현
-  console.log('[Push] 토큰 삭제 (미구현):', token.slice(0, 20) + '...');
-  return false;
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    return !!subscription;
+  } catch {
+    return false;
+  }
 }
 
 /**

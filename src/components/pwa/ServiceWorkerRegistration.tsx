@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 
+import { subscribeToPush } from '@/lib/push-notifications';
+
 interface ServiceWorkerRegistrationProps {
   onUpdate?: (registration: ServiceWorkerRegistration) => void;
   onSuccess?: (registration: ServiceWorkerRegistration) => void;
@@ -46,6 +48,12 @@ export function ServiceWorkerRegistration({ onUpdate, onSuccess }: ServiceWorker
         // 이미 활성화된 서비스 워커가 있는 경우
         if (registration.active) {
           console.log('[SW] 서비스 워커가 활성화되어 있습니다.');
+        }
+
+        // 알림 권한을 이미 허용한 사용자는 구독을 서버와 동기화
+        // (기존 구독 재사용 + upsert라 반복 호출해도 안전)
+        if ('Notification' in window && Notification.permission === 'granted') {
+          subscribeToPush().catch(() => {});
         }
       } catch (error) {
         console.error('[SW] 서비스 워커 등록 실패:', error);

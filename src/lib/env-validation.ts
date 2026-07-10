@@ -76,6 +76,18 @@ const SERVER_ENV_VARS = {
     description: 'Sentry Auth Token (소스맵 업로드용)',
     requiredFor: '프로덕션 디버깅 (선택적)',
   },
+  VAPID_PRIVATE_KEY: {
+    description: 'Web Push VAPID 개인 키',
+    requiredFor: '웹푸시 알림 발송',
+  },
+  VAPID_SUBJECT: {
+    description: 'Web Push VAPID subject (mailto: 또는 https: URL)',
+    requiredFor: '웹푸시 알림 발송',
+  },
+  CRON_SECRET: {
+    description: 'Vercel Cron 인증 시크릿',
+    requiredFor: '투표 독려 등 예약 알림 발송',
+  },
 } as const;
 
 /**
@@ -204,4 +216,37 @@ export function getSupabaseServiceRoleKey(): string {
     );
   }
   return key;
+}
+
+/**
+ * Web Push VAPID 공개 키 가져오기 (검증 포함)
+ */
+export function getVapidPublicKey(): string {
+  const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  if (!key) {
+    throw new Error('NEXT_PUBLIC_VAPID_PUBLIC_KEY가 설정되지 않았습니다.');
+  }
+  return key;
+}
+
+/**
+ * Web Push VAPID 개인 키 가져오기 (서버 전용, 검증 포함)
+ */
+export function getVapidPrivateKey(): string {
+  const key = process.env.VAPID_PRIVATE_KEY;
+  if (!key) {
+    throw new Error('VAPID_PRIVATE_KEY가 설정되지 않았습니다. 웹푸시 발송에 필요합니다.');
+  }
+  return key;
+}
+
+/**
+ * Web Push VAPID subject 가져오기 (검증 포함)
+ */
+export function getVapidSubject(): string {
+  const subject = process.env.VAPID_SUBJECT;
+  if (!subject) {
+    throw new Error('VAPID_SUBJECT가 설정되지 않았습니다. (예: mailto:admin@example.com)');
+  }
+  return subject;
 }

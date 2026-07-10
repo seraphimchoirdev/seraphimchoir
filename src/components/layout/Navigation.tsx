@@ -9,6 +9,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { NotificationBell } from '@/components/features/notifications/NotificationBell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -210,6 +211,7 @@ export default function Navigation() {
 
             {/* 데스크톱 사용자 정보 및 로그아웃 - lg(1024px) 이상에서 표시 */}
             <div className="hidden items-center gap-4 lg:flex">
+              {mounted && user && <NotificationBell />}
               {mounted && user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -306,7 +308,8 @@ export default function Navigation() {
             </div>
 
             {/* 모바일 프로필 Avatar - lg(1024px) 미만에서 표시 */}
-            <div className="flex items-center lg:hidden">
+            <div className="flex items-center gap-1 lg:hidden">
+              {mounted && user && <NotificationBell />}
               {mounted && user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

@@ -5,6 +5,7 @@ import { AlertCircle, Bell, BellOff, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { subscribeToPush } from '@/lib/push-notifications';
 
 const STORAGE_KEY_DISMISSED = 'push_prompt_dismissed';
 const STORAGE_KEY_PAGE_VIEWS = 'push_prompt_page_views';
@@ -100,8 +101,8 @@ export function PushNotificationPrompt({
 
       if (result === 'granted') {
         setShowPrompt(false);
-        // FCM 토큰 요청은 여기서 처리 (향후 구현)
-        // await requestFCMToken();
+        // 웹푸시 구독 생성 + 서버 저장
+        await subscribeToPush();
       } else {
         // 거부됨 - 프롬프트 닫기
         setShowPrompt(false);
