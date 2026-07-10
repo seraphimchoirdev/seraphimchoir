@@ -1,7 +1,7 @@
 'use client';
 
 import { RoleLabels, type UserRole } from '@/app/api/auth/types';
-import { ChevronDown, LogOut, Mail, User } from 'lucide-react';
+import { CheckCircle, ChevronDown, LogOut, Mail, User } from 'lucide-react';
 
 import { useState } from 'react';
 
@@ -79,13 +79,11 @@ export default function Navigation() {
   // 연결된 대원 이름을 우선 표시, 없으면 profile.name (카카오 닉네임)
   const displayName = profile?.linked_member?.name || profile?.name || '사용자';
 
+  // 1차 메뉴: 매일 쓰는 핵심 메뉴만 노출 (저빈도는 '더보기', 개인 메뉴는 프로필 드롭다운)
   const navLinks = [
     // 모든 로그인 사용자
     { href: '/dashboard', label: '홈', show: true },
     { href: '/community', label: '커뮤니티', show: true },
-
-    // 관리자 페이지 (ADMIN만)
-    { href: '/admin', label: '관리자', show: hasRole(['ADMIN']) },
 
     // 출석 관리 (ADMIN, CONDUCTOR, MANAGER, PART_LEADER)
     {
@@ -108,24 +106,29 @@ export default function Navigation() {
       show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER', 'PART_LEADER', 'MEMBER']),
     },
 
-    // 새로핌지 (모든 인증 사용자 조회 가능)
-    {
-      href: '/newsletters',
-      label: '새로핌지',
-      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER', 'PART_LEADER', 'MEMBER']),
-    },
-
     // 임원 포털 (ADMIN, CONDUCTOR, MANAGER, SECRETARY, TREASURER, PART_LEADER)
     {
       href: '/management',
       label: '임원 포털',
       show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER', 'PART_LEADER']),
     },
-
-    // 대원 연결된 사용자용 메뉴 (역할 무관, 대원 연결됨)
-    { href: '/my-attendance', label: '내 출석', show: isMemberLinked() },
-    { href: '/mypage', label: '마이페이지', show: isMemberLinked() },
   ].filter((link) => link.show);
+
+  // '더보기' 드롭다운: 저빈도 메뉴
+  const moreLinks = [
+    // 새로핌지 (모든 인증 사용자 조회 가능)
+    {
+      href: '/newsletters',
+      label: '새로핌지',
+      show: hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'SECRETARY', 'TREASURER', 'PART_LEADER', 'MEMBER']),
+    },
+    // 관리자 페이지 (ADMIN만)
+    { href: '/admin', label: '관리자', show: hasRole(['ADMIN']) },
+  ].filter((link) => link.show);
+
+  const isMoreActive = moreLinks.some((link) =>
+    pathname.startsWith(link.href)
+  );
 
   return (
     <>
@@ -172,6 +175,36 @@ export default function Navigation() {
                     </Link>
                   );
                 })}
+
+                {/* 더보기: 저빈도 메뉴 (새로핌지, 관리자) */}
+                {moreLinks.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className={`relative flex cursor-pointer items-center gap-0.5 rounded-[var(--radius-base)] px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                          isMoreActive
+                            ? 'bg-[var(--color-primary-50)] text-[var(--color-primary-600)]'
+                            : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-background-tertiary)] hover:text-[var(--color-text-primary)]'
+                        }`}
+                      >
+                        더보기
+                        <ChevronDown className="h-3.5 w-3.5" />
+                        {isMoreActive && (
+                          <span className="absolute bottom-0 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-[var(--color-primary-500)]" />
+                        )}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      {moreLinks.map((link) => (
+                        <DropdownMenuItem key={link.href} asChild>
+                          <Link href={link.href} className="cursor-pointer">
+                            {link.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </div>
 
@@ -237,6 +270,15 @@ export default function Navigation() {
                       </div>
                     )}
                     <DropdownMenuSeparator />
+                    {/* 내 출석 - 대원 연결된 사용자 (개인 메뉴는 프로필 드롭다운으로 통합) */}
+                    {isMemberLinked() && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/my-attendance" className="cursor-pointer">
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          내 출석
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     {/* MyPage Link - 모든 로그인 사용자 접근 가능 */}
                     <DropdownMenuItem asChild>
                       <Link href="/mypage" className="cursor-pointer">
@@ -288,6 +330,15 @@ export default function Navigation() {
                         {profile?.role ? RoleLabels[profile.role as UserRole] : '역할 미지정'}
                       </Badge>
                     </div>
+                    {/* 내 출석 - 대원 연결된 사용자 */}
+                    {isMemberLinked() && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/my-attendance" className="cursor-pointer">
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          내 출석
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     {/* MyPage Link - 모든 로그인 사용자 접근 가능 */}
                     <DropdownMenuItem asChild>
                       <Link href="/mypage" className="cursor-pointer">
