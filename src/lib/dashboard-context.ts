@@ -111,6 +111,21 @@ export function isToday(dateStr: string): boolean {
 }
 
 /**
+ * 투표 마감 시각을 표시용 문자열로 변환 (예: "토요일 15:00")
+ *
+ * 서버(Vercel)는 UTC이므로 getHours() 같은 로컬 타임존 API를 쓰면
+ * 9시간 어긋난다. KST(+09:00) 고정으로 계산한다.
+ */
+export function formatVoteDeadlineDisplay(deadlineAt: string): string {
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  const kst = new Date(new Date(deadlineAt).getTime() + 9 * 60 * 60 * 1000);
+  const dayOfWeek = days[kst.getUTCDay()];
+  const hours = kst.getUTCHours();
+  const minutes = String(kst.getUTCMinutes()).padStart(2, '0');
+  return `${dayOfWeek}요일 ${hours}:${minutes}`;
+}
+
+/**
  * 마감 시간까지 남은 시간을 표시용 문자열로 변환
  */
 export function formatTimeUntilDeadline(deadlineAt: string): string {

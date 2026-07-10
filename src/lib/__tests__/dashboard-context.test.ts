@@ -6,11 +6,30 @@ import {
   formatDate,
   formatDisplayDate,
   formatTimeUntilDeadline,
+  formatVoteDeadlineDisplay,
   getCurrentWeekSunday,
   getDayOfWeek,
   getNextSunday,
   isToday,
 } from '../dashboard-context';
+
+// ─── formatVoteDeadlineDisplay ──────────────────────────────────────
+
+describe('formatVoteDeadlineDisplay', () => {
+  it('KST 오프셋 표기(+09:00) → 토요일 15:00', () => {
+    expect(formatVoteDeadlineDisplay('2026-07-11T15:00:00+09:00')).toBe('토요일 15:00');
+  });
+
+  it('UTC 표기(Z) → KST로 변환해 표시한다 (서버 타임존 무관)', () => {
+    // 2026-07-11T06:00:00Z = KST 토요일 15:00
+    expect(formatVoteDeadlineDisplay('2026-07-11T06:00:00Z')).toBe('토요일 15:00');
+  });
+
+  it('UTC 기준 날짜가 넘어가는 경계 → KST 요일로 표시한다', () => {
+    // 2026-07-11T20:00:00Z = KST 일요일 05:00
+    expect(formatVoteDeadlineDisplay('2026-07-11T20:00:00Z')).toBe('일요일 5:00');
+  });
+});
 
 // ─── formatDate (YYYY-MM-DD) ────────────────────────────────────────
 

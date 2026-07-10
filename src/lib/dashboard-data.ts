@@ -5,11 +5,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   type DashboardContext,
   determineTimeContext,
-  formatDate,
+  formatVoteDeadlineDisplay,
   getDayOfWeek,
   getNextSunday,
   isToday,
 } from '@/lib/dashboard-context';
+import { getServiceDeadline } from '@/lib/vote-deadlines';
 import type { MyDashboardStatusResponse, MyVote, MySeat } from '@/app/api/dashboard/my-status/route';
 import type { ConductorStatusResponse, AttendanceSummaryItem } from '@/app/api/dashboard/conductor-status/route';
 import type { PendingApprovalsResponse, PendingApproval } from '@/app/api/dashboard/pending-approvals/route';
@@ -71,8 +72,11 @@ export async function fetchDashboardContext(
     serviceSchedules?.[0] ??
     null;
 
-  const deadlineAt = voteDeadlineResult.data?.deadline_at || null;
-  const isVotePassed = deadlineAt ? new Date(deadlineAt) < new Date() : true;
+  // 관리자가 명시 설정한 마감이 없으면 기본 규칙(예배 전날 토요일 15:00 KST)으로 폴백
+  // — my-attendance 페이지 및 attendance-vote-guard와 동일한 판정 규칙
+  const deadlineAt =
+    voteDeadlineResult.data?.deadline_at || getServiceDeadline(nextSunday).toISOString();
+  const isVotePassed = new Date(deadlineAt) < new Date();
   const hasVoted = !!attendanceResult.data;
 
   const arrangement = arrangementResult.data;
@@ -88,14 +92,7 @@ export async function fetchDashboardContext(
     hasUpcomingService: true,
   });
 
-  let voteDeadlineDisplay: string | null = null;
-  if (deadlineAt) {
-    const deadline = new Date(deadlineAt);
-    const dayOfWeek = getDayOfWeek(formatDate(deadline)).slice(0, 1);
-    const hours = deadline.getHours();
-    const minutes = deadline.getMinutes().toString().padStart(2, '0');
-    voteDeadlineDisplay = `${dayOfWeek}요일 ${hours}:${minutes}`;
-  }
+  const voteDeadlineDisplay = formatVoteDeadlineDisplay(deadlineAt);
 
   return {
     timeContext,
