@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-07-11 | feat(my-attendance): 연습 투표 마감을 연습 시작 시각까지로 완화 |
 | 2026-07-11 | fix(dashboard): 마감 레코드 없을 때 기본 마감 규칙으로 폴백 |
 | 2026-07-11 | fix(dashboard): 출석 투표 카드 링크를 /my-attendance로 정정 |
 | 2026-07-11 | feat(my-attendance): 투표 명시적 저장 + 마감 전 자유 수정 UX |

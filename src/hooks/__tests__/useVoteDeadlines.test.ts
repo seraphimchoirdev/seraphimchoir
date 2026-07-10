@@ -98,25 +98,32 @@ describe('getDefaultDeadline', () => {
 
 describe('getServiceDeadline', () => {
   it('주일 예배 -> 토요일 15:00 반환', () => {
-    // 2024-03-03은 일요일
+    // 2024-03-03(일) 전날인 3월 2일(토) 15:00 KST = 06:00 UTC
     const result = getServiceDeadline('2024-03-03');
 
-    expect(result.getDay()).toBe(6); // 토요일
-    expect(result.getHours()).toBe(15);
-    expect(result.getMinutes()).toBe(0);
-    // 3월 3일 - 1일 = 3월 2일(토)
-    expect(result.getDate()).toBe(2);
+    expect(result.toISOString()).toBe('2024-03-02T06:00:00.000Z');
   });
 });
 
 describe('getPracticeDeadline', () => {
-  it('주일 예배 -> 당일 09:00 반환', () => {
-    // 2024-03-03은 일요일
+  // 실행 환경 타임존에 의존하지 않도록 UTC 순간(toISOString)으로 비교한다
+  it('연습 시작 시각 명시 -> 시작 시각 그대로 반환 (버퍼 없음)', () => {
+    // 2024-03-03은 일요일, 연습 시작 10:30 KST = 01:30 UTC
+    const result = getPracticeDeadline('2024-03-03', '10:30:00');
+
+    expect(result.toISOString()).toBe('2024-03-03T01:30:00.000Z');
+  });
+
+  it("'HH:MM' 단축 형식도 동일하게 처리한다", () => {
+    const result = getPracticeDeadline('2024-03-03', '10:30');
+
+    expect(result.toISOString()).toBe('2024-03-03T01:30:00.000Z');
+  });
+
+  it('시작 시각 미상 -> 당일 09:00 KST 폴백', () => {
     const result = getPracticeDeadline('2024-03-03');
 
-    expect(result.getDate()).toBe(3);
-    expect(result.getHours()).toBe(9);
-    expect(result.getMinutes()).toBe(0);
+    expect(result.toISOString()).toBe('2024-03-03T00:00:00.000Z');
   });
 });
 

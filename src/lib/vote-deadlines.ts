@@ -19,7 +19,12 @@ export function getServiceDeadline(serviceDate: string): Date {
   return new Date(`${saturday}T15:00:00+09:00`);
 }
 
-/** 연습 참석 투표 마감: 연습 시작 10분 전 KST (폴백: 당일 09:00 KST) */
+/**
+ * 연습 참석 투표 마감: 연습 시작 시각 KST (폴백: 당일 09:00 KST)
+ *
+ * 연습 참석은 정보성 데이터라 배치표처럼 사전 확정이 필요 없고,
+ * 주일 당일 다른 봉사와 겹쳐 변동이 잦으므로 시작 직전까지 열어둔다.
+ */
 export function getPracticeDeadline(
   serviceDate: string,
   postPracticeStartTime?: string | null
@@ -27,11 +32,9 @@ export function getPracticeDeadline(
   if (postPracticeStartTime) {
     // 'HH:MM' 또는 'HH:MM:SS' 형태 지원
     const [h, m] = postPracticeStartTime.split(':');
-    const start = new Date(
+    return new Date(
       `${serviceDate}T${h.padStart(2, '0')}:${(m ?? '00').padStart(2, '0')}:00+09:00`
     );
-    start.setMinutes(start.getMinutes() - 10);
-    return start;
   }
   return new Date(`${serviceDate}T09:00:00+09:00`);
 }
