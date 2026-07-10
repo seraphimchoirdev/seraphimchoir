@@ -105,6 +105,55 @@
 
 - [x] **feat(community): 사진첩(앨범) 구현 복원 (stash → 정식 커밋, 검증 예정)**
   - 커밋: `f3a100c`
+### 2026-06-22
+- [x] **feat(navigation): 메인 메뉴 '대시보드'를 '홈'으로 변경**
+  - 커밋: `1b4fac7`
+
+- [x] **fix(arrangements): 빈자리 정리 되돌리기 실패 및 hydration 에러 수정**
+  - 커밋: `38f7339`
+
+
+- [x] **feat(arrangements): 긴급 등단 불가 처리를 모달 없이 즉시 처리**
+  - 커밋: `f0e6456`
+
+### 2026-06-20
+- [x] **fix(attendances): 출석 저장 시 전체 멤버 상태 기록하도록 수정**
+  - 커밋: `a65ccfb`
+
+
+- [x] **fix(service-schedules): 선곡표 일괄 등록 PDF/JPG 파싱 실패 수정**
+  - 커밋: `a44adc1`
+
+### 2026-05-09
+- [x] **fix(dashboard): 출석 카드 상태 텍스트 가독성 개선**
+  - 커밋: `384dbe9`
+
+- [x] **feat(dashboard): 출석 카드에 최근성 색 인디케이터 + 미입력 명시 표시 (v0.2.5)**
+  - 커밋: `4fa324c` (develop) / `6493ce7` (hotfix/v0.2.5 → main)
+
+
+- [x] **fix(attendance): 준비완료 기능 제거 및 마지막 저장 시각 표시로 대체 (v0.2.4)**
+  - 커밋: `d034e29`
+
+### 2026-05-02
+- [x] **fix(seats): 5단계 대원 목록 사이드바 스크롤 복구**
+  - 커밋: `02b5cfb` (develop) / `f611253` (hotfix/v0.2.3 → main)
+
+- [x] **fix(recommend): rowCapacities 행당 max=20 가드로 합동 찬양 시 400 해결**
+  - 커밋: `6848402`
+
+- [x] **feat(seats): 자리배치표 출력/내보내기 시 키(cm) 표시 숨김**
+  - 커밋: `cc4f9c0`
+
+- [x] **fix(recommend): 빈 행(capacity=0) 그리드를 허용하도록 zod 스키마 완화**
+  - 커밋: `78a688c`
+
+- [x] **fix(members): PATCH 스키마에 GUEST/height/height_cm 추가 (DB·POST와 동기화)**
+  - 커밋: `822d9b5`
+
+
+- [x] **fix(attendance): 파트장 저장 시 준비완료 자동 처리 제거 (a51356c 회귀)**
+  - 커밋: `a8369a4`
 
 ### 2026-04-21
 - [x] **feat(community): 커뮤니티 플랫폼 (공지사항 + 피드 게시판) 구현**

@@ -230,6 +230,20 @@ Recharts (Charts)
 | 2026-06-23 | fix(community): linked_member 없는 운영진의 앨범/업로드 권한 차단 수정 |
 | 2026-06-23 | feat(community): 사진첩(앨범) 구현 복원 (stash → 정식 커밋, 검증 예정) |
 | 2026-04-21 | feat(community): 커뮤니티 플랫폼 (공지사항 + 피드 게시판) 구현 |
+| 2026-06-22 | feat(navigation): 메인 메뉴 '대시보드'를 '홈'으로 변경 |
+| 2026-06-22 | fix(arrangements): 빈자리 정리 되돌리기 실패 및 hydration 에러 수정 |
+| 2026-06-22 | feat(arrangements): 긴급 등단 불가 처리를 모달 없이 즉시 처리 |
+| 2026-06-20 | fix(attendances): 출석 저장 시 전체 멤버 상태 기록하도록 수정 |
+| 2026-06-20 | fix(service-schedules): 선곡표 일괄 등록 PDF/JPG 파싱 실패 수정 |
+| 2026-05-09 | fix(dashboard): 출석 카드 상태 텍스트 가독성 개선 |
+| 2026-05-09 | feat(dashboard): 출석 카드에 최근성 색 인디케이터 + 미입력 명시 표시 (v0.2.5) |
+| 2026-05-09 | fix(attendance): 준비완료 기능 제거 및 마지막 저장 시각 표시로 대체 (v0.2.4) |
+| 2026-05-02 | fix(seats): 5단계 대원 목록 사이드바 스크롤 복구 |
+| 2026-05-02 | fix(recommend): rowCapacities 행당 max=20 가드로 합동 찬양 시 400 해결 |
+| 2026-05-02 | feat(seats): 자리배치표 출력/내보내기 시 키(cm) 표시 숨김 |
+| 2026-05-02 | fix(recommend): 빈 행(capacity=0) 그리드를 허용하도록 zod 스키마 완화 |
+| 2026-05-02 | fix(members): PATCH 스키마에 GUEST/height/height_cm 추가 (DB·POST와 동기화) |
+| 2026-05-02 | fix(attendance): 파트장 저장 시 준비완료 자동 처리 제거 (a51356c 회귀) |
 | 2026-04-21 | feat(attendance): 파트장 출석 저장 시 준비완료 자동 처리 |
 | 2026-04-18 | fix(attendance): 준비완료 해제 권한 수정 및 자동 체크 race condition 해결 |
 | 2026-04-11 | feat(ml): 배치표 공유/확정 시 ML 이력 자동 기록 |

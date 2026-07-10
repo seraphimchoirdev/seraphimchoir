@@ -16,6 +16,7 @@ interface ClickableMemberProps {
   part: Part;
   isPlaced?: boolean;
   isGuest?: boolean;
+  heightCm?: number | null;
 }
 
 // 파트별 파스텔 배경색 (GridClickableMember와 동일 팔레트)
@@ -34,7 +35,7 @@ const getPartColor = (p: Part) => {
   }
 };
 
-function ClickableMember({ memberId, name, part, isPlaced, isGuest }: ClickableMemberProps) {
+function ClickableMember({ memberId, name, part, isPlaced, isGuest, heightCm }: ClickableMemberProps) {
   const { selectedMemberId, selectedSource, selectMemberFromSidebar } = useArrangementStore();
 
   const isSelected = selectedMemberId === memberId && selectedSource === 'sidebar';
@@ -68,6 +69,12 @@ function ClickableMember({ memberId, name, part, isPlaced, isGuest }: ClickableM
       aria-pressed={isSelected}
     >
       {name}
+      {/* 키(cm) 표시는 일시적으로 비활성화 (요청에 따라 숨김). heightCm prop은 유지. */}
+      {false && heightCm != null && (
+        <span className="ml-1 text-[10px] font-normal text-[var(--color-text-tertiary)]">
+          {heightCm}cm
+        </span>
+      )}
       {isGuest && (
         <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-neutral-500 text-[9px] font-bold text-white shadow-sm">
           G

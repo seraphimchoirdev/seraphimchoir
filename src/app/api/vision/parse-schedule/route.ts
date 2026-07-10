@@ -15,14 +15,12 @@ import {
   extractWordsWithClovaOcr,
   isClovaOcrConfigured,
 } from '@/lib/vision/clovaOcrClient';
-import {
-  extractTextFromPdf,
-  isPdfTextBased,
-  parseScheduleFromPdfText,
-} from '@/lib/vision/pdfParser';
+import { convertPdfToImage } from '@/lib/vision/pdfParser';
 
 const logger = createLogger({ prefix: 'ParseScheduleAPI' });
 
+// PDF → PNG 변환(pdf-to-png-converter)에 Node.js 런타임 필요 (Edge 불가)
+export const runtime = 'nodejs';
 export const maxDuration = 60; // 60초 타임아웃
 
 /**
@@ -128,61 +126,44 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // PDF 파일 처리
-    if (pdfTypes.includes(file.type)) {
-      logger.debug('=== PDF 파일 처리 ===');
+    // OCR에 넘길 base64 이미지와 포맷 결정
+    let base64: string;
+    let imageFormat: 'jpg' | 'png';
+    const isPdf = pdfTypes.includes(file.type);
 
-      // 텍스트 기반 PDF인지 확인
-      const isTextBased = await isPdfTextBased(buffer);
-      logger.debug('텍스트 기반 PDF:', isTextBased);
-
-      if (isTextBased) {
-        // 텍스트 직접 추출 (OCR 불필요, 100% 정확도)
-        const pdfText = await extractTextFromPdf(buffer);
-        logger.debug('추출된 텍스트 (처음 1000자):', pdfText.substring(0, 1000));
-
-        const parseResult = parseScheduleFromPdfText(pdfText, year);
-        const schedules = parseResult.schedules.map(toServiceScheduleInsert);
-
-        return NextResponse.json({
-          success: parseResult.success,
-          data: schedules,
-          rawSchedules: parseResult.schedules,
-          errors: parseResult.errors,
-          warnings: parseResult.warnings,
-          debug: {
-            source: 'pdf-text',
-            year,
-            textLength: pdfText.length,
-          },
-        });
-      } else {
-        // 스캔된 PDF - 이미지로 변환 필요
-        // PDF 이미지 변환 라이브러리가 Next.js 환경과 호환성 문제가 있어 비활성화
-        logger.debug('스캔된 PDF 감지 - 이미지 변환 안내');
+    if (isPdf) {
+      // PDF 처리: 텍스트/스캔 구분 없이 이미지로 변환 후 Clova OCR 좌표 파서로 통일.
+      // unpdf 텍스트 추출은 표의 컬럼 좌표를 잃어버려(한 줄로 합쳐짐) 파싱이 불가능하므로
+      // PDF를 PNG로 렌더링해 이미지 파일과 동일한 OCR 파이프라인을 태운다.
+      logger.debug('=== PDF 파일 처리 (이미지 변환 → OCR) ===');
+      try {
+        base64 = await convertPdfToImage(buffer);
+        imageFormat = 'png';
+        logger.debug('PDF → PNG 변환 성공');
+      } catch (conversionError) {
+        // 일부 서버리스 환경에서 PDF 렌더링 네이티브 의존성이 없을 수 있음 → 안내 폴백
+        logger.error('PDF 이미지 변환 실패:', conversionError);
         return NextResponse.json(
           {
             success: false,
             error:
-              '스캔된 PDF 파일입니다. PDF 파일을 열어 스크린샷을 찍거나 "미리보기" 앱에서 이미지로 내보내기 후 PNG/JPG 파일로 업로드해주세요.',
+              'PDF를 처리할 수 없습니다. PDF 파일을 열어 스크린샷을 찍거나 이미지(PNG/JPG)로 내보내기 후 업로드해주세요.',
             data: [],
-            errors: ['스캔된 PDF는 이미지로 변환 후 업로드해주세요.'],
+            errors: ['PDF 변환에 실패했습니다. 이미지 파일로 업로드해주세요.'],
             warnings: [],
           },
           { status: 400 }
         );
       }
+    } else {
+      // 이미지 파일 처리
+      base64 = buffer.toString('base64');
+      imageFormat = file.type.includes('png')
+        ? 'png'
+        : file.type.includes('webp')
+          ? 'png' // webp는 png로 처리
+          : 'jpg';
     }
-
-    // 이미지 파일 처리
-    const base64 = buffer.toString('base64');
-
-    // 이미지 포맷 결정
-    const imageFormat = file.type.includes('png')
-      ? 'png'
-      : file.type.includes('webp')
-        ? 'png' // webp는 png로 처리
-        : 'jpg';
 
     logger.debug('=== Clova OCR 처리 ===');
 
@@ -255,7 +236,7 @@ export async function POST(request: NextRequest) {
       errors: parseResult.errors,
       warnings: parseResult.warnings,
       debug: {
-        source: 'clova-ocr',
+        source: isPdf ? 'pdf-image-ocr' : 'clova-ocr',
         ocrProvider: 'clova',
         wordCount: words.length,
         imageWidth,

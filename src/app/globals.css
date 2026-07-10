@@ -685,6 +685,11 @@ table td,
     display: none !important;
   }
 
+  /* 인쇄 시 키(cm) 표시 숨김 — 개인정보 보호 */
+  [data-capture-target] [data-height-badge] {
+    display: none !important;
+  }
+
   /* 인쇄 시 줄반장 왕관 아이콘 축소 및 위치 조정 */
   [data-capture-target] [data-seat-slot] .crown-badge {
     width: 18px !important;
@@ -698,6 +703,12 @@ table td,
     width: 11px !important;
     height: 11px !important;
   }
+}
+
+/* === 이미지 캡처 모드(html-to-image)에서 키(cm) 숨김 === */
+/* useImageGeneration.ts가 캡처 직전 [data-capture-mode="true"]를 부착함 */
+[data-capture-mode] [data-height-badge] {
+  display: none !important;
 }
 
 /* === 스켈레톤 시머 효과 === */

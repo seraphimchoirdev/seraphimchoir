@@ -32,6 +32,8 @@ interface SeatSlotProps {
   isEmergencyMode?: boolean;
   /** 대시보드에서 "내 자리 확인하기" 클릭 시 하이라이트 표시 */
   isHighlighted?: boolean;
+  /** memberId → height_cm 조회 맵 (이름 아래 키 표시용) */
+  heightMap?: Map<string, number | null>;
 }
 
 // 메모이제이션된 SeatSlot 컴포넌트
@@ -42,6 +44,7 @@ const SeatSlot = memo(function SeatSlot({
   isReadOnly = false,
   isEmergencyMode = false,
   isHighlighted = false,
+  heightMap,
 }: SeatSlotProps) {
   const seatKey = `${row}-${col}`;
 
@@ -195,6 +198,7 @@ const SeatSlot = memo(function SeatSlot({
             isRowLeader={assignment.isRowLeader}
             rowLeaderMode={rowLeaderMode}
             changeHighlight={changeHighlight}
+            heightCm={heightMap?.get(assignment.memberId) ?? null}
           />
         ) : (
           <div className="pointer-events-none text-[10px] text-[var(--color-text-tertiary)] sm:text-xs">
@@ -217,6 +221,7 @@ const GridClickableMember = memo(function GridClickableMember({
   isRowLeader,
   rowLeaderMode,
   changeHighlight,
+  heightCm,
 }: {
   name: string;
   part: Part;
@@ -225,6 +230,7 @@ const GridClickableMember = memo(function GridClickableMember({
   isRowLeader?: boolean;
   rowLeaderMode?: boolean;
   changeHighlight?: ChangeHighlight;
+  heightCm?: number | null;
 }) {
   // Part color mapping - 파스텔 배경 + 검정 텍스트 (흑백 인쇄 가독성)
   const getPartColor = (p: Part) => {
@@ -290,6 +296,15 @@ const GridClickableMember = memo(function GridClickableMember({
       >
         {name}
       </span>
+      {/* 키(cm) 표시는 일시적으로 비활성화 (요청에 따라 숨김). heightCm prop은 유지. */}
+      {false && heightCm != null && (
+        <span
+          data-height-badge
+          className="mt-0.5 text-[8px] leading-none text-[var(--color-text-tertiary)] sm:text-[9px] lg:text-[10px]"
+        >
+          {heightCm}cm
+        </span>
+      )}
       {/* 줄반장 아이콘 표시: 흰색 원형 배경 + 보라 크라운 */}
       {isRowLeader && (
         <div className="crown-badge absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full border-2 border-violet-400 bg-white shadow-lg">

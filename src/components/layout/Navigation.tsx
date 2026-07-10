@@ -81,7 +81,7 @@ export default function Navigation() {
 
   const navLinks = [
     // 모든 로그인 사용자
-    { href: '/dashboard', label: '대시보드', show: true },
+    { href: '/dashboard', label: '홈', show: true },
     { href: '/community', label: '커뮤니티', show: true },
 
     // 관리자 페이지 (ADMIN만)

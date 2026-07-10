@@ -253,7 +253,7 @@ export async function fetchConductorStatus(
 
     adminSupabase
       .from('attendances')
-      .select('member_id, is_service_available, service_schedule_id')
+      .select('member_id, is_service_available, service_schedule_id, updated_at')
       .eq('date', nextSunday),
 
     adminSupabase
@@ -284,11 +284,19 @@ export async function fetchConductorStatus(
   const parts = ['SOPRANO', 'ALTO', 'TENOR', 'BASS'];
   const totalMembers = activeMembers?.length || 0;
 
+  // member_id → part 매핑 (파트별 lastUpdatedAt 계산용)
+  const memberPartById = new Map<string, string>();
+  activeMembers?.forEach((m: { id: string; part: string }) => memberPartById.set(m.id, m.part));
+
   function aggregateAttendance(
-    filteredAttendances: { member_id: string; is_service_available: boolean }[]
+    filteredAttendances: {
+      member_id: string;
+      is_service_available: boolean;
+      updated_at?: string | null;
+    }[]
   ) {
     const attendanceMap = new Map(
-      filteredAttendances.map((a: { member_id: string; is_service_available: boolean }) => [a.member_id, a.is_service_available])
+      filteredAttendances.map((a) => [a.member_id, a.is_service_available])
     );
 
     const partCounts: Record<
@@ -297,6 +305,22 @@ export async function fetchConductorStatus(
     > = {};
     parts.forEach((part) => {
       partCounts[part] = { total: 0, available: 0, unavailable: 0, noResponse: 0 };
+    });
+
+    const partLastUpdated: Record<string, string | null> = {
+      SOPRANO: null,
+      ALTO: null,
+      TENOR: null,
+      BASS: null,
+    };
+    filteredAttendances.forEach((a) => {
+      const part = memberPartById.get(a.member_id);
+      if (!part || !(part in partLastUpdated)) return;
+      if (!a.updated_at) return;
+      const prev = partLastUpdated[part];
+      if (prev === null || a.updated_at > prev) {
+        partLastUpdated[part] = a.updated_at;
+      }
     });
 
     let totalAvailable = 0;
@@ -333,6 +357,7 @@ export async function fetchConductorStatus(
         available: partCounts[part]?.available || 0,
         unavailable: partCounts[part]?.unavailable || 0,
         noResponse: partCounts[part]?.noResponse || 0,
+        lastUpdatedAt: partLastUpdated[part] ?? null,
       })),
     };
   }

@@ -50,7 +50,7 @@ const uuidSchema = z.string().uuid('Invalid arrangement ID format');
 const gridLayoutSchema = z
   .object({
     rows: z.number().int().min(1, '최소 1행 이상').max(10, '최대 10행 이하'),
-    rowCapacities: z.array(z.number().int().min(1).max(20)).min(1).max(10),
+    rowCapacities: z.array(z.number().int().min(0).max(20)).min(1).max(10),
     zigzagPattern: z.enum(['none', 'even', 'odd']),
   })
   .optional();

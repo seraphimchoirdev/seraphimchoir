@@ -1,29 +1,43 @@
 'use client';
 
-import { Check, Users } from 'lucide-react';
+import { format, isToday } from 'date-fns';
+import { Users } from 'lucide-react';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  READINESS_PARTS,
-  getReadyPartsCount,
-  useAttendanceDeadlines,
-} from '@/hooks/useAttendanceDeadlines';
 import { formatDisplayDate } from '@/lib/dashboard-context';
 import type { AttendanceSummaryItem } from '@/app/api/dashboard/conductor-status/route';
-
-interface PartSummary {
-  part: string;
-  total: number;
-  available: number;
-  unavailable: number;
-  noResponse: number;
-}
 
 interface AttendanceSummaryCardProps {
   nextServiceDate: string;
   summaries: AttendanceSummaryItem[];
+}
+
+/**
+ * 파트별 마지막 저장 시각 표시 (간결 모드).
+ * - 당일: HH:mm (예: 14:23) — 시·분 정밀도
+ * - 그 외: M/d (예: 5/1) — 일자만, 분 정밀도는 title 툴팁의 raw ISO에서 확인
+ */
+function formatLastUpdated(iso: string | null): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return isToday(d) ? format(d, 'HH:mm') : format(d, 'M/d');
+}
+
+/**
+ * 응답 활성도 색 점 — "파트장이 최근 입력했는가"를 한눈에.
+ * 임계값: 24h 이내(녹색), 24-72h(호박색), 그 외 또는 저장 없음(회색)
+ */
+function getRecencyDotClass(iso: string | null): string {
+  if (!iso) return 'bg-[var(--color-text-tertiary)]';
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return 'bg-[var(--color-text-tertiary)]';
+  const hours = (Date.now() - t) / 36e5;
+  if (hours <= 24) return 'bg-[var(--color-success-500)]';
+  if (hours <= 72) return 'bg-[var(--color-warning-500)]';
+  return 'bg-[var(--color-text-tertiary)]';
 }
 
 const PART_LABELS: Record<string, string> = {
@@ -66,12 +80,10 @@ function ServiceAttendanceSection({
   summary,
   showLabel,
   nextServiceDate,
-  deadlines,
 }: {
   summary: AttendanceSummaryItem;
   showLabel: boolean;
   nextServiceDate: string;
-  deadlines: ReturnType<typeof useAttendanceDeadlines>['data'];
 }) {
   const { availableCount, unavailableCount, byPart, serviceType } = summary;
 
@@ -121,17 +133,15 @@ function ServiceAttendanceSection({
           .filter((p) => PART_LABELS[p.part])
           .map((part) => {
             const colors = PART_CARD_COLORS[part.part];
-            const isReady = deadlines?.partDeadlines?.[part.part as keyof typeof deadlines.partDeadlines] !== null;
+            const hasSaved = !!part.lastUpdatedAt;
+            const tooltip = hasSaved
+              ? `파트장 마지막 저장: ${part.lastUpdatedAt}`
+              : '이번 주 파트장 저장 이력 없음';
             return (
               <div
                 key={part.part}
-                className={`relative rounded-md border p-2 text-center ${colors?.bg ?? ''} ${colors?.border ?? 'border-[var(--color-border-subtle)]'}`}
+                className={`rounded-md border p-2 text-center ${colors?.bg ?? ''} ${colors?.border ?? 'border-[var(--color-border-subtle)]'}`}
               >
-                {isReady && (
-                  <div className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-success-500)]">
-                    <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
-                  </div>
-                )}
                 <div className={`text-xs font-semibold ${colors?.label ?? 'text-[var(--color-text-tertiary)]'}`}>
                   {PART_LABELS[part.part]}
                 </div>
@@ -140,6 +150,22 @@ function ServiceAttendanceSection({
                   <span className="text-sm font-normal text-[var(--color-text-tertiary)]">
                     /{part.total}
                   </span>
+                </div>
+                <div
+                  className="mt-1 flex items-center justify-center gap-1 text-[10px] leading-tight"
+                  title={tooltip}
+                >
+                  <span
+                    aria-hidden
+                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${getRecencyDotClass(part.lastUpdatedAt)}`}
+                  />
+                  {hasSaved ? (
+                    <span className="font-semibold text-[var(--color-text-secondary)]">
+                      {formatLastUpdated(part.lastUpdatedAt)} 저장됨
+                    </span>
+                  ) : (
+                    <span className="font-semibold text-[var(--color-warning-700)]">미입력</span>
+                  )}
                 </div>
               </div>
             );
@@ -156,11 +182,6 @@ function ServiceAttendanceSection({
  * 같은 날에 여러 예배가 있으면 각각 독립적으로 표시합니다.
  */
 export function AttendanceSummaryCard({ nextServiceDate, summaries }: AttendanceSummaryCardProps) {
-  // 준비 완료 현황 조회
-  const { data: deadlines } = useAttendanceDeadlines(nextServiceDate || undefined);
-  const readyCount = getReadyPartsCount(deadlines);
-  const totalParts = READINESS_PARTS.length;
-
   const showLabels = summaries.length > 1;
 
   return (
@@ -178,17 +199,8 @@ export function AttendanceSummaryCard({ nextServiceDate, summaries }: Attendance
             summary={summary}
             showLabel={showLabels}
             nextServiceDate={nextServiceDate}
-            deadlines={deadlines}
           />
         ))}
-
-        {/* 준비 완료 현황 */}
-        <div className="flex items-center justify-between rounded-md bg-[var(--color-background-tertiary)] px-3 py-2 text-xs">
-          <span className="text-[var(--color-text-secondary)]">파트 준비 현황</span>
-          <span className={readyCount === totalParts ? 'font-semibold text-[var(--color-success-600)]' : 'font-medium text-[var(--color-text-tertiary)]'}>
-            {readyCount}/{totalParts} 완료
-          </span>
-        </div>
 
         {/* 액션 버튼 */}
         <Button asChild variant="outline" className="w-full">
