@@ -3,6 +3,7 @@
 import {
   ArrowLeft,
   CheckCircle2,
+  ClipboardList,
   Clock,
   Lock,
   MoreVertical,
@@ -25,6 +26,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 
+import { useAuth } from '@/hooks/useAuth';
 import {
   useCancelPollResponse,
   useDeletePoll,
@@ -38,6 +40,7 @@ import {
   formatTargetParts,
   PART_LABELS,
   POLL_AUDIENCE_LABELS,
+  POLL_SENIOR_STAFF_ROLES,
   POLL_TYPE_LABELS,
 } from '@/lib/community/poll-constants';
 import { showError, showSuccess } from '@/lib/toast';
@@ -77,6 +80,7 @@ function ResultsHiddenNotice() {
 
 export default function PollDetailView({ pollId }: PollDetailViewProps) {
   const router = useRouter();
+  const { profile } = useAuth();
   const { data: poll, isLoading, error } = usePoll(pollId);
 
   const submitResponse = useSubmitPollResponse(pollId);
@@ -310,6 +314,20 @@ export default function PollDetailView({ pollId }: PollDetailViewProps) {
             </span>
           )}
         </div>
+
+        {/* 응답 현황 (운영진 전체 / 파트장 자기 파트 — 익명 설문은 미제공) */}
+        {!poll.is_anonymous &&
+          (POLL_SENIOR_STAFF_ROLES.includes(profile?.role || '') ||
+            (profile?.role === 'PART_LEADER' &&
+              poll.audience_type !== 'STAFF')) && (
+            <Link
+              href={`/community/polls/${pollId}/audience-status`}
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary-600)] hover:text-[var(--color-primary-700)]"
+            >
+              <ClipboardList className="h-4 w-4" />
+              응답 현황 보기
+            </Link>
+          )}
       </div>
 
       {/* ==================== 참석 조사 ==================== */}

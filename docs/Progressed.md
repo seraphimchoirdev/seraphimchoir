@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-07-11 | feat(community): 기획 잔여 갭 4건 구현 (develop 머지 준비) |
 | 2026-07-11 | fix(types): ArrangementStatus·PracticeAttendanceType 유실 타입 복구 |
 | 2026-07-11 | fix(community): 코드 리뷰 발견 7건 수정 |
 | 2026-07-10 | feat(community): 설문/투표 기능 구현 (대상 지정 + 결과 공개 시점 제어) |

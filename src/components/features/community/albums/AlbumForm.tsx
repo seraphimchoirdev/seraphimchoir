@@ -15,6 +15,7 @@ import {
   useCreateAlbum,
   useUpdateAlbum,
 } from '@/hooks/useAlbums';
+import { useChoirEvents } from '@/hooks/useChoirEvents';
 import { showError, showSuccess } from '@/lib/toast';
 
 interface AlbumFormProps {
@@ -54,6 +55,7 @@ export default function AlbumForm({ editId }: AlbumFormProps) {
       initialTitle={existing?.title || ''}
       initialDescription={existing?.description || ''}
       initialEventDate={existing?.event_date || todayKST()}
+      initialChoirEventId={existing?.choir_event_id || ''}
     />
   );
 }
@@ -63,6 +65,7 @@ interface AlbumFormFieldsProps {
   initialTitle: string;
   initialDescription: string;
   initialEventDate: string;
+  initialChoirEventId: string;
 }
 
 function AlbumFormFields({
@@ -70,15 +73,32 @@ function AlbumFormFields({
   initialTitle,
   initialDescription,
   initialEventDate,
+  initialChoirEventId,
 }: AlbumFormFieldsProps) {
   const router = useRouter();
   const isEdit = !!editId;
   const createAlbum = useCreateAlbum();
   const updateAlbum = useUpdateAlbum(editId || '');
+  const { data: choirEvents } = useChoirEvents();
 
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
   const [eventDate, setEventDate] = useState(initialEventDate);
+  const [choirEventId, setChoirEventId] = useState(initialChoirEventId);
+
+  // 최근 행사가 위로 오도록 내림차순 정렬 (훅은 오름차순으로 내려줌)
+  const sortedEvents = [...(choirEvents?.data ?? [])].sort((a, b) =>
+    (b.date || '').localeCompare(a.date || '')
+  );
+
+  // 행사 선택 시 행사 날짜를 앨범 날짜 기본값으로 제안
+  const handleEventSelect = (id: string) => {
+    setChoirEventId(id);
+    const selected = sortedEvents.find((e) => e.id === id);
+    if (selected?.date) {
+      setEventDate(selected.date);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -96,6 +116,7 @@ function AlbumFormFields({
           title: title.trim(),
           description: description.trim() || undefined,
           event_date: eventDate,
+          choir_event_id: choirEventId || null,
         });
         showSuccess('앨범이 수정되었습니다.');
         router.push(`/community/albums/${editId}`);
@@ -104,6 +125,7 @@ function AlbumFormFields({
           title: title.trim(),
           description: description.trim() || undefined,
           event_date: eventDate,
+          choir_event_id: choirEventId || undefined,
         });
         showSuccess('앨범이 생성되었습니다.');
         router.push(`/community/albums/${album.id}`);
@@ -145,6 +167,27 @@ function AlbumFormFields({
           placeholder="예: 2026 부활절 칸타타"
           maxLength={100}
         />
+      </div>
+
+      {/* 행사 연결 (선택) */}
+      <div className="space-y-2">
+        <Label htmlFor="album-event">연결할 행사 (선택)</Label>
+        <select
+          id="album-event"
+          value={choirEventId}
+          onChange={(e) => handleEventSelect(e.target.value)}
+          className="w-full rounded-lg border border-[var(--color-border-default)] bg-[var(--color-background-primary)] px-3 py-2 text-base text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)]"
+        >
+          <option value="">없음</option>
+          {sortedEvents.map((event) => (
+            <option key={event.id} value={event.id}>
+              {event.date} · {event.title}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-[var(--color-text-tertiary)]">
+          행사를 연결하면 앨범 목록에 행사 정보가 함께 표시됩니다.
+        </p>
       </div>
 
       {/* 행사 날짜 */}

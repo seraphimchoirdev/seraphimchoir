@@ -9,6 +9,7 @@ import { STALE_TIME } from '@/lib/constants';
 
 import type {
   CreatePollRequest,
+  PollAudienceGroupStatus,
   PollDetail,
   PollWithMeta,
   SubmitPollResponseRequest,
@@ -157,6 +158,30 @@ export function useSubmitPollResponse(pollId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['polls'] });
     },
+  });
+}
+
+// ============================================================
+// 파트별 응답 현황 (운영진/파트장)
+// ============================================================
+export function usePollAudienceStatus(pollId: string | undefined) {
+  return useQuery<{
+    data: PollAudienceGroupStatus[];
+    poll_title: string;
+  }>({
+    queryKey: ['polls', 'audience-status', pollId],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/community/polls/${pollId}/audience-status`
+      );
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || '응답 현황을 불러오는데 실패했습니다.');
+      }
+      return res.json();
+    },
+    enabled: Boolean(pollId),
+    staleTime: STALE_TIME.SHORT,
   });
 }
 

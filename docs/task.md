@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-07-11
+- [x] **feat(community): 기획 잔여 갭 4건 구현 (develop 머지 준비)**
+  - 커밋: `210d931`
+
 - [x] **fix(types): ArrangementStatus·PracticeAttendanceType 유실 타입 복구**
   - 커밋: `689a8fb`
 

@@ -43,6 +43,13 @@ export function canParticipateInCommunity(profile: {
 }
 
 /**
+ * 앨범 전체(일괄) 다운로드 최대 사진 수.
+ * 클라이언트에서 zip을 조립하므로(JSZip) 브라우저 메모리 보호를 위한 상한.
+ * 사진은 업로드 시 1920px/5MB 이하로 압축되어 100장이어도 통상 수십 MB 수준.
+ */
+export const ALBUM_DOWNLOAD_MAX_PHOTOS = 100;
+
+/**
  * 사진 이모지 반응 프리셋 (좋아요/웃음/놀람/감사·기도/박수).
  * API와 프론트엔드가 이 배열을 공유하여 반응 유효성을 검증한다.
  * 프리셋 변경 시 DB 마이그레이션 없이 이 상수만 수정하면 된다.

@@ -29,6 +29,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useUnreadNoticeCount } from '@/hooks/useConfirmations';
 import { useMounted } from '@/hooks/useMounted';
 
 import { createLogger } from '@/lib/logger';
@@ -42,6 +43,7 @@ export default function Navigation() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const mounted = useMounted();
+  const { data: unreadCount } = useUnreadNoticeCount(!!profile);
 
   const handleSignOut = async () => {
     try {
@@ -80,6 +82,7 @@ export default function Navigation() {
   const navLinks = [
     // 모든 로그인 사용자
     { href: '/dashboard', label: '대시보드', show: true },
+    { href: '/community', label: '커뮤니티', show: true },
 
     // 관리자 페이지 (ADMIN만)
     { href: '/admin', label: '관리자', show: hasRole(['ADMIN']) },
@@ -156,6 +159,13 @@ export default function Navigation() {
                       }`}
                     >
                       {link.label}
+                      {/* 미확인 공지 뱃지 (모바일 하단 네비와 동일 데이터) */}
+                      {link.href === '/community' &&
+                        (unreadCount ?? 0) > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-error-500)] px-1 text-[10px] font-bold text-white">
+                            {unreadCount}
+                          </span>
+                        )}
                       {isActive && (
                         <span className="absolute bottom-0 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-[var(--color-primary-500)]" />
                       )}

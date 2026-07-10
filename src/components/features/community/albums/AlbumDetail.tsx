@@ -1,6 +1,14 @@
 'use client';
 
-import { ArrowLeft, Calendar, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Calendar,
+  Download,
+  Loader2,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -15,7 +23,11 @@ import {
   useAlbumPhotos,
   useDeleteAlbum,
 } from '@/hooks/useAlbums';
-import { canParticipateInCommunity } from '@/lib/community/album-constants';
+import { useAlbumZipDownload } from '@/hooks/useAlbumZipDownload';
+import {
+  ALBUM_DOWNLOAD_MAX_PHOTOS,
+  canParticipateInCommunity,
+} from '@/lib/community/album-constants';
 import { useAuth } from '@/hooks/useAuth';
 import { showError, showSuccess } from '@/lib/toast';
 
@@ -45,6 +57,7 @@ export default function AlbumDetail({ albumId }: AlbumDetailProps) {
     fetchNextPage,
   } = useAlbumPhotos(albumId);
   const deleteAlbum = useDeleteAlbum();
+  const { downloadAll, progress: zipProgress } = useAlbumZipDownload();
 
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -165,10 +178,40 @@ export default function AlbumDetail({ albumId }: AlbumDetailProps) {
         </div>
       </div>
 
-      {/* 사진 추가 버튼 */}
-      {canUpload && (
-        <div className="flex justify-end">
-          <PhotoUploader albumId={albumId} />
+      {/* 전체 다운로드 + 사진 추가 버튼 */}
+      {((album.photo_count ?? 0) > 0 || canUpload) && (
+        <div className="flex justify-end gap-2">
+          {(album.photo_count ?? 0) > 0 && (
+            <button
+              type="button"
+              onClick={() => downloadAll(albumId, album.title)}
+              disabled={
+                !!zipProgress ||
+                (album.photo_count ?? 0) > ALBUM_DOWNLOAD_MAX_PHOTOS
+              }
+              title={
+                (album.photo_count ?? 0) > ALBUM_DOWNLOAD_MAX_PHOTOS
+                  ? `사진이 너무 많아 전체 다운로드를 지원하지 않습니다 (최대 ${ALBUM_DOWNLOAD_MAX_PHOTOS}장)`
+                  : undefined
+              }
+              className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-background-primary)] px-4 py-2.5 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-background-secondary)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {zipProgress ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {zipProgress.total > 0
+                    ? `내려받는 중 (${zipProgress.current}/${zipProgress.total})`
+                    : '준비 중...'}
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  전체 다운로드
+                </>
+              )}
+            </button>
+          )}
+          {canUpload && <PhotoUploader albumId={albumId} />}
         </div>
       )}
 

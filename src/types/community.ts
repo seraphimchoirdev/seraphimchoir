@@ -290,3 +290,23 @@ export interface SubmitPollResponseRequest {
   option_ids?: string[];
   text_response?: string;
 }
+
+/**
+ * 설문 응답 현황 그룹 (파트별 또는 STAFF 단일 그룹)
+ * 공지 PartConfirmationStatus와 동일한 구조 철학
+ */
+export interface PollAudienceGroupStatus {
+  /** 파트 코드(SOPRANO 등) 또는 'STAFF' */
+  group: string;
+  responded: Array<{
+    user_id: string;
+    name: string;
+    responded_at: string | null;
+  }>;
+  not_responded: Array<{
+    user_id: string;
+    name: string;
+  }>;
+  total: number;
+  responded_count: number;
+}
