@@ -1109,6 +1109,7 @@ export type Database = {
       polls: {
         Row: {
           allow_multiple: boolean | null
+          audience_type: string
           created_at: string | null
           created_by: string
           deadline_at: string | null
@@ -1119,11 +1120,14 @@ export type Database = {
           is_deleted: boolean | null
           poll_type: string
           response_count: number | null
+          show_results_before_close: boolean
+          target_parts: Database["public"]["Enums"]["part"][] | null
           title: string
           updated_at: string | null
         }
         Insert: {
           allow_multiple?: boolean | null
+          audience_type?: string
           created_at?: string | null
           created_by: string
           deadline_at?: string | null
@@ -1134,11 +1138,14 @@ export type Database = {
           is_deleted?: boolean | null
           poll_type: string
           response_count?: number | null
+          show_results_before_close?: boolean
+          target_parts?: Database["public"]["Enums"]["part"][] | null
           title: string
           updated_at?: string | null
         }
         Update: {
           allow_multiple?: boolean | null
+          audience_type?: string
           created_at?: string | null
           created_by?: string
           deadline_at?: string | null
@@ -1149,6 +1156,8 @@ export type Database = {
           is_deleted?: boolean | null
           poll_type?: string
           response_count?: number | null
+          show_results_before_close?: boolean
+          target_parts?: Database["public"]["Enums"]["part"][] | null
           title?: string
           updated_at?: string | null
         }
@@ -1707,6 +1716,13 @@ export type Database = {
       }
       get_user_role: { Args: never; Returns: string }
       has_role: { Args: { required_roles: string[] }; Returns: boolean }
+      is_in_poll_audience: {
+        Args: {
+          p_audience_type: string
+          p_target_parts: Database["public"]["Enums"]["part"][]
+        }
+        Returns: boolean
+      }
       is_member_linked: { Args: never; Returns: boolean }
       is_valid_role: { Args: { check_role: string }; Returns: boolean }
       is_vote_deadline_passed: {

@@ -24,6 +24,7 @@ export type FeedCategory = 'performance' | 'celebration' | 'sharing' | 'daily' |
 export type NoticePriority = 'normal' | 'important' | 'urgent';
 export type PollType = 'attendance' | 'choice' | 'open_ended';
 export type AttendanceStatus = 'attending' | 'not_attending' | 'undecided';
+export type PollAudience = 'ALL' | 'STAFF' | 'PART';
 
 // ============================================================
 // Author info (user_profiles + members JOIN 결과)
@@ -195,4 +196,97 @@ export interface CreateCommentRequest {
   post_id: string;
   parent_id?: string;
   content: string;
+}
+
+// ============================================================
+// 설문/투표 관련 Rich types
+// ============================================================
+
+/** 응답자 정보 (익명 설문에서는 API가 내려주지 않음) */
+export interface PollVoter {
+  user_id: string;
+  name: string;
+  part: string | null;
+}
+
+/** 선택지 + 실시간 집계 (vote_count는 GROUP BY 집계값, DB 캐시 아님) */
+export interface PollOptionWithVotes extends PollOption {
+  vote_count: number;
+  voters: PollVoter[];
+  is_my_choice: boolean;
+}
+
+/** 참석 조사 상태별 집계 */
+export interface AttendanceSummary {
+  status: AttendanceStatus;
+  count: number;
+  voters: PollVoter[];
+}
+
+/** 주관식 응답 (익명이면 author null) */
+export interface PollTextResponse {
+  id: string;
+  text_response: string;
+  created_at: string | null;
+  author: PollVoter | null;
+}
+
+/** 내 응답 상태 */
+export interface MyPollResponse {
+  attendance_status: AttendanceStatus | null;
+  selected_option_ids: string[];
+  text_response: string | null;
+}
+
+/** 설문 목록 카드용 */
+export interface PollWithMeta extends Poll {
+  creator: PollVoter | null;
+  /** 실제 응답자 수 (사람 기준, 다중 선택도 1명으로 집계) */
+  voter_count: number;
+  has_my_response: boolean;
+  /** 마감 시각 경과 or is_closed */
+  is_effectively_closed: boolean;
+}
+
+/** 설문 상세용 (목록 메타 + 결과) */
+export interface PollDetail extends PollWithMeta {
+  options: PollOptionWithVotes[];
+  attendance_summary: AttendanceSummary[];
+  text_responses: PollTextResponse[];
+  my_response: MyPollResponse | null;
+  can_vote: boolean;
+  can_manage: boolean;
+  /** 현재 사용자에게 집계 결과가 보이는지 (마감 후 공개 설문이면 false일 수 있음) */
+  results_visible: boolean;
+}
+
+// ============================================================
+// 설문 API 요청 타입
+// ============================================================
+
+export interface CreatePollRequest {
+  title: string;
+  description?: string;
+  poll_type: PollType;
+  audience_type: PollAudience;
+  target_parts?: string[];
+  options?: string[];
+  is_anonymous?: boolean;
+  allow_multiple?: boolean;
+  deadline_at?: string | null;
+  /** 마감 전 결과 공개 여부. 생략 시 참석 조사 true, 그 외 false */
+  show_results_before_close?: boolean;
+}
+
+export interface UpdatePollRequest {
+  title?: string;
+  description?: string;
+  deadline_at?: string | null;
+  is_closed?: boolean;
+}
+
+export interface SubmitPollResponseRequest {
+  attendance_status?: AttendanceStatus;
+  option_ids?: string[];
+  text_response?: string;
 }
