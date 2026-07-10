@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { createLogger } from '@/lib/logger';
+import { notifyArrangementStatusChange } from '@/lib/notifications/arrangement-notify';
 import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'ArrangementsAPI' });
@@ -178,6 +179,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         }
       } catch (rpcErr) {
         logger.warn('ML 이력 기록 중 예외 (배치표 저장은 정상):', rpcErr);
+      }
+
+      // 대원 알림 발송 — 긴급수정 진입(CONFIRMED→SHARED)은 재공유가 아니므로 제외
+      const isEmergencyEdit = body.status === 'SHARED' && currentStatus === 'CONFIRMED';
+      if (!isEmergencyEdit && currentStatus !== body.status) {
+        try {
+          await notifyArrangementStatusChange(id, body.status, data.date);
+        } catch (notifyErr) {
+          logger.warn('배치표 알림 발송 실패 (배치표 저장은 정상):', notifyErr);
+        }
       }
     }
 
