@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import AppShell from '@/components/layout/AppShell';
+import NotificationPermissionGuide from '@/components/pwa/NotificationPermissionGuide';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -94,6 +95,7 @@ export default function MyPage() {
   const [heightCm, setHeightCm] = useState<string>('');
   const [regularMemberSince, setRegularMemberSince] = useState<string>('');
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [showPermissionGuide, setShowPermissionGuide] = useState(false);
 
   // 프로필 데이터로 폼 초기화 - 외부 데이터(서버에서 fetch한 profile)로 로컬 폼 상태 동기화
   useEffect(() => {
@@ -389,6 +391,15 @@ export default function MyPage() {
                     허용하기
                   </Button>
                 )}
+                {pushPermission === 'denied' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowPermissionGuide(true)}
+                  >
+                    방법 보기
+                  </Button>
+                )}
               </div>
 
               {/* 이미 설치된 경우 간결한 상태 표시 */}
@@ -416,6 +427,13 @@ export default function MyPage() {
               )}
             </div>
           </div>
+
+          {/* 알림 차단 복구 안내 모달 */}
+          <NotificationPermissionGuide
+            open={showPermissionGuide}
+            onClose={() => setShowPermissionGuide(false)}
+            onOpenInstallGuide={() => setShowIOSGuide(true)}
+          />
 
           {/* iOS 설치 가이드 모달 */}
           {showIOSGuide && (

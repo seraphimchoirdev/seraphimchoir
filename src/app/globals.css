@@ -35,6 +35,9 @@
     --color-primary-700: #2c5a95;
     --color-primary-800: #224573;
     --color-primary-900: #1a3556;
+    /* 접미사 없는 별칭 — var(--color-primary) 형태로 수십 곳에서 사용되나
+       정의가 없어 투명 처리되던 버그 수정 (예: 안내 모달 단계 번호 배지) */
+    --color-primary: var(--color-primary-500);
 
     /* Secondary Colors (Seraphim White) */
     --color-background-primary: #ffffff;

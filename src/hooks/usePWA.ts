@@ -115,14 +115,33 @@ export function usePWA(): UsePWAResult {
       setIsInstalled(e.matches);
     };
 
+    // 브라우저/OS 설정에서 알림 권한을 바꾸고 돌아온 경우 상태 자동 갱신
+    // (denied → 설정에서 허용 → 탭 복귀 시 새로고침 없이 반영)
+    let lastPermission: PushPermission = isPushSupported()
+      ? (Notification.permission as PushPermission)
+      : 'unsupported';
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible' || !isPushSupported()) return;
+      const current = Notification.permission as PushPermission;
+      if (current === lastPermission) return;
+      if (current === 'granted') {
+        // 설정에서 방금 허용한 경우 구독이 없을 수 있으므로 생성 (idempotent)
+        subscribeToPush().catch(() => {});
+      }
+      lastPermission = current;
+      setPushPermission(current);
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
     displayModeQuery.addEventListener('change', handleDisplayModeChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
       displayModeQuery.removeEventListener('change', handleDisplayModeChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
