@@ -12,6 +12,7 @@ README.md
 # Scripts (개발용, 빌드 스크립트 제외)
 /scripts/*
 !/scripts/generate-handoff-manifest.mjs
+!/scripts/generate-sw-version.mjs
 
 # Test files
 __tests__

@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-07-12 | fix(deploy): .vercelignore 예외에 generate-sw-version.mjs 추가 |
 | 2026-07-12 | refactor(arrangements): 모바일 바텀시트·안내 메모 패널 분리 (B10-3) |
 | 2026-07-12 | docs: 코드 리뷰 3차 세션 결과 기록 (B10·B11·E2E 강화·크래시 수정) |
 | 2026-07-12 | test(e2e): 자리배치 편집·출석 관리 핵심 플로우 E2E 강화 |

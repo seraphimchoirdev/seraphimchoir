@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-07-12
+- [x] **fix(deploy): .vercelignore 예외에 generate-sw-version.mjs 추가**
+  - 커밋: `0940e69`
+
 - [x] **refactor(arrangements): 모바일 바텀시트·안내 메모 패널 분리 (B10-3)**
   - 커밋: `4025860`
 
