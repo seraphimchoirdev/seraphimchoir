@@ -31,9 +31,11 @@ describe('CSP Nonce', () => {
 
   describe('generateCSPHeader', () => {
     const originalEnv = process.env.NODE_ENV;
+    const originalSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
     afterEach(() => {
       process.env.NODE_ENV = originalEnv;
+      process.env.NEXT_PUBLIC_SUPABASE_URL = originalSupabaseUrl;
     });
 
     it('should generate development CSP with unsafe-inline', () => {
@@ -48,6 +50,7 @@ describe('CSP Nonce', () => {
 
     it('should generate production CSP with unsafe-inline (nonce disabled)', () => {
       process.env.NODE_ENV = 'production';
+      process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
       const csp = generateCSPHeader();
 
       // 현재 구현은 nonce 대신 unsafe-inline 사용
@@ -55,6 +58,19 @@ describe('CSP Nonce', () => {
       expect(csp).toContain("script-src-elem 'self' 'unsafe-inline'");
       expect(csp).not.toContain('unsafe-eval');
       expect(csp).toContain('upgrade-insecure-requests');
+    });
+
+    it('should allow local http Supabase and skip upgrade-insecure-requests', () => {
+      // 로컬 Supabase(http)로 프로덕션 빌드를 돌리는 경우(E2E 등):
+      // WebKit은 localhost도 https로 승격하므로 upgrade-insecure-requests를 빼야 함
+      process.env.NODE_ENV = 'production';
+      process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
+      const csp = generateCSPHeader();
+
+      expect(csp).toContain('http://localhost:54321');
+      expect(csp).toContain('ws://localhost:54321');
+      expect(csp).not.toContain('upgrade-insecure-requests');
+      expect(csp).not.toContain('block-all-mixed-content');
     });
 
     it('should include necessary external domains', () => {

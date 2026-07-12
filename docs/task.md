@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-07-12
+- [x] **fix(security): CSP가 NEXT_PUBLIC_SUPABASE_URL 기반으로 Supabase origin을 허용하도록 수정**
+  - 커밋: `a99cd76`
+
 - [x] **fix(arrangements): 등단 인원이 추천 상한 초과 시 새 배치표 무한 루프 크래시 수정**
   - 커밋: `49ee1c3`
 

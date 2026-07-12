@@ -9,10 +9,34 @@
  */
 
 /**
+ * NEXT_PUBLIC_SUPABASE_URL에서 CSP 허용 origin을 도출한다.
+ * - 로컬 Supabase(http://localhost:54321)로 프로덕션 빌드를 돌릴 때(E2E 등)
+ *   와일드카드(*.supabase.co)에 걸리지 않는 문제 해결
+ * - 커스텀 도메인으로 전환해도 CSP가 깨지지 않음
+ */
+function getSupabaseOrigins(): string[] {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) return [];
+  try {
+    const parsed = new URL(url);
+    const wsProtocol = parsed.protocol === 'https:' ? 'wss' : 'ws';
+    return [parsed.origin, `${wsProtocol}://${parsed.host}`];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * 환경별 CSP 정책 생성
  */
 export function generateCSPHeader(_nonce?: string): string {
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const supabaseOrigins = getSupabaseOrigins();
+  // http(s) origin만 (img-src용)
+  const supabaseHttpOrigins = supabaseOrigins.filter((o) => o.startsWith('http'));
+  // 로컬 Supabase(http://localhost:54321) 사용 시 upgrade-insecure-requests를 끈다.
+  // WebKit은 Chromium과 달리 localhost도 https로 승격해 로컬 API 연결이 전부 실패함
+  const hasInsecureSupabase = supabaseOrigins.some((o) => o.startsWith('http://'));
 
   // 기본 CSP 지시어
   const directives: Record<string, string[] | undefined> = {
@@ -22,12 +46,14 @@ export function generateCSPHeader(_nonce?: string): string {
       : ["'self'", "'unsafe-inline'"],
     'style-src': ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
     'img-src': ["'self'", 'data:', 'https://*.supabase.co', 'blob:',
+      ...supabaseHttpOrigins,
       ...(isDevelopment ? ['http://127.0.0.1:*'] : [])],
     'font-src': ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
     'connect-src': [
       "'self'",
       'https://*.supabase.co',
       'wss://*.supabase.co',
+      ...supabaseOrigins,
       'https://*.ingest.sentry.io',
       'https://*.upstash.com', // Upstash Redis
       'https://vitals.vercel-analytics.com', // Vercel Analytics (legacy)
@@ -46,8 +72,8 @@ export function generateCSPHeader(_nonce?: string): string {
     'style-src-elem': isDevelopment
       ? undefined // 개발 환경에서는 style-src와 동일
       : ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
-    'upgrade-insecure-requests': isDevelopment ? undefined : [''],
-    'block-all-mixed-content': isDevelopment ? undefined : [''],
+    'upgrade-insecure-requests': isDevelopment || hasInsecureSupabase ? undefined : [''],
+    'block-all-mixed-content': isDevelopment || hasInsecureSupabase ? undefined : [''],
   };
 
   // 지시어를 CSP 문자열로 변환
