@@ -16,6 +16,7 @@ const managementMenuItems = [
   { href: '/management/statistics', label: '출석 통계' },
   { href: '/management/documents', label: '문서 아카이브' },
   { href: '/management/prayers', label: '기도 담당' },
+  { href: '/management/notify', label: '알림 발송' },
 ];
 
 export default function ManagementLayout({ children }: { children: React.ReactNode }) {

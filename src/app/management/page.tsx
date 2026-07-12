@@ -5,6 +5,7 @@ import { ko } from 'date-fns/locale';
 import {
   ArrowRight,
   BarChart3,
+  BellRing,
   Calendar,
   FileText,
   TrendingDown,
@@ -281,6 +282,18 @@ export default function ManagementDashboardPage() {
                 <div>
                   <p className="font-medium text-[var(--color-text-primary)]">찬양대 일정</p>
                   <p className="text-xs text-[var(--color-text-tertiary)]">예배 및 행사 일정</p>
+                </div>
+              </div>
+            </Link>
+
+            <Link href="/management/notify">
+              <div className="flex cursor-pointer items-center gap-3 rounded-lg border border-[var(--color-border)] p-4 transition-colors hover:bg-[var(--color-background-secondary)]">
+                <div className="rounded-lg bg-[var(--color-primary-50)] p-2">
+                  <BellRing className="h-5 w-5 text-[var(--color-primary)]" />
+                </div>
+                <div>
+                  <p className="font-medium text-[var(--color-text-primary)]">알림 발송</p>
+                  <p className="text-xs text-[var(--color-text-tertiary)]">대원에게 푸시 알림 보내기</p>
                 </div>
               </div>
             </Link>

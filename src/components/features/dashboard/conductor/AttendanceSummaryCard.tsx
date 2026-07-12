@@ -1,12 +1,19 @@
 'use client';
 
 import { format, isToday } from 'date-fns';
-import { Users } from 'lucide-react';
+import { BellRing, Loader2, Users } from 'lucide-react';
 import Link from 'next/link';
+
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useAuth } from '@/hooks/useAuth';
+import { useMounted } from '@/hooks/useMounted';
 import { formatDisplayDate } from '@/lib/dashboard-context';
+import { MANUAL_NOTIFY_ROLES } from '@/lib/notifications/notify-constants';
+import { showError, showSuccess, showWarning } from '@/lib/toast';
 import type { AttendanceSummaryItem } from '@/app/api/dashboard/conductor-status/route';
 
 interface AttendanceSummaryCardProps {
@@ -183,6 +190,39 @@ function ServiceAttendanceSection({
  */
 export function AttendanceSummaryCard({ nextServiceDate, summaries }: AttendanceSummaryCardProps) {
   const showLabels = summaries.length > 1;
+  const mounted = useMounted();
+  const { hasRole } = useAuth();
+  // 권한 상태는 클라이언트에서만 채워지므로 마운트 후에만 버튼 렌더 (hydration mismatch 방지)
+  const canSendReminder = mounted && hasRole([...MANUAL_NOTIFY_ROLES]);
+
+  const [showReminderConfirm, setShowReminderConfirm] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+
+  const handleSendReminder = async () => {
+    setIsSending(true);
+    try {
+      const res = await fetch('/api/notifications/vote-reminder', { method: 'POST' });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showError(data.error || '독려 알림 발송에 실패했습니다.', handleSendReminder);
+        return;
+      }
+      if (data.skipped) {
+        showWarning(
+          data.reason === 'deadline_passed'
+            ? '출석 투표가 이미 마감되어 발송하지 않았습니다.'
+            : '아직 투표하지 않은 대원이 없습니다.'
+        );
+        return;
+      }
+      showSuccess(`미투표 대원 ${data.targets}명에게 독려 알림을 보냈습니다.`);
+    } catch {
+      showError('독려 알림 발송에 실패했습니다.', handleSendReminder);
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   return (
     <Card>
@@ -203,9 +243,35 @@ export function AttendanceSummaryCard({ nextServiceDate, summaries }: Attendance
         ))}
 
         {/* 액션 버튼 */}
-        <Button asChild variant="outline" className="w-full">
-          <Link href="/attendances">출석 관리</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" className="flex-1">
+            <Link href="/attendances">출석 관리</Link>
+          </Button>
+          {canSendReminder && (
+            <Button
+              variant="outline"
+              className="flex-1"
+              disabled={isSending}
+              onClick={() => setShowReminderConfirm(true)}
+            >
+              {isSending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <BellRing className="mr-2 h-4 w-4" />
+              )}
+              미투표자 독려
+            </Button>
+          )}
+        </div>
+
+        <ConfirmDialog
+          open={showReminderConfirm}
+          onOpenChange={setShowReminderConfirm}
+          title="투표 독려 알림 발송"
+          description="아직 출석 투표를 하지 않은 대원들에게 독려 알림을 보낼까요?"
+          confirmLabel="발송"
+          onConfirm={handleSendReminder}
+        />
       </CardContent>
     </Card>
   );

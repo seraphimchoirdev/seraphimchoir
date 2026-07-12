@@ -18,6 +18,7 @@ export type NotificationType =
   | 'ARRANGEMENT_SHARED'
   | 'ARRANGEMENT_CONFIRMED'
   | 'SEAT_CHANGED'
+  | 'MANUAL' // 관리자 수동 발송
   // 2차 예약값
   | 'NOTICE_POSTED'
   | 'COMMENT_REPLY'

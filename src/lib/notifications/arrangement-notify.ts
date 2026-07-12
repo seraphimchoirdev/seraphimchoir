@@ -2,6 +2,7 @@ import 'server-only';
 
 import { formatDisplayDate } from '@/lib/dashboard-context';
 import { createLogger } from '@/lib/logger';
+import { getApprovedUserIdsByMember } from '@/lib/notifications/audience';
 import { notifyBatch, type NotifyEntry, type NotificationType } from '@/lib/notifications/notify';
 import {
   findNeighbors,
@@ -11,34 +12,6 @@ import {
 import { createAdminClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'ArrangementNotify' });
-
-/**
- * 배치표에 좌석이 있는 대원들의 승인된 사용자 계정 매핑 조회
- * (한 대원에 승인 프로필이 여러 개일 수 있어 배열로 관리)
- */
-async function getMemberUserMap(memberIds: string[]): Promise<Map<string, string[]>> {
-  const admin = await createAdminClient();
-
-  const { data: profiles, error } = await admin
-    .from('user_profiles')
-    .select('id, linked_member_id')
-    .eq('link_status', 'approved')
-    .in('linked_member_id', memberIds);
-
-  if (error) {
-    logger.warn('user_profiles 조회 실패:', error.message);
-    return new Map();
-  }
-
-  const map = new Map<string, string[]>();
-  profiles?.forEach((p: { id: string; linked_member_id: string | null }) => {
-    if (!p.linked_member_id) return;
-    const list = map.get(p.linked_member_id) ?? [];
-    list.push(p.id);
-    map.set(p.linked_member_id, list);
-  });
-  return map;
-}
 
 async function getArrangementSeats(arrangementId: string): Promise<SeatInfo[]> {
   const admin = await createAdminClient();
@@ -79,7 +52,7 @@ export async function notifyArrangementStatusChange(
   const seats = await getArrangementSeats(arrangementId);
   if (seats.length === 0) return;
 
-  const userMap = await getMemberUserMap(seats.map((s) => s.memberId));
+  const userMap = await getApprovedUserIdsByMember(seats.map((s) => s.memberId));
   if (userMap.size === 0) return;
 
   const displayDate = formatDisplayDate(arrangementDate);
@@ -128,7 +101,7 @@ export async function notifySeatChanges(
   if (changedMemberIds.size === 0) return;
 
   const seats = await getArrangementSeats(arrangementId);
-  const userMap = await getMemberUserMap([...changedMemberIds]);
+  const userMap = await getApprovedUserIdsByMember([...changedMemberIds]);
   if (userMap.size === 0) return;
 
   const displayDate = formatDisplayDate(arrangementDate);
