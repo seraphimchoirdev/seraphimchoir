@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-07-12
+- [x] **refactor(arrangements): 초기화 로직을 useArrangementInitialization 훅으로 추출 (B10-2)**
+  - 커밋: `97db59e`
+
 - [x] **refactor(arrangements): 워크플로우 스텝 콘텐츠를 컴포넌트로 분리 (B10-1)**
   - 커밋: `9e24cfd`
 

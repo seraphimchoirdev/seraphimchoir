@@ -32,7 +32,7 @@ type SeatWithMember = Database['public']['Tables']['seats']['Row'] & {
   member?: { id: string; name: string } | null;
 };
 
-interface ArrangementWithSeats extends Arrangement {
+export interface ArrangementWithSeats extends Arrangement {
   seats?: SeatWithMember[];
 }
 
