@@ -37,7 +37,7 @@ WHERE jobname IN ('vote-reminder-friday', 'vote-reminder-saturday');
 | 프로덕션 마이그레이션 (`db push`) | ✅ 적용됨 (2026-07-12) | push_notifications + 크론 + **크론 일시중지**까지 적용 |
 | Vault 시크릿 2개 (pg_cron 크론용) | ⏸ **의도적 미등록** | 전대원 오픈 시 위 재활성화 절차 수행 |
 | 투표 독려 크론 잡 | ⏸ **비활성화됨** (`active=false`) | 전대원 오픈 시 재활성화 |
-| **Upstash Redis 호스트 DNS 불통** | ⚠️ **조사 필요** | `.env`의 UPSTASH_REDIS_REST_URL이 해석 안 됨 (인스턴스 삭제/만료 추정). rate limiter가 예외를 던져 **로그인 자체가 500으로 실패**함. 로컬은 `.env.local` 빈 값 오버라이드로 우회 중. 프로덕션도 같은 인스턴스면 로그인 장애 가능 — Upstash 콘솔에서 확인하고, 장기적으로 limiter 장애 시 fail-open 처리 검토 |
+| **Upstash Redis 호스트 DNS 불통** | ⚠️ **부분 해소** | 프로덕션에서 실제 로그인 500 장애로 확인됨(2026-07-12). limiter 예외 시 fail-open 처리(`safeLimit`)를 배포해 **로그인은 복구됨**. 남은 작업: Vercel의 죽은 `UPSTASH_REDIS_REST_URL/TOKEN` env 삭제(요청마다 DNS 실패 대기 비용 제거) 또는 새 Upstash 인스턴스 발급 후 교체 — rate limiting 재활성화하려면 후자 |
 
 ## 1. Vercel 환경변수 등록 (필수)
 

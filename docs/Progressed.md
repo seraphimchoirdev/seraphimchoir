@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-07-12 | docs(push): Upstash 장애 현황 업데이트 — fail-open 배포로 로그인 복구 |
 | 2026-07-12 | feat(navigation): 모바일 하단 네비 개편 — 임원 포털을 더보기로, 배치표를 메인으로 |
 | 2026-07-12 | fix(security): rate limiter 장애 시 fail-open으로 로그인 500 해소 |
 | 2026-07-12 | fix(deploy): .vercelignore 예외에 generate-sw-version.mjs 추가 |
