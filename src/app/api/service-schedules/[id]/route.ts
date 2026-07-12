@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { revalidateDashboardShared } from '@/lib/dashboard-shared-cache';
 import { createClient } from '@/lib/supabase/server';
 
 const updateServiceScheduleSchema = z.object({
@@ -86,6 +87,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    revalidateDashboardShared();
     return NextResponse.json(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -122,5 +124,6 @@ export async function DELETE(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  revalidateDashboardShared();
   return NextResponse.json({ success: true });
 }

@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-07-12 | perf(dashboard): 전 사용자 공유 데이터 unstable_cache + 태그 무효화 (B9) |
 | 2026-07-12 | perf(dashboard): 프로필 조회 단기 캐시로 60초 폴링 중복 제거 (B8) |
 | 2026-07-12 | fix(community): 월간 자동앨범 find-or-create 동시성 레이스 수정 (A7) |
 | 2026-07-12 | docs: 전체 코드 리뷰 보고서 및 최적화 실행 결과 기록 |

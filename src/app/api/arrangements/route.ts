@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { sanitizeQueryParams } from '@/lib/api/sanitization-middleware';
+import { revalidateDashboardShared } from '@/lib/dashboard-shared-cache';
 import { createLogger } from '@/lib/logger';
 import { sanitizers } from '@/lib/security/input-sanitizer';
 import { createClient } from '@/lib/supabase/server';
@@ -309,6 +310,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    revalidateDashboardShared();
     return NextResponse.json(data);
   } catch (error) {
     if (error instanceof z.ZodError) {

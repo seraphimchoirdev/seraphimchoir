@@ -3,6 +3,7 @@ import path from 'path';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { revalidateDashboardShared } from '@/lib/dashboard-shared-cache';
 import { createLogger } from '@/lib/logger';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
@@ -206,6 +207,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: seatsError.message }, { status: 500 });
     }
 
+    revalidateDashboardShared();
     return NextResponse.json({
       success: true,
       arrangementId,

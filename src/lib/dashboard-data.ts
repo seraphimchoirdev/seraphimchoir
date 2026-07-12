@@ -10,6 +10,7 @@ import {
   getNextSunday,
   isToday,
 } from '@/lib/dashboard-context';
+import { getSharedDashboardData } from '@/lib/dashboard-shared-cache';
 import { getServiceDeadline } from '@/lib/vote-deadlines';
 import type { MyDashboardStatusResponse, MyVote, MySeat } from '@/app/api/dashboard/my-status/route';
 import type { ConductorStatusResponse, AttendanceSummaryItem } from '@/app/api/dashboard/conductor-status/route';
@@ -36,37 +37,22 @@ export async function fetchDashboardContext(
 
   const nextSunday = getNextSunday();
 
-  const [serviceSchedulesResult, voteDeadlineResult, attendanceResult, arrangementResult] =
-    await Promise.all([
-      adminSupabase
-        .from('service_schedules')
-        .select('*')
-        .eq('date', nextSunday)
-        .order('service_start_time', { ascending: true, nullsFirst: false }),
+  // 일정·마감·배치표는 전 사용자 공유 데이터 → unstable_cache 경유 (B9)
+  // 개인 투표 여부만 사용자별로 직접 조회한다.
+  const [shared, attendanceResult] = await Promise.all([
+    getSharedDashboardData(nextSunday),
 
-      adminSupabase
-        .from('attendance_vote_deadlines')
-        .select('deadline_at')
-        .eq('service_date', nextSunday)
-        .maybeSingle(),
+    isLinked && linkedMemberId
+      ? adminSupabase
+          .from('attendances')
+          .select('id')
+          .eq('member_id', linkedMemberId)
+          .eq('date', nextSunday)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
-      isLinked && linkedMemberId
-        ? adminSupabase
-            .from('attendances')
-            .select('id')
-            .eq('member_id', linkedMemberId)
-            .eq('date', nextSunday)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-
-      adminSupabase
-        .from('arrangements')
-        .select('id, status')
-        .eq('date', nextSunday)
-        .maybeSingle(),
-    ]);
-
-  const serviceSchedules = serviceSchedulesResult.data;
+  const serviceSchedules = shared.serviceSchedules;
   const serviceSchedule =
     serviceSchedules?.find((s: { service_type: string }) => s.service_type === '주일 2부 예배') ??
     serviceSchedules?.[0] ??
@@ -74,12 +60,11 @@ export async function fetchDashboardContext(
 
   // 관리자가 명시 설정한 마감이 없으면 기본 규칙(예배 전날 토요일 15:00 KST)으로 폴백
   // — my-attendance 페이지 및 attendance-vote-guard와 동일한 판정 규칙
-  const deadlineAt =
-    voteDeadlineResult.data?.deadline_at || getServiceDeadline(nextSunday).toISOString();
+  const deadlineAt = shared.voteDeadlineAt || getServiceDeadline(nextSunday).toISOString();
   const isVotePassed = new Date(deadlineAt) < new Date();
   const hasVoted = !!attendanceResult.data;
 
-  const arrangement = arrangementResult.data;
+  const arrangement = shared.arrangement;
   const hasArrangement = !!arrangement;
   const arrangementStatus = (arrangement?.status as 'DRAFT' | 'SHARED' | 'CONFIRMED') || null;
 
@@ -154,7 +139,8 @@ export async function fetchMyDashboardStatus(
     };
   }
 
-  const [memberResult, attendanceResult, arrangementResult] = await Promise.all([
+  // 배치표는 전 사용자 공유 데이터 → unstable_cache 경유 (B9)
+  const [memberResult, attendanceResult, shared] = await Promise.all([
     adminSupabase.from('members').select('name, part').eq('id', linkedMemberId).single(),
 
     adminSupabase
@@ -164,12 +150,7 @@ export async function fetchMyDashboardStatus(
       .eq('date', nextSunday)
       .maybeSingle(),
 
-    adminSupabase
-      .from('arrangements')
-      .select('id, date, status')
-      .eq('date', nextSunday)
-      .in('status', ['SHARED', 'CONFIRMED'])
-      .maybeSingle(),
+    getSharedDashboardData(nextSunday),
   ]);
 
   const member = memberResult.data;
@@ -183,7 +164,12 @@ export async function fetchMyDashboardStatus(
     : null;
 
   let mySeat: MySeat | null = null;
-  const arrangement = arrangementResult.data;
+  // 기존 쿼리의 .in('status', ['SHARED', 'CONFIRMED']) 필터와 동일한 판정
+  const arrangement =
+    shared.arrangement &&
+    (shared.arrangement.status === 'SHARED' || shared.arrangement.status === 'CONFIRMED')
+      ? shared.arrangement
+      : null;
 
   if (arrangement) {
     const { data: seat } = await adminSupabase
