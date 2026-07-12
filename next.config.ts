@@ -1,6 +1,8 @@
 import bundleAnalyzer from '@next/bundle-analyzer';
 import { withSentryConfig } from '@sentry/nextjs';
 
+import { generateFullCSPHeader, generateReportToHeader } from './src/lib/security/csp-policy';
+
 import type { NextConfig } from 'next';
 
 const withBundleAnalyzer = bundleAnalyzer({
@@ -9,8 +11,10 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 const nextConfig: NextConfig = {
   // React Compiler 설정 (Next.js 16에서 최상위로 이동)
+  // infer: React 규칙을 따르는 모든 컴포넌트/훅을 자동 메모이제이션
+  // (annotation 모드에서는 'use memo'가 붙은 MemberTable 하나만 최적화되고 있었음)
   reactCompiler: {
-    compilationMode: 'annotation',
+    compilationMode: 'infer',
   },
   // 로컬 이미지 쿼리 스트링 허용 (캐시 버스팅용)
   images: {
@@ -53,10 +57,8 @@ const nextConfig: NextConfig = {
 
   // 보안 헤더 설정
   async headers() {
-    // CSP는 프로덕션 미들웨어(middleware.ts)에서 nonce와 함께 적용
-    // next.config.ts headers()에서는 CSP를 설정하지 않음:
-    // - 개발 환경: 로컬 Supabase(54321), HMR 등 다양한 포트 충돌 방지
-    // - 프로덕션: 미들웨어에서 nonce 기반 CSP를 동적으로 생성
+    // CSP는 요청별로 달라지지 않으므로(nonce 미사용) 여기서 정적으로 적용.
+    // 프로덕션 빌드에만 추가 — 개발 환경은 HMR/로컬 포트 제약 때문에 미적용.
 
     const headers = [
       // XSS 공격 방어: 콘텐츠 타입 스니핑 차단
@@ -108,9 +110,19 @@ const nextConfig: NextConfig = {
         key: 'X-Permitted-Cross-Domain-Policies',
         value: 'none',
       },
+      // CSP (프로덕션 전용) — 미들웨어에서 매 요청 생성하던 것을 정적 헤더로 이동
+      ...(process.env.NODE_ENV === 'production'
+        ? [
+            {
+              key: 'Content-Security-Policy',
+              value: generateFullCSPHeader(),
+            },
+            ...(generateReportToHeader()
+              ? [{ key: 'Report-To', value: generateReportToHeader()! }]
+              : []),
+          ]
+        : []),
     ];
-
-    // CSP는 프로덕션 미들웨어(middleware.ts)에서만 적용 — 여기서는 설정하지 않음
 
     return [
       {

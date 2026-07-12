@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
 
@@ -10,28 +10,34 @@ const FADE_OUT_MS = 500;
 const SESSION_KEY = 'seraphim-splash-shown';
 
 export default function SplashScreen() {
-  // 세션 내 반복 방문 시 스플래시를 스킵
-  const alreadyShown = typeof window !== 'undefined' &&
-    (sessionStorage.getItem(SESSION_KEY) === '1' || splashManager.getIsSplashDismissed());
+  // 세션 내 반복 방문 여부는 마운트 후에만 판정 (렌더 중 sessionStorage를 읽으면
+  // 서버/클라이언트 마크업이 달라져 hydration mismatch 발생).
+  // null = 미판정, true = 스킵, false = 정상 표시
+  const [alreadyShown, setAlreadyShown] = useState<boolean | null>(null);
 
-  const [isVisible, setIsVisible] = useState(!alreadyShown);
+  const [isVisible, setIsVisible] = useState(true);
   const [isFading, setIsFading] = useState(false);
   const [isShowing, setIsShowing] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const dismissedRef = useRef(alreadyShown);
+  const dismissedRef = useRef(false);
   const mountTimeRef = useRef(Date.now());
 
-  // 이미 표시했다면 즉시 splashManager에 완료 알림
-  useEffect(() => {
-    if (alreadyShown) {
+  // 페인트 전에 스킵 여부 판정 (초기 마크업이 opacity-0이라 깜빡임 없음)
+  useLayoutEffect(() => {
+    const shown =
+      sessionStorage.getItem(SESSION_KEY) === '1' || splashManager.getIsSplashDismissed();
+    setAlreadyShown(shown);
+    if (shown) {
+      dismissedRef.current = true;
+      setIsVisible(false);
       splashManager.setAppReady();
       splashManager.setSplashDismissed();
     }
-  }, [alreadyShown]);
+  }, []);
 
   // 페이드 인 애니메이션
   useEffect(() => {
-    if (alreadyShown) return;
+    if (alreadyShown !== false) return;
 
     const showTimer = setTimeout(() => {
       setIsShowing(true);
@@ -42,7 +48,7 @@ export default function SplashScreen() {
 
   // 앱 준비 상태 구독 + safety timeout
   useEffect(() => {
-    if (alreadyShown) return;
+    if (alreadyShown !== false) return;
 
     let fadeTimer: NodeJS.Timeout;
 

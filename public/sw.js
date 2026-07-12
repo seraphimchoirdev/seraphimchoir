@@ -1,6 +1,9 @@
 // Service Worker for 새로핌On PWA
-const CACHE_NAME = 'seraphimon-v1';
-const STATIC_CACHE_NAME = 'seraphimon-static-v1';
+// BUILD_VERSION은 Vercel 빌드 시 scripts/generate-sw-version.mjs가 커밋 SHA로 치환한다.
+// 배포마다 캐시명이 갈려 오래된 정적 자산이 무한히 서빙되는 문제를 방지.
+const BUILD_VERSION = 'dev';
+const CACHE_NAME = `seraphimon-${BUILD_VERSION}`;
+const STATIC_CACHE_NAME = `seraphimon-static-${BUILD_VERSION}`;
 
 // 앱 셸에 필수적인 정적 자원만 프리캐시
 const PRECACHE_URLS = [

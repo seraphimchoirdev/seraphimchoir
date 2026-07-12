@@ -1,13 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { STALE_TIME } from '@/lib/constants';
 import { Tables, TablesInsert, TablesUpdate } from '@/types/database.types';
-
-// React Query stale time 설정
-// 출석 데이터는 실시간으로 변경될 수 있으므로 짧은 stale time 사용
-const STALE_TIME = {
-  ATTENDANCES_LIST: 1000 * 30, // 30초 - 여러 사용자가 동시에 수정할 수 있음
-  ATTENDANCE_DETAIL: 1000 * 30, // 30초
-} as const;
 
 // Attendance 타입 정의 (members 조인 포함)
 export type Attendance = Tables<'attendances'> & {
@@ -78,7 +72,7 @@ export function useAttendances(filters?: AttendanceFilters) {
       }
       return response.json();
     },
-    staleTime: STALE_TIME.ATTENDANCES_LIST,
+    staleTime: STALE_TIME.SHORT,
     enabled: enabled ?? hasAnyFilter,
     // 긴급 모드에서 탭 포커스 시 자동 갱신 (출석 관리 변경사항 반영)
     refetchOnWindowFocus: refetchOnWindowFocus ?? false,
@@ -103,7 +97,7 @@ export function useAttendance(id: string | undefined) {
       return response.json();
     },
     enabled: !!id,
-    staleTime: STALE_TIME.ATTENDANCE_DETAIL,
+    staleTime: STALE_TIME.SHORT,
   });
 }
 
