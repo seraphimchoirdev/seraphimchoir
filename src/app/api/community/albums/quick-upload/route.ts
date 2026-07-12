@@ -99,13 +99,26 @@ export async function POST(request: NextRequest) {
       .select('id, cover_image_path')
       .single();
 
-    if (createErr || !created) {
+    if (createErr?.code === '23505') {
+      // 동시 업로드 레이스: 다른 요청이 먼저 생성함 (uq_photo_albums_auto_monthly) → 재조회
+      const { data: existing } = await adminClient
+        .from('photo_albums')
+        .select('id, cover_image_path')
+        .eq('description', AUTO_ALBUM_SENTINEL)
+        .eq('event_date', monthFirstDay)
+        .eq('is_deleted', false)
+        .maybeSingle();
+      album = existing;
+    } else if (!createErr && created) {
+      album = created;
+    }
+
+    if (!album) {
       return NextResponse.json(
         { error: createErr?.message || '자동 앨범 생성에 실패했습니다.' },
         { status: 500 }
       );
     }
-    album = created;
   }
 
   // 2. 사진 일괄 insert (RLS는 user_id = auth.uid() 검증, supabase 클라이언트 사용)
