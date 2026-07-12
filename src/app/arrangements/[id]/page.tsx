@@ -27,9 +27,9 @@ import { useArrangement, useUpdateArrangement } from '@/hooks/useArrangements';
 import { useImageExportHandlers } from '@/hooks/useImageExportHandlers';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useServiceSchedule } from '@/hooks/useServiceSchedules';
+import { useArrangementMembers } from '@/hooks/useArrangementMembers';
 import { useAuth } from '@/hooks/useAuth';
 import { useAutoSaveDraft } from '@/hooks/useAutoSaveDraft';
-import { useMembers } from '@/hooks/useMembers';
 import type { RecommendationResponse } from '@/hooks/useRecommendSeats';
 import { useRestoreDraft } from '@/hooks/useRestoreDraft';
 import { useUndoRedoShortcuts } from '@/hooks/useUndoRedoShortcuts';
@@ -179,19 +179,13 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   // Step 3 자동 최소화를 위한 이전 Step 추적
   const prevStepRef = useRef<number>(workflow.currentStep);
 
-  // 모든 정대원 조회 (AI 추천 분배 인원수 계산용 - 등단자만)
-  const { data: membersData } = useMembers({
-    member_status: 'REGULAR',
-    is_singer: true, // 등단자만 (지휘자/반주자 제외)
-    limit: 100,
-  });
-
-  // 게스트 멤버 조회 (총 좌석 수에 포함)
-  const { data: guestMembersData } = useMembers({
-    member_status: 'GUEST',
-    is_singer: true,
-    limit: 100,
-  });
+  // 정대원·게스트 등단자 목록 (페이지 레벨 1회 구독 — MemberSidebar/SeatsGrid에 props로 전달, B11)
+  const {
+    regularMembers,
+    guestMembers,
+    heightMap,
+    isLoading: membersLoading,
+  } = useArrangementMembers();
 
   // 긴급 수정 모드 (SHARED 상태에서 canEmergencyEdit 권한이 있을 때만)
   // DRAFT: 일반 편집 모드 (더블클릭으로 제거)
@@ -261,17 +255,15 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   // 등단 가능한 멤버 수 계산 (정대원 + 게스트)
   const arrangementDate = arrangement?.date;
   const totalMembers = useMemo(() => {
-    const members = membersData?.data || [];
-    const regularCount = members.filter((member) => {
+    const regularCount = regularMembers.filter((member) => {
       // 배치표 날짜 이전에 입단한 대원만 포함 (MemberSidebar와 동일 기준)
       if (arrangementDate && member.joined_date && member.joined_date > arrangementDate) return false;
       const attendance = attendanceMap.get(member.id);
       if (!attendance) return true;
       return attendance.is_service_available === true;
     }).length;
-    const guestCount = guestMembersData?.data?.length || 0;
-    return regularCount + guestCount;
-  }, [membersData, guestMembersData, attendanceMap, arrangementDate]);
+    return regularCount + guestMembers.length;
+  }, [regularMembers, guestMembers, attendanceMap, arrangementDate]);
 
   // 워크플로우 자동 진행 훅 (위자드 모드에서 단계 완료 조건 자동 감지)
   useWorkflowAutoAdvance(totalMembers, arrangement?.status ?? undefined);
@@ -1338,6 +1330,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                   hidePlaced={true}
                   isEmergencyMode={isEmergencyMode}
                   arrangementId={id}
+                  regularMembers={regularMembers}
+                  guestMembers={guestMembers}
+                  membersLoading={membersLoading}
                 />
               </div>
             )}
@@ -1348,6 +1343,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         <div className="flex min-w-0 flex-1 flex-col overflow-auto">
           <SeatsGrid
             ref={desktopCaptureRef}
+            heightMap={heightMap}
             gridLayout={gridLayout}
             arrangementInfo={{
               date: arrangement.date,
@@ -1445,6 +1441,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         <div className="relative flex-1 overflow-auto">
           <SeatsGrid
             ref={mobileCaptureRef}
+            heightMap={heightMap}
             gridLayout={gridLayout}
             arrangementInfo={{
               date: arrangement.date,
@@ -1515,6 +1512,9 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
                 compact={true}
                 isEmergencyMode={isEmergencyMode}
                 arrangementId={id}
+                regularMembers={regularMembers}
+                guestMembers={guestMembers}
+                membersLoading={membersLoading}
               />
             </div>
           </div>

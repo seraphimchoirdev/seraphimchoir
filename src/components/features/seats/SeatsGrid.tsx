@@ -2,7 +2,6 @@
 
 import { forwardRef, useEffect, useMemo } from 'react';
 
-import { useMembers } from '@/hooks/useMembers';
 import { useZigzagOffset } from '@/hooks/useZigzagOffset';
 
 import { calculateSeatsByRow } from '@/lib/utils/seatPositionCalculator';
@@ -53,7 +52,11 @@ interface SeatsGridProps {
   highlightMemberId?: string | null;
   /** 외부에서 직접 오프셋 컨트롤 표시를 제어 (긴급수정모드용) */
   showOffsetControls?: boolean;
+  /** 멤버별 키(cm) lookup map — 페이지 레벨 useArrangementMembers에서 전달 (B11) */
+  heightMap?: Map<string, number | null>;
 }
+
+const EMPTY_HEIGHT_MAP = new Map<string, number | null>();
 
 const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
   {
@@ -67,6 +70,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
     workflowStep,
     highlightMemberId,
     showOffsetControls = false,
+    heightMap = EMPTY_HEIGHT_MAP,
   },
   ref
 ) {
@@ -77,25 +81,6 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
   const assignments = useArrangementStore((state) => state.assignments);
   // 행별 오프셋 설정 함수 (Step 2 인라인 컨트롤용)
   const setRowOffset = useArrangementStore((state) => state.setRowOffset);
-
-  // 멤버별 키(cm) 표시용 lookup map: memberId → height_cm
-  // 정대원 + 게스트 둘 다 좌석에 배치될 수 있으므로 두 status 모두 조회
-  const { data: regularMembersData } = useMembers({
-    member_status: 'REGULAR',
-    is_singer: true,
-    limit: 100,
-  });
-  const { data: guestMembersData } = useMembers({
-    member_status: 'GUEST',
-    is_singer: true,
-    limit: 100,
-  });
-  const heightMap = useMemo(() => {
-    const map = new Map<string, number | null>();
-    regularMembersData?.data?.forEach((m) => map.set(m.id, m.height_cm));
-    guestMembersData?.data?.forEach((m) => map.set(m.id, m.height_cm));
-    return map;
-  }, [regularMembersData?.data, guestMembersData?.data]);
 
   // Step 2에서 인라인 오프셋 컨트롤 표시 여부
   // (showCaptureInfo는 헤더/푸터 표시 여부일 뿐, 편집 모드와 무관)

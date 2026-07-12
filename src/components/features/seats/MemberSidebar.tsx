@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 
 import { useAttendances } from '@/hooks/useAttendances';
-import { useMembers } from '@/hooks/useMembers';
+import type { ArrangementMember } from '@/hooks/useArrangementMembers';
 
 import { showError, showSuccess } from '@/lib/toast';
 
@@ -36,6 +36,12 @@ interface MemberSidebarProps {
   isEmergencyMode?: boolean;
   /** 배치표 ID (긴급 추가 다이얼로그용) */
   arrangementId?: string;
+  /** 정대원 목록 — 페이지 레벨 useArrangementMembers에서 전달 (B11) */
+  regularMembers: ArrangementMember[];
+  /** 게스트 목록 — 페이지 레벨 useArrangementMembers에서 전달 (B11) */
+  guestMembers: ArrangementMember[];
+  /** 대원 목록 로딩 여부 */
+  membersLoading: boolean;
 }
 
 const PARTS: Part[] = ['SOPRANO', 'ALTO', 'TENOR', 'BASS', 'SPECIAL'];
@@ -63,6 +69,9 @@ const MemberSidebar = memo(function MemberSidebar({
   compact = false,
   isEmergencyMode = false,
   arrangementId,
+  regularMembers,
+  guestMembers: guestMembersRaw,
+  membersLoading,
 }: MemberSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPart, setSelectedPart] = useState<Part | 'ALL'>('ALL');
@@ -114,20 +123,6 @@ const MemberSidebar = memo(function MemberSidebar({
     return outOfBounds;
   }, [gridLayout, assignments]);
 
-  // 모든 정대원 조회 (등단자만 - 지휘자/반주자 제외, API limit 최대값: 100)
-  const { data: membersData, isLoading: membersLoading } = useMembers({
-    member_status: 'REGULAR',
-    is_singer: true, // 등단자만 (지휘자/반주자 제외)
-    limit: 100,
-  });
-
-  // 게스트 멤버 전체 조회 (매핑 없이 GUEST 상태 멤버를 모든 배치표에서 표시)
-  const { data: guestMembersData, isLoading: guestsLoading } = useMembers({
-    member_status: 'GUEST',
-    is_singer: true,
-    limit: 100,
-  });
-
   // 해당 날짜+예배의 출석 데이터 조회 (service_schedule_id로 예배별 분리)
   // ⭐ 긴급 모드에서는 탭 포커스 시 자동 갱신 (출석 관리에서 변경 후 돌아올 때)
   const { data: attendances, isLoading: attendancesLoading } = useAttendances({
@@ -136,7 +131,7 @@ const MemberSidebar = memo(function MemberSidebar({
     refetchOnWindowFocus: isEmergencyMode,
   });
 
-  const isLoading = membersLoading || attendancesLoading || guestsLoading;
+  const isLoading = membersLoading || attendancesLoading;
 
   // Check if member is already placed (Set 기반으로 O(1) 조회)
   const isMemberPlaced = useCallback(
@@ -148,15 +143,14 @@ const MemberSidebar = memo(function MemberSidebar({
 
   // 게스트 멤버 리스트
   const guestMembers = useMemo(() => {
-    const guests = guestMembersData?.data || [];
-    return guests.map((g) => ({
+    return guestMembersRaw.map((g) => ({
       id: g.id,
       name: g.name,
       part: g.part,
       height_cm: g.height_cm,
       isGuest: true as const,
     }));
-  }, [guestMembersData?.data]);
+  }, [guestMembersRaw]);
 
   const groupedGuests = useMemo(() => {
     if (!guestMembers.length) return {};
@@ -194,7 +188,7 @@ const MemberSidebar = memo(function MemberSidebar({
   );
 
   // 멤버 리스트 (정대원만)
-  const members = useMemo(() => membersData?.data || [], [membersData?.data]);
+  const members = regularMembers;
 
   // Group members by part
   const groupedMembers = useMemo(() => {
