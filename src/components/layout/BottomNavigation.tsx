@@ -59,6 +59,7 @@ export default function BottomNavigation() {
   const isManager = hasRole(['ADMIN', 'CONDUCTOR', 'MANAGER', 'PART_LEADER']);
 
   // 관리자용 메인 메뉴 (4개 + 더보기)
+  // 임원 포털은 일부 임원만 쓰는 저빈도 메뉴라 더보기로 이동, 자주 쓰는 배치표를 메인에 배치
   const managerMainNav: NavItem[] = [
     { href: '/dashboard', label: '홈', icon: <Home className="h-5 w-5" />, show: true },
     {
@@ -68,12 +69,12 @@ export default function BottomNavigation() {
       show: true,
     },
     { href: '/community', label: '커뮤니티', icon: <MessageSquare className="h-5 w-5" />, show: true },
-    { href: '/management', label: '임원', icon: <Briefcase className="h-5 w-5" />, show: true },
+    { href: '/arrangements', label: '배치표', icon: <LayoutGrid className="h-5 w-5" />, show: true },
   ];
 
   // 관리자용 더보기 메뉴
   const managerMoreNav: NavItem[] = [
-    { href: '/arrangements', label: '배치표', icon: <LayoutGrid className="h-5 w-5" />, show: true },
+    { href: '/management', label: '임원 포털', icon: <Briefcase className="h-5 w-5" />, show: true },
     {
       href: '/service-schedules',
       label: '찬양대 일정',

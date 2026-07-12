@@ -22,8 +22,10 @@ test.describe('모바일 하단 네비게이션', () => {
     const bottomNav = page.locator('nav.lg\\:hidden');
     await expect(bottomNav.getByText('홈')).toBeVisible();
     await expect(bottomNav.getByText('출석')).toBeVisible();
-    await expect(bottomNav.getByText('자리')).toBeVisible();
-    await expect(bottomNav.getByText('임원')).toBeVisible();
+    await expect(bottomNav.getByText('커뮤니티')).toBeVisible();
+    // 임원 포털은 일부 임원 전용 저빈도 메뉴라 더보기로 이동, 배치표가 메인에 노출
+    await expect(bottomNav.getByText('배치표')).toBeVisible();
+    await expect(bottomNav.getByText('임원')).toHaveCount(0);
   });
 
   test('더보기 버튼으로 Sheet가 열린다', async ({
@@ -40,6 +42,8 @@ test.describe('모바일 하단 네비게이션', () => {
     await moreButton.click();
 
     await expect(page.getByRole('heading', { name: '더보기' })).toBeVisible();
+    // 임원 포털은 더보기 시트에서 접근
+    await expect(page.getByRole('link', { name: '임원 포털' })).toBeVisible();
   });
 
   test('더보기 Sheet에서 메뉴 항목을 클릭하면 해당 페이지로 이동', async ({
