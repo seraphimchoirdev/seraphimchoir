@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-07-12 | docs: 전체 코드 리뷰 보고서 및 최적화 실행 결과 기록 |
 | 2026-07-12 | refactor(dashboard): API 라우트가 SSR과 동일한 조회 로직을 사용하도록 위임 |
 | 2026-07-12 | perf: TTFB/렌더링 개선 — CSP 정적화·컴파일러 infer·스플래시 hydration 수정 |
 | 2026-07-12 | fix(security): 무인증 admin 라우트·IDOR·파일 삭제 권한 결함 6건 수정 |
