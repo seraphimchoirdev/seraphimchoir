@@ -102,7 +102,8 @@ describe('PATCH /api/attendances/[id]', () => {
     const response = await PATCH(request, createRouteContext({ id: ATTENDANCE_ID }));
     expect(response.status).toBe(403);
     const body = await response.json();
-    expect(body.error).toContain('권한');
+    // 권한 없는 역할은 MEMBER 본인 검증 가드에 걸린다 (attendance-vote-guard)
+    expect(body.error).toContain('본인 출석만');
   });
 
   it('PART_LEADER 이상 역할 → 정상 업데이트 200', async () => {
