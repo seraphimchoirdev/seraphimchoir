@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-07-12
+- [x] **fix(security): rate limiter 장애 시 fail-open으로 로그인 500 해소**
+  - 커밋: `9e90ab5`
+
 - [x] **fix(deploy): .vercelignore 예외에 generate-sw-version.mjs 추가**
   - 커밋: `0940e69`
 

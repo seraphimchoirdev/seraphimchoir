@@ -111,6 +111,33 @@ export const apiRateLimiter = redis
     })
   : disabledRateLimiter;
 
+/** limit() 결과 중 라우트가 사용하는 부분 */
+interface RateLimitResult {
+  success: boolean;
+  reset: number;
+}
+
+/**
+ * Rate limiter 호출 (fail-open)
+ *
+ * Upstash 장애(인스턴스 삭제/DNS 불통 등) 시 limiter가 예외를 던지면
+ * 로그인 등 서비스 전체가 500으로 막히는 사고가 있었다 (2026-07-12).
+ * 인프라 장애가 가용성을 해치지 않도록, limiter 예외는 로그만 남기고
+ * 요청을 허용한다(fail-open). 남용 방어보다 서비스 가용성을 우선한다.
+ */
+export async function safeLimit(
+  limiter: { limit: (key: string) => Promise<RateLimitResult> },
+  key: string
+): Promise<RateLimitResult> {
+  try {
+    const { success, reset } = await limiter.limit(key);
+    return { success, reset };
+  } catch (error) {
+    logger.error('Rate limiter 장애 — fail-open으로 요청 허용:', error);
+    return { success: true, reset: 0 };
+  }
+}
+
 /**
  * NextRequest에서 클라이언트 IP 추출
  *

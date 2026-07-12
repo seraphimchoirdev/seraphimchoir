@@ -8,6 +8,7 @@ import { logLoginEvent, logRateLimitExceeded } from '@/lib/security/audit-logger
 import { sanitizers } from '@/lib/security/input-sanitizer';
 import {
   authRateLimiter,
+  safeLimit,
   createRateLimitErrorResponse,
   getClientIp,
 } from '@/lib/security/rate-limiter';
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate Limiting: 무차별 대입 공격 방어 (5회/분)
     const ip = getClientIp(request);
-    const { success, reset } = await authRateLimiter.limit(ip);
+    const { success, reset } = await safeLimit(authRateLimiter, ip);
 
     if (!success) {
       logger.warn(`Rate limit exceeded for login attempt from IP: ${ip}`);

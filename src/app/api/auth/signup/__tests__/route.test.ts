@@ -8,6 +8,7 @@ import { POST } from '../route';
 
 // rate-limiter 모킹
 jest.mock('@/lib/security/rate-limiter', () => ({
+  safeLimit: jest.fn(async (limiter, key) => limiter.limit(key)),
   signupRateLimiter: {
     limit: jest.fn().mockResolvedValue({ success: true, reset: Date.now() + 60000 }),
   },

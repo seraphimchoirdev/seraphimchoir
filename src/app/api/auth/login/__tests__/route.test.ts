@@ -15,6 +15,7 @@ jest.mock('@/lib/security/rate-limiter', () => ({
     limit: jest.fn().mockResolvedValue({ success: true, reset: Date.now() + 60000 }),
   },
   getClientIp: jest.fn().mockReturnValue('127.0.0.1'),
+  safeLimit: jest.fn(async (limiter, key) => limiter.limit(key)),
   createRateLimitErrorResponse: jest.fn().mockReturnValue({ error: 'Rate limit exceeded' }),
 }));
 

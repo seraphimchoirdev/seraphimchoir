@@ -8,6 +8,7 @@ import { getSecuritySummary, getSuspiciousActivities } from '@/lib/security/audi
 import { logUnauthorizedAccess } from '@/lib/security/audit-logger';
 import {
   apiRateLimiter,
+  safeLimit,
   createRateLimitErrorResponse,
   getClientIp,
 } from '@/lib/security/rate-limiter';
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
   try {
     // Rate Limiting
     const ip = getClientIp(request);
-    const { success, reset } = await apiRateLimiter.limit(ip);
+    const { success, reset } = await safeLimit(apiRateLimiter, ip);
 
     if (!success) {
       return NextResponse.json(createRateLimitErrorResponse(reset), { status: 429 });

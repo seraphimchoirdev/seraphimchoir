@@ -257,10 +257,10 @@ export async function POST(request: NextRequest) {
     // Rate Limiting: 대량 데이터 생성 방지 (100회/분)
     // Redis 연결 실패 시에도 핵심 기능(대원 등록)은 계속 동작하도록 graceful fallback
     try {
-      const { apiRateLimiter, getClientIp, createRateLimitErrorResponse } =
+      const { apiRateLimiter, getClientIp, createRateLimitErrorResponse, safeLimit } =
         await import('@/lib/security/rate-limiter');
       const ip = getClientIp(request);
-      const { success, reset } = await apiRateLimiter.limit(ip);
+      const { success, reset } = await safeLimit(apiRateLimiter, ip);
 
       if (!success) {
         logger.warn(`Rate limit exceeded for member creation from IP: ${ip}`);

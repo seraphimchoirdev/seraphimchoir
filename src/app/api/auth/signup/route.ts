@@ -9,6 +9,7 @@ import {
   createRateLimitErrorResponse,
   getClientIp,
   signupRateLimiter,
+  safeLimit,
 } from '@/lib/security/rate-limiter';
 import { createClient } from '@/lib/supabase/server';
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate Limiting: 스팸 계정 생성 방지 (3회/분)
     const ip = getClientIp(request);
-    const { success, reset } = await signupRateLimiter.limit(ip);
+    const { success, reset } = await safeLimit(signupRateLimiter, ip);
 
     if (!success) {
       logger.warn(`Rate limit exceeded for signup attempt from IP: ${ip}`);
