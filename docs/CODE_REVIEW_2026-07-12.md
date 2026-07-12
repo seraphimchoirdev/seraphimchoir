@@ -68,7 +68,7 @@
 2. ✅ **B10** — 2단계 분리로 `arrangements/[id]/page.tsx` **1,638줄 → 936줄**:
    - B10-1: WorkflowStepContent(Expanded)·WorkflowFloatingStepContent(플로팅 바)·OffsetPresetButtons 컴포넌트 추출, getActivePresetId 순수 함수화
    - B10-2: ID 변경 감지·DB 초기 로드·AI 추천 분배 3개 효과를 `hooks/useArrangementInitialization.ts`로 이동
-   - 잔여(모바일 바텀시트·메모 에디터 분리)는 효과 대비 리스크로 백로그 유지
+   - B10-3: MobileBottomSheet·ArrangementNotesPanel 분리 → 최종 **843줄** (E2E 데스크톱 16/16·모바일 12/12 재검증)
 3. ✅ **E2E 강화** (사용자 요청: 핵심 페이지 빡센 검증):
    - 신규 `arrangement-editor.spec`: 생성→워크플로우→click-to-place 배치/제거→저장→새로고침 복원→SHARED 전환→긴급 수정 보존 전체 여정 + 모바일 스모크
    - `attendance.spec` 보강: 토글→저장→새로고침 유지→원상복구 (실제 mutation 검증)

@@ -5,13 +5,38 @@
 > 배치표 공유/확정/좌석변동 알림, 관리자 수동 발송(독려 버튼 + /management/notify).
 > 상세 설계는 코드 주석 및 핸드오프 문서 참고.
 
-## ⚠️ 현재 상태 (2026-07-12 기준) — 아직 안 된 것
+## 🚦 운영 방침 (2026-07-12 결정): 전대원 오픈 전 — 자동 발송 보류, 환경 세팅만
+
+아직 전대원에게 오픈한 시스템이 아니므로 **자동 시스템 푸시(투표 독려 크론)는 발송하지 않는다.**
+이중 안전장치로 보류 상태를 보장한다:
+
+1. **Vault 시크릿 미등록** — `invoke_vote_reminder()`가 no-op (호출 생략 NOTICE만 남김)
+2. **크론 잡 비활성화** — `20260712120000_pause_vote_reminder_cron.sql`이
+   `vote-reminder-friday`/`vote-reminder-saturday`를 `active = false`로 전환 (로컬·프로덕션 모두 적용됨)
+
+배치표 공유/확정 등 **이벤트성 알림은 구독한 브라우저에만** 발송되므로, 오픈 전(구독자 없음)에는
+VAPID 환경변수를 등록해도 실질 발송이 없다. 관리자 수동 발송(`/management/notify`)은 재량 사용 가능.
+
+### 전대원 오픈 시 재활성화 절차
+
+```sql
+-- 1. Vault 시크릿 등록 (Supabase Studio SQL Editor)
+SELECT vault.create_secret('https://<프로덕션 도메인>/api/cron/vote-reminder', 'vote_reminder_url');
+SELECT vault.create_secret('<CRON_SECRET 값>', 'vote_reminder_cron_secret');
+
+-- 2. 크론 잡 재활성화
+SELECT cron.alter_job(jobid, active := true) FROM cron.job
+WHERE jobname IN ('vote-reminder-friday', 'vote-reminder-saturday');
+```
+
+## ⚠️ 현재 상태 (2026-07-12 기준)
 
 | 항목 | 상태 | 조치 |
 |---|---|---|
-| Vercel 환경변수 (VAPID 3종 + CRON_SECRET) | ❌ **미등록** | 아래 1절. 값은 로컬 `.env.local`에 발급되어 있음 |
-| 프로덕션 마이그레이션 (`db push`) | ❌ 미적용 | 아래 2절 |
-| Vault 시크릿 2개 (pg_cron 크론용) | ❌ 미등록 | 아래 3절. 등록 전까지 자동 독려 발송은 no-op |
+| Vercel 환경변수 (VAPID 3종 + CRON_SECRET) | ❌ **미등록** | 아래 1절. 값은 로컬 `.env.local`에 발급되어 있음. 지금 등록해도 자동 발송 없음(위 방침) |
+| 프로덕션 마이그레이션 (`db push`) | ✅ 적용됨 (2026-07-12) | push_notifications + 크론 + **크론 일시중지**까지 적용 |
+| Vault 시크릿 2개 (pg_cron 크론용) | ⏸ **의도적 미등록** | 전대원 오픈 시 위 재활성화 절차 수행 |
+| 투표 독려 크론 잡 | ⏸ **비활성화됨** (`active=false`) | 전대원 오픈 시 재활성화 |
 | **Upstash Redis 호스트 DNS 불통** | ⚠️ **조사 필요** | `.env`의 UPSTASH_REDIS_REST_URL이 해석 안 됨 (인스턴스 삭제/만료 추정). rate limiter가 예외를 던져 **로그인 자체가 500으로 실패**함. 로컬은 `.env.local` 빈 값 오버라이드로 우회 중. 프로덕션도 같은 인스턴스면 로그인 장애 가능 — Upstash 콘솔에서 확인하고, 장기적으로 limiter 장애 시 fail-open 처리 검토 |
 
 ## 1. Vercel 환경변수 등록 (필수)
