@@ -58,9 +58,25 @@
 2. ✅ **B8** — `lib/profile-cache.ts`(TTL 60s, 유닛 테스트 5건): 대시보드 라우트 3곳 + SSR 페이지에 적용, `auth/roles`·`member-link` 변경 3곳에서 무효화. 스모크: `/dashboard` SSR 재방문 0.30s → 0.09s.
 3. ✅ **B9** — `lib/dashboard-shared-cache.ts`: 일정·투표마감·배치표를 `unstable_cache`(Vercel Data Cache — 인스턴스 간 공유)로 캐싱. Next 16의 `revalidateTag(tag, 'max')` 시그니처 사용, 무효화 실패는 요청을 실패시키지 않도록 흡수(60s 안전망). service-schedules 4곳·arrangements 3곳·import-ml-data에서 태그 무효화.
 4. 검증: 전체 테스트 715건 통과, 프로덕션 빌드 통과, 대시보드 API 4종 + SSR 스모크 200 확인.
-5. 📋 **잔여 백로그**: B10/B11(arrangements/[id] 1,639줄 컴포넌트 분리 + useMembers 3중 구독) — 별도 세션 권장 유지.
+5. ✅ ~~잔여 백로그: B10/B11~~ → 3차 세션에서 완료 (아래 F 참고)
 
 **배포 후 확인**: Speed Insights에서 TTFB/RES 추이 재관찰 (CSP 정적화·infer 모드 효과 측정). TTFB의 나머지 몫은 Hobby 콜드스타트 영향이 커서 코드만으로 한계가 있음.
+
+## F. 3차 세션 실행 결과 — B10/B11 + E2E 강화 (2026-07-12)
+
+1. ✅ **B11** — `hooks/useArrangementMembers.ts`: page/MemberSidebar/SeatsGrid의 useMembers 6개 구독을 페이지 1곳으로 통합, 하위에는 props(멤버 목록·heightMap) 전달.
+2. ✅ **B10** — 2단계 분리로 `arrangements/[id]/page.tsx` **1,638줄 → 936줄**:
+   - B10-1: WorkflowStepContent(Expanded)·WorkflowFloatingStepContent(플로팅 바)·OffsetPresetButtons 컴포넌트 추출, getActivePresetId 순수 함수화
+   - B10-2: ID 변경 감지·DB 초기 로드·AI 추천 분배 3개 효과를 `hooks/useArrangementInitialization.ts`로 이동
+   - 잔여(모바일 바텀시트·메모 에디터 분리)는 효과 대비 리스크로 백로그 유지
+3. ✅ **E2E 강화** (사용자 요청: 핵심 페이지 빡센 검증):
+   - 신규 `arrangement-editor.spec`: 생성→워크플로우→click-to-place 배치/제거→저장→새로고침 복원→SHARED 전환→긴급 수정 보존 전체 여정 + 모바일 스모크
+   - `attendance.spec` 보강: 토글→저장→새로고침 유지→원상복구 (실제 mutation 검증)
+   - 무력화돼 있던 `arrangement-emergency-edit.spec`(존재하지 않는 셀렉터로 항상 통과) 실셀렉터 기반 재작성, 컴포넌트에 data-testid 부여
+   - 내비 라벨 개편 미반영 등 기존 스펙 부패 6건 수리
+4. 🐛 **E2E가 발견한 잠재 크래시 (수정 완료)**: 등단 인원이 추천 상한(120석) 초과 시 새 배치표 편집 페이지가 setGridLayout 무한 루프(React #185)로 전면 크래시. 실운영은 아직 120명 이하라 미발현이었으나 게스트 포함 시 재현 가능했음 → 수렴 조건을 추천 결과 기준으로 수정 + 회귀 테스트 2건.
+5. 🔧 **CSP 개선**: Supabase origin을 env에서 도출(커스텀 도메인 대비), 로컬 http Supabase 시 upgrade-insecure-requests 제외(WebKit E2E 차단 해소).
+6. 검증: jest **718건** 통과, 프로덕션 빌드 통과, E2E desktop-chrome **117/117**, mobile-ios(편집·출석) **12/12**.
 
 ## D. 리뷰에서 문제없음으로 확인된 것
 
