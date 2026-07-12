@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-07-12 | refactor(arrangements): 워크플로우 스텝 콘텐츠를 컴포넌트로 분리 (B10-1) |
 | 2026-07-12 | refactor(arrangements): useMembers 다중 구독을 페이지 레벨 단일 구독으로 정리 (B11) |
 | 2026-07-12 | docs: 코드 리뷰 백로그 2차 세션 실행 결과 기록 (A7·B8·B9 완료) |
 | 2026-07-12 | perf(dashboard): 전 사용자 공유 데이터 unstable_cache + 태그 무효화 (B9) |

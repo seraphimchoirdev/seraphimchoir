@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-07-12
+- [x] **refactor(arrangements): 워크플로우 스텝 콘텐츠를 컴포넌트로 분리 (B10-1)**
+  - 커밋: `9e24cfd`
+
 - [x] **refactor(arrangements): useMembers 다중 구독을 페이지 레벨 단일 구독으로 정리 (B11)**
   - 커밋: `c6b8cae`
 
