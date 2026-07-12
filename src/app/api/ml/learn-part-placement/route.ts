@@ -18,12 +18,36 @@ import {
   type SeatDataForLearning,
   learnAllPartPlacementRules,
 } from '@/lib/part-placement-learner';
-import { createAdminClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 import type { Database } from '@/types/database.types';
 import type { GridLayout } from '@/types/grid';
 
 const logger = createLogger({ prefix: 'LearnPartPlacement' });
+
+/** 운영진 가드 — ML 학습 규칙 DB를 쓰는 라우트이므로 ADMIN/CONDUCTOR만 허용 */
+async function requireMLRole(): Promise<NextResponse | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 });
+  }
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile?.role || !['ADMIN', 'CONDUCTOR'].includes(profile.role)) {
+    return NextResponse.json({ error: '권한이 없습니다' }, { status: 403 });
+  }
+
+  return null;
+}
 
 type Part = Database['public']['Enums']['part'];
 
@@ -208,6 +232,9 @@ function loadDataFromMLOutputFiles(): {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireMLRole();
+  if (authError) return authError;
+
   const supabase = await createAdminClient();
   const { searchParams } = new URL(request.url);
 
@@ -413,6 +440,9 @@ export async function POST(request: NextRequest) {
  * GET: 현재 학습된 규칙 조회
  */
 export async function GET(request: NextRequest) {
+  const authError = await requireMLRole();
+  if (authError) return authError;
+
   const supabase = await createAdminClient();
 
   try {

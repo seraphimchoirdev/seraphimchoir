@@ -4,9 +4,33 @@ import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { createLogger } from '@/lib/logger';
-import { createAdminClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'ImportMLDataAPI' });
+
+/** ADMIN 전용 가드 — DB를 직접 쓰는 데이터 임포트 라우트이므로 최고 권한만 허용 */
+async function requireAdmin(): Promise<NextResponse | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 });
+  }
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'ADMIN 권한이 필요합니다' }, { status: 403 });
+  }
+
+  return null;
+}
 
 interface MLSeat {
   member_id: string;
@@ -34,6 +58,9 @@ interface MLData {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   const supabase = await createAdminClient();
 
   try {
@@ -41,6 +68,11 @@ export async function POST(request: NextRequest) {
 
     if (!filename) {
       return NextResponse.json({ error: 'filename is required' }, { status: 400 });
+    }
+
+    // path traversal 방지: 디렉토리 구분자 없는 .json 파일명만 허용
+    if (path.basename(filename) !== filename || !filename.endsWith('.json')) {
+      return NextResponse.json({ error: '유효하지 않은 파일명입니다' }, { status: 400 });
     }
 
     // ML 데이터 파일 읽기
@@ -194,6 +226,9 @@ export async function POST(request: NextRequest) {
 
 // GET: ML 데이터 파일 목록 조회
 export async function GET() {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
   try {
     const mlOutputDir = path.join(process.cwd(), 'training_data', 'ml_output');
 

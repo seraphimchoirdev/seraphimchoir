@@ -105,10 +105,29 @@ export async function PATCH(
     );
   }
 
-  // soft delete 시에는 RLS의 is_deleted=false 필터를 우회하기 위해 adminClient 사용
-  const client = parsed.data.is_deleted
-    ? await createAdminClient()
-    : supabase;
+  // soft delete 시에는 RLS의 is_deleted=false 필터를 우회하기 위해 adminClient 사용.
+  // RLS를 우회하므로 앱 레벨에서 생성자/운영진 권한을 직접 검증한다.
+  let client = supabase;
+  if (parsed.data.is_deleted) {
+    const [{ data: album }, { data: profile }] = await Promise.all([
+      supabase.from('photo_albums').select('created_by').eq('id', id).single(),
+      supabase.from('user_profiles').select('role').eq('id', user.id).single(),
+    ]);
+
+    if (!album) {
+      return NextResponse.json({ error: '앨범을 찾을 수 없습니다.' }, { status: 404 });
+    }
+
+    const isCreator = album.created_by === user.id;
+    const isManager =
+      !!profile?.role && ['ADMIN', 'CONDUCTOR', 'MANAGER'].includes(profile.role);
+
+    if (!isCreator && !isManager) {
+      return NextResponse.json({ error: '삭제 권한이 없습니다.' }, { status: 403 });
+    }
+
+    client = await createAdminClient();
+  }
 
   const { data: updated, error: updateError } = await client
     .from('photo_albums')

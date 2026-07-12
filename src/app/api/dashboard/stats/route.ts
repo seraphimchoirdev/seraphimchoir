@@ -2,15 +2,25 @@ import { addDays, endOfMonth, format, startOfMonth, startOfWeek } from 'date-fns
 
 import { NextResponse } from 'next/server';
 
-import { createAdminClient } from '@/lib/supabase/server';
+import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 /**
  * 대시보드 통계 API
  * Admin 클라이언트를 사용하여 RLS를 우회합니다.
- * 대시보드 통계는 인증된 사용자에게 공개되는 집계 정보이므로 Admin 클라이언트 사용이 적절합니다.
+ * 대시보드 통계는 인증된 사용자에게 공개되는 집계 정보이므로 Admin 클라이언트 사용이 적절하지만,
+ * 인증 자체는 필수다 (미들웨어가 /api/*의 세션 검증을 생략하므로 라우트가 직접 확인).
  */
 export async function GET() {
   try {
+    const authClient = await createClient();
+    const {
+      data: { user },
+    } = await authClient.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 });
+    }
+
     const supabase = await createAdminClient();
     const now = new Date();
 

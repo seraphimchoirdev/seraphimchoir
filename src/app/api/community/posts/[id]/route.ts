@@ -143,10 +143,29 @@ export async function PATCH(
     );
   }
 
-  // soft delete 시 adminClient 사용 (SELECT RLS가 is_deleted=false 필터)
-  const client = parsed.data.is_deleted
-    ? await createAdminClient()
-    : supabase;
+  // soft delete 시 adminClient 사용 (SELECT RLS가 is_deleted=false 필터).
+  // RLS를 우회하므로 앱 레벨에서 작성자/운영진 권한을 직접 검증한다.
+  let client = supabase;
+  if (parsed.data.is_deleted) {
+    const [{ data: post }, { data: profile }] = await Promise.all([
+      supabase.from('community_posts').select('author_id').eq('id', id).single(),
+      supabase.from('user_profiles').select('role').eq('id', user.id).single(),
+    ]);
+
+    if (!post) {
+      return NextResponse.json({ error: '게시글을 찾을 수 없습니다.' }, { status: 404 });
+    }
+
+    const isAuthor = post.author_id === user.id;
+    const isManager =
+      !!profile?.role && ['ADMIN', 'CONDUCTOR', 'MANAGER'].includes(profile.role);
+
+    if (!isAuthor && !isManager) {
+      return NextResponse.json({ error: '삭제 권한이 없습니다.' }, { status: 403 });
+    }
+
+    client = await createAdminClient();
+  }
 
   const { data: updated, error: updateError } = await client
     .from('community_posts')

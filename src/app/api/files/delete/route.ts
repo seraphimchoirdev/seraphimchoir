@@ -55,6 +55,30 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
+    // 공개 버킷 삭제: MANAGER 이상 또는 업로더 본인 (DB에서 소유권 확인)
+    if (bucketType === 'public' && !hasPermission(profile?.role as UserRole, 'canManageDocuments')) {
+      const [{ data: photo }, { data: attachment }] = await Promise.all([
+        supabase
+          .from('album_photos')
+          .select('uploaded_by')
+          .or(`file_path.eq.${key},thumbnail_path.eq.${key}`)
+          .maybeSingle(),
+        supabase
+          .from('post_attachments')
+          .select('post:community_posts!post_id(author_id)')
+          .or(`file_path.eq.${key},thumbnail_path.eq.${key}`)
+          .maybeSingle(),
+      ]);
+
+      const attachmentPost = attachment?.post as unknown as { author_id: string } | null;
+      const isUploader =
+        photo?.uploaded_by === user.id || attachmentPost?.author_id === user.id;
+
+      if (!isUploader) {
+        return NextResponse.json({ error: '삭제 권한이 없습니다.' }, { status: 403 });
+      }
+    }
+
     const bucket = bucketType === 'private' ? R2_PRIVATE_BUCKET : R2_PUBLIC_BUCKET;
     await deleteFromR2(bucket, key);
 
