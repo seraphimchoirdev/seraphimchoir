@@ -49,6 +49,9 @@ function ClickableMember({ memberId, name, part, isPlaced, isGuest, heightCm }: 
   return (
     <button
       type="button"
+      data-testid="sidebar-member"
+      data-member-id={memberId}
+      data-placed={isPlaced ?? false}
       onClick={handleClick}
       disabled={isPlaced}
       className={cn(

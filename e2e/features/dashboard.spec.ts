@@ -17,7 +17,7 @@ test.describe('대시보드', () => {
 
     if (isDesktopViewport) {
       const nav = page.locator('nav');
-      await expect(nav.getByRole('link', { name: '대시보드' })).toBeVisible({ timeout: 15_000 });
+      await expect(nav.getByRole('link', { name: '홈' })).toBeVisible({ timeout: 15_000 });
     } else {
       // 모바일: 하단 네비게이션 또는 로고 확인
       await expect(page.locator('nav')).toBeVisible();

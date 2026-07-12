@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-07-12 | test(e2e): 자리배치 편집·출석 관리 핵심 플로우 E2E 강화 |
 | 2026-07-12 | fix(security): CSP가 NEXT_PUBLIC_SUPABASE_URL 기반으로 Supabase origin을 허용하도록 수정 |
 | 2026-07-12 | fix(arrangements): 등단 인원이 추천 상한 초과 시 새 배치표 무한 루프 크래시 수정 |
 | 2026-07-12 | refactor(arrangements): 초기화 로직을 useArrangementInitialization 훅으로 추출 (B10-2) |

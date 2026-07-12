@@ -144,6 +144,11 @@ const SeatSlot = memo(function SeatSlot({
       <button
         type="button"
         data-seat-slot
+        data-testid="seat-slot"
+        data-row={row}
+        data-col={col}
+        data-occupied={isOccupied}
+        data-member-id={assignment?.memberId ?? undefined}
         {...(isHighlighted ? { 'data-highlight-seat': true } : {})}
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}

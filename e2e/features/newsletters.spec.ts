@@ -77,9 +77,10 @@ test.describe('주보 (새로핌지)', () => {
       timeout: 30_000,
     });
 
-    // "(자동 입력)" 텍스트가 발행인/편집인/편집주간 라벨 옆에 표시
-    const autoLabels = page.getByText('(자동 입력)');
-    await expect(autoLabels.first()).toBeVisible({ timeout: 15_000 });
+    // 발행인/편집인 메타 필드가 표시됨
+    // ("(자동 입력)" 라벨은 이전 호가 존재할 때만 붙는 조건부 UI라 단정하지 않음)
+    await expect(page.getByText('발행인', { exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('편집인', { exact: true })).toBeVisible();
   });
 
   test('알림 항목 추가/삭제가 동작한다', async ({ page }) => {
@@ -181,9 +182,11 @@ test.describe('주보 (새로핌지)', () => {
     await expect(page.locator('main')).toBeVisible({ timeout: 30_000 });
 
     if (isDesktopViewport) {
-      const nav = page.locator('nav');
+      // 새로핌지는 저빈도 메뉴로 '더보기' 드롭다운 안에 있음 (상단 sticky nav 기준)
+      const nav = page.locator('nav').first();
       await expect(nav).toBeVisible({ timeout: 15_000 });
-      await expect(nav.getByRole('link', { name: '새로핌지' })).toBeVisible({ timeout: 15_000 });
+      await nav.getByRole('button', { name: '더보기' }).click();
+      await expect(page.getByRole('link', { name: '새로핌지' })).toBeVisible({ timeout: 5_000 });
     } else if (isMobileViewport || isTabletViewport) {
       // 모바일: 더보기 시트에서 확인
       const moreButton = page.locator('nav.lg\\:hidden').getByText('더보기');

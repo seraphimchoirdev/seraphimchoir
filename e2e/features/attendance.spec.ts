@@ -1,4 +1,12 @@
+import type { APIRequestContext } from '@playwright/test';
+
 import { test, expect } from '../fixtures/base.fixture';
+import {
+  type EnsuredSchedule,
+  cleanupSchedule,
+  ensureSchedule,
+  upcomingSundayISO,
+} from '../helpers/e2e-data';
 
 test.describe('출석 관리', () => {
   test('출석 관리 페이지가 정상 로드된다', async ({ page }) => {
@@ -43,15 +51,11 @@ test.describe('출석 관리', () => {
     await expect(page.getByRole('heading', { name: '출석 관리' })).toBeVisible({ timeout: 30_000 });
 
     // 로딩 완료 후 콘텐츠 확인 (테이블 또는 카드 형태)
-    // "예배가 없습니다" 메시지가 있거나 출석 데이터가 있어야 함
-    const hasContent = await page.getByText(/등단|출석|미등단|예배/).first()
-      .isVisible({ timeout: 10_000 })
-      .catch(() => false);
-    const hasNoData = await page.getByText(/일정이 없|데이터가 없|예배가 없/).first()
-      .isVisible({ timeout: 3_000 })
-      .catch(() => false);
-
-    expect(hasContent || hasNoData).toBeTruthy();
+    // 출석 데이터가 있거나 "예배가 없습니다" 류의 빈 상태 메시지가 표시되어야 함
+    // (isVisible은 timeout 옵션을 무시하고 즉시 반환하므로 expect로 대기)
+    await expect(
+      page.locator('main').getByText(/등단|출석|미등단|예배|일정이 없|데이터가 없/).first()
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test('준비 완료 현황이 표시된다', async ({ page }) => {
@@ -144,5 +148,88 @@ test.describe('출석 관리', () => {
       // 예배 일정이 등록된 날짜만 선택 가능 안내 텍스트
       await expect(page.getByText('예배 일정이 등록된 날짜만 선택 가능')).toBeVisible();
     }
+  });
+});
+
+/**
+ * 출석 토글 → 저장 → 새로고침 후 유지 (핵심 mutation 검증)
+ *
+ * 전용 예배 일정(E2E출석예배, 다가오는 주일)을 API로 생성해 결정적으로 검증한다.
+ * 페이지 기본 날짜는 "가장 가까운 미래 예배 날짜"이므로 이 일정이 자동 선택된다.
+ * (arrangement-editor 스펙은 다다음 주일을 사용 — 날짜 분리로 간섭 없음)
+ */
+test.describe('출석 토글 저장', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  let api: APIRequestContext;
+  let schedule: EnsuredSchedule | null = null;
+
+  test.beforeAll(async ({ playwright }) => {
+    api = await playwright.request.newContext({
+      baseURL: 'http://localhost:3000',
+      storageState: 'e2e/.auth/user.json',
+    });
+    schedule = await ensureSchedule(api, upcomingSundayISO(0), 'E2E출석예배');
+  });
+
+  test.afterAll(async () => {
+    await cleanupSchedule(api, schedule);
+    await api.dispose();
+  });
+
+  test('대원 출석을 토글하고 저장하면 새로고침 후에도 유지된다', async ({ page }) => {
+    test.setTimeout(120_000);
+
+    await page.goto('/attendances', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: '출석 관리' })).toBeVisible({
+      timeout: 30_000,
+    });
+
+    // 전용 일정 날짜가 기본 선택되었는지 확인
+    await expect(
+      page.getByRole('button', { name: new RegExp(schedule!.date) })
+    ).toBeVisible({ timeout: 20_000 });
+
+    // 파트 섹션 전체 펼치기 → 출석 칩 노출
+    await page.getByRole('button', { name: '모두 펼치기' }).click();
+    const firstChip = page.locator('[data-testid="attendance-chip"]:visible').first();
+    await expect(firstChip).toBeVisible({ timeout: 20_000 });
+    await expect(firstChip).toBeEnabled();
+
+    const memberId = await firstChip.getAttribute('data-member-id');
+    const before = await firstChip.getAttribute('data-attending');
+    expect(memberId).toBeTruthy();
+
+    const chipFor = (id: string) =>
+      page.locator(`[data-testid="attendance-chip"][data-member-id="${id}"]:visible`).first();
+    const flipped = before === 'true' ? 'false' : 'true';
+
+    // 토글 → 상태 반전 확인
+    await firstChip.click();
+    await expect(chipFor(memberId!)).toHaveAttribute('data-attending', flipped);
+
+    // 저장 → 성공 토스트
+    await page.locator('[data-testid="attendance-save"]:visible').click();
+    await expect(page.getByText('저장되었습니다')).toBeVisible({ timeout: 20_000 });
+
+    // 새로고침 후 토글 상태가 유지되는지 확인
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: '출석 관리' })).toBeVisible({
+      timeout: 30_000,
+    });
+    await page.getByRole('button', { name: '모두 펼치기' }).click();
+    await expect(chipFor(memberId!)).toHaveAttribute('data-attending', flipped, {
+      timeout: 20_000,
+    });
+
+    // 원상 복구 (토글 → 저장)
+    await chipFor(memberId!).click();
+    // 전원 출석이 되면 "불참자 있는 파트만 자동 열림" 로직이 파트 섹션을 접으므로 다시 펼침
+    await page.getByRole('button', { name: '모두 펼치기' }).click();
+    await expect(chipFor(memberId!)).toHaveAttribute('data-attending', before!, {
+      timeout: 10_000,
+    });
+    await page.locator('[data-testid="attendance-save"]:visible').click();
+    await expect(page.getByText('저장되었습니다')).toBeVisible({ timeout: 20_000 });
   });
 });

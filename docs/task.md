@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-07-12
+- [x] **test(e2e): 자리배치 편집·출석 관리 핵심 플로우 E2E 강화**
+  - 커밋: `e8577a8`
+
 - [x] **fix(security): CSP가 NEXT_PUBLIC_SUPABASE_URL 기반으로 Supabase origin을 허용하도록 수정**
   - 커밋: `a99cd76`
 

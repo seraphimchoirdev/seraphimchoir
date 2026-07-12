@@ -89,6 +89,10 @@ export default function WorkflowSection({
 
   return (
     <Collapsible
+      data-testid="workflow-section"
+      data-step={step}
+      data-current={isCurrent}
+      data-completed={isCompleted}
       open={isExpanded}
       onOpenChange={() => handleHeaderClick()}
       className={cn(

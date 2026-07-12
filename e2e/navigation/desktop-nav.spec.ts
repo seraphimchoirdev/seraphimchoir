@@ -6,8 +6,8 @@ test.describe('데스크톱 네비게이션', () => {
 
     await page.goto('/dashboard');
 
-    const dashboardLink = page.locator('nav').getByRole('link', { name: '대시보드' });
-    await expect(dashboardLink).toBeVisible();
+    const homeLink = page.locator('nav').getByRole('link', { name: '홈' });
+    await expect(homeLink).toBeVisible();
   });
 
   test('네비게이션 링크들이 올바르게 표시된다 (ADMIN)', async ({
@@ -18,13 +18,19 @@ test.describe('데스크톱 네비게이션', () => {
 
     await page.goto('/dashboard');
 
+    // 1차 메뉴 (핵심 메뉴만 노출)
     const nav = page.locator('nav');
-    await expect(nav.getByRole('link', { name: '대시보드' })).toBeVisible();
-    await expect(nav.getByRole('link', { name: '관리자' })).toBeVisible();
+    await expect(nav.getByRole('link', { name: '홈' })).toBeVisible();
+    await expect(nav.getByRole('link', { name: '커뮤니티' })).toBeVisible();
     await expect(nav.getByRole('link', { name: '출석 관리' })).toBeVisible();
+    await expect(nav.getByRole('link', { name: '찬양대 일정' })).toBeVisible();
     await expect(nav.getByRole('link', { name: '자리배치' })).toBeVisible();
-    await expect(nav.getByRole('link', { name: '새로핌지' })).toBeVisible();
     await expect(nav.getByRole('link', { name: '임원 포털' })).toBeVisible();
+
+    // 저빈도 메뉴는 '더보기' 드롭다운 안에 (새로핌지, 관리자) — 항목은 link로 렌더링됨
+    await nav.getByRole('button', { name: '더보기' }).click();
+    await expect(page.getByRole('link', { name: '새로핌지' })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('link', { name: '관리자', exact: true })).toBeVisible();
   });
 
   test('현재 페이지에 해당하는 링크가 활성 상태이다', async ({
@@ -35,8 +41,8 @@ test.describe('데스크톱 네비게이션', () => {
 
     await page.goto('/dashboard');
 
-    const dashboardLink = page.locator('nav').getByRole('link', { name: '대시보드' });
-    await expect(dashboardLink).toBeVisible();
+    const homeLink = page.locator('nav').getByRole('link', { name: '홈' });
+    await expect(homeLink).toBeVisible();
   });
 
   test('네비게이션 링크 클릭 시 올바른 페이지로 이동', async ({

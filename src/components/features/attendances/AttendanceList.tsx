@@ -703,6 +703,7 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
               </Button>
               <Button
                 size="sm"
+                data-testid="attendance-save"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="flex-1"

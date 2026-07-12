@@ -751,6 +751,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
           {/* 그리드 설정 버튼 (Floating) — 긴급 수정 모드에서는 amber 스타일 */}
           <Button
             data-print-hide
+            data-testid="mobile-settings-button"
             onClick={() => setShowSettingsSheet(true)}
             variant="outline"
             size="icon"

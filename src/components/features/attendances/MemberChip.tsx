@@ -44,6 +44,9 @@ function MemberChip({ member, isAttending, isChanged, disabled, onToggle }: Memb
   return (
     <button
       type="button"
+      data-testid="attendance-chip"
+      data-member-id={member.id}
+      data-attending={isAttending}
       onClick={handleClick}
       disabled={disabled}
       className={cn(

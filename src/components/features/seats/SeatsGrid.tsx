@@ -127,7 +127,7 @@ const SeatsGrid = forwardRef<HTMLDivElement, SeatsGridProps>(function SeatsGrid(
   }, [highlightMemberId]);
 
   return (
-    <div className="flex-1 overflow-auto bg-[var(--color-background-secondary)]">
+    <div data-testid="seats-grid" className="flex-1 overflow-auto bg-[var(--color-background-secondary)]">
       <div className="flex min-h-full min-w-fit flex-col bg-white p-2 sm:p-6 lg:p-8">
         {/* 이미지 캡처 대상 영역 */}
         <div

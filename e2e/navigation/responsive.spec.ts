@@ -10,7 +10,7 @@ test.describe('반응형 레이아웃', () => {
     await page.goto('/dashboard');
 
     // 상단 nav 안에 데스크톱 메뉴 링크가 보여야 함
-    await expect(page.locator('nav').getByRole('link', { name: '대시보드' })).toBeVisible();
+    await expect(page.locator('nav').getByRole('link', { name: '홈' })).toBeVisible();
 
     // 하단 BottomNavigation은 숨겨져야 함
     const bottomNav = page.locator('nav.lg\\:hidden');
