@@ -276,12 +276,16 @@ export function useArrangementInitialization({
     // 이미 수동으로 구성된 그리드 (저장 후 refetch 시 race condition 방어)
     if (gridLayout?.isManuallyConfigured) return;
 
-    // 이미 같은 인원 기반으로 AI 추천이 적용되어 있으면 스킵
-    const currentTotal = gridLayout?.rowCapacities?.reduce((a, b) => a + b, 0) ?? 0;
-    if (gridLayout?.isAIRecommended && currentTotal === totalMembers) return;
-
-    // AI 추천 분배 자동 적용 (totalMembers가 변하면 재적용)
+    // AI 추천 분배 계산 (totalMembers가 변하면 재적용)
     const recommendation = recommendRowDistribution(totalMembers);
+
+    // 이미 추천 결과와 같은 그리드면 스킵 (수렴 조건)
+    // ⚠️ totalMembers와 직접 비교하면 안 됨: 추천기는 물리 상한(줄 수×줄당 최대)으로
+    // 좌석을 자를 수 있어(예: 128명 → 120석) 인원과 합계가 영원히 불일치
+    // → setGridLayout 무한 루프(React #185)가 발생했던 버그의 원인
+    const currentTotal = gridLayout?.rowCapacities?.reduce((a, b) => a + b, 0) ?? 0;
+    const recommendedTotal = recommendation.rowCapacities.reduce((a, b) => a + b, 0);
+    if (gridLayout?.isAIRecommended && currentTotal === recommendedTotal) return;
     setGridLayout({
       rows: recommendation.rows,
       rowCapacities: recommendation.rowCapacities,

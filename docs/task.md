@@ -68,6 +68,9 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-07-12
+- [x] **fix(arrangements): 등단 인원이 추천 상한 초과 시 새 배치표 무한 루프 크래시 수정**
+  - 커밋: `49ee1c3`
+
 - [x] **refactor(arrangements): 초기화 로직을 useArrangementInitialization 훅으로 추출 (B10-2)**
   - 커밋: `97db59e`
 

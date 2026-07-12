@@ -218,6 +218,7 @@ Recharts (Charts)
 
 | 날짜 | 주요 변경사항 |
 |------|-------------|
+| 2026-07-12 | fix(arrangements): 등단 인원이 추천 상한 초과 시 새 배치표 무한 루프 크래시 수정 |
 | 2026-07-12 | refactor(arrangements): 초기화 로직을 useArrangementInitialization 훅으로 추출 (B10-2) |
 | 2026-07-12 | refactor(arrangements): 워크플로우 스텝 콘텐츠를 컴포넌트로 분리 (B10-1) |
 | 2026-07-12 | refactor(arrangements): useMembers 다중 구독을 페이지 레벨 단일 구독으로 정리 (B11) |
