@@ -1,14 +1,15 @@
 'use client';
 
-import { AlertTriangle, ChevronDown, ChevronUp, Loader2, Settings, Users } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, Settings, Users } from 'lucide-react';
 
 import { useSearchParams } from 'next/navigation';
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import ArrangementHeader from '@/components/features/arrangements/ArrangementHeader';
+import ArrangementNotesPanel from '@/components/features/arrangements/ArrangementNotesPanel';
 import CompactWorkflowStrip from '@/components/features/arrangements/CompactWorkflowStrip';
 import EmergencyEditPanel from '@/components/features/arrangements/EmergencyEditPanel';
-import NotesEditor from '@/components/features/arrangements/NotesEditor';
+import MobileBottomSheet from '@/components/features/arrangements/MobileBottomSheet';
 import RestoreDialog from '@/components/features/arrangements/RestoreDialog';
 import WorkflowFloatingActionBar from '@/components/features/arrangements/WorkflowFloatingActionBar';
 import WorkflowFloatingStepContent from '@/components/features/arrangements/WorkflowFloatingStepContent';
@@ -23,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 
-import { useArrangement, useUpdateArrangement } from '@/hooks/useArrangements';
+import { useArrangement } from '@/hooks/useArrangements';
 import { useImageExportHandlers } from '@/hooks/useImageExportHandlers';
 import { useAttendances } from '@/hooks/useAttendances';
 import { useServiceSchedule } from '@/hooks/useServiceSchedules';
@@ -89,9 +90,7 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
   const [panelMode, setPanelMode] = useState<'expanded' | 'compact'>('expanded');
   const [showMobileSidebar, setShowMobileSidebar] = useState(true);
   const [notesValue, setNotesValue] = useState<string>('');
-  const [isNotesSaving, setIsNotesSaving] = useState(false);
   const notesInitialized = useRef(false);
-  const updateArrangementForNotes = useUpdateArrangement();
 
   // 긴급 수정 패널 접기/펼치기 상태 (데스크톱)
   const [emergencyPanelCollapsed, setEmergencyPanelCollapsed] = useState(false);
@@ -641,46 +640,11 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
 
           {/* 안내 메모 에디터 (6단계에서만 표시, 배치표 하단) */}
           {workflow.currentStep === 6 && !isReadOnly && (
-            <div data-print-hide className="border-t-2 border-[var(--color-primary-200)] bg-[var(--color-background-secondary)] p-4">
-              <div className="mx-auto max-w-3xl rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface)] p-4 shadow-sm">
-                <h3 className="mb-2 text-sm font-bold text-[var(--color-text-primary)]">
-                  📋 안내 메모
-                </h3>
-                <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
-                  대원 이동 동선, 대형 변경 등 안내사항을 기록하세요. 이미지 내보내기에 포함됩니다.
-                </p>
-                <NotesEditor
-                  value={notesValue}
-                  onChange={setNotesValue}
-                />
-                <div className="mt-3 flex justify-end">
-                  <Button
-                    size="sm"
-                    onClick={async () => {
-                      setIsNotesSaving(true);
-                      try {
-                        await updateArrangementForNotes.mutateAsync({
-                          id: arrangement.id,
-                          data: { notes: notesValue || null },
-                        });
-                        showSuccess('안내 메모가 저장되었습니다.');
-                      } catch {
-                        showError('안내 메모 저장에 실패했습니다.');
-                      } finally {
-                        setIsNotesSaving(false);
-                      }
-                    }}
-                    disabled={isNotesSaving}
-                  >
-                    {isNotesSaving ? (
-                      <><Loader2 className="mr-1 h-4 w-4 animate-spin" />저장 중...</>
-                    ) : (
-                      '메모 저장'
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <ArrangementNotesPanel
+              arrangementId={arrangement.id}
+              value={notesValue}
+              onChange={setNotesValue}
+            />
           )}
         </div>
       </div>
@@ -809,104 +773,46 @@ export default function ArrangementEditorPage({ params }: { params: Promise<{ id
         )}
 
         {/* Bottom Sheet - 워크플로우 또는 긴급 수정 패널 (모바일) */}
-        {showSettingsSheet && (
-          <>
-            {/* 배경 오버레이 */}
-            <div
-              className="absolute inset-0 z-30 bg-black/30"
-              onClick={() => setShowSettingsSheet(false)}
-              style={{
-                animation: 'fadeIn 0.3s ease-out',
-              }}
+        <MobileBottomSheet
+          open={showSettingsSheet}
+          onClose={() => setShowSettingsSheet(false)}
+          title={isEmergencyMode ? '긴급 수정' : '워크플로우'}
+        >
+          {isEmergencyMode ? (
+            <EmergencyEditPanel
+              arrangementId={id}
+              date={arrangement?.date || ''}
+              serviceScheduleId={arrangement?.service_schedule_id ?? undefined}
+              gridLayout={gridLayout}
+              onGridLayoutChange={setGridLayout}
+              onOpenUnavailableDialog={handleEmergencyUnavailable}
+              onOpenAvailableDialog={() => setEmergencyAvailableDialogOpen(true)}
+              onOpenClearRowLeadersDialog={() => setClearRowLeadersDialog(true)}
+              getActivePresetId={getActivePresetIdForPanel}
+              totalMembers={totalMembers}
+              onRequestUnavailableMode={handleEmergencyUnavailableFromPanel}
+              onOffsetEditChange={setEmergencyOffsetEditing}
             />
-            {/* Bottom Sheet - 60% 높이로 그리드 가시성 확보 */}
-            <div
-              className="absolute right-0 bottom-0 left-0 z-40 flex max-h-full flex-col rounded-t-2xl bg-[var(--color-background-primary)] shadow-2xl"
-              style={{
-                height: '60%',
-                maxHeight: '500px',
-                animation: 'slideUp 0.3s ease-out',
-              }}
-            >
-              {/* 드래그 핸들 */}
-              <div className="flex flex-shrink-0 justify-center pt-2 pb-1">
-                <div className="h-1 w-10 rounded-full bg-[var(--color-text-tertiary)] opacity-30" />
-              </div>
-              {/* 헤더 - flex-shrink-0로 항상 표시 보장 */}
-              <div className="flex flex-shrink-0 items-center justify-between border-b border-[var(--color-border-default)] bg-[var(--color-surface)] px-4 py-3">
-                <h2 className="text-lg font-bold text-[var(--color-text-primary)]">
-                  {isEmergencyMode ? '긴급 수정' : '워크플로우'}
-                </h2>
-                <Button
-                  onClick={() => setShowSettingsSheet(false)}
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                  닫기
-                </Button>
-              </div>
-              {/* 패널 콘텐츠 - min-h-0으로 flex overflow 동작 보장 */}
-              <div className="min-h-0 flex-1 overflow-auto p-4">
-                {isEmergencyMode ? (
-                  <EmergencyEditPanel
-                    arrangementId={id}
-                    date={arrangement?.date || ''}
-                    serviceScheduleId={arrangement?.service_schedule_id ?? undefined}
-                    gridLayout={gridLayout}
-                    onGridLayoutChange={setGridLayout}
-                    onOpenUnavailableDialog={handleEmergencyUnavailable}
-                    onOpenAvailableDialog={() => setEmergencyAvailableDialogOpen(true)}
-                    onOpenClearRowLeadersDialog={() => setClearRowLeadersDialog(true)}
-                    getActivePresetId={getActivePresetIdForPanel}
-                    totalMembers={totalMembers}
-                    onRequestUnavailableMode={handleEmergencyUnavailableFromPanel}
-                    onOffsetEditChange={setEmergencyOffsetEditing}
-                  />
-                ) : (
-                  <WorkflowPanel
-                    renderStepContent={(step) => (
-                    <WorkflowStepContent
-                      step={step}
-                      arrangementId={id}
-                      arrangementStatus={arrangement.status}
-                      totalMembers={totalMembers}
-                      isReadOnly={isReadOnly}
-                      onApplyRecommendation={handleApplyRecommendation}
-                      onRequestClearRowLeaders={() => setClearRowLeadersDialog(true)}
-                      imageExport={imageExport}
-                    />
-                  )}
-                    totalMembers={totalMembers}
-                    arrangementStatus={arrangement.status ?? undefined}
-                  />
-                )}
-              </div>
-            </div>
-          </>
-        )}
+          ) : (
+            <WorkflowPanel
+              renderStepContent={(step) => (
+                <WorkflowStepContent
+                  step={step}
+                  arrangementId={id}
+                  arrangementStatus={arrangement.status}
+                  totalMembers={totalMembers}
+                  isReadOnly={isReadOnly}
+                  onApplyRecommendation={handleApplyRecommendation}
+                  onRequestClearRowLeaders={() => setClearRowLeadersDialog(true)}
+                  imageExport={imageExport}
+                />
+              )}
+              totalMembers={totalMembers}
+              arrangementStatus={arrangement.status ?? undefined}
+            />
+          )}
+        </MobileBottomSheet>
       </div>
-
-      {/* CSS 애니메이션 */}
-      <style jsx>{`
-        @keyframes slideUp {
-          from {
-            transform: translateY(100%);
-          }
-          to {
-            transform: translateY(0);
-          }
-        }
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-      `}</style>
 
       {/* 줄반장 전체 해제 확인 다이얼로그 */}
       <ConfirmDialog
