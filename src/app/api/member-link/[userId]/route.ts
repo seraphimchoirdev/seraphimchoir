@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { createLogger } from '@/lib/logger';
+import { invalidateProfileCache } from '@/lib/profile-cache';
 import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'MemberLinkAction' });
@@ -162,6 +163,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ us
         return NextResponse.json({ error: '승인 처리에 실패했습니다.' }, { status: 500 });
       }
 
+      invalidateProfileCache(userId);
+
       const assignedRole = updateData.role || currentRole?.role || 'MEMBER';
       return NextResponse.json({
         success: true,
@@ -184,6 +187,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ us
         logger.error('거부 처리 실패:', updateError);
         return NextResponse.json({ error: '거부 처리에 실패했습니다.' }, { status: 500 });
       }
+
+      invalidateProfileCache(userId);
 
       return NextResponse.json({
         success: true,

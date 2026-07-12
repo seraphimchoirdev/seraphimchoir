@@ -5,6 +5,7 @@ import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query
 import AppShell from '@/components/layout/AppShell';
 import DashboardContent from '@/components/features/dashboard/DashboardContent';
 import { DashboardLoadingSkeleton } from '@/components/features/dashboard/DashboardContent';
+import { getProfileCached } from '@/lib/profile-cache';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import {
   fetchDashboardContext,
@@ -100,11 +101,8 @@ export default async function DashboardPage() {
   }
 
   // 프로필 조회 (Suspense 밖에서 수행 — role에 따라 셸 구조가 달라질 수 있음)
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('id, role, linked_member_id, link_status')
-    .eq('id', user.id)
-    .maybeSingle();
+  // 60초 폴링·재방문 시 반복 조회를 단기 캐시로 흡수해 TTFB를 줄인다 (B8)
+  const profile = await getProfileCached(supabase, user.id);
 
   const role = profile?.role || null;
 

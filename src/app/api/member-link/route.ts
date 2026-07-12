@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { createLogger } from '@/lib/logger';
+import { invalidateProfileCache } from '@/lib/profile-cache';
 import { createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'MemberLink' });
@@ -136,6 +137,8 @@ export async function POST(request: Request) {
       logger.error('연결 요청 생성 실패:', updateError);
       return NextResponse.json({ error: '연결 요청 생성에 실패했습니다.' }, { status: 500 });
     }
+
+    invalidateProfileCache(user.id);
 
     return NextResponse.json({
       success: true,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { createLogger } from '@/lib/logger';
+import { invalidateProfileCache } from '@/lib/profile-cache';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 
 const logger = createLogger({ prefix: 'RolesAPI' });
@@ -110,6 +111,8 @@ export async function PATCH(request: NextRequest) {
       logger.error('Role update error:', updateError);
       return NextResponse.json({ error: '역할 업데이트 중 오류가 발생했습니다.' }, { status: 500 });
     }
+
+    invalidateProfileCache(userId);
 
     const roleLabel = role ? `역할: ${role}` : '';
     const titleLabel = title ? `직책: ${title}` : '';

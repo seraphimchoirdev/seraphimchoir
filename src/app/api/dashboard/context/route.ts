@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { fetchDashboardContext } from '@/lib/dashboard-data';
+import { getProfileCached } from '@/lib/profile-cache';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 
 /**
@@ -23,11 +24,8 @@ export async function GET() {
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('id, role, linked_member_id, link_status')
-      .eq('id', user.id)
-      .single();
+    // 60초 폴링마다 반복되는 프로필 조회를 단기 캐시로 흡수 (B8)
+    const profile = await getProfileCached(supabase, user.id);
 
     const adminSupabase = await createAdminClient();
 
