@@ -200,15 +200,27 @@ export default function OnboardingPage() {
                   <span>
                     화면에 <strong className="text-[var(--color-text-primary)]">&quot;앱 설치&quot;</strong>{' '}
                     안내가 뜨면 <strong className="text-[var(--color-text-primary)]">설치</strong>를
-                    누르세요
+                    누르세요 — 설치하면 홈 화면 아이콘까지 자동으로 생겨요
                   </span>
                 </p>
                 <p className="flex items-start gap-2">
                   <span className="font-bold text-[var(--color-text-primary)]">②</span>
                   <span>
-                    안내가 안 뜨면: 오른쪽 위 <strong className="text-[var(--color-text-primary)]">⋮</strong>{' '}
-                    메뉴 → <strong className="text-[var(--color-text-primary)]">앱 설치</strong>(또는 홈
-                    화면에 추가)를 누르세요
+                    안내가 안 뜨면(Chrome): 오른쪽 위{' '}
+                    <strong className="text-[var(--color-text-primary)]">⋮</strong> 메뉴 →{' '}
+                    <strong className="text-[var(--color-text-primary)]">앱 설치</strong>(또는 홈 화면에
+                    추가)를 누르세요
+                  </span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="font-bold text-[var(--color-text-primary)]">③</span>
+                  <span>
+                    <strong className="text-[var(--color-text-primary)]">
+                      인터넷(삼성 브라우저)으로 열렸다면
+                    </strong>
+                    : 화면 아래 오른쪽 <strong className="text-[var(--color-text-primary)]">≡ 메뉴</strong>{' '}
+                    → <strong className="text-[var(--color-text-primary)]">홈 화면에 추가</strong>를
+                    누르세요
                   </span>
                 </p>
               </>
