@@ -5,12 +5,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidateDashboardShared } from '@/lib/dashboard-shared-cache';
 import { createClient } from '@/lib/supabase/server';
 
+// ⚠️ zod .object()는 스키마에 없는 키를 에러 없이 제거(strip)한다 —
+// 클라이언트가 보내는 필드와 반드시 1:1로 유지할 것 (bulk 라우트 스키마와 동일 목록).
 const createServiceScheduleSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '유효한 날짜 형식이 아닙니다'),
   service_type: z.string().optional().default('주일예배'),
-  hymn_name: z.string().optional(),
-  offertory_performer: z.string().optional(),
-  notes: z.string().optional(),
+  hymn_name: z.string().nullable().optional(),
+  offertory_performer: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  // 선곡표 필드
+  hood_color: z.string().nullable().optional(),
+  composer: z.string().nullable().optional(),
+  music_source: z.string().nullable().optional(),
+  // 연습 설정 필드
+  has_pre_practice: z.boolean().nullable().optional(),
+  has_post_practice: z.boolean().nullable().optional(),
+  pre_practice_minutes_before: z.number().nullable().optional(),
+  post_practice_start_time: z.string().nullable().optional(),
+  post_practice_duration: z.number().nullable().optional(),
+  pre_practice_location: z.string().nullable().optional(),
+  post_practice_location: z.string().nullable().optional(),
 });
 
 /**
@@ -100,15 +114,10 @@ export async function POST(request: NextRequest) {
     const json = await request.json();
     const body = createServiceScheduleSchema.parse(json);
 
+    // 스키마 통과한 필드 전체를 insert (개별 나열로 인한 필드 누락 재발 방지)
     const { data, error } = await supabase
       .from('service_schedules')
-      .insert({
-        date: body.date,
-        service_type: body.service_type,
-        hymn_name: body.hymn_name,
-        offertory_performer: body.offertory_performer,
-        notes: body.notes,
-      })
+      .insert(body)
       .select()
       .single();
 

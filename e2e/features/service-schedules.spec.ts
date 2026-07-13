@@ -169,3 +169,84 @@ test.describe('일정 관리', () => {
     }
   });
 });
+
+/**
+ * 일정 수정 영속성 검증 (작곡가·악보 출처)
+ *
+ * 회귀 대상: PATCH zod 스키마에 composer/music_source가 없어 조용히 strip →
+ * "성공 토스트는 뜨지만 실데이터 미반영" 버그 (2026-07-13 프로덕션 신고).
+ * 이런 유형은 저장 후 재조회까지 확인하는 E2E만이 잡을 수 있다.
+ */
+import type { APIRequestContext } from '@playwright/test';
+
+import {
+  type EnsuredSchedule,
+  cleanupSchedule,
+  ensureSchedule,
+  upcomingSundayISO,
+} from '../helpers/e2e-data';
+
+test.describe('일정 수정 영속성', () => {
+  let api: APIRequestContext;
+  let schedule: EnsuredSchedule | null = null;
+  const SERVICE_TYPE = 'E2E선곡검증예배';
+
+  test.beforeAll(async ({ playwright }) => {
+    api = await playwright.request.newContext({
+      baseURL: 'http://localhost:3000',
+      storageState: 'e2e/.auth/user.json',
+    });
+    // 다른 스펙과 날짜 분리 (+3주, '다가오는 일정' 5주 범위 내)
+    schedule = await ensureSchedule(api, upcomingSundayISO(3), SERVICE_TYPE);
+  });
+
+  test.afterAll(async () => {
+    await cleanupSchedule(api, schedule);
+    await api.dispose();
+  });
+
+  test('작곡가·악보 출처 수정이 저장되고 새로고침 후에도 유지된다', async ({ page }) => {
+    test.setTimeout(90_000);
+
+    await page.goto('/service-schedules', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: '찬양대 일정 관리' })).toBeVisible({
+      timeout: 30_000,
+    });
+
+    // 전용 일정 카드에서 수정 다이얼로그 열기
+    const card = page
+      .locator(`[data-testid="schedule-date-card"][data-date="${schedule!.date}"]`)
+      .first();
+    await expect(card).toBeVisible({ timeout: 20_000 });
+    await card.getByTitle('첫 번째 일정 수정').click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 5_000 });
+
+    // 찬양곡명·작곡가·악보 출처 입력 후 저장
+    // (카드는 찬양곡명이 있을 때만 "곡명 (작곡가)" 형태로 표시)
+    await dialog.locator('#hymn_name').fill('시온성');
+    await dialog.locator('#composer').fill('오병희');
+    await dialog.locator('#music_source').fill('예수 나의 기쁨 21권');
+    await dialog.getByRole('button', { name: '수정', exact: true }).click();
+
+    await expect(page.getByText('일정이 수정되었습니다')).toBeVisible({ timeout: 15_000 });
+
+    // 카드에 작곡가 반영 확인
+    await expect(card.getByText(/오병희/)).toBeVisible({ timeout: 10_000 });
+
+    // 새로고침 후에도 유지 (DB 영속성 — 토스트만 성공하는 회귀 차단)
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    const cardAfter = page
+      .locator(`[data-testid="schedule-date-card"][data-date="${schedule!.date}"]`)
+      .first();
+    await expect(cardAfter.getByText(/오병희/)).toBeVisible({ timeout: 20_000 });
+
+    // 다이얼로그 재진입 시 악보 출처도 유지 확인
+    await cardAfter.getByTitle('첫 번째 일정 수정').click();
+    await expect(page.getByRole('dialog').locator('#music_source')).toHaveValue(
+      '예수 나의 기쁨 21권',
+      { timeout: 10_000 }
+    );
+  });
+});

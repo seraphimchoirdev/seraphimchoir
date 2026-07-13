@@ -5,6 +5,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidateDashboardShared } from '@/lib/dashboard-shared-cache';
 import { createClient } from '@/lib/supabase/server';
 
+// ⚠️ zod .object()는 스키마에 없는 키를 에러 없이 제거(strip)한다.
+// 과거 composer/music_source 등이 여기 빠져 있어 "성공 토스트는 뜨지만
+// 저장은 안 되는" 버그가 있었음 — 클라이언트(ServiceScheduleDialog)가 보내는
+// 필드와 반드시 1:1로 유지할 것 (bulk 라우트 스키마와 동일 목록).
 const updateServiceScheduleSchema = z.object({
   date: z
     .string()
@@ -14,6 +18,18 @@ const updateServiceScheduleSchema = z.object({
   hymn_name: z.string().nullable().optional(),
   offertory_performer: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
+  // 선곡표 필드
+  hood_color: z.string().nullable().optional(),
+  composer: z.string().nullable().optional(),
+  music_source: z.string().nullable().optional(),
+  // 연습 설정 필드
+  has_pre_practice: z.boolean().nullable().optional(),
+  has_post_practice: z.boolean().nullable().optional(),
+  pre_practice_minutes_before: z.number().nullable().optional(),
+  post_practice_start_time: z.string().nullable().optional(),
+  post_practice_duration: z.number().nullable().optional(),
+  pre_practice_location: z.string().nullable().optional(),
+  post_practice_location: z.string().nullable().optional(),
 });
 
 /**

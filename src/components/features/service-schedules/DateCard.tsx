@@ -94,6 +94,8 @@ export const DateCard = memo(function DateCard({
 
   return (
     <Card
+      data-testid="schedule-date-card"
+      data-date={dateStr}
       className={`transition-all ${isSpecialService ? 'border-l-4 border-l-orange-400 bg-orange-50/30' : ''} ${hasOnlyEvents ? 'border-l-4 border-l-purple-400 bg-purple-50/30' : ''} ${hasSchedules && !isSpecialService ? 'border-[var(--color-primary-200)]' : ''} ${today ? 'ring-2 ring-[var(--color-primary-500)]' : ''} ${past && !hasSchedules && dateEvents.length === 0 ? 'opacity-60' : ''} `}
     >
       <CardHeader className="px-4 py-3">

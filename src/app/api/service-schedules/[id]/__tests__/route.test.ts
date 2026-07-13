@@ -111,6 +111,41 @@ describe('PATCH /api/service-schedules/[id]', () => {
     expect(body.hymn_name).toBe('새찬양');
   });
 
+  it('작곡가·악보출처·후드색상·연습설정이 update에 전달된다 (zod strip 회귀 방지)', async () => {
+    // 과거 스키마에 이 필드들이 없어서 조용히 제거(strip)되어
+    // "성공 토스트는 뜨지만 저장 안 됨" 버그가 있었음 (2026-07-13)
+    const client = setupAuthenticatedSupabase({
+      tables: {
+        service_schedules: { updateData: { ...mockSchedule, composer: '오병희' } },
+      },
+    });
+
+    const payload = {
+      hymn_name: '시온성',
+      composer: '오병희',
+      music_source: '예수 나의 기쁨 21권',
+      hood_color: '녹색',
+      has_pre_practice: true,
+      pre_practice_minutes_before: 60,
+      has_post_practice: true,
+      post_practice_start_time: '10:30',
+      post_practice_duration: 60,
+      pre_practice_location: null,
+      post_practice_location: '본당',
+    };
+    const request = createTestRequest('/api/service-schedules/sched-1', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const ctx = createRouteContext({ id: 'sched-1' });
+    const response = await PATCH(request, ctx);
+
+    expect(response.status).toBe(200);
+    const updateMock = client.from('service_schedules').update as jest.Mock;
+    expect(updateMock).toHaveBeenCalledWith(expect.objectContaining(payload));
+  });
+
   it('중복 날짜+유형 -> 409', async () => {
     setupAuthenticatedSupabase({
       tables: {

@@ -219,6 +219,40 @@ describe('POST /api/service-schedules', () => {
     expect(body.id).toBe('new-schedule');
   });
 
+  it('작곡가·악보출처·후드색상·연습설정이 insert에 전달된다 (zod strip 회귀 방지)', async () => {
+    // 과거 스키마·insert 객체에 이 필드들이 빠져 있어 생성 시 조용히 유실되던 버그 (2026-07-13)
+    const client = setupAuthenticatedSupabase({
+      tables: {
+        service_schedules: { insertData: { id: 'new-schedule' } },
+      },
+    });
+
+    const payload = {
+      date: '2024-03-17',
+      service_type: '주일예배',
+      hymn_name: '시온성',
+      composer: '오병희',
+      music_source: '예수 나의 기쁨 21권',
+      hood_color: '녹색',
+      has_pre_practice: true,
+      pre_practice_minutes_before: 60,
+      has_post_practice: true,
+      post_practice_start_time: '10:30',
+      post_practice_duration: 60,
+      post_practice_location: '본당',
+    };
+    const request = createTestRequest('/api/service-schedules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const response = await POST(request);
+
+    expect(response.status).toBe(201);
+    const insertMock = client.from('service_schedules').insert as jest.Mock;
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining(payload));
+  });
+
   it('DB insert 에러 -> 500', async () => {
     setupAuthenticatedSupabase({
       tables: {
