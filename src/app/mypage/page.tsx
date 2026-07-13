@@ -4,8 +4,10 @@ import {
   AlertTriangle,
   Bell,
   BellOff,
+  BookOpen,
   Calendar,
   Check,
+  ChevronRight,
   Download,
   Info,
   Loader2,
@@ -425,6 +427,25 @@ export default function MyPage() {
                   </p>
                 </div>
               )}
+
+              {/* 시작 가이드 다시 보기 */}
+              <Link
+                href="/onboarding"
+                className="flex items-center justify-between rounded-lg bg-[var(--color-background-tertiary)] p-4 transition-colors hover:bg-[var(--color-background-secondary)]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-primary-50)]">
+                    <BookOpen className="h-5 w-5 text-[var(--color-primary-600)]" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-[var(--color-text-primary)]">시작 가이드</p>
+                    <p className="text-sm text-[var(--color-text-secondary)]">
+                      설치·알림·출석 투표 방법을 다시 볼 수 있어요
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-[var(--color-text-tertiary)]" />
+              </Link>
             </div>
           </div>
 

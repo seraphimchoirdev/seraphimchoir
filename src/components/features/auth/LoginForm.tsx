@@ -1,10 +1,11 @@
 'use client';
 
-import { Loader2, MessageCircle } from 'lucide-react';
+import { BookOpen, Loader2, MessageCircle, X } from 'lucide-react';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -26,6 +27,21 @@ export default function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 처음 사용자용 시작 가이드 배너 — '다시 보지 않기'를 누르면 다시 표시하지 않음
+  // (SSR 마크업과의 hydration mismatch 방지를 위해 effect에서 localStorage 확인)
+  const ONBOARDING_BANNER_KEY = 'onboarding_banner_dismissed';
+  const [showGuideBanner, setShowGuideBanner] = useState(false);
+  useEffect(() => {
+    if (!localStorage.getItem(ONBOARDING_BANNER_KEY)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 시스템(localStorage)에 반응
+      setShowGuideBanner(true);
+    }
+  }, []);
+  const dismissGuideBanner = () => {
+    localStorage.setItem(ONBOARDING_BANNER_KEY, '1');
+    setShowGuideBanner(false);
+  };
   const [isKakaoLoading, setIsKakaoLoading] = useState(false);
 
   // URL에서 에러 파라미터 확인
@@ -85,6 +101,48 @@ export default function LoginForm() {
 
   return (
     <div className="w-full max-w-md">
+      {/* 처음 사용자용 시작 가이드 배너 ('다시 보지 않기' 시 localStorage에 저장) */}
+      {showGuideBanner && (
+        <div
+          data-testid="onboarding-banner"
+          className="mb-4 rounded-[var(--radius-xl)] border border-[var(--color-primary-200)] bg-[var(--color-primary-50)] p-4"
+        >
+          <div className="flex items-start gap-3">
+            <BookOpen className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--color-primary-600)]" />
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-[var(--color-primary-900)]">
+                새로핌ON이 처음이신가요?
+              </p>
+              <p className="mt-0.5 text-sm text-[var(--color-primary-700)]">
+                가입부터 출석 투표까지 순서대로 알려드려요.
+              </p>
+              <div className="mt-3 flex items-center gap-3">
+                <Link href="/onboarding" className="flex-1">
+                  <Button size="sm" className="w-full">
+                    시작 가이드 보기
+                  </Button>
+                </Link>
+                <button
+                  type="button"
+                  onClick={dismissGuideBanner}
+                  className="flex-shrink-0 text-sm text-[var(--color-text-tertiary)] underline underline-offset-2 hover:text-[var(--color-text-secondary)]"
+                >
+                  다시 보지 않기
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={dismissGuideBanner}
+              aria-label="배너 닫기"
+              className="flex-shrink-0 rounded p-1 text-[var(--color-text-tertiary)] hover:bg-[var(--color-primary-100)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 로고 + 브랜드 */}
       <div className="mb-8 flex flex-col items-center">
         <Image
@@ -206,6 +264,17 @@ export default function LoginForm() {
               )}
             </Button>
           </form>
+
+          {/* 처음 사용자용 시작 가이드 */}
+          <p className="mt-6 text-center text-sm text-[var(--color-text-secondary)]">
+            새로핌ON이 처음이신가요?{' '}
+            <Link
+              href="/onboarding"
+              className="font-medium text-[var(--color-primary-600)] underline underline-offset-2"
+            >
+              시작 가이드 보기
+            </Link>
+          </p>
         </div>
       </div>
     </div>
