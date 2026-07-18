@@ -114,3 +114,37 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/notifications
+ * 본인의 읽은 알림 전체 삭제 (알림함 '읽은 알림 지우기').
+ * RLS(DELETE 정책)로 본인 알림만 삭제됨. 미읽음 알림은 보존.
+ */
+export async function DELETE() {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 });
+    }
+
+    const { error, count } = await supabase
+      .from('notifications')
+      .delete({ count: 'exact' })
+      .not('read_at', 'is', null);
+
+    if (error) {
+      logger.error('읽은 알림 삭제 실패:', error.message);
+      return NextResponse.json({ error: '알림 삭제에 실패했습니다' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, deleted: count ?? 0 });
+  } catch (error) {
+    logger.error('읽은 알림 삭제 오류:', error);
+    return NextResponse.json({ error: '서버 오류가 발생했습니다' }, { status: 500 });
+  }
+}

@@ -66,3 +66,22 @@ export function useMarkNotificationsRead() {
     },
   });
 }
+
+/** 읽은 알림 전체 삭제 (알림함 '읽은 알림 지우기') */
+export function useClearReadNotifications() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/notifications', { method: 'DELETE' });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || '알림 삭제에 실패했습니다.');
+      }
+      return res.json() as Promise<{ success: boolean; deleted: number }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+}

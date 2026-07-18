@@ -113,3 +113,83 @@ describe('diffSeatChanges', () => {
     expect(diffSeatChanges(before, after).size).toBe(0);
   });
 });
+
+// ─── planSeatChangeDelivery (좌석 변동 알림 중복 억제) ─────────────────
+
+import { planSeatChangeDelivery, type RecentNotificationRow } from '../seat-notification-utils';
+
+const row = (
+  id: string,
+  userId: string,
+  type: string,
+  createdAt: string
+): RecentNotificationRow => ({ id, user_id: userId, type, created_at: createdAt });
+
+describe('planSeatChangeDelivery', () => {
+  it('최근 알림이 없으면 전부 신규 발송', () => {
+    const plan = planSeatChangeDelivery([{ userId: 'u1', body: '새 자리: 1열 1번' }], []);
+    expect(plan.inserts).toHaveLength(1);
+    expect(plan.updates).toHaveLength(0);
+  });
+
+  it('미읽음 SEAT_CHANGED가 있으면 갱신하고 created_at을 올린다 (B)', () => {
+    const plan = planSeatChangeDelivery(
+      [{ userId: 'u1', body: '새 자리: 2열 3번' }],
+      [row('n1', 'u1', 'SEAT_CHANGED', '2026-07-18T01:00:00Z')]
+    );
+    expect(plan.inserts).toHaveLength(0);
+    expect(plan.updates).toEqual([{ id: 'n1', body: '새 자리: 2열 3번', bumpCreatedAt: true }]);
+  });
+
+  it('미읽음 공유/확정 알림만 있으면 그 알림의 자리 안내를 갱신 (C, created_at 유지)', () => {
+    const plan = planSeatChangeDelivery(
+      [{ userId: 'u1', body: '새 자리: 2열 3번' }],
+      [row('n2', 'u1', 'ARRANGEMENT_SHARED', '2026-07-18T01:00:00Z')]
+    );
+    expect(plan.inserts).toHaveLength(0);
+    expect(plan.updates).toEqual([{ id: 'n2', body: '새 자리: 2열 3번', bumpCreatedAt: false }]);
+  });
+
+  it('SEAT_CHANGED와 공유 알림이 모두 있으면 SEAT_CHANGED를 우선 갱신', () => {
+    const plan = planSeatChangeDelivery(
+      [{ userId: 'u1', body: 'B' }],
+      [
+        row('shared', 'u1', 'ARRANGEMENT_SHARED', '2026-07-18T01:00:00Z'),
+        row('seat', 'u1', 'SEAT_CHANGED', '2026-07-18T01:05:00Z'),
+      ]
+    );
+    expect(plan.updates).toEqual([{ id: 'seat', body: 'B', bumpCreatedAt: true }]);
+  });
+
+  it('같은 타입이 여러 건이면 가장 최근 것을 갱신', () => {
+    const plan = planSeatChangeDelivery(
+      [{ userId: 'u1', body: 'B' }],
+      [
+        row('old', 'u1', 'SEAT_CHANGED', '2026-07-18T01:00:00Z'),
+        row('new', 'u1', 'SEAT_CHANGED', '2026-07-18T01:10:00Z'),
+      ]
+    );
+    expect(plan.updates[0].id).toBe('new');
+  });
+
+  it('사용자별로 독립적으로 판단한다', () => {
+    const plan = planSeatChangeDelivery(
+      [
+        { userId: 'u1', body: 'B1' },
+        { userId: 'u2', body: 'B2' },
+      ],
+      [row('n1', 'u1', 'SEAT_CHANGED', '2026-07-18T01:00:00Z')]
+    );
+    expect(plan.updates).toHaveLength(1);
+    expect(plan.inserts).toEqual([{ userId: 'u2', body: 'B2' }]);
+  });
+
+  it('무관한 타입(VOTE_REMINDER 등)은 무시한다', () => {
+    const plan = planSeatChangeDelivery(
+      [{ userId: 'u1', body: 'B' }],
+      [row('n1', 'u1', 'VOTE_REMINDER', '2026-07-18T01:00:00Z')]
+    );
+    expect(plan.inserts).toHaveLength(1);
+    expect(plan.updates).toHaveLength(0);
+  });
+});

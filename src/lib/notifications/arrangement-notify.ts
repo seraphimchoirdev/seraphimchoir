@@ -5,8 +5,12 @@ import { createLogger } from '@/lib/logger';
 import { getApprovedUserIdsByMember } from '@/lib/notifications/audience';
 import { notifyBatch, type NotifyEntry, type NotificationType } from '@/lib/notifications/notify';
 import {
+  SEAT_CHANGE_DEDUPE_WINDOW_MINUTES,
   findNeighbors,
   formatSeatDescription,
+  planSeatChangeDelivery,
+  type RecentNotificationRow,
+  type SeatChangeCandidate,
   type SeatInfo,
 } from '@/lib/notifications/seat-notification-utils';
 import { createAdminClient } from '@/lib/supabase/server';
@@ -106,8 +110,9 @@ export async function notifySeatChanges(
 
   const displayDate = formatDisplayDate(arrangementDate);
   const seatByMember = new Map(seats.map((s) => [s.memberId, s]));
+  const link = `/arrangements/${arrangementId}`;
 
-  const entries: NotifyEntry[] = [];
+  const candidates: SeatChangeCandidate[] = [];
   for (const memberId of changedMemberIds) {
     const userIds = userMap.get(memberId);
     if (!userIds || userIds.length === 0) continue;
@@ -119,20 +124,65 @@ export async function notifySeatChanges(
       : '이번 배치에서 자리가 변경되었습니다. 배치표를 확인해주세요.';
 
     for (const userId of userIds) {
-      entries.push({
-        userId,
-        payload: {
-          type: 'SEAT_CHANGED',
-          title: `${displayDate} 자리배치가 변경되었습니다`,
-          body,
-          link: `/arrangements/${arrangementId}`,
-        },
-      });
+      candidates.push({ userId, body });
     }
   }
+  if (candidates.length === 0) return;
 
-  const result = await notifyBatch(entries);
+  // 중복 억제: 시간 창 내 같은 배치표의 미읽음 알림이 있으면 갱신으로 대체 (푸시 없음)
+  // — 긴급 수정에서 저장할 때마다 알림이 쌓이는 문제 방지
+  const admin = await createAdminClient();
+  const windowStart = new Date(
+    Date.now() - SEAT_CHANGE_DEDUPE_WINDOW_MINUTES * 60 * 1000
+  ).toISOString();
+  const { data: recentRows, error: recentError } = await admin
+    .from('notifications')
+    .select('id, user_id, type, created_at')
+    .in('user_id', [...new Set(candidates.map((c) => c.userId))])
+    .eq('link', link)
+    .in('type', ['SEAT_CHANGED', 'ARRANGEMENT_SHARED', 'ARRANGEMENT_CONFIRMED'])
+    .is('read_at', null)
+    .gte('created_at', windowStart);
+
+  if (recentError) {
+    logger.warn('최근 알림 조회 실패 — 중복 억제 없이 발송:', recentError.message);
+  }
+
+  const plan = planSeatChangeDelivery(candidates, (recentRows ?? []) as RecentNotificationRow[]);
+
+  // 기존 알림 갱신 (푸시 없음)
+  let updated = 0;
+  await Promise.all(
+    plan.updates.map(async (u) => {
+      const { error } = await admin
+        .from('notifications')
+        .update({
+          body: u.body,
+          ...(u.bumpCreatedAt ? { created_at: new Date().toISOString() } : {}),
+        })
+        .eq('id', u.id);
+      if (error) {
+        logger.warn(`알림 갱신 실패(${u.id}):`, error.message);
+      } else {
+        updated += 1;
+      }
+    })
+  );
+
+  // 신규 발송 (알림함 + 푸시)
+  const entries: NotifyEntry[] = plan.inserts.map((c) => ({
+    userId: c.userId,
+    payload: {
+      type: 'SEAT_CHANGED',
+      title: `${displayDate} 자리배치가 변경되었습니다`,
+      body: c.body,
+      link,
+    },
+  }));
+  const result =
+    entries.length > 0 ? await notifyBatch(entries) : { inserted: 0, pushed: 0, failed: 0 };
+
   logger.info(
-    `좌석 변동 알림 발송: 알림함 ${result.inserted}건, 푸시 ${result.pushed}건 (실패 ${result.failed})`
+    `좌석 변동 알림 발송: 신규 ${result.inserted}건(푸시 ${result.pushed}), 갱신 ${updated}건 (실패 ${result.failed})`
   );
 }

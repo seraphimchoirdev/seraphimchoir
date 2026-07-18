@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, CheckCheck, Loader2 } from 'lucide-react';
+import { Bell, CheckCheck, Loader2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { useState } from 'react';
@@ -9,10 +9,12 @@ import TimeAgo from '@/components/features/community/common/TimeAgo';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
+  useClearReadNotifications,
   useMarkNotificationsRead,
   useNotifications,
   type NotificationItem,
 } from '@/hooks/useNotifications';
+import { showSuccess } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 
 /**
@@ -25,9 +27,11 @@ export function NotificationBell() {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useNotifications();
   const markRead = useMarkNotificationsRead();
+  const clearRead = useClearReadNotifications();
 
   const notifications = data?.pages.flatMap((page) => page.data) ?? [];
   const unreadCount = data?.pages[0]?.unreadCount ?? 0;
+  const hasReadItems = notifications.some((n) => !!n.read_at);
 
   const handleItemClick = (item: NotificationItem) => {
     if (!item.read_at) {
@@ -57,15 +61,31 @@ export function NotificationBell() {
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] px-4 py-3">
           <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">알림</h3>
-          {unreadCount > 0 && (
-            <button
-              onClick={() => markRead.mutate(undefined)}
-              className="flex items-center gap-1 text-xs text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
-            >
-              <CheckCheck className="h-3.5 w-3.5" />
-              모두 읽음
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {unreadCount > 0 && (
+              <button
+                onClick={() => markRead.mutate(undefined)}
+                className="flex items-center gap-1 text-xs text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
+              >
+                <CheckCheck className="h-3.5 w-3.5" />
+                모두 읽음
+              </button>
+            )}
+            {hasReadItems && (
+              <button
+                onClick={() =>
+                  clearRead.mutate(undefined, {
+                    onSuccess: (res) => showSuccess(`읽은 알림 ${res.deleted}건을 지웠습니다.`),
+                  })
+                }
+                disabled={clearRead.isPending}
+                className="flex items-center gap-1 text-xs text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-error-500,#ef4444)] disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                읽은 알림 지우기
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="max-h-96 overflow-y-auto">
