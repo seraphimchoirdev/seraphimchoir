@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 import { splashManager } from '@/lib/splash-manager';
 
-const FADE_OUT_MS = 500;
+const FADE_OUT_MS = 300;
 const SESSION_KEY = 'seraphim-splash-shown';
 
 export default function SplashScreen() {
@@ -58,8 +58,9 @@ export default function SplashScreen() {
       window.navigator.standalone === true ||
       document.referrer.includes('android-app://');
 
-    const minDisplayTime = isPWA ? 500 : 300;
-    const maxDisplayTime = 1500;
+    // PWA는 OS 네이티브 스플래시가 선행되므로 커스텀 스플래시는 짧게 (체감 시간 단축)
+    const minDisplayTime = isPWA ? 300 : 200;
+    const maxDisplayTime = 1000;
 
     const hideSplash = () => {
       if (dismissedRef.current) return;
@@ -101,12 +102,12 @@ export default function SplashScreen() {
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center bg-[var(--color-background-primary)] transition-all duration-500 ${
+      className={`fixed inset-0 z-[100] flex items-center justify-center bg-[var(--color-background-primary)] transition-all duration-300 ${
         !isShowing ? 'opacity-0 pointer-events-none' : isFading ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >
       <div
-        className={`relative flex flex-col items-center transition-transform duration-500 ${
+        className={`relative flex flex-col items-center transition-transform duration-300 ${
           isShowing ? 'scale-100' : 'scale-95'
         }`}
       >
