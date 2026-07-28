@@ -16,6 +16,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  DEFAULT_SERVICE_START_TIME,
+  getDefaultServiceStartTime,
+  toTimeInputValue,
+} from '@/lib/service-time';
 
 import type { Database } from '@/types/database.types';
 
@@ -59,6 +64,15 @@ function isPresetServiceType(value: string | null | undefined): boolean {
   return SERVICE_TYPE_OPTIONS.some((opt) => opt.value === value);
 }
 
+// 현재 시간값이 (비어 있거나) 어떤 예배 종류의 기본값인지 확인.
+// 사용자가 직접 입력한 시간은 어떤 기본값과도 일치하지 않으므로,
+// 예배 유형을 바꿔도 덮어쓰지 않고 보존된다.
+function isUntouchedStartTime(value: string | null | undefined): boolean {
+  const normalized = toTimeInputValue(value);
+  if (!normalized) return true;
+  return Object.values(DEFAULT_SERVICE_START_TIME).includes(normalized);
+}
+
 export default function ServiceScheduleForm({
   initialData,
   date,
@@ -78,6 +92,11 @@ export default function ServiceScheduleForm({
     return {
       date: initialData?.date || date || '',
       service_type: serviceType,
+      // 수정 시에는 저장된 값을, 신규 생성 시에는 예배 종류별 기본 시간을 사용
+      service_start_time:
+        toTimeInputValue(initialData?.service_start_time) ||
+        getDefaultServiceStartTime(serviceType) ||
+        '',
       hymn_name: initialData?.hymn_name || '',
       offertory_performer: initialData?.offertory_performer || '',
       notes: initialData?.notes || '',
@@ -144,7 +163,15 @@ export default function ServiceScheduleForm({
                 setCustomServiceType('');
                 // 주일 2부 예배가 아니면 특별예배 → 예배 후 연습 기본 false
                 const isSpecial = isSpecialService(value);
-                setFormData({ ...formData, service_type: value, has_post_practice: !isSpecial });
+                setFormData({
+                  ...formData,
+                  service_type: value,
+                  has_post_practice: !isSpecial,
+                  // 사용자가 직접 고친 시간은 보존하고, 손대지 않은 경우만 기본값으로 갱신
+                  service_start_time: isUntouchedStartTime(formData.service_start_time)
+                    ? (getDefaultServiceStartTime(value) ?? '')
+                    : formData.service_start_time,
+                });
               }
             }}
           >
@@ -174,6 +201,22 @@ export default function ServiceScheduleForm({
             />
           )}
         </div>
+      </div>
+
+      {/* 예배 시작 시간 — 예배 유형 선택 시 자동으로 채워지며, 직접 수정 가능 */}
+      <div className="sm:w-1/2 sm:pr-2">
+        <Label htmlFor="service_start_time">예배 시작 시간</Label>
+        <Input
+          id="service_start_time"
+          type="time"
+          value={toTimeInputValue(formData.service_start_time)}
+          onChange={(e) =>
+            setFormData({ ...formData, service_start_time: e.target.value || null })
+          }
+        />
+        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+          예배 유형을 선택하면 기본 시간이 자동으로 입력됩니다. 필요 시 직접 수정하세요.
+        </p>
       </div>
 
       {/* 후드 색상 */}

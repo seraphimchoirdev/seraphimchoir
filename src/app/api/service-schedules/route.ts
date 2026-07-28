@@ -10,6 +10,12 @@ import { createClient } from '@/lib/supabase/server';
 const createServiceScheduleSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '유효한 날짜 형식이 아닙니다'),
   service_type: z.string().optional().default('주일예배'),
+  // TIME 컬럼은 '09:00:00' 형태로 오갈 수 있어 초 단위를 옵셔널로 허용
+  service_start_time: z
+    .string()
+    .regex(/^\d{2}:\d{2}(:\d{2})?$/, '유효한 시간 형식이 아닙니다')
+    .nullable()
+    .optional(),
   hymn_name: z.string().nullable().optional(),
   offertory_performer: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
