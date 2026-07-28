@@ -66,12 +66,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
             'group-[.toast]:bg-[var(--color-background-tertiary)] group-[.toast]:text-[var(--color-text-secondary)] group-[.toast]:rounded-md',
           closeButton:
             'group-[.toast]:bg-[var(--color-background-tertiary)] group-[.toast]:border-[var(--color-border-default)]',
-          success:
-            'group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--color-success-500)]',
-          error: 'group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--color-error-500)]',
-          warning:
-            'group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--color-warning-500)]',
-          info: 'group-[.toaster]:border-l-4 group-[.toaster]:border-l-[var(--color-primary-500)]',
+          // 타입별(success/error/warning/info) 스타일은 여기서 지정하지 않는다.
+          // sonner의 [data-sonner-toast][data-styled='true'] 규칙이 명시도(0,2,0)로
+          // Tailwind 유틸리티 클래스(0,1,0)를 이기기 때문에 적용되지 않는다.
+          // globals.css의 [data-sonner-toast][data-styled][data-type] 블록 참고.
         },
       }}
       {...props}

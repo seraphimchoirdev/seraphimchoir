@@ -76,6 +76,8 @@
     --color-warning-500: #fadb3f;
     --color-warning-600: #e0c127;
     --color-warning-700: #c4a820;
+    /* -800은 텍스트/아이콘 전용 — -700(#c4a820)은 흰 배경 대비 2.32:1로 WCAG AA 미달 */
+    --color-warning-800: #7a6712;
 
     /* Semantic Colors - Error */
     --color-error-50: #fef5f4;
@@ -483,26 +485,52 @@ table td,
   }
 }
 
+/* === Toast 타입별 시각적 구분 === */
+/*
+ * sonner의 [data-sonner-toast][data-styled='true'] 규칙(명시도 0,2,0)이
+ * border를 지정하므로 Tailwind 유틸리티 클래스(0,1,0)로는 이길 수 없다.
+ * data-type을 하나 더 붙여 0,3,0으로 우위를 확보한다.
+ *
+ * 색상 톤: 좌측 바는 면적이 넓어 채도가 살아있는 -600,
+ * 아이콘은 얇은 선이라 대비 확보를 위해 -700(warning만 -800).
+ */
+[data-sonner-toast][data-styled='true'][data-type='success'] {
+  border-left: 6px solid var(--color-success-600);
+}
+[data-sonner-toast][data-styled='true'][data-type='success'] [data-icon] {
+  color: var(--color-success-700);
+}
+
+[data-sonner-toast][data-styled='true'][data-type='error'] {
+  border-left: 6px solid var(--color-error-600);
+}
+[data-sonner-toast][data-styled='true'][data-type='error'] [data-icon] {
+  color: var(--color-error-700);
+}
+
+[data-sonner-toast][data-styled='true'][data-type='warning'] {
+  border-left: 6px solid var(--color-warning-600);
+}
+[data-sonner-toast][data-styled='true'][data-type='warning'] [data-icon] {
+  color: var(--color-warning-800);
+}
+
+[data-sonner-toast][data-styled='true'][data-type='info'] {
+  border-left: 6px solid var(--color-primary-600);
+}
+[data-sonner-toast][data-styled='true'][data-type='info'] [data-icon] {
+  color: var(--color-primary-700);
+}
+
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
   [data-sonner-toast] {
     border-width: 2px;
   }
 
-  [data-sonner-toast][data-type='success'] {
-    border-left-width: 6px;
-  }
-
-  [data-sonner-toast][data-type='error'] {
-    border-left-width: 6px;
-  }
-
-  [data-sonner-toast][data-type='warning'] {
-    border-left-width: 6px;
-  }
-
-  [data-sonner-toast][data-type='info'] {
-    border-left-width: 6px;
+  /* 기본 좌측 바가 이미 6px이므로 고대비에서는 한 단계 더 굵게 */
+  [data-sonner-toast][data-styled='true'][data-type] {
+    border-left-width: 8px;
   }
 }
 
