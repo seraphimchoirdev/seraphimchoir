@@ -22,7 +22,13 @@ fi
 cd "$PROJECT_ROOT"
 
 # 최근 커밋 정보 가져오기
-COMMIT_HASH=$(git log -1 --format='%h')
+#
+# 커밋 해시는 기록하지 않는다. 이 스크립트는 마지막에 --amend로 문서를 커밋에
+# 포함시키는데, amend는 트리를 바꾸므로 해시도 함께 바뀐다. 즉 여기서 읽은 해시는
+# 문서가 커밋되는 순간 이미 존재하지 않는 값이 된다. amend 후 해시로 다시 고쳐도
+# 그 수정이 또 트리를 바꾸므로 영원히 한 발 뒤처진다(고정점이 없다).
+# 커밋 메시지는 amend를 거쳐도 그대로이므로 이것으로 식별한다.
+#   역추적: git log --grep="<설명 일부>"
 COMMIT_MESSAGE=$(git log -1 --format='%s')
 COMMIT_DATE=$(git log -1 --format='%cs')
 
@@ -68,11 +74,6 @@ if [ ! -f "$TASK_FILE" ] || [ ! -f "$PROGRESSED_FILE" ]; then
   exit 0
 fi
 
-# 중복 방지: 이미 이 커밋이 문서에 있는지 확인
-if grep -q "$COMMIT_HASH" "$TASK_FILE" 2>/dev/null; then
-  exit 0
-fi
-
 # scope가 있으면 포함
 if [ -n "$COMMIT_SCOPE" ]; then
   FULL_TYPE="$COMMIT_TYPE($COMMIT_SCOPE)"
@@ -80,9 +81,18 @@ else
   FULL_TYPE="$COMMIT_TYPE"
 fi
 
+ENTRY_TITLE="$FULL_TYPE: $COMMIT_DESC"
+
+# 중복 방지: 같은 제목이 이미 문서에 있으면 스킵.
+# (해시 기준이던 기존 검사는 amend로 해시가 매번 바뀌어 사실상 동작하지 않았다.)
+# grep -F: 메시지의 괄호·점 등이 정규식으로 해석되지 않게 고정 문자열로 비교
+if grep -qF "**$ENTRY_TITLE**" "$TASK_FILE" 2>/dev/null; then
+  exit 0
+fi
+
 echo ""
 echo "📝 문서 자동 업데이트 중..."
-echo "   커밋: $COMMIT_HASH - $FULL_TYPE: $COMMIT_DESC"
+echo "   $ENTRY_TITLE"
 
 # ============================================
 # 1. task.md 업데이트
@@ -93,14 +103,14 @@ if grep -q "### $COMMIT_DATE" "$TASK_FILE"; then
   # 기존 날짜 섹션에 항목 추가 (날짜 헤더 바로 다음 줄에)
   # macOS sed와 호환되는 방식으로 처리
   # 날짜 헤더 다음 줄에 삽입
-  awk -v date="### $COMMIT_DATE" -v entry="- [x] **$FULL_TYPE: $COMMIT_DESC**\n  - 커밋: \`$COMMIT_HASH\`\n" '
+  awk -v date="### $COMMIT_DATE" -v entry="- [x] **$ENTRY_TITLE**\n" '
     $0 == date { print; getline; print entry; print; next }
     { print }
   ' "$TASK_FILE" > "$TASK_FILE.tmp" && mv "$TASK_FILE.tmp" "$TASK_FILE"
 else
   # 새로운 날짜 섹션 생성 - "완료된 작업" 섹션 다음에 추가
   # "## 완료된 작업" 헤더를 찾아서 그 다음에 새 섹션 추가
-  NEW_SECTION="### $COMMIT_DATE\n\n- [x] **$FULL_TYPE: $COMMIT_DESC**\n  - 커밋: \`$COMMIT_HASH\`\n"
+  NEW_SECTION="### $COMMIT_DATE\n\n- [x] **$ENTRY_TITLE**\n"
 
   awk -v section="$NEW_SECTION" '
     /^## 완료된 작업/ { print; getline; print; print section; next }
@@ -115,7 +125,7 @@ fi
 # "## 8. 최근 업데이트 이력" 테이블에 새 행 추가
 # 테이블 헤더 다음 줄에 삽입
 
-PROGRESS_ENTRY="| $COMMIT_DATE | $FULL_TYPE: $COMMIT_DESC |"
+PROGRESS_ENTRY="| $COMMIT_DATE | $ENTRY_TITLE |"
 
 # 테이블 헤더 라인(|------|) 다음에 새 행 삽입
 awk -v entry="$PROGRESS_ENTRY" '
@@ -130,7 +140,11 @@ awk -v entry="$PROGRESS_ENTRY" '
 git add "$TASK_FILE" "$PROGRESSED_FILE"
 git commit --amend --no-edit --no-verify >/dev/null 2>&1
 
-echo "✅ 문서 업데이트 완료! (커밋에 자동 포함됨)"
-echo "   - docs/task.md"
-echo "   - docs/Progressed.md"
+# amend로 커밋 해시가 바뀌었다. 커밋 직후 화면에 표시된 해시는 이미 브랜치에서
+# 밀려난 값이므로, 그 해시로 git show를 하면 문서가 빠진 것처럼 보인다.
+# 최종 해시를 여기서 알려 혼동을 막는다.
+FINAL_HASH=$(git log -1 --format='%h')
+
+echo "✅ 문서 업데이트 완료 (docs/task.md, docs/Progressed.md)"
+echo "   ⚠️ amend로 커밋 해시가 $FINAL_HASH 로 변경됨 — 직전 출력된 해시는 무효"
 echo ""
