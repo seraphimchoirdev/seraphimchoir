@@ -48,6 +48,55 @@
 - **비밀번호**: `admin3586`
 - **역할**: ADMIN
 
+## 자격증명 취급 규칙
+
+토큰·API 키 등 실제 자격증명 값은 **Claude가 읽거나 쓰지 않는다.** 파일을 편집하면
+변경 내용이 대화 컨텍스트에 그대로 실리므로, 값을 마스킹해서 출력하더라도 노출된다.
+
+### 하지 말 것
+
+- `.envrc`, `.env.local` 등 자격증명이 든 파일을 Read/Edit/Write로 직접 다루기
+- 사용자에게 편집기로 열게 한 뒤 Claude가 그 파일을 검사하기
+  (편집 결과가 시스템 알림으로 컨텍스트에 들어온다)
+- 커맨드라인에 토큰을 인라인으로 넣어 실행하기
+  (셸 히스토리·프로세스 목록·`.claude/settings.local.json` permission 목록에 남는다)
+
+### 대신 이렇게 할 것
+
+값 자리만 비워둔 명령을 만들어 사용자가 직접 채워 실행하게 한다:
+
+```bash
+# Claude가 제시 → 사용자가 <값> 부분만 바꿔 실행
+sed -i '' 's|^export VERCEL_TOKEN=.*|export VERCEL_TOKEN="<값>"|' .envrc && direnv allow
+```
+
+상태 확인이 필요하면 값이 아니라 **속성만** 본다 — 길이, 접두사 유무, 주입 여부:
+
+```bash
+direnv exec . bash -c 'echo "${TOKEN_NAME:+주입됨(${#TOKEN_NAME}자)}"'
+```
+
+### direnv 구성
+
+Supabase 계정이 여러 개라 CLI 토큰은 프로젝트별 `.envrc`로 주입한다.
+`~/.zshrc`의 전역 환경변수는 제거했다 — CLI 인증 우선순위가
+`환경변수 > 키체인`이라, 전역에 값이 있으면 다른 계정으로 로그인해도 무시된다.
+
+| 파일 | 담는 값 | 읽는 주체 |
+|---|---|---|
+| `.envrc` | `SUPABASE_ACCESS_TOKEN`, `VERCEL_TOKEN` | 셸 (CLI·Claude Code 훅) |
+| `.env.local` | `NEXT_PUBLIC_*`, `SUPABASE_SERVICE_ROLE_KEY`, `SENTRY_*`, `R2_*` 등 | Next.js 런타임·빌드 |
+
+**빌드가 쓰는 값은 `.envrc`로 옮기지 않는다.** `SENTRY_AUTH_TOKEN`은 CLI 토큰처럼
+보이지만 `next.config.ts`가 소스맵 업로드에 사용한다. Next.js는 `.envrc`를 읽지
+않으므로(로컬 `next dev`는 셸 상속으로 우연히 동작할 뿐), 옮기면 Vercel·CI 빌드에서
+조용히 실패한다.
+
+**`.envrc` 수정 후에는 반드시 `direnv allow`를 다시 실행한다.** direnv는 승인 시점의
+파일 내용 해시를 기억해서, 한 글자만 바뀌어도 승인이 무효화되고 변수를 주입하지 않는다.
+이때 CLI는 키체인으로 폴백해 401이 나는데, 토큰이 잘못된 것처럼 보여 오진하기 쉽다.
+증상은 `direnv status`의 `is blocked` 표시로 확인한다.
+
 ## 개발 명령어
 
 모든 명령어는 프로젝트 루트(`seraphimChoir/`)에서 실행합니다:
