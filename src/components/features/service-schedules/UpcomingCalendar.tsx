@@ -166,6 +166,7 @@ export default function UpcomingCalendar({
             onCreateSchedule={handleCreateSchedule}
             onEditEvent={handleEditEvent}
             onCreateEvent={handleCreateEvent}
+            onRefresh={onRefresh}
           />
         );
       })}

@@ -116,45 +116,8 @@ test.describe('일정 관리', () => {
     }
   });
 
-  test('일정 수정 다이얼로그에 삭제 버튼이 표시된다 (ADMIN)', async ({ page }) => {
-    await page.goto('/service-schedules', { waitUntil: 'domcontentloaded' });
-
-    // 페이지 로드 대기
-    await expect(page.getByText('다가오는 일정')).toBeVisible({ timeout: 30_000 });
-
-    // 첫 번째 일정 수정 버튼 클릭
-    const editButton = page.getByRole('button', { name: '첫 번째 일정 수정' }).first();
-    await expect(editButton).toBeVisible({ timeout: 15_000 });
-    await editButton.click();
-
-    // 다이얼로그가 열리고 삭제 버튼이 표시
-    const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible({ timeout: 5_000 });
-    await expect(dialog.getByRole('button', { name: '삭제' })).toBeVisible();
-  });
-
-  test('삭제 확인 다이얼로그가 표시된다', async ({ page }) => {
-    await page.goto('/service-schedules', { waitUntil: 'domcontentloaded' });
-
-    // 페이지 로드 대기
-    await expect(page.getByText('다가오는 일정')).toBeVisible({ timeout: 30_000 });
-
-    // 일정 수정 다이얼로그 열기
-    await page.getByRole('button', { name: '첫 번째 일정 수정' }).first().click();
-    const dialog = page.getByRole('dialog');
-    await expect(dialog).toBeVisible({ timeout: 5_000 });
-
-    // 삭제 버튼 클릭 → 확인 다이얼로그
-    await dialog.getByRole('button', { name: '삭제' }).click();
-
-    const alertDialog = page.getByRole('alertdialog');
-    await expect(alertDialog).toBeVisible({ timeout: 5_000 });
-    await expect(alertDialog.getByText('이 예배 일정을 삭제하시겠습니까?')).toBeVisible();
-
-    // 취소로 닫기
-    await alertDialog.getByRole('button', { name: '취소' }).click();
-    await expect(alertDialog).not.toBeVisible();
-  });
+  // 수정 다이얼로그 내 삭제 버튼 검증은 아래 '일정 수정 다이얼로그 삭제' describe로 이동
+  // (과거: 임의 일정 존재에 의존하던 비결정적 테스트 → 전용 일정 기반으로 재작성)
 
   test('일정 관리 페이지가 오버플로 없이 표시된다', async ({ page }) => {
     await page.goto('/service-schedules', { waitUntil: 'domcontentloaded' });
@@ -248,5 +211,100 @@ test.describe('일정 수정 영속성', () => {
       '예수 나의 기쁨 21권',
       { timeout: 10_000 }
     );
+  });
+});
+
+/**
+ * 목록 직접 삭제 (수정 다이얼로그를 거치지 않는 카드 내 휴지통 버튼)
+ */
+test.describe('일정 목록 직접 삭제', () => {
+  let api: APIRequestContext;
+  let schedule: EnsuredSchedule | null = null;
+  const SERVICE_TYPE = 'E2E삭제검증예배';
+
+  test.beforeAll(async ({ playwright }) => {
+    api = await playwright.request.newContext({
+      baseURL: 'http://localhost:3000',
+      storageState: 'e2e/.auth/user.json',
+    });
+    // 다른 스펙과 날짜 분리 (+4주)
+    schedule = await ensureSchedule(api, upcomingSundayISO(4), SERVICE_TYPE);
+  });
+
+  test.afterAll(async () => {
+    // UI 삭제가 성공했으면 no-op (cleanupSchedule은 best-effort)
+    await cleanupSchedule(api, schedule);
+    await api.dispose();
+  });
+
+  test('카드의 휴지통 버튼으로 일정을 삭제할 수 있다', async ({ page }) => {
+    await page.goto('/service-schedules', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: '찬양대 일정 관리' })).toBeVisible({
+      timeout: 30_000,
+    });
+
+    const card = page
+      .locator(`[data-testid="schedule-date-card"][data-date="${schedule!.date}"]`)
+      .first();
+    await expect(card).toBeVisible({ timeout: 20_000 });
+    await expect(card.getByText(SERVICE_TYPE)).toBeVisible();
+
+    // 휴지통 클릭 → 확인 다이얼로그(alertdialog) → 삭제
+    await card.getByTitle('첫 번째 일정 삭제').click();
+    const confirm = page.getByRole('alertdialog').filter({ hasText: '예배 일정 삭제' });
+    await expect(confirm).toBeVisible({ timeout: 5_000 });
+    await confirm.getByRole('button', { name: '삭제' }).click();
+
+    await expect(page.getByText('예배 일정이 삭제되었습니다')).toBeVisible({ timeout: 15_000 });
+    // 카드에서 일정이 사라짐
+    await expect(card.getByText(SERVICE_TYPE)).toHaveCount(0, { timeout: 10_000 });
+  });
+});
+
+
+/**
+ * 수정 다이얼로그 내 삭제 버튼 (전용 일정 기반 — 데이터 유무에 의존하지 않음)
+ */
+test.describe('일정 수정 다이얼로그 삭제', () => {
+  let api: APIRequestContext;
+  let schedule: EnsuredSchedule | null = null;
+  const SERVICE_TYPE = 'E2E다이얼로그검증예배';
+
+  test.beforeAll(async ({ playwright }) => {
+    api = await playwright.request.newContext({
+      baseURL: 'http://localhost:3000',
+      storageState: 'e2e/.auth/user.json',
+    });
+    schedule = await ensureSchedule(api, upcomingSundayISO(2), SERVICE_TYPE);
+  });
+
+  test.afterAll(async () => {
+    await cleanupSchedule(api, schedule);
+    await api.dispose();
+  });
+
+  test('수정 다이얼로그에 삭제 버튼이 있고, 확인 다이얼로그가 뜬다', async ({ page }) => {
+    await page.goto('/service-schedules', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: '찬양대 일정 관리' })).toBeVisible({
+      timeout: 30_000,
+    });
+
+    const card = page
+      .locator(`[data-testid="schedule-date-card"][data-date="${schedule!.date}"]`)
+      .first();
+    await expect(card).toBeVisible({ timeout: 20_000 });
+    await card.getByTitle('첫 번째 일정 수정').click();
+
+    // 다이얼로그가 열리고 삭제 버튼이 표시
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 5_000 });
+    await dialog.getByRole('button', { name: '삭제' }).click();
+
+    // 삭제 확인 다이얼로그 → 취소로 닫기 (일정 유지)
+    const alertDialog = page.getByRole('alertdialog');
+    await expect(alertDialog).toBeVisible({ timeout: 5_000 });
+    await expect(alertDialog.getByText('이 예배 일정을 삭제하시겠습니까?')).toBeVisible();
+    await alertDialog.getByRole('button', { name: '취소' }).click();
+    await expect(alertDialog).not.toBeVisible();
   });
 });

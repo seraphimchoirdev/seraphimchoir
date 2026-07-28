@@ -152,6 +152,7 @@ export default function QuarterlyCalendar({
             onCreateSchedule={handleCreateSchedule}
             onEditEvent={handleEditEvent}
             onCreateEvent={handleCreateEvent}
+            onRefresh={onRefresh}
           />
         );
       })}

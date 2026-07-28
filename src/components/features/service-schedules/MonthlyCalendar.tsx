@@ -148,6 +148,7 @@ export default function MonthlyCalendar({
             onCreateSchedule={handleCreateSchedule}
             onEditEvent={handleEditEvent}
             onCreateEvent={handleCreateEvent}
+            onRefresh={onRefresh}
           />
         );
       })}

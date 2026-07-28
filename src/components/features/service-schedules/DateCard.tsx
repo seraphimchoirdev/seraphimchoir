@@ -1,15 +1,19 @@
 'use client';
 'use memo';
 
-import { Clock, Edit2, MapPin, Music, PartyPopper, Plus, Star, User } from 'lucide-react';
+import { Clock, Edit2, MapPin, Music, PartyPopper, Plus, Star, Trash2, User } from 'lucide-react';
 
-import { memo } from 'react';
+import { memo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
-import { EVENT_TYPE_LABELS, type EventType } from '@/hooks/useChoirEvents';
+import { EVENT_TYPE_LABELS, useDeleteChoirEvent, type EventType } from '@/hooks/useChoirEvents';
+import { useDeleteServiceSchedule } from '@/hooks/useServiceSchedules';
+
+import { showError, showSuccess } from '@/lib/toast';
 
 import type { Database } from '@/types/database.types';
 
@@ -74,7 +78,14 @@ export interface DateCardProps {
   onCreateSchedule: (date: string) => void;
   onEditEvent: (event: ChoirEvent) => void;
   onCreateEvent: (date: string) => void;
+  /** 삭제 후 목록 갱신 (미전달 시 query invalidation에만 의존) */
+  onRefresh?: () => void;
 }
+
+/** 삭제 확인 대상 (예배 일정 또는 행사) */
+type DeleteTarget =
+  | { kind: 'schedule'; id: string; label: string }
+  | { kind: 'event'; id: string; label: string };
 
 export const DateCard = memo(function DateCard({
   dateStr,
@@ -86,11 +97,35 @@ export const DateCard = memo(function DateCard({
   onCreateSchedule,
   onEditEvent,
   onCreateEvent,
+  onRefresh,
 }: DateCardProps) {
   const past = isPast(dateStr);
   const today = isToday(dateStr);
   const hasSchedules = dateSchedules.length > 0;
   const hasOnlyEvents = !hasSchedules && dateEvents.length > 0;
+
+  // 목록에서 바로 삭제 (수정 다이얼로그를 거치지 않아도 됨)
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const deleteSchedule = useDeleteServiceSchedule();
+  const deleteEvent = useDeleteChoirEvent();
+  const isDeleting = deleteSchedule.isPending || deleteEvent.isPending;
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      if (deleteTarget.kind === 'schedule') {
+        await deleteSchedule.mutateAsync(deleteTarget.id);
+        showSuccess('예배 일정이 삭제되었습니다.');
+      } else {
+        await deleteEvent.mutateAsync(deleteTarget.id);
+        showSuccess('행사가 삭제되었습니다.');
+      }
+      setDeleteTarget(null);
+      onRefresh?.();
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '삭제에 실패했습니다.');
+    }
+  };
 
   return (
     <Card
@@ -129,15 +164,32 @@ export const DateCard = memo(function DateCard({
           {canManageService && (
             <div className="flex items-center gap-1">
               {hasSchedules ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => onEditSchedule(dateSchedules[0])}
-                  title="첫 번째 일정 수정"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => onEditSchedule(dateSchedules[0])}
+                    title="첫 번째 일정 수정"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-[var(--color-text-tertiary)] hover:bg-red-50 hover:text-red-600"
+                    onClick={() =>
+                      setDeleteTarget({
+                        kind: 'schedule',
+                        id: dateSchedules[0].id,
+                        label: dateSchedules[0].service_type || '주일예배',
+                      })
+                    }
+                    title="첫 번째 일정 삭제"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </>
               ) : isSunday(dateStr) ? (
                 <Button
                   variant="outline"
@@ -188,14 +240,32 @@ export const DateCard = memo(function DateCard({
                     )}
                   </div>
                   {canManageService && idx > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => onEditSchedule(schedule)}
-                    >
-                      <Edit2 className="h-3 w-3" />
-                    </Button>
+                    <div className="flex items-center gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => onEditSchedule(schedule)}
+                        title="일정 수정"
+                      >
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-[var(--color-text-tertiary)] hover:bg-red-50 hover:text-red-600"
+                        onClick={() =>
+                          setDeleteTarget({
+                            kind: 'schedule',
+                            id: schedule.id,
+                            label: schedule.service_type || '주일예배',
+                          })
+                        }
+                        title="일정 삭제"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   )}
                 </div>
                 {schedule.hymn_name && (
@@ -253,6 +323,21 @@ export const DateCard = memo(function DateCard({
                   >
                     {EVENT_TYPE_LABELS[event.event_type as EventType] || event.event_type}
                   </Badge>
+                  {canManageService && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 flex-shrink-0 text-purple-400 hover:bg-red-50 hover:text-red-600"
+                      onClick={(e) => {
+                        // 행 전체가 수정 클릭 영역이므로 전파 차단
+                        e.stopPropagation();
+                        setDeleteTarget({ kind: 'event', id: event.id, label: event.title });
+                      }}
+                      title="행사 삭제"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
                 {(event.start_time || event.location) && (
                   <div className="mt-1 flex items-center gap-4 text-xs text-purple-600">
@@ -278,6 +363,23 @@ export const DateCard = memo(function DateCard({
           </div>
         </CardContent>
       )}
+
+      {/* 목록 직접 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setDeleteTarget(null);
+        }}
+        title={deleteTarget?.kind === 'event' ? '행사 삭제' : '예배 일정 삭제'}
+        description={
+          deleteTarget?.kind === 'event'
+            ? `"${deleteTarget.label}" 행사를 삭제하시겠습니까? 삭제된 행사는 복구할 수 없습니다.`
+            : `${formatDate(dateStr)} "${deleteTarget?.label ?? ''}" 일정을 삭제하시겠습니까? 삭제된 일정은 복구할 수 없습니다.`
+        }
+        confirmLabel="삭제"
+        variant="destructive"
+        onConfirm={handleConfirmDelete}
+      />
     </Card>
   );
 });
