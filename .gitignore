@@ -83,3 +83,11 @@ blob-report/
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# direnv — SUPABASE_ACCESS_TOKEN 등 계정 자격증명이 들어가므로 절대 커밋 금지
+.envrc
+.direnv/
+
+# Python 캐시 (스킬 스크립트 실행 시 자동 생성)
+__pycache__/
+*.pyc
