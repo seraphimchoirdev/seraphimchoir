@@ -20,6 +20,10 @@ ALTER TABLE service_schedules
 --    이미 올바르게 저장된 시간을 패턴 매칭으로 덮어쓰지 않도록 한다.
 UPDATE service_schedules
 SET service_start_time = CASE
+  -- 천안중앙교회 초청예배는 19:00에 진행됨(관리자 확인).
+  -- '%찬양%'·'%오후%' 등 아래 분기에 걸리지 않는 외부 초청 행사라
+  -- 별도로 지정한다. CASE는 위에서부터 평가되므로 순서를 지킬 것.
+  WHEN service_type LIKE '%천안중앙%' THEN '19:00'::TIME
   WHEN service_type LIKE '%2부%'    THEN '09:00'::TIME
   WHEN service_type LIKE '%오후%'   THEN '17:00'::TIME
   WHEN service_type LIKE '%절기%'   THEN '17:00'::TIME
