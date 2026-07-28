@@ -68,402 +68,286 @@
 ## 완료된 작업 (2025년 12월 ~ 2026년 1월)
 
 ### 2026-07-28
+- [x] **docs(task): 조회 불가능한 커밋 해시 204줄 제거**
+
 - [x] **fix(hooks): 문서 자동화 훅이 존재하지 않는 커밋 해시를 기록하던 문제 수정**
 
 - [x] **docs(claude): 자격증명 취급 규칙 및 direnv 구성 문서화**
-  - 커밋: `3de751b`
 
 - [x] **fix(service-schedules): 천안중앙교회 초청예배 시작 시간 19:00으로 보정**
-  - 커밋: `42a4bdb`
 
 - [x] **fix(service-schedules): 예배 시작 시간이 전부 14:00으로 저장되는 버그 수정**
-  - 커밋: `9567d4d`
 
 - [x] **fix(ui): 토스트 타입별 시각적 구분 복구 (성공/에러/경고/정보)**
-  - 커밋: `ef33bd0`
 
 
 - [x] **feat(service-schedules): 일정·행사를 목록 카드에서 바로 삭제**
-  - 커밋: `f5d750c`
 
 ### 2026-07-18
 - [x] **perf(splash): 커스텀 스플래시 표시 시간 단축 (최대 2.0s → 1.3s)**
-  - 커밋: `bb74994`
 
 
 - [x] **feat(notifications): 좌석 변동 알림 중복 억제 + 보관 7일 자동 정리 + 읽은 알림 지우기**
-  - 커밋: `f138d61`
 
 ### 2026-07-13
 - [x] **docs(onboarding): 안드로이드 안내에 삼성 인터넷 경로 보강**
-  - 커밋: `0f32e71`
 
 - [x] **feat(onboarding): 전대원 오픈 대비 시작 가이드 (앱 페이지 + 인쇄용 PDF)**
-  - 커밋: `3e2d563`
 
 
 - [x] **fix(service-schedules): 작곡가·악보출처·후드색상·연습설정이 저장되지 않던 버그 수정**
-  - 커밋: `a4ed6ca`
 
 ### 2026-07-12
 - [x] **docs(handoff): 2026-07-12 세션 핸드오프 — 리뷰 백로그 완주·v0.3.0 배포·장애 2건 해결**
-  - 커밋: `cb27c7b`
 
 - [x] **feat(mypage): 알림 차단 시 플랫폼별 재허용 방법 안내 추가**
-  - 커밋: `b2c0bbc`
 
 - [x] **docs(push): Upstash 장애 현황 업데이트 — fail-open 배포로 로그인 복구**
-  - 커밋: `2dead9e`
 
 - [x] **feat(navigation): 모바일 하단 네비 개편 — 임원 포털을 더보기로, 배치표를 메인으로**
-  - 커밋: `d3f578f`
 
 - [x] **fix(security): rate limiter 장애 시 fail-open으로 로그인 500 해소**
-  - 커밋: `9e90ab5`
 
 - [x] **fix(deploy): .vercelignore 예외에 generate-sw-version.mjs 추가**
-  - 커밋: `0940e69`
 
 - [x] **refactor(arrangements): 모바일 바텀시트·안내 메모 패널 분리 (B10-3)**
-  - 커밋: `4025860`
 
 - [x] **docs: 코드 리뷰 3차 세션 결과 기록 (B10·B11·E2E 강화·크래시 수정)**
-  - 커밋: `6f6d4b6`
 
 - [x] **test(e2e): 자리배치 편집·출석 관리 핵심 플로우 E2E 강화**
-  - 커밋: `e8577a8`
 
 - [x] **fix(security): CSP가 NEXT_PUBLIC_SUPABASE_URL 기반으로 Supabase origin을 허용하도록 수정**
-  - 커밋: `a99cd76`
 
 - [x] **fix(arrangements): 등단 인원이 추천 상한 초과 시 새 배치표 무한 루프 크래시 수정**
-  - 커밋: `49ee1c3`
 
 - [x] **refactor(arrangements): 초기화 로직을 useArrangementInitialization 훅으로 추출 (B10-2)**
-  - 커밋: `97db59e`
 
 - [x] **refactor(arrangements): 워크플로우 스텝 콘텐츠를 컴포넌트로 분리 (B10-1)**
-  - 커밋: `9e24cfd`
 
 - [x] **refactor(arrangements): useMembers 다중 구독을 페이지 레벨 단일 구독으로 정리 (B11)**
-  - 커밋: `c6b8cae`
 
 - [x] **docs: 코드 리뷰 백로그 2차 세션 실행 결과 기록 (A7·B8·B9 완료)**
-  - 커밋: `443a3ae`
 
 - [x] **perf(dashboard): 전 사용자 공유 데이터 unstable_cache + 태그 무효화 (B9)**
-  - 커밋: `f029e2e`
 
 - [x] **perf(dashboard): 프로필 조회 단기 캐시로 60초 폴링 중복 제거 (B8)**
-  - 커밋: `7e4db0e`
 
 - [x] **fix(community): 월간 자동앨범 find-or-create 동시성 레이스 수정 (A7)**
-  - 커밋: `04cbe36`
 
 - [x] **docs: 전체 코드 리뷰 보고서 및 최적화 실행 결과 기록**
-  - 커밋: `bc34e47`
 
 - [x] **refactor(dashboard): API 라우트가 SSR과 동일한 조회 로직을 사용하도록 위임**
-  - 커밋: `11426f6`
 
 - [x] **perf: TTFB/렌더링 개선 — CSP 정적화·컴파일러 infer·스플래시 hydration 수정**
-  - 커밋: `79c5e2a`
 
 - [x] **fix(security): 무인증 admin 라우트·IDOR·파일 삭제 권한 결함 6건 수정**
-  - 커밋: `99874cd`
 
 - [x] **docs(push): 배포 전 미설정 항목 현황 기록**
-  - 커밋: `7527c30`
 
 
 - [x] **feat(push): 관리자 수동 알림 발송 (미투표자 독려 버튼 + 알림 발송 페이지)**
-  - 커밋: `1a3ed9c`
 
 ### 2026-07-11
 - [x] **docs(push): 푸시 알림 배포 체크리스트 작성**
-  - 커밋: `2e48044`
 
 - [x] **feat(push): 배치표·투표 독려 알림 트리거 + pg_cron 스케줄**
-  - 커밋: `e775b79`
 
 - [x] **feat(push): 웹푸시(VAPID) 인프라 + 인앱 알림함 구축**
-  - 커밋: `ed5447d`
 
 - [x] **feat(my-attendance): 연습 투표 마감을 연습 시작 시각까지로 완화**
-  - 커밋: `4d19ac8`
 
 - [x] **fix(dashboard): 마감 레코드 없을 때 기본 마감 규칙으로 폴백**
-  - 커밋: `d9c2c77`
 
 - [x] **fix(dashboard): 출석 투표 카드 링크를 /my-attendance로 정정**
-  - 커밋: `e4bb206`
 
 - [x] **feat(my-attendance): 투표 명시적 저장 + 마감 전 자유 수정 UX**
-  - 커밋: `408fe8d`
 
 - [x] **fix(api): 일반 대원 출석 투표 API 허용 + 서버 마감 검증 추가**
-  - 커밋: `5566cdb`
 
 - [x] **refactor(navigation): 데스크톱 상단 네비 '핵심 + 더보기' 구조로 정리**
-  - 커밋: `533a3e8`
 
 - [x] **feat(community): 기획 잔여 갭 4건 구현 (develop 머지 준비)**
-  - 커밋: `210d931`
 
 - [x] **fix(types): ArrangementStatus·PracticeAttendanceType 유실 타입 복구**
-  - 커밋: `689a8fb`
 
 
 - [x] **fix(community): 코드 리뷰 발견 7건 수정**
-  - 커밋: `8e31c6e`
 
 ### 2026-07-10
 - [x] **feat(community): 설문/투표 기능 구현 (대상 지정 + 결과 공개 시점 제어)**
-  - 커밋: `9c0414a`
 
 
 - [x] **docs(handoff): 핸드오프 문서 및 매니페스트 업데이트 (2026-02-19 ~ 2026-06-23)**
-  - 커밋: `1cbabb6`
 
 ### 2026-06-23
 - [x] **feat(community): 사진 이모지 반응을 팝오버(플로팅) 방식으로 변경**
-  - 커밋: `53509df`
 
 - [x] **feat(community): 앨범 사진 반응·댓글·다운로드 UI + 모바일 삭제 버그 수정**
-  - 커밋: `2df24c1`
 
 - [x] **feat(community): 앨범 사진 반응·댓글·다운로드 백엔드 추가**
-  - 커밋: `f0007c8`
 
 - [x] **fix(community): 파일 업로드 버킷명 오타 수정 (seraphim → saeropim)**
-  - 커밋: `67da909`
 
 - [x] **fix(community): linked_member 없는 운영진의 앨범/업로드 권한 차단 수정**
-  - 커밋: `814c300`
 
 
 - [x] **feat(community): 사진첩(앨범) 구현 복원 (stash → 정식 커밋, 검증 예정)**
-  - 커밋: `f3a100c`
 ### 2026-06-22
 - [x] **feat(navigation): 메인 메뉴 '대시보드'를 '홈'으로 변경**
-  - 커밋: `1b4fac7`
 
 - [x] **fix(arrangements): 빈자리 정리 되돌리기 실패 및 hydration 에러 수정**
-  - 커밋: `38f7339`
 
 
 - [x] **feat(arrangements): 긴급 등단 불가 처리를 모달 없이 즉시 처리**
-  - 커밋: `f0e6456`
 
 ### 2026-06-20
 - [x] **fix(attendances): 출석 저장 시 전체 멤버 상태 기록하도록 수정**
-  - 커밋: `a65ccfb`
 
 
 - [x] **fix(service-schedules): 선곡표 일괄 등록 PDF/JPG 파싱 실패 수정**
-  - 커밋: `a44adc1`
 
 ### 2026-05-09
 - [x] **fix(dashboard): 출석 카드 상태 텍스트 가독성 개선**
-  - 커밋: `384dbe9`
 
 - [x] **feat(dashboard): 출석 카드에 최근성 색 인디케이터 + 미입력 명시 표시 (v0.2.5)**
-  - 커밋: `4fa324c` (develop) / `6493ce7` (hotfix/v0.2.5 → main)
 
 
 - [x] **fix(attendance): 준비완료 기능 제거 및 마지막 저장 시각 표시로 대체 (v0.2.4)**
-  - 커밋: `d034e29`
 
 ### 2026-05-02
 - [x] **fix(seats): 5단계 대원 목록 사이드바 스크롤 복구**
-  - 커밋: `02b5cfb` (develop) / `f611253` (hotfix/v0.2.3 → main)
 
 - [x] **fix(recommend): rowCapacities 행당 max=20 가드로 합동 찬양 시 400 해결**
-  - 커밋: `6848402`
 
 - [x] **feat(seats): 자리배치표 출력/내보내기 시 키(cm) 표시 숨김**
-  - 커밋: `cc4f9c0`
 
 - [x] **fix(recommend): 빈 행(capacity=0) 그리드를 허용하도록 zod 스키마 완화**
-  - 커밋: `78a688c`
 
 - [x] **fix(members): PATCH 스키마에 GUEST/height/height_cm 추가 (DB·POST와 동기화)**
-  - 커밋: `822d9b5`
 
 
 - [x] **fix(attendance): 파트장 저장 시 준비완료 자동 처리 제거 (a51356c 회귀)**
-  - 커밋: `a8369a4`
 
 ### 2026-04-21
 - [x] **feat(community): 커뮤니티 플랫폼 (공지사항 + 피드 게시판) 구현**
-  - 커밋: `1f919a3`
 
 
 - [x] **feat(attendance): 파트장 출석 저장 시 준비완료 자동 처리**
-  - 커밋: `c72ff03`
 
 ### 2026-04-18
 
 - [x] **fix(attendance): 준비완료 해제 권한 수정 및 자동 체크 race condition 해결**
-  - 커밋: `f57bb13`
 
 ### 2026-04-11
 - [x] **feat(ml): 배치표 공유/확정 시 ML 이력 자동 기록**
-  - 커밋: `b65a31a`
 
 - [x] **fix(grid): 줄별 인원 수동 조정이 그리드에 반영되지 않는 문제 수정**
-  - 커밋: `10b487d`
 
 
 - [x] **fix(seed): bass@test.com 테스트 계정에 김철우 대원 연결**
-  - 커밋: `8c44417`
 
 ### 2026-04-10
 - [x] **fix(attendance): linked_member_id 없는 계정의 파트 조회 fallback 추가**
-  - 커밋: `50d278b`
 
 - [x] **fix(attendance): 파트장 준비완료 권한 검증을 user_profiles 기반으로 변경**
-  - 커밋: `518ec25`
 
 - [x] **fix(build): RowOffsetValue null 타입으로 인한 빌드 에러 수정**
-  - 커밋: `a4a5c7e`
 
 - [x] **fix(grid): 디바운스 race condition으로 좌석 수 불일치 수정**
-  - 커밋: `09a3b2d`
 
 - [x] **fix(seats): 일반 렌더링에서도 음수 오프셋 행의 행 라벨 겹침 수정**
-  - 커밋: `723abea`
 
 - [x] **fix(export): 캡처 모드에서 음수 오프셋 행의 행 라벨 겹침 수정**
-  - 커밋: `c615ab8`
 
 
 - [x] **fix(export): 갤럭시 폴드 캡처 ref 분기점 수정 및 좌석번호 가독성 개선**
-  - 커밋: `9babc06`
 
 ### 2026-04-08
 - [x] **fix(export): 빈 이미지 생성 문제 근본 수정**
-  - 커밋: `e13e0f9`
 
 - [x] **fix(export): 갤럭시 폴드 공유 시 user gesture 만료 대응**
-  - 커밋: `821c32b`
 
 - [x] **fix(auth): Supabase Auth lock 경쟁 에러 수정**
-  - 커밋: `3475af8`
 
 - [x] **fix(export): toBlob 실패 시 toPng fallback 추가**
-  - 커밋: `8c55316`
 
 - [x] **fix(export): 갤럭시 폴드 등 대형 기기에서 이미지 내보내기 실패 수정**
-  - 커밋: `2f46557`
 
 - [x] **feat(emergency): 긴급 수정모드 대원 목록 사이드바 숨기기 기능**
-  - 커밋: `e5fc2ef`
 
 - [x] **fix(seats): 행 레이블 sticky 제거**
-  - 커밋: `b0bd276`
 
 
 - [x] **fix(seats): 행 레이블 겹침 수정 및 인원 수 글씨 크기 증가**
-  - 커밋: `170ba9a`
 
 ### 2026-04-01
 - [x] **fix(test): 기존 실패 테스트 9개 수정**
-  - 커밋: `ee295f8`
 
 
 - [x] **fix(arrangements): 긴급 수정모드에서 AI 자동 줄 구성 변경 차단**
-  - 커밋: `2ca07cf`
 
 ### 2026-03-31
 - [x] **feat(notes): 배치표 안내 메모 에디터 기능 추가**
-  - 커밋: `af4e18a`
 
 - [x] **fix(guest): 총 좌석 수 계산에 게스트 인원 포함**
-  - 커밋: `1a75ff1`
 
 
 - [x] **feat(guest): 외부 찬양대 게스트 자리배치 지원**
-  - 커밋: `8890964`
 
 ### 2026-03-22
 - [x] **refactor(ui): 디자인 품질 개선 (redesign phase 1)**
-  - 커밋: `7a74614`
 
 
 - [x] **fix(ai-seat): 소규모 그리드에서 좌석 배치 초과 및 fallback 개선**
-  - 커밋: `ca87a44`
 
 ### 2026-03-17
 - [x] **fix(arrangements): 새 배치표 생성 시 줄별 인원수 0 표시 버그 수정**
-  - 커밋: `1156bd8`
 
 - [x] **fix(dashboard): 다음 주일 배치표 없을 때 과거 배치표 표시 버그 수정**
-  - 커밋: `4d0ae96`
 
 - [x] **fix(dashboard): 배치표 링크 404 오류 수정**
-  - 커밋: `a60d6a8`
 
 
 - [x] **fix(arrangements): 긴급 수정 모드에서 대원 목록(MemberSidebar) 표시**
-  - 커밋: `1deffb0`
 
 ### 2026-03-15
 - [x] **fix(arrangements): 긴급 수정 모드에서 좌석 클릭/배치 차단 해제**
-  - 커밋: `c7ddfe6`
 
 - [x] **fix(arrangements): 줄반장 수동 지정 모드에서 컨텍스트 메뉴 억제 및 Step 5 이후 좌석 조작 차단**
-  - 커밋: `889bce6`
 
 - [x] **fix(arrangements): SHARED→DRAFT 전환 시 긴급 변동 하이라이트 잔존 버그 수정**
-  - 커밋: `eb1fba4`
 
 - [x] **fix(arrangements): Step 5 완료 시 수동 줄반장 지정 모드 자동 해제**
-  - 커밋: `0414e58`
 
 - [x] **fix(arrangements): 긴급 등단 처리 시 service_schedule_id 전달 누락 수정**
-  - 커밋: `6fae3d0`
 
 - [x] **fix(arrangements): 긴급 등단 불가 처리 시 service_schedule_id 누락 버그 수정**
-  - 커밋: `7cd46bf`
 
 - [x] **fix(arrangements): SHARED/CONFIRMED 배치표 로드 시 빈 좌석 표시 버그 수정**
-  - 커밋: `c5f8cd7`
 
 - [x] **fix(arrangements): 새 배치표 생성 시 전체 멤버(98명) 기준 줄 구성 버그 수정**
-  - 커밋: `d2df3a3`
 
 
 - [x] **fix(service-schedules): 같은 날짜 예배 일정 정렬 시 시작 시간 기준 2차 정렬 추가**
-  - 커밋: `0cb2b4b`
 
 ### 2026-03-14
 - [x] **fix(arrangements): 자리배치 생성 시 예배별 출석 데이터 미분리 버그 수정**
-  - 커밋: `549a87a`
 
 - [x] **fix(attendances): 파트장 별 아이콘을 외부 absolute 뱃지로 변경**
-  - 커밋: `fa3843d`
 
 - [x] **test(e2e): E2E 테스트 업데이트 및 시드 데이터 갱신**
-  - 커밋: `2d8a651`
 
 - [x] **feat(newsletters): 새로핌지(소식지) 및 기도 담당 관리 기능 추가**
-  - 커밋: `4340c0d`
 
 - [x] **feat(service-schedules): 일정 삭제 기능 및 임포터 인라인 편집 추가**
-  - 커밋: `8878667`
 
 - [x] **fix(date): toISOString() UTC 기준 날짜 버그 수정**
-  - 커밋: `805a8a7`
 
 - [x] **refactor(auth): STAFF 역할을 SECRETARY/TREASURER로 분리**
-  - 커밋: `b269584`
 
 - [x] **feat(dashboard): 출석 현황 예배별 분리 표시**
-  - 커밋: `69a798e`
 
 - [x] **fix(attendances): MemberChip 반응형 3열 고정 레이아웃으로 변경**
-  - 커밋: `221309d`
 
 
 - [x] **fix(members): 새 대원 등록 서버 에러 수정**
@@ -472,301 +356,215 @@
 ### 2026-03-10
 
 - [x] **fix(attendances): 관리자 출석 관리 날짜 이동을 예배 일정 기반으로 변경**
-  - 커밋: `4155a17`
 
 ### 2026-03-05
 
 - [x] **feat(newsletters): 알림 고정(pin) 기능 + 하단 글자 크기 개선**
-  - 커밋: `7977e8a`
 
 ### 2026-03-04
 - [x] **feat(newsletters): 후원계좌 하단 이동, 계좌 복사/송금, 찬양곡 정렬, 기도 담당 개선**
-  - 커밋: `87d5df7`
 
 
 - [x] **feat(newsletters): 알림 항목별 입력 UI + 발행인/편집인 자동 채움 indicator**
-  - 커밋: `585ec14`
 
 ### 2026-03-01
 
 - [x] **fix(db): 마이그레이션 seed INSERT 비활성화로 members 중복 해소**
-  - 커밋: `544ec17`
 
 ### 2026-02-28
 - [x] **feat(emergency): 긴급 수정 모드 통합 — EmergencyEditPanel 연동 + 모바일 지원**
-  - 커밋: `da789ab`
 
 - [x] **feat(ui): EmergencyEditPanel 섹션 시각적 구분 개선**
-  - 커밋: `95cc8c9`
 
 - [x] **feat(ui): 배치표 워크플로우 UX 개선 + 출석/마이페이지 UI 리팩토링**
-  - 커밋: `436ed33`
 
 - [x] **fix(seats): RPC 에러 로깅 추가 + 로컬 Supabase 설정 수정**
-  - 커밋: `f211a46`
 
 - [x] **fix(ui): 줄별 인원수 스피너 -/+ 버튼 색상 구분 + 접근성 개선**
-  - 커밋: `4dcd408`
 
 - [x] **feat(service-schedules): "다가오는 일정" 기본 뷰 추가 + DateCard 중복 제거**
-  - 커밋: `2f65cb4`
 
 - [x] **feat(ui): 내 출석 투표 마감시한 표시 + 대시보드 UX 개선**
-  - 커밋: `0da4eb6`
 
 
 - [x] **fix(ui): 모바일 토스트 하단 네비 겹침 수정 + 내 출석 페이지 리팩토링**
-  - 커밋: `0571194`
 
 ### 2026-02-26
 
 - [x] **fix(sentry): 보안 개선 + 불필요한 에러/예제 코드 정리**
-  - 커밋: `3807b70`
 
 ### 2026-02-24
 
 - [x] **fix(ui): 모바일 다이얼로그 스크롤 버그 수정 + E2E 테스트**
-  - 커밋: `e2b445c`
 
 ### 2026-02-22
 
 - [x] **test: Phase 8 Playwright E2E 테스트 환경 구축 (17 Suites, 512 Tests, 8 Devices)**
-  - 커밋: `ccaaafa`
 
 ### 2026-02-20
 - [x] **test: Phase 6 커버리지 부스트 + 신규 유틸/API 테스트 (44 Suites, 582 Tests, 81.49% Stmt)**
-  - 커밋: `0b4b59e`
 
 - [x] **test: Phase 4 service-schedules CRUD + Hook 테스트 추가 (32 Suites, 404 Tests)**
-  - 커밋: `c1a8bdf`
 
 
 - [x] **test: Phase 2 통합 테스트 + Hook 테스트 추가 (22 Suites, 319 Tests)**
-  - 커밋: `97924a5`
 
 ### 2026-02-19
 - [x] **test: Phase 1 테스트 인프라 강화 및 유닛 테스트 11개 파일 추가**
-  - 커밋: `a9c41c1`
 
 - [x] **refactor: 3순위 코드 리뷰 이슈 7건 수정 (아키텍처/성능)**
-  - 커밋: `fb946d5`
 
 
 - [x] **fix(security,store): API 인증 강화, Emergency 롤백 추가, CSRF 데드코드 삭제**
-  - 커밋: `9458cb7`
 
 ### 2026-02-14
 - [x] **fix(dashboard): getSession() → getUser()로 복원하여 보안 경고 해소**
-  - 커밋: `516b368`
 
 - [x] **perf(dashboard): TTFB/FCP/CLS 성능 최적화**
-  - 커밋: `f2dbeee`
 
 - [x] **fix(dashboard): 임원 대시보드 환영 메시지에서 소속 파트명 제거**
-  - 커밋: `39f91e7`
 
 - [x] **fix(draft): DB 데이터 선택 시 resetWorkflow() 호출 제거**
-  - 커밋: `860bec7`
 
 - [x] **fix(arrangements): AI 추천에서 joined_date 기반 대원 필터링 추가**
-  - 커밋: `91e050c`
 
 - [x] **perf(middleware): API 라우트 및 OAuth 콜백에서 getUser() 스킵**
-  - 커밋: `1c4674e`
 
 - [x] **feat(dashboard): 대시보드를 Server Component로 전환하여 성능 개선**
-  - 커밋: `dd68177`
 
 - [x] **fix(splash): SplashScreen 반복 표시 버그 수정**
-  - 커밋: `f4e3b23`
 
 - [x] **feat(emergency): 긴급 변동 되돌리기 기능 + rowOffset 초기화 버그 수정**
-  - 커밋: `bd7ee28`
 
 
 - [x] **fix(arrangements): 새 배치표 생성 시 총 좌석이 전체 대원 수로 세팅되는 버그 수정**
-  - 커밋: `0de3d27`
 
 ### 2026-02-12
 
 - [x] **feat(emergency): 긴급 등단 불가 로직 고도화**
-  - 커밋: `98f82f6`
 
 ### 2026-02-10
 - [x] **fix(arrangements): 확정 배치표에서 등단 불가 멤버 필터링 후 빈 좌석이 표시되는 버그 수정**
-  - 커밋: `f2caac5`
 
 - [x] **feat(seats): 사이드바 칩 크기 확대 + 파트 헤더 필터 토글 개선**
-  - 커밋: `79fc986`
 
 - [x] **docs: 핸드오프 문서 추가 (2026-02-08 ~ 2026-02-10)**
-  - 커밋: `226ebaa`
 
 - [x] **feat(arrangements): Step 3(AI 자동배치) 건너뛰기 옵션 추가**
-  - 커밋: `f6f6e6d`
 
 
 - [x] **perf: 모바일 Speed Insights 추가 최적화 — dynamic import, 쿼리 병렬화, 스플래시 단축**
-  - 커밋: `55ab16e`
 
 ### 2026-02-09
 - [x] **perf: Vercel Speed Insights 성능 최적화 — TTFB/LCP 개선**
-  - 커밋: `a49e601`
 
 - [x] **feat(dashboard): 지휘자 대시보드 환영 메시지에 파트 준비 현황 반영**
-  - 커밋: `b4352e5`
 
 - [x] **refactor(arrangements): 워크플로우 단계 순서 변경 — 줄 정렬을 AI 배치 앞으로 이동**
-  - 커밋: `900bf05`
 
 - [x] **fix(attendances): 긴급 등단 불가 처리 시 batch API 400 에러 수정**
-  - 커밋: `4cf9ae0`
 
 - [x] **feat(attendances): 자리배치표 생성 여부에 따른 잠금 오버레이 문구 분기**
-  - 커밋: `25a17eb`
 
 - [x] **feat(attendances): 준비완료 파트 칩 영역 블러 오버레이 + 안내 문구**
-  - 커밋: `7a07924`
 
 - [x] **fix(attendances): 준비 완료 상태에서 출석 수정 차단 + 토스트 안내**
-  - 커밋: `6907518`
 
 - [x] **feat(attendances): 파트별 준비완료 현황 바 + 저장 후 플로팅 준비완료 제안 UX**
-  - 커밋: `3ec5e7c`
 
 
 - [x] **fix(arrangements): 모바일 좌석 자동 스크롤 미동작 버그 수정**
-  - 커밋: `8d4fc8a`
 
 ### 2026-02-08
 - [x] **feat(arrangements): 배치표 내 자리 자동 포커싱 + 하이라이트 애니메이션**
-  - 커밋: `17c93f1`
 
 
 - [x] **fix(arrangements): 캡처 헤더/푸터 텍스트 줄바꿈 깨짐 수정**
-  - 커밋: `5895d63`
 
 ### 2026-02-07
 - [x] **fix(arrangements): 캡처 푸터 파트별 인원수 줄바꿈 깨짐 수정**
-  - 커밋: `1bb4999`
 
 - [x] **fix(arrangements): 이미지 내보내기 시 뷰포트 독립적 해상도 고정**
-  - 커밋: `071d1b8`
 
 - [x] **fix(arrangements): 이미지 내보내기 시 예배 유형 표시 안정화**
-  - 커밋: `f6f2340`
 
 - [x] **fix(arrangements): 배치표 예배 유형 잘못 표시 버그 수정**
-  - 커밋: `76c4a87`
 
 - [x] **fix(dashboard): 다중 예배 시 "다음 예배" 정보 미표시 버그 수정**
-  - 커밋: `378c339`
 
 - [x] **feat(attendances): ADMIN/CONDUCTOR 출석 탭 시간 기반 기본 선택 적용**
-  - 커밋: `0c6fc9b`
 
 - [x] **fix(db): 오후찬양예배·찬양대연합예배 시작 시간 14:00→17:00 수정**
-  - 커밋: `19b6077`
 
 - [x] **feat(attendances): 다중 예배 시간순 정렬 및 안내 문구 추가**
-  - 커밋: `9fd8d6a`
 
 - [x] **perf(mobile): 모바일 초기 로딩 속도 개선 + PWA 아이콘 수정**
-  - 커밋: `a45d6b3`
 
 - [x] **feat(arrangements): 줄별 인원 수 stepper UI 개선 및 동기화 버그 수정**
-  - 커밋: `5479c5c`
 
 - [x] **fix(arrangements): GridSettingsPanel 디바운스 race condition 버그 수정**
-  - 커밋: `41d6301`
 
 - [x] **fix(arrangements): GridSettingsPanel 디바운스 race condition 버그 수정**
-  - 커밋: `b55595f`
 
 - [x] **feat(arrangements): 자리배치 워크플로우 UX 개선 9개 항목**
-  - 커밋: `887d8c0`
 
 - [x] **fix(ui): 데스크탑 토스트 위치를 top-center로 변경 (반응형)**
-  - 커밋: `6446ccc`
 
 - [x] **docs: Claude API Structured Outputs 가이드 문서 추가**
-  - 커밋: `6668af0`
 
 - [x] **fix(config): CSP 및 로컬 개발 환경 localhost 지원 추가**
-  - 커밋: `99a385a`
 
 - [x] **fix(auth): 프로필 조회 시 .single() → .maybeSingle() 에러 처리 개선**
-  - 커밋: `be652ec`
 
 - [x] **refactor(arrangements): 7단계 → 6단계 워크플로우 리팩토링**
-  - 커밋: `a3bb4ff`
 
 - [x] **fix(arrangements): 배치표 생성 토스트 통합 및 AI 추천 분배 race condition 수정**
-  - 커밋: `c94597f`
 
 - [x] **feat(arrangements): 데이터 변경 시 워크플로우 이후 단계 체크 자동 해제**
-  - 커밋: `3087c9a`
 
 
 - [x] **docs: 2026-02-07 핸드오프 문서 생성**
-  - 커밋: `b7a27e2`
 
 ### 2026-02-06
 - [x] **fix(arrangements): 긴급 수정 모드에서 워크플로우 체크 표시 해제 버그 수정**
-  - 커밋: `08d62fd`
 
 - [x] **fix(security): CSP connect-src에 Vercel Analytics 새 도메인 추가**
-  - 커밋: `6d5b19a`
 
 
 - [x] **docs: 2026-02-06 핸드오프 문서 생성**
-  - 커밋: `e048b61`
 
 ### 2026-02-05
 - [x] **fix: 출석 모드 null 처리 및 알토 줄반장 선택 로직 개선**
-  - 커밋: `942d961`
 
 - [x] **docs: 핸드오프 문서 추가 (01/31, 02/01, 02/02, 02/04)**
-  - 커밋: `12fe52f`
 
 - [x] **refactor(arrangements): 자리배치 저장/공유/확정 UX 용어 재설계**
-  - 커밋: `197ff2c`
 
 - [x] **fix(arrangements): 저장 시 줄 정렬 조정(rowOffsets) 초기화 버그 수정**
-  - 커밋: `e6b9ae1`
 
 - [x] **fix(seats): 인쇄 시 줄반장 보라 글로우/링 제거 누락 수정**
-  - 커밋: `078f050`
 
 - [x] **fix(auth): fetchUser 프로필 쿼리 안정화 - single→maybeSingle 변경**
-  - 커밋: `ef2a680`
 
 - [x] **fix(auth): admin 프로필 로드 에러 및 대시보드 미표시 수정**
-  - 커밋: `5bcdab2`
 
 
 - [x] **feat(attendances): 예배별 개별 출석 체크 (Multi-Service Attendance)**
-  - 커밋: `df65e7a`
 
 ### 2026-02-02
 - [x] **feat(db): 프로덕션 DB → seed.sql 자동 생성 스크립트 추가**
-  - 커밋: `39f3d33`
 
 
 - [x] **fix(config): Turbopack 호환성 개선 - Sentry 설정 마이그레이션 및 루트 경로 명시**
-  - 커밋: `5cdcda9`
 
 ### 2026-02-01
 
 - [x] **fix(attendances): 자리배치표 존재 시 연습 출석 수정 허용 및 practice_status 스키마 추가**
-  - 커밋: `91fd663`
 
 ### 2026-01-31
 - [x] **fix(image-capture): inline style로 좌석 테두리 숨김 방식 변경**
-  - 커밋: `b17d069`
 
 - [x] **fix(hooks): 문서 자동 업데이트 훅 개선 — amend 방식으로 unstaged 잔여물 제거**
-  - 커밋: `eddac5d`
 
 - [x] **docs: 자동 생성 문서 및 핸드오프 매니페스트 업데이트**
   - 커밋: `ac35f49`
