@@ -11,6 +11,7 @@
  * 7. 절기/행사 정보
  */
 import { createLogger } from '@/lib/logger';
+import { hasPostPractice } from '@/lib/service-time';
 
 import type { Database } from '@/types/database.types';
 
@@ -565,16 +566,15 @@ export function parseScheduleFromWords(
  * ParsedSchedule을 ServiceScheduleInsert 형식으로 변환
  *
  * 예배 유형별 연습 설정:
- * - 주일 2부 예배: 예배 전 연습 + 예배 후 연습
- * - 오후찬양예배: 예배 전 연습만 (예배 후 연습 없음)
- * - 기도회: 예배 전 연습만
- * - 절기찬양예배: 예배 전 연습 + 예배 후 연습
- * - 찬양대연합예배: 예배 전 연습만
+ * - 예배 전 연습: 모든 예배에 있다 (등단 인원 전원 필수 참석)
+ * - 예배 후 연습: 주일 2부 예배에만 있다
+ *
+ * 판정 규칙은 src/lib/service-time.ts가 단일 출처다. 과거 이 함수가
+ * 절기찬양예배도 후연습 있음으로 판정해 폼(주일 2부만)과 어긋났고,
+ * 일정표를 붙여넣을 때마다 잘못된 값이 되살아났다.
  */
 export function toServiceScheduleInsert(parsed: ParsedSchedule): ServiceScheduleInsert {
-  // 예배 후 연습이 있는 예배 유형
-  const hasPostPracticeTypes = ['주일 2부 예배', '절기찬양예배'];
-  const hasPostPractice = hasPostPracticeTypes.includes(parsed.service_type);
+  const hasPost = hasPostPractice(parsed.service_type);
 
   return {
     date: parsed.date,
@@ -586,12 +586,12 @@ export function toServiceScheduleInsert(parsed: ParsedSchedule): ServiceSchedule
     offertory_performer: parsed.offertory_performer,
     notes: parsed.notes,
     // 예배 유형별 연습 설정
-    has_post_practice: hasPostPractice,
+    has_post_practice: hasPost,
     has_pre_practice: true,
     pre_practice_minutes_before: 60,
-    post_practice_start_time: hasPostPractice ? '07:30' : null,
-    post_practice_duration: hasPostPractice ? 60 : null,
+    post_practice_start_time: hasPost ? '07:30' : null,
+    post_practice_duration: hasPost ? 60 : null,
     pre_practice_location: '2층 1찬양대실',
-    post_practice_location: hasPostPractice ? '7층 2찬양대실' : null,
+    post_practice_location: hasPost ? '7층 2찬양대실' : null,
   };
 }

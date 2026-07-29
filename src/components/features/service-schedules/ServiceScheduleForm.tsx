@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   DEFAULT_SERVICE_START_TIME,
   getDefaultServiceStartTime,
+  hasPostPractice,
   toTimeInputValue,
 } from '@/lib/service-time';
 
@@ -42,11 +43,6 @@ const HOOD_COLOR_OPTIONS = [
   { value: '적', label: '적색' },
   { value: '검정', label: '검정색' },
 ] as const;
-
-// 특별예배 여부 확인 (주일 2부 예배가 아닌 경우)
-function isSpecialService(serviceType: string | null | undefined): boolean {
-  return !!serviceType && serviceType !== '주일 2부 예배';
-}
 
 type ServiceSchedule = Database['public']['Tables']['service_schedules']['Row'];
 type ServiceScheduleInsert = Database['public']['Tables']['service_schedules']['Insert'];
@@ -86,8 +82,6 @@ export default function ServiceScheduleForm({
 
   const [formData, setFormData] = useState<ServiceScheduleInsert>(() => {
     const serviceType = initialServiceType;
-    // 특별예배는 예배 후 연습이 보통 없음
-    const isSpecial = isSpecialService(serviceType);
 
     return {
       date: initialData?.date || date || '',
@@ -105,8 +99,9 @@ export default function ServiceScheduleForm({
       composer: initialData?.composer || '',
       music_source: initialData?.music_source || '',
       // 연습 설정 필드
-      // 특별예배는 예배 후 연습 기본값 false, 일반예배는 true
-      has_post_practice: initialData?.has_post_practice ?? !isSpecial,
+      // 예배 후 연습은 주일 2부 예배에만 있다 (판정 규칙은 service-time.ts가 단일 출처).
+      // 수정 시에는 관리자가 예외적으로 켜둔 값을 존중해 저장값을 그대로 쓴다.
+      has_post_practice: initialData?.has_post_practice ?? hasPostPractice(serviceType),
       post_practice_start_time: initialData?.post_practice_start_time || '07:30',
       post_practice_duration: initialData?.post_practice_duration ?? 60,
       // 예배 전 연습은 모든 예배에서 필수 (등단 인원 전원 참석)
@@ -156,17 +151,17 @@ export default function ServiceScheduleForm({
               if (value === '기타') {
                 setIsCustomMode(true);
                 setCustomServiceType('');
-                // 기타는 특별예배로 간주 → 예배 후 연습 기본 false
+                // 기타(자유 입력)는 주일 2부 예배일 수 없으므로 예배 후 연습 없음
                 setFormData({ ...formData, service_type: '', has_post_practice: false });
               } else {
                 setIsCustomMode(false);
                 setCustomServiceType('');
-                // 주일 2부 예배가 아니면 특별예배 → 예배 후 연습 기본 false
-                const isSpecial = isSpecialService(value);
                 setFormData({
                   ...formData,
                   service_type: value,
-                  has_post_practice: !isSpecial,
+                  // 예배 유형을 바꾸면 그 유형의 규칙대로 다시 채운다.
+                  // 예외가 필요하면 아래 체크박스로 다시 켤 수 있다.
+                  has_post_practice: hasPostPractice(value),
                   // 사용자가 직접 고친 시간은 보존하고, 손대지 않은 경우만 기본값으로 갱신
                   service_start_time: isUntouchedStartTime(formData.service_start_time)
                     ? (getDefaultServiceStartTime(value) ?? '')
