@@ -26,6 +26,8 @@ const createServiceScheduleSchema = z.object({
   // 연습 설정 필드
   has_pre_practice: z.boolean().nullable().optional(),
   has_post_practice: z.boolean().nullable().optional(),
+  // 화면이 읽는 전연습 시각. 스키마에 없으면 zod가 조용히 버려 저장되지 않는다.
+  pre_practice_start_time: z.string().nullable().optional(),
   pre_practice_minutes_before: z.number().nullable().optional(),
   post_practice_start_time: z.string().nullable().optional(),
   post_practice_duration: z.number().nullable().optional(),

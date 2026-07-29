@@ -11,7 +11,7 @@
  * 7. 절기/행사 정보
  */
 import { createLogger } from '@/lib/logger';
-import { hasPostPractice } from '@/lib/service-time';
+import { getDefaultPrePracticeStartTime, hasPostPractice } from '@/lib/service-time';
 
 import type { Database } from '@/types/database.types';
 
@@ -588,6 +588,9 @@ export function toServiceScheduleInsert(parsed: ParsedSchedule): ServiceSchedule
     // 예배 유형별 연습 설정
     has_post_practice: hasPost,
     has_pre_practice: true,
+    // 화면(dashboard-data.ts)이 읽는 것은 이 컬럼이다. 과거 이 값을 아무도 채우지
+    // 않아 주일 2부 예배의 75%가 NULL이었고, 그 일정에는 전연습 안내가 뜨지 않았다.
+    pre_practice_start_time: getDefaultPrePracticeStartTime(parsed.service_type),
     pre_practice_minutes_before: 60,
     post_practice_start_time: hasPost ? '07:30' : null,
     post_practice_duration: hasPost ? 60 : null,

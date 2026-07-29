@@ -17,7 +17,9 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  DEFAULT_PRE_PRACTICE_START_TIME,
   DEFAULT_SERVICE_START_TIME,
+  getDefaultPrePracticeStartTime,
   getDefaultServiceStartTime,
   hasPostPractice,
   toTimeInputValue,
@@ -60,13 +62,19 @@ function isPresetServiceType(value: string | null | undefined): boolean {
   return SERVICE_TYPE_OPTIONS.some((opt) => opt.value === value);
 }
 
-// 현재 시간값이 (비어 있거나) 어떤 예배 종류의 기본값인지 확인.
+// 현재 시간값이 (비어 있거나) 그 매핑의 어떤 기본값인지 확인.
 // 사용자가 직접 입력한 시간은 어떤 기본값과도 일치하지 않으므로,
 // 예배 유형을 바꿔도 덮어쓰지 않고 보존된다.
-function isUntouchedStartTime(value: string | null | undefined): boolean {
+//
+// 예배 시작 시각과 전연습 시각에 같은 판정이 필요하므로 매핑을 인자로 받는다.
+// 판정을 두 벌 두면 언젠가 한쪽만 고쳐져 어긋난다 — 이번 버그가 정확히 그랬다.
+function isUntouchedTime(
+  value: string | null | undefined,
+  defaults: Record<string, string>
+): boolean {
   const normalized = toTimeInputValue(value);
   if (!normalized) return true;
-  return Object.values(DEFAULT_SERVICE_START_TIME).includes(normalized);
+  return Object.values(defaults).includes(normalized);
 }
 
 export default function ServiceScheduleForm({
@@ -106,6 +114,12 @@ export default function ServiceScheduleForm({
       post_practice_duration: initialData?.post_practice_duration ?? 60,
       // 예배 전 연습은 모든 예배에서 필수 (등단 인원 전원 참석)
       has_pre_practice: true,
+      // 화면(dashboard-data.ts)이 읽는 것은 이 컬럼이다. 폼도 파서도 채우지 않아
+      // 주일 2부 예배의 75%가 NULL이었고 전연습 안내가 뜨지 않았다.
+      pre_practice_start_time:
+        toTimeInputValue(initialData?.pre_practice_start_time) ||
+        getDefaultPrePracticeStartTime(serviceType) ||
+        '',
       pre_practice_minutes_before: initialData?.pre_practice_minutes_before ?? 60,
       // 연습 장소
       pre_practice_location: initialData?.pre_practice_location || '2층 1찬양대실',
@@ -163,9 +177,19 @@ export default function ServiceScheduleForm({
                   // 예외가 필요하면 아래 체크박스로 다시 켤 수 있다.
                   has_post_practice: hasPostPractice(value),
                   // 사용자가 직접 고친 시간은 보존하고, 손대지 않은 경우만 기본값으로 갱신
-                  service_start_time: isUntouchedStartTime(formData.service_start_time)
+                  service_start_time: isUntouchedTime(
+                    formData.service_start_time,
+                    DEFAULT_SERVICE_START_TIME
+                  )
                     ? (getDefaultServiceStartTime(value) ?? '')
                     : formData.service_start_time,
+                  // 절기찬양예배처럼 기본값이 없는 종류는 null이 되어 관리자 입력에 맡긴다
+                  pre_practice_start_time: isUntouchedTime(
+                    formData.pre_practice_start_time,
+                    DEFAULT_PRE_PRACTICE_START_TIME
+                  )
+                    ? (getDefaultPrePracticeStartTime(value) ?? '')
+                    : formData.pre_practice_start_time,
                 });
               }
             }}

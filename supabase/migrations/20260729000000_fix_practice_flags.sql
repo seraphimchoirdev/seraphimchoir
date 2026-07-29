@@ -52,3 +52,27 @@ SET post_practice_start_time = NULL,
     post_practice_duration   = NULL,
     post_practice_location   = NULL
 WHERE has_post_practice = false;
+
+-- 4) 전연습 시각(pre_practice_start_time) 누락 보정
+--
+-- has_pre_practice를 켜는 것만으로는 안내가 뜨지 않는다. 화면
+-- (dashboard-data.ts:92 → UpcomingService.tsx:90)은 이 컬럼을 직접 읽고,
+-- NULL이면 아무것도 렌더링하지 않는다. 주일 2부 예배의 75%가 NULL이었다.
+--
+-- 쓰는 쪽과 읽는 쪽이 다른 컬럼을 보고 있던 것이 원인이다. 폼과 파서는
+-- pre_practice_minutes_before(60)만 채웠는데 그 값은 어디서도 읽히지 않는다.
+-- 게다가 실제 운영은 90분 전(09:00 예배 / 07:30 연습)이라 60이라는 값 자체도
+-- 틀렸다. 같은 커밋에서 폼·파서·API가 start_time을 채우도록 고쳤다.
+--
+-- 절기찬양예배는 제외한다. 절기에 따라 주일 오후 찬양예배를 대신하기도 하고
+-- 평일 저녁에 열리기도 해서 종류만으로 시각을 정할 수 없다. 틀린 값을 채우면
+-- 폼에 이 필드의 입력란이 없어 관리자가 고칠 수단도 없으므로, NULL로 두고
+-- 안내를 생략하는 편이 안전하다.
+UPDATE service_schedules
+SET pre_practice_start_time = CASE service_type
+      WHEN '주일 2부 예배' THEN '07:30'::time
+      WHEN '오후찬양예배'  THEN '16:00'::time
+      WHEN '기도회'        THEN '05:30'::time
+    END
+WHERE pre_practice_start_time IS NULL
+  AND service_type IN ('주일 2부 예배', '오후찬양예배', '기도회');

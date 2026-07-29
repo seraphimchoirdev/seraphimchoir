@@ -67,3 +67,36 @@ export function hasPostPractice(serviceType: string | null | undefined): boolean
   if (!serviceType) return false;
   return POST_PRACTICE_SERVICE_TYPES.includes(serviceType);
 }
+
+/**
+ * 예배 종류별 예배 전 연습 시작 시각.
+ *
+ * 실제 운영값에서 뽑았다 — 이 세 종류는 시각이 하나로 일관되게 수렴해 있었다.
+ *
+ * 절기찬양예배는 일부러 뺐다. 절기에 따라 주일 오후 찬양예배를 대신하기도 하고
+ * 평일 저녁에 열리기도 해서, 종류만으로 시각을 정할 수 없다. 매핑에 없으면
+ * null이 반환되고 관리자가 직접 입력하게 된다 — 틀린 시각을 자동으로 채워
+ * 넣는 것보다 비워두는 편이 안전하다.
+ *
+ * 주의: pre_practice_minutes_before(60)로 계산하면 안 된다. 주일 2부 예배는
+ * 09:00 시작인데 전연습은 07:30이라 실제로는 90분 전이고, 그 60이라는 값은
+ * 폼과 파서에 하드코딩만 돼 있을 뿐 어디서도 읽히지 않는 죽은 값이다.
+ * 화면(dashboard-data.ts)이 읽는 것은 pre_practice_start_time 컬럼이다.
+ */
+export const DEFAULT_PRE_PRACTICE_START_TIME: Record<string, string> = {
+  '주일 2부 예배': '07:30',
+  오후찬양예배: '16:00',
+  기도회: '05:30',
+  // 절기찬양예배·'기타'는 시각이 일정하지 않아 기본값을 두지 않음
+};
+
+/**
+ * 예배 종류에 대응하는 전연습 시작 시각을 반환한다.
+ * 프리셋에 없는 종류는 null을 반환해 사용자 입력에 맡긴다.
+ */
+export function getDefaultPrePracticeStartTime(
+  serviceType: string | null | undefined
+): string | null {
+  if (!serviceType) return null;
+  return DEFAULT_PRE_PRACTICE_START_TIME[serviceType] ?? null;
+}
