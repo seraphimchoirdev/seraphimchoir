@@ -30,7 +30,12 @@ const updateMemberSchema = z.object({
   leave_start_date: z.string().nullable().optional(), // YYYY-MM-DD 형식
   leave_duration_months: z.number().int().min(1).max(24).nullable().optional(),
   expected_return_date: z.string().nullable().optional(), // YYYY-MM-DD 형식
-  joined_date: z.string().nullable().optional(), // 임명일
+  joined_date: z.string().nullable().optional(), // 입단일 (YYYY-MM-DD)
+  // 정대원 임명일. joined_date(입단일)와 다른 날짜다 — 입단 후 2~4주 뒤에 임명받는다.
+  // 승격 시 member_status='REGULAR'와 함께 이 값을 채운다.
+  regular_member_since: z.string().nullable().optional(),
+  // 정대원 승격에 필요한 연습 세트 수(전연습+후연습=1세트)
+  required_practice_sets: z.number().int().min(1).max(10).optional(),
 });
 
 /**

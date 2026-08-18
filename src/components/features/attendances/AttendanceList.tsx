@@ -33,6 +33,7 @@ import { Database } from '@/types/database.types';
 import AttendanceFilters from './AttendanceFilters';
 import AttendanceSummary from './AttendanceSummary';
 import MemberChip from './MemberChip';
+import PracticeSetChip from './PracticeSetChip';
 
 const logger = createLogger({ prefix: 'AttendanceList' });
 
@@ -92,8 +93,11 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
   // 출석 관리 모드 및 잠금 상태
   const { mode, defaultTab, lockStatus, isLoading: isModeLoading } = useAttendanceMode({ date, serviceScheduleId });
 
+  // 신입대원(NEW)도 함께 조회한다. 신입은 등단하지 않지만 연습 참석을 기록해야
+  // 세트(전연습+후연습)가 쌓이고, 그 기록이 정대원 승격의 근거가 된다.
+  // 신입을 빼면 출석 레코드 자체가 생기지 않아 승격 판단 재료가 없다.
   const { data: membersData, isLoading: membersLoading } = useMembers({
-    member_status: 'REGULAR',
+    member_status: ['REGULAR', 'NEW'],
     is_singer: true, // 등단자만 (지휘자/반주자 제외)
     limit: 100,
     sortBy: 'name', // 가나다순 정렬 (중장년층 UX 개선)
@@ -155,6 +159,13 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
 
   const members = useMemo(() => membersData?.data || [], [membersData?.data]);
 
+  // 신입대원 id 집합. 렌더 루프와 저장 payload 양쪽에서 "이 사람이 신입인가"를
+  // 물어보는데, 매번 members를 훑으면 O(n²)가 된다.
+  const newMemberIds = useMemo(
+    () => new Set(members.filter((m) => m.member_status === 'NEW').map((m) => m.id)),
+    [members]
+  );
+
   // 파트별로 멤버 그룹화
   const membersByPart = useMemo(() => {
     return members.reduce(
@@ -177,21 +188,43 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
   const currentField = activeTab === 'service' ? 'is_service_available' : 'is_practice_attended';
 
   // 멤버의 출석 상태 계산
+  //
+  // 신입대원은 등단 탭에서 항상 false다. 등단 자체를 하지 않으므로 DB 기본값인
+  // true를 그대로 쓰면 "등단 예정"으로 표시되고, 저장 시 잘못된 이력이 남는다.
+  // 연습 탭은 신입도 정상 참여하므로 기존 로직을 그대로 쓴다.
   const getMemberAttendingStatus = useCallback(
     (memberId: string): boolean => {
+      if (currentField === 'is_service_available' && newMemberIds.has(memberId)) {
+        return false;
+      }
       const pending = pendingChanges[memberId];
       const attendance = attendances?.find((a) => a.member_id === memberId);
       const dbValue = attendance?.[currentField] ?? true;
       const pendingValue = pending?.[currentField];
       return pendingValue !== undefined ? pendingValue : dbValue;
     },
-    [pendingChanges, attendances, currentField]
+    [pendingChanges, attendances, currentField, newMemberIds]
   );
 
   // 파트별 통계 계산
+  //
+  // 등단 탭에서는 신입을 분모에서도 뺀다. 신입은 등단 대상이 아니므로 분모에 넣으면
+  // 파트 헤더가 매주 "12/14명 · 2명 불참"으로 보이고, 파트장이 있지도 않은 불참자를
+  // 찾게 된다. 연습 탭에서는 신입도 참석 대상이라 그대로 센다.
+  const countedMembersByPart = useMemo(() => {
+    if (activeTab !== 'service' || newMemberIds.size === 0) return membersByPart;
+
+    return Object.fromEntries(
+      Object.entries(membersByPart).map(([part, partMembers]) => [
+        part,
+        partMembers.filter((m) => !newMemberIds.has(m.id)),
+      ])
+    );
+  }, [membersByPart, activeTab, newMemberIds]);
+
   const partStats = useMemo(() => {
     return PARTS.map((part) => {
-      const partMembers = membersByPart[part] || [];
+      const partMembers = countedMembersByPart[part] || [];
       const attendingCount = partMembers.filter((member) =>
         getMemberAttendingStatus(member.id)
       ).length;
@@ -202,7 +235,7 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
         attending: attendingCount,
       };
     }).filter((stat) => stat.total > 0);
-  }, [membersByPart, getMemberAttendingStatus]);
+  }, [countedMembersByPart, getMemberAttendingStatus]);
 
   // 전체 통계
   const totalStats = useMemo(() => {
@@ -219,24 +252,31 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
 
     const newOpenParts: Record<Part, boolean> = {} as Record<Part, boolean>;
     PARTS.forEach((part) => {
-      const partMembers = membersByPart[part] || [];
+      // countedMembersByPart를 쓴다 — 등단 탭에서 신입은 항상 "불참"이라
+      // membersByPart 기준으로 세면 신입이 있는 파트가 매번 자동으로 펼쳐진다.
+      const partMembers = countedMembersByPart[part] || [];
       const hasAbsent = partMembers.some((m) => !getMemberAttendingStatus(m.id));
       newOpenParts[part] = hasAbsent;
     });
     setOpenParts(newOpenParts);
-  }, [isLoading, membersByPart, attendances, getMemberAttendingStatus]);
+  }, [isLoading, countedMembersByPart, attendances, getMemberAttendingStatus]);
 
   // 필터링된 멤버
+  //
+  // "불참자만" 필터에서도 신입은 남긴다. 신입 행은 등단 여부가 아니라 연습 세트를
+  // 기록하는 자리이므로, 불참자를 훑는 중에도 전/후연습 체크는 계속 할 수 있어야 한다.
   const filteredMembersByPart = useMemo(() => {
     if (!showAbsentOnly) return membersByPart;
 
     return Object.fromEntries(
       Object.entries(membersByPart).map(([part, partMembers]) => [
         part,
-        partMembers.filter((member) => !getMemberAttendingStatus(member.id)),
+        partMembers.filter(
+          (member) => newMemberIds.has(member.id) || !getMemberAttendingStatus(member.id)
+        ),
       ])
     );
-  }, [membersByPart, getMemberAttendingStatus, showAbsentOnly]);
+  }, [membersByPart, getMemberAttendingStatus, showAbsentOnly, newMemberIds]);
 
   // 해당 파트가 준비완료 상태인지 확인
   const isPartReadinessLocked = useCallback(
@@ -276,6 +316,71 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
     [getMemberAttendingStatus, currentField, isPartReadinessLocked, getLockedWarningMessage]
   );
 
+  // 신입대원의 예배 전 연습 참석 상태 (미기록 = null)
+  const getPrePracticeStatus = useCallback(
+    (memberId: string): boolean | null => {
+      const pending = pendingChanges[memberId];
+      if (pending && 'pre_practice_attended' in pending) {
+        return pending.pre_practice_attended ?? null;
+      }
+      const attendance = attendances?.find((a) => a.member_id === memberId);
+      return attendance?.pre_practice_attended ?? null;
+    },
+    [pendingChanges, attendances]
+  );
+
+  // 전연습 토글 — 미기록 → 참석 → 불참 → 미기록 순환
+  //
+  // 2상태(참석/불참) 토글이 아닌 이유: 전연습은 DEFAULT가 NULL이고 "아직 확인 안 됨"과
+  // "불참"이 다른 의미다. 잘못 누른 것을 미기록으로 되돌릴 수 없으면, 파트장이 오조작을
+  // 정정할 방법이 없어 세트 집계가 틀어진 채로 남는다.
+  //
+  // handleToggle과 합치지 않은 이유: handleToggle은 currentField(탭에 종속)로 동작하는데
+  // 전연습은 탭과 무관하게 항상 기록 가능해야 한다. 옵셔널 인자로 분기시키면 기존
+  // 정대원 저장 경로까지 함께 흔들린다.
+  const handlePrePracticeToggle = useCallback(
+    (memberId: string, memberPart: string) => {
+      if (isPartReadinessLocked(memberPart)) {
+        showWarning(getLockedWarningMessage());
+        return;
+      }
+      const current = getPrePracticeStatus(memberId);
+      const next = current === null ? true : current === true ? false : null;
+
+      setPendingChanges((prev) => ({
+        ...prev,
+        [memberId]: {
+          ...(prev[memberId] || {}),
+          pre_practice_attended: next,
+        },
+      }));
+    },
+    [getPrePracticeStatus, isPartReadinessLocked, getLockedWarningMessage]
+  );
+
+  // 신입 행의 후연습 토글 — 등단 탭에서도 눌러야 하므로 currentField를 안 쓰고
+  // is_practice_attended를 직접 지정한다. 저장 경로는 정대원과 완전히 동일하다.
+  const handlePostPracticeToggle = useCallback(
+    (memberId: string, memberPart: string) => {
+      if (isPartReadinessLocked(memberPart)) {
+        showWarning(getLockedWarningMessage());
+        return;
+      }
+      const pending = pendingChanges[memberId];
+      const attendance = attendances?.find((a) => a.member_id === memberId);
+      const current = pending?.is_practice_attended ?? attendance?.is_practice_attended ?? true;
+
+      setPendingChanges((prev) => ({
+        ...prev,
+        [memberId]: {
+          ...(prev[memberId] || {}),
+          is_practice_attended: !current,
+        },
+      }));
+    },
+    [pendingChanges, attendances, isPartReadinessLocked, getLockedWarningMessage]
+  );
+
   // 파트 전체 선택/해제 핸들러
   const handleSelectAllPart = useCallback(
     (part: string, value: boolean) => {
@@ -283,7 +388,9 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
         showWarning(getLockedWarningMessage());
         return;
       }
-      const partMembers = membersByPart[part] || [];
+      // 등단 탭의 "전체 출석"이 신입까지 true로 만들면 안 된다 — 신입은 등단하지 않는다.
+      // countedMembersByPart는 등단 탭에서 이미 신입을 제외한 목록이다.
+      const partMembers = countedMembersByPart[part] || [];
 
       setPendingChanges((prev) => {
         const updates = { ...prev };
@@ -296,7 +403,7 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
         return updates;
       });
     },
-    [membersByPart, currentField, isPartReadinessLocked, getLockedWarningMessage]
+    [countedMembersByPart, currentField, isPartReadinessLocked, getLockedWarningMessage]
   );
 
   // 파트 토글 핸들러
@@ -327,13 +434,37 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
         const memberId = member.id;
         const changes = pendingChanges[memberId];
         const existing = attendances?.find((a) => a.member_id === memberId);
+        const isNewMember = newMemberIds.has(memberId);
 
         // 표시 우선순위: 사용자 변경 > 기존 DB 값 > 기본 true(등단/연습 가능)
-        const is_service_available =
-          changes?.is_service_available ?? existing?.is_service_available ?? true;
+        //
+        // 신입대원만 예외로 false를 명시 전송한다. 신입은 등단하지 않으므로 기존
+        // 우선순위(기본 true)를 그대로 태우면 손대지 않아도 매주 등단으로 기록되고,
+        // 승격 후에야 "신입일 때도 매주 등단했다"는 잘못된 이력으로 드러난다.
+        // zod의 .default(true)에 의존하지 않고 값을 직접 보낸다.
+        const is_service_available = isNewMember
+          ? false
+          : (changes?.is_service_available ?? existing?.is_service_available ?? true);
 
         const is_practice_attended =
           changes?.is_practice_attended ?? existing?.is_practice_attended ?? true;
+
+        // 전연습 값은 신입 여부와 무관하게 **항상** 보낸다(미기록이면 null).
+        // 입력은 신입 행에서만 하지만, 전송은 전원이 한다.
+        //
+        // 조건부로 키를 빼면 안 되는 이유 — PostgREST는 배열 upsert를 행별로 처리하지
+        // 않는다. 합집합 컬럼으로 INSERT 하나를 만든 뒤 ON CONFLICT DO UPDATE SET
+        // col = EXCLUDED.col을 건다. 키가 빠진 행에는 DEFAULT(= NULL)가 채워지므로
+        // 그 행의 기존 값이 지워진다(로컬 DB에서 재현 확인).
+        //
+        // 그래서 두 가지가 깨진다:
+        //   1. 신입 A만 체크해도 같은 payload의 신입 B 기록이 NULL이 된다
+        //   2. 승격된 대원은 newMemberIds에서 빠져 키를 안 보내게 되는데, 그 순간
+        //      신입 시절의 세트 기록이 전부 지워진다 — 승격 근거가 사라진다
+        //
+        // 화면이 계산한 값(기존 DB 값 폴백 포함)을 항상 실으면 덮어써도 같은 값이라
+        // 무해하다. is_service_available이 이미 쓰는 스냅샷 규약과 동일하다.
+        const pre_practice_attended = getPrePracticeStatus(memberId);
 
         return {
           member_id: memberId,
@@ -341,6 +472,7 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
           service_schedule_id: serviceScheduleId,
           is_service_available,
           is_practice_attended,
+          pre_practice_attended,
         };
       });
 
@@ -515,10 +647,17 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
 
               if (allPartMembers.length === 0) return null;
 
-              const partAttendingCount = allPartMembers.filter((m) =>
+              // 신입은 별도 블록으로 렌더링한다(칩 그리드에 넣으면 칩 두 개가 뭉갠다)
+              const partRegulars = partMembers.filter((m) => !newMemberIds.has(m.id));
+              const partNewMembers = partMembers.filter((m) => newMemberIds.has(m.id));
+
+              // 파트 헤더의 "n/N명 · n명 불참"은 등단 인원 기준이다.
+              // countedMembersByPart는 등단 탭에서 신입이 빠진 목록이라 여기에 맞다.
+              const countedPartMembers = countedMembersByPart[part] || [];
+              const partAttendingCount = countedPartMembers.filter((m) =>
                 getMemberAttendingStatus(m.id)
               ).length;
-              const partAbsentCount = allPartMembers.length - partAttendingCount;
+              const partAbsentCount = countedPartMembers.length - partAttendingCount;
 
               const isExpanded = openParts[part];
 
@@ -548,7 +687,7 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
                         {getPartLabel(part)}
                       </span>
                       <span className="text-sm text-[var(--color-text-secondary)]">
-                        {partAttendingCount}/{allPartMembers.length}명
+                        {partAttendingCount}/{countedPartMembers.length}명
                       </span>
                     </div>
 
@@ -599,9 +738,9 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
                           </Button>
                         </div>
 
-                        {/* 칩 그리드 */}
+                        {/* 칩 그리드 (정대원) */}
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-                          {partMembers.map((member) => {
+                          {partRegulars.map((member) => {
                             const attendance = attendances?.find((a) => a.member_id === member.id);
                             const dbValue =
                               tabValue === 'service'
@@ -632,6 +771,77 @@ export default function AttendanceList({ date, serviceScheduleId, deadlines }: A
                             );
                           })}
                         </div>
+
+                        {/* 신입대원 — 그리드가 아니라 전체 너비 행으로 쌓는다.
+                            이름 + 전연습 + 후연습 세 요소가 좁은 그리드 셀에서는 뭉개지고,
+                            신입은 파트당 0~2명이라 세로로 쌓아도 공간을 거의 안 먹는다. */}
+                        {partNewMembers.length > 0 && (
+                          <div className="space-y-2 rounded-lg border border-dashed border-[var(--color-border-default)] bg-[var(--color-background-secondary)] p-3">
+                            <p className="text-xs font-medium text-[var(--color-text-secondary)]">
+                              신입대원 · 연습 세트 기록
+                            </p>
+                            {partNewMembers.map((member) => {
+                              const isRowDisabled = isPartReadinessLocked(member.part);
+                              const attendance = attendances?.find((a) => a.member_id === member.id);
+                              const pending = pendingChanges[member.id];
+
+                              const preValue = getPrePracticeStatus(member.id);
+                              const preChanged =
+                                pending !== undefined &&
+                                'pre_practice_attended' in pending &&
+                                (pending.pre_practice_attended ?? null) !==
+                                  (attendance?.pre_practice_attended ?? null);
+
+                              // 후연습은 기존 boolean 필드를 그대로 쓴다(정대원과 동일한 저장 경로).
+                              // 다만 신입 행에서는 탭과 무관하게 항상 보여야 하므로 값을 직접 계산한다.
+                              const postDbValue = attendance?.is_practice_attended ?? true;
+                              const postValue = pending?.is_practice_attended ?? postDbValue;
+                              const postChanged =
+                                pending?.is_practice_attended !== undefined &&
+                                pending.is_practice_attended !== postDbValue;
+
+                              return (
+                                <div
+                                  key={member.id}
+                                  className="flex flex-wrap items-center gap-2"
+                                  data-testid="new-member-row"
+                                  data-member-id={member.id}
+                                >
+                                  <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+                                    <span className="truncate">{member.name}</span>
+                                    <span className="flex-shrink-0 rounded-full bg-[var(--color-primary-100)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-primary-700)]">
+                                      신입
+                                    </span>
+                                  </span>
+
+                                  <div className="ml-auto flex items-center gap-1.5">
+                                    <PracticeSetChip
+                                      label="전연습"
+                                      value={preValue}
+                                      isChanged={preChanged}
+                                      disabled={isRowDisabled}
+                                      onToggle={() =>
+                                        handlePrePracticeToggle(member.id, member.part)
+                                      }
+                                    />
+                                    {/* 후연습이 없는 예배에서는 세트가 성립하지 않으므로 칩도 숨긴다 */}
+                                    {hasPostPractice && (
+                                      <PracticeSetChip
+                                        label="후연습"
+                                        value={postValue}
+                                        isChanged={postChanged}
+                                        disabled={isRowDisabled}
+                                        onToggle={() =>
+                                          handlePostPracticeToggle(member.id, member.part)
+                                        }
+                                      />
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
 
                         {/* 불참자 필터 시 해당 파트에 불참자가 없을 때 */}
                         {showAbsentOnly && partMembers.length === 0 && partAbsentCount === 0 && (

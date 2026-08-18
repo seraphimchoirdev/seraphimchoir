@@ -19,6 +19,8 @@ const createAttendanceSchema = z.object({
   is_service_available: z.boolean().default(true),
   is_practice_attended: z.boolean().default(true),
   practice_status: practiceAttendanceTypeSchema.nullable().optional(),
+  // 예배 전 연습 참석(신입대원 세트 카운팅용). 미전송은 "미기록"이므로 default를 두지 않는다.
+  pre_practice_attended: z.boolean().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
