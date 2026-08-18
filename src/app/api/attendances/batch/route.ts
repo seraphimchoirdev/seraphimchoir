@@ -89,6 +89,11 @@ const attendanceItemSchema = z.object({
   service_schedule_id: z.string().uuid('유효한 예배 일정 ID를 입력해주세요').optional(),
   is_service_available: z.boolean().default(true),
   is_practice_attended: z.boolean().default(true),
+  // 신입대원 세트 카운팅용 예배 전 연습 참석.
+  // default를 두지 않는 이유: 위 두 필드와 달리 "안 보냈으면 참석"이 아니다.
+  // 파트장이 적극적으로 체크하는 항목이라 미전송은 "미기록"(NULL)이어야 한다.
+  // default(true)를 주면 화면을 열고 저장만 해도 세트가 부풀려진다.
+  pre_practice_attended: z.boolean().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
@@ -335,6 +340,7 @@ const updateItemSchema = z.object({
     .optional(),
   is_service_available: z.boolean().optional(),
   is_practice_attended: z.boolean().optional(),
+  pre_practice_attended: z.boolean().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 

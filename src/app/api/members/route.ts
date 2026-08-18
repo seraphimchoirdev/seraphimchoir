@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { createLogger } from '@/lib/logger';
+import { DEFAULT_REQUIRED_PRACTICE_SETS } from '@/lib/practice-set-rule';
 import { sanitizers } from '@/lib/security/input-sanitizer';
 import { createClient } from '@/lib/supabase/server';
 
@@ -23,7 +24,15 @@ const queryParamsSchema = z.object({
   page: z.coerce.number().int().min(1).optional().nullish(),
   part: PartEnum.optional().nullish(),
   search: z.string().optional().nullish(),
-  member_status: MemberStatusEnum.optional().nullish(),
+  // 상태 필터. 콤마로 여러 개를 받는다 ('REGULAR,NEW').
+  // 출석 화면이 정대원과 신입대원을 함께 조회해야 하기 때문이다 — 신입은 연습
+  // 참석을 기록해야 세트가 쌓이는데, REGULAR만 조회하면 화면에 나타나지 않는다.
+  member_status: z
+    .string()
+    .optional()
+    .nullish()
+    .transform((v) => (v ? v.split(',').map((s) => s.trim()).filter(Boolean) : undefined))
+    .pipe(z.array(MemberStatusEnum).min(1).optional()),
   // 자리배치/출석체크 대상 필터 (true=등단자만, false=비등단자만)
   is_singer: z
     .enum(['true', 'false'])
@@ -75,6 +84,14 @@ const createMemberSchema = z.object({
   leave_start_date: z.string().nullable().optional(),
   leave_duration_months: z.number().int().min(1).max(24).nullable().optional(),
   expected_return_date: z.string().nullable().optional(),
+  // 신입대원이 정대원이 되기까지 채워야 할 연습 세트 수(전연습+후연습=1세트).
+  // 입단일로부터 2~4주라는 폭을 지휘자가 대원마다 판단해 정하므로 등록 시 고른다.
+  required_practice_sets: z
+    .number()
+    .int()
+    .min(1)
+    .max(10)
+    .default(DEFAULT_REQUIRED_PRACTICE_SETS),
 });
 
 /**
@@ -173,9 +190,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 상태 필터링
-    if (params.member_status) {
-      query = query.eq('member_status', params.member_status);
+    // 상태 필터링 — 배열이므로 .in()을 쓴다.
+    // .eq()에 배열이나 'REGULAR,NEW' 문자열을 넘기면 매칭이 안 돼 조용히 0명이 나온다.
+    if (params.member_status && params.member_status.length > 0) {
+      query = query.in('member_status', params.member_status);
     }
 
     // 등단자/비등단자 필터링 (지휘자, 반주자 등 구분)
