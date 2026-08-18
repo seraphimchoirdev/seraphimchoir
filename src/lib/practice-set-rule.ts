@@ -104,3 +104,37 @@ export const DEFAULT_REQUIRED_PRACTICE_SETS = 4;
 
 /** 폼에서 고를 수 있는 세트 수. 입단일로부터 2~4주라는 폭을 지휘자가 판단해 정한다. */
 export const REQUIRED_PRACTICE_SETS_OPTIONS = [2, 3, 4, 5, 6] as const;
+
+/** 한 신입대원의 세트 진행 상황. 집계 API와 화면이 함께 쓰는 형태다. */
+export interface PracticeSetProgress {
+  /** 완성된 세트 수 */
+  completed: number;
+  /** 목표 세트 수 (members.required_practice_sets) */
+  required: number;
+  /** 목표를 채웠는가 — 승격 "가능" 여부이지 "승격됨"이 아니다 */
+  isEligible: boolean;
+}
+
+/**
+ * 출석 기록과 목표 세트 수로 진행 상황을 만든다.
+ *
+ * required가 NULL일 수 있다. 컬럼 DEFAULT는 4지만 이 컬럼이 생기기 전에 만들어진
+ * 행에는 값이 없을 수 있고(ALTER TABLE ADD COLUMN의 DEFAULT는 기존 행을 채우지만,
+ * 뷰를 거치며 NULL이 섞여 들어올 여지가 있다), 그럴 때 0으로 떨어뜨리면 아무 기록도
+ * 없는 신입이 "0/0 달성"으로 보여 승격 가능 표시가 뜬다. 기본값으로 폴백한다.
+ */
+export function calculatePracticeSetProgress(
+  records: PracticeSetInput[],
+  required: number | null | undefined
+): PracticeSetProgress {
+  const target =
+    typeof required === 'number' && required > 0 ? required : DEFAULT_REQUIRED_PRACTICE_SETS;
+  const completed = countPracticeSets(records);
+
+  return {
+    completed,
+    required: target,
+    // 초과 달성(5/4)도 당연히 승격 가능하다 — 등호가 아니라 이상으로 판정한다.
+    isEligible: completed >= target,
+  };
+}

@@ -6,6 +6,8 @@
  * 화면에서 눈으로 확인하기 어려운 종류의 오류라 여기서 고정한다.
  */
 import {
+  DEFAULT_REQUIRED_PRACTICE_SETS,
+  calculatePracticeSetProgress,
   countPracticeSets,
   isPracticeSetComplete,
   type PracticeSetInput,
@@ -110,5 +112,50 @@ describe('countPracticeSets', () => {
 
   it('기록이 없으면 0세트다', () => {
     expect(countPracticeSets([])).toBe(0);
+  });
+});
+
+describe('calculatePracticeSetProgress', () => {
+  const 성립기록들 = (개수: number): PracticeSetInput[] =>
+    Array.from({ length: 개수 }, () => 기록({}));
+
+  it('목표를 채우면 승격 가능이다', () => {
+    expect(calculatePracticeSetProgress(성립기록들(4), 4)).toEqual({
+      completed: 4,
+      required: 4,
+      isEligible: true,
+    });
+  });
+
+  it('목표에 못 미치면 승격 가능이 아니다', () => {
+    expect(calculatePracticeSetProgress(성립기록들(3), 4).isEligible).toBe(false);
+  });
+
+  // 목표 4세트인데 5세트를 채운 대원이 승격 불가로 뜨면 안 된다.
+  it('목표를 넘겨도 승격 가능이다', () => {
+    expect(calculatePracticeSetProgress(성립기록들(5), 4).isEligible).toBe(true);
+  });
+
+  // required가 0이나 NULL로 떨어지면 `0 >= 0`이 참이 되어, 기록이 하나도 없는
+  // 신입이 "승격 가능"으로 표시된다. 화면에서 눈으로 잡기 어려운 오류라 고정한다.
+  it('목표 세트 수가 없으면 기본값으로 폴백한다', () => {
+    expect(calculatePracticeSetProgress([], null)).toEqual({
+      completed: 0,
+      required: DEFAULT_REQUIRED_PRACTICE_SETS,
+      isEligible: false,
+    });
+    expect(calculatePracticeSetProgress([], undefined).required).toBe(
+      DEFAULT_REQUIRED_PRACTICE_SETS
+    );
+    expect(calculatePracticeSetProgress([], 0).isEligible).toBe(false);
+  });
+
+  it('불성립 기록은 진행도에 넣지 않는다', () => {
+    const 섞인기록들 = [
+      기록({}), // 성립
+      기록({ pre_practice_attended: null }), // 미기록
+      기록({ has_post_practice: false }), // 후연습 없는 예배
+    ];
+    expect(calculatePracticeSetProgress(섞인기록들, 4).completed).toBe(1);
   });
 });

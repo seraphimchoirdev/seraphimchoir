@@ -33,6 +33,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+import {
+  type MemberPracticeSetProgress,
+  useMemberPracticeSets,
+} from '@/hooks/useMemberPracticeSets';
 import { useDeleteMember, useUpdateMember } from '@/hooks/useMembers';
 
 import { createLogger } from '@/lib/logger';
@@ -109,6 +113,15 @@ interface ReturnFromLeaveInfo {
   leaveDurationMonths: number;
   requiredPracticeSessions: number;
   targetStatus: MemberStatus;
+}
+
+/** 정대원 승격 확인 모달에 넘길 정보. 집계 전이면 completed/required가 null이다. */
+interface PromoteInfo {
+  memberId: string;
+  memberName: string;
+  completed: number | null;
+  required: number | null;
+  isEligible: boolean;
 }
 
 /**
@@ -206,6 +219,8 @@ interface MemberRowProps {
   member: Member;
   updatingStatusId: string | null;
   isDeleting: boolean;
+  /** 신입대원일 때의 세트 진행 상황. 아직 안 불러왔으면 undefined */
+  practiceSetProgress?: MemberPracticeSetProgress;
   onStatusChange: (memberId: string, newStatus: MemberStatus) => void;
   onDeleteClick: (id: string) => void;
 }
@@ -214,6 +229,7 @@ const MemberRow = memo(function MemberRow({
   member,
   updatingStatusId,
   isDeleting,
+  practiceSetProgress,
   onStatusChange,
   onDeleteClick,
 }: MemberRowProps) {
@@ -309,6 +325,25 @@ const MemberRow = memo(function MemberRow({
               복직: {format(new Date(member.expected_return_date), 'yy.MM.dd')}
             </span>
           )}
+          {/* 신입대원일 때 연습 세트 진행도 — 승격 판단 근거를 결정이 일어나는 자리에 붙인다 */}
+          {member.member_status === 'NEW' && practiceSetProgress && (
+            <span
+              data-testid="practice-set-progress"
+              className={`text-[10px] font-medium ${
+                practiceSetProgress.isEligible
+                  ? 'text-[var(--color-success-600)]'
+                  : 'text-[var(--color-text-tertiary)]'
+              }`}
+              title={
+                practiceSetProgress.isEligible
+                  ? '필요한 연습 세트를 채웠습니다'
+                  : '전연습+후연습을 모두 참석해야 1세트로 인정됩니다'
+              }
+            >
+              {practiceSetProgress.completed}/{practiceSetProgress.required} 세트
+              {practiceSetProgress.isEligible && ' ✓ 승격가능'}
+            </span>
+          )}
         </div>
       </td>
 
@@ -399,9 +434,22 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
   });
   // 복직 처리 모달 상태
   const [returnModalInfo, setReturnModalInfo] = useState<ReturnFromLeaveInfo | null>(null);
+  // 정대원 승격 확인 모달 상태
+  const [promoteModalInfo, setPromoteModalInfo] = useState<PromoteInfo | null>(null);
 
   const deleteMutation = useDeleteMember();
   const updateMutation = useUpdateMember();
+
+  // 신입대원 연습 세트 진행도.
+  //
+  // 목록에 신입이 하나도 없으면 조회하지 않는다. 정대원만 있는 파트를 보고 있을 때
+  // 쓰이지도 않을 집계를 매번 부르지 않기 위해서다.
+  const hasNewMembers = useMemo(
+    () => members.some((m) => m.member_status === 'NEW'),
+    [members]
+  );
+  const { data: practiceSetsData } = useMemberPracticeSets(hasNewMembers);
+  const practiceSetProgressById = practiceSetsData?.data;
 
   // 삭제 대상 멤버 메모이제이션
   const memberToDelete = useMemo(() => {
@@ -466,6 +514,24 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
         return;
       }
 
+      // 신입 → 정대원 승격은 확인을 받는다.
+      //
+      // 막지는 않는다. 세트를 덜 채웠어도 지휘자가 사정상 조기 승격을 결정할 수 있고,
+      // 시스템이 그 재량을 대신 판단할 근거가 없다. 다만 목표 미달을 모르고 누른
+      // 경우와 알고 누른 경우를 구분해야 하므로, 현재 진행도를 보여주고 한 번 묻는다.
+      if (currentMember?.member_status === 'NEW' && newStatus === 'REGULAR') {
+        const progress = practiceSetProgressById?.[memberId];
+        setPromoteModalInfo({
+          memberId,
+          memberName: currentMember.name,
+          // 집계가 아직 안 왔으면 진행도를 지어내지 않는다 — 모달이 "확인 중"으로 뜬다.
+          completed: progress?.completed ?? null,
+          required: progress?.required ?? null,
+          isEligible: progress?.isEligible ?? false,
+        });
+        return;
+      }
+
       // 일반 상태 변경
       setUpdatingStatusId(memberId);
       try {
@@ -482,8 +548,50 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
         setUpdatingStatusId(null);
       }
     },
-    [updateMutation, onRefetch, members]
+    [updateMutation, onRefetch, members, practiceSetProgressById]
   );
+
+  /**
+   * 승격 확정 — 모달에서 "승격" 을 누른 뒤 실제로 저장한다.
+   *
+   * member_status와 함께 regular_member_since를 채운다. 승격일이 없으면 나중에
+   * "언제 정대원이 됐는지"를 되짚을 방법이 없고, 목록의 정대원 임명일 칸이 계속 '-'다.
+   *
+   * version을 함께 보내 낙관적 잠금을 건다. 기존 상태 변경 경로는 version을 안 보내
+   * 마지막 저장이 이기는데, 승격은 두 사람이 동시에 판단할 수 있는 작업이라
+   * 조용히 덮어쓰면 안 된다.
+   */
+  const handlePromoteConfirm = useCallback(async () => {
+    if (!promoteModalInfo) return;
+
+    const { memberId } = promoteModalInfo;
+    const target = members.find((m) => m.id === memberId);
+
+    setUpdatingStatusId(memberId);
+    try {
+      await updateMutation.mutateAsync({
+        id: memberId,
+        data: {
+          member_status: 'REGULAR',
+          regular_member_since: format(new Date(), 'yyyy-MM-dd'),
+          ...(target?.version !== undefined &&
+            target?.version !== null && { version: target.version }),
+        },
+      });
+      showSuccess('정대원으로 승격되었습니다.');
+      onRefetch?.();
+      setPromoteModalInfo(null);
+    } catch (error) {
+      logger.error('Promote error:', error);
+      if ((error as { code?: string }).code === 'VERSION_CONFLICT') {
+        showError('다른 곳에서 이 대원 정보가 수정되었습니다. 새로고침 후 다시 시도해주세요.');
+      } else {
+        showError('승격에 실패했습니다.');
+      }
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  }, [promoteModalInfo, members, updateMutation, onRefetch]);
 
   // 휴직 정보 제출 핸들러
   const handleLeaveSubmit = useCallback(
@@ -664,6 +772,7 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
                 member={member}
                 updatingStatusId={updatingStatusId}
                 isDeleting={deleteMutation.isPending}
+                practiceSetProgress={practiceSetProgressById?.[member.id]}
                 onStatusChange={handleStatusChange}
                 onDeleteClick={handleDeleteClick}
               />
@@ -1001,6 +1110,119 @@ export default function MemberTable({ members, onRefetch }: MemberTableProps) {
                   </span>
                 ) : (
                   '복직 처리'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 정대원 승격 확인 모달 */}
+      {promoteModalInfo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setPromoteModalInfo(null)}
+        >
+          <div
+            className="mx-4 w-full max-w-md rounded-lg bg-white p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-neutral-900">정대원 승격</h3>
+              <button
+                onClick={() => setPromoteModalInfo(null)}
+                className="p-1 text-neutral-400 transition-colors hover:text-neutral-600"
+                aria-label="닫기"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* 대원 정보 — 목표 달성 여부에 따라 색이 갈린다 */}
+            <div
+              className={`mb-4 flex items-center gap-3 rounded-lg border p-3 ${
+                promoteModalInfo.isEligible
+                  ? 'border-[var(--color-success-200)] bg-[var(--color-success-50)]'
+                  : 'border-[var(--color-warning-200)] bg-[var(--color-warning-50)]'
+              }`}
+            >
+              {promoteModalInfo.isEligible ? (
+                <CheckCircle2 className="h-8 w-8 flex-shrink-0 text-[var(--color-success-600)]" />
+              ) : (
+                <AlertTriangle className="h-8 w-8 flex-shrink-0 text-[var(--color-warning-600)]" />
+              )}
+              <div>
+                <div className="text-sm font-medium text-neutral-900">
+                  {promoteModalInfo.memberName}
+                </div>
+                <div
+                  className={`text-xs ${
+                    promoteModalInfo.isEligible
+                      ? 'text-[var(--color-success-600)]'
+                      : 'text-[var(--color-warning-700)]'
+                  }`}
+                >
+                  {promoteModalInfo.completed === null
+                    ? '연습 세트 현황을 확인하는 중입니다'
+                    : promoteModalInfo.isEligible
+                      ? '필요한 연습 세트를 모두 채웠습니다'
+                      : '아직 필요한 연습 세트를 채우지 못했습니다'}
+                </div>
+              </div>
+            </div>
+
+            {/* 세트 진행도 */}
+            <div className="mb-4 rounded-lg bg-neutral-50 p-4">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-medium text-neutral-700">연습 세트</span>
+                <span className="text-sm font-semibold text-neutral-900">
+                  {promoteModalInfo.completed === null || promoteModalInfo.required === null
+                    ? '확인 중'
+                    : `${promoteModalInfo.completed} / ${promoteModalInfo.required} 세트`}
+                </span>
+              </div>
+              <p className="text-xs text-neutral-500">
+                예배 전 연습과 예배 후 연습에 모두 참석해야 1세트로 인정됩니다.
+              </p>
+            </div>
+
+            {/* 미달 상태에서만 경고를 띄운다. 채운 경우엔 굳이 겁줄 이유가 없다. */}
+            {promoteModalInfo.completed !== null && !promoteModalInfo.isEligible && (
+              <p className="mb-4 text-xs text-[var(--color-warning-700)]">
+                ※ 목표 세트를 채우지 않았습니다. 그래도 승격하려면 아래 버튼을 눌러주세요.
+              </p>
+            )}
+
+            <p className="mb-4 text-xs text-neutral-500">
+              ※ 승격하면 오늘 날짜가 정대원 임명일로 기록되고, 예배 등단 대상에 포함됩니다.
+            </p>
+
+            {updateMutation.error && (
+              <p className="mb-4 text-sm text-red-600">{updateMutation.error.message}</p>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => setPromoteModalInfo(null)}
+                className="flex-1"
+                disabled={updatingStatusId === promoteModalInfo.memberId}
+              >
+                취소
+              </Button>
+              <Button
+                variant={promoteModalInfo.isEligible ? 'success' : 'warning'}
+                onClick={handlePromoteConfirm}
+                className="flex-1"
+                disabled={updatingStatusId === promoteModalInfo.memberId}
+              >
+                {updatingStatusId === promoteModalInfo.memberId ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    처리 중...
+                  </span>
+                ) : (
+                  '정대원으로 승격'
                 )}
               </Button>
             </div>
