@@ -6,13 +6,14 @@ import {
   Download,
   Image as ImageIcon,
   Loader2,
+  Pencil,
   Trash2,
   Upload,
   XCircle,
 } from 'lucide-react';
 import Papa from 'papaparse';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -51,8 +52,29 @@ const logger = createLogger({ prefix: 'ScheduleImporter' });
 /** 업로드 결과를 읽을 시간을 준 뒤 목록으로 되돌아가기까지의 대기 시간 */
 const AUTO_EXIT_DELAY_MS = 2000;
 
+/**
+ * 행의 안정적인 식별자를 만든다.
+ *
+ * 배열 인덱스는 위치일 뿐 정체성이 아니다. 행을 삭제하면 뒤쪽 행들의 인덱스가
+ * 모두 한 칸씩 당겨지므로, 인덱스로 "편집 중인 행"을 가리키면 삭제 한 번에
+ * 엉뚱한 행이 열린다. 파싱 시점에 한 번 부여하고 그 뒤로 바뀌지 않는 값을 쓴다.
+ *
+ * crypto.randomUUID는 보안 컨텍스트(https·localhost)에서만 있으므로 폴백을 둔다.
+ * 여기서 필요한 건 암호학적 강도가 아니라 한 화면 안에서의 유일성뿐이다.
+ */
+let rowIdCounter = 0;
+function createRowId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  rowIdCounter += 1;
+  return `row-${Date.now()}-${rowIdCounter}`;
+}
+
 // 파싱된 예배 일정 타입
 interface ParsedSchedule {
+  /** 행의 안정적 식별자. 삭제·정렬로 위치가 바뀌어도 유지된다. */
+  id: string;
   date: string;
   service_type: string;
   hymn_name: string;
@@ -215,6 +237,7 @@ function parseAndValidateData(rawData: Record<string, string>[]): ValidationResu
     }
 
     data.push({
+      id: createRowId(),
       date,
       service_type: serviceType,
       hymn_name: hymnName,
@@ -285,16 +308,32 @@ export default function ServiceScheduleImporter({
 
   const bulkUpsertMutation = useBulkUpsertServiceSchedules();
 
+  /**
+   * 지금 편집 패널이 열려 있는 행의 id.
+   *
+   * OCR 결과는 대부분 맞고 실제로 고치는 건 2~5행뿐이라, 모든 칸을 입력칸으로
+   * 깔아두면 입력칸들이 가로 폭을 나눠 갖느라 정작 확인해야 할 값이 잘려 보인다.
+   * 평소에는 텍스트로 넓게 읽히게 두고, 고를 때만 편집칸을 연다.
+   *
+   * 인덱스가 아니라 id로 가리키는 이유는 행 삭제 때문이다. 인덱스는 위치일 뿐이라
+   * 앞쪽 행이 지워지면 뒤쪽이 한 칸씩 당겨지고, 편집 패널이 조용히 다른 행을
+   * 가리키게 된다. id는 그런 재매핑이 필요 없다.
+   */
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   // 인라인 편집 핸들러
-  const updateParsedItem = (index: number, field: keyof ParsedSchedule, value: string) => {
-    setParsedData(prev => prev.map((item, i) =>
-      i === index ? { ...item, [field]: value } : item
+  const updateParsedItem = (id: string, field: keyof ParsedSchedule, value: string) => {
+    setParsedData(prev => prev.map((item) =>
+      item.id === id ? { ...item, [field]: value } : item
     ));
   };
 
   // 행 삭제 핸들러
-  const removeParsedItem = (index: number) => {
-    setParsedData(prev => prev.filter((_, i) => i !== index));
+  const removeParsedItem = (id: string) => {
+    setParsedData(prev => prev.filter((item) => item.id !== id));
+    // 편집 중이던 행이 사라지면 패널도 닫는다. id 기반이라 다른 행으로
+    // 잘못 옮겨갈 일은 없지만, 존재하지 않는 행을 가리킨 채 두지는 않는다.
+    setEditingId(prev => (prev === id ? null : prev));
   };
 
   // 행별 검증 결과 (현재 값 기준)
@@ -302,8 +341,15 @@ export default function ServiceScheduleImporter({
   // ParsedSchedule.valid는 파싱 시점의 스냅샷이라 인라인 편집을 따라오지 않는다.
   // 화면과 저장이 서로 다른 기준을 보면 "3건 업로드"라고 표시하고 2건만 올리는
   // 조용한 누락이 생기므로, 파생값 하나를 만들어 양쪽이 같은 것을 보게 한다.
-  const rowErrors = useMemo(() => parsedData.map(getRowErrors), [parsedData]);
-  const validCount = useMemo(() => rowErrors.filter((e) => e.length === 0).length, [rowErrors]);
+  // 인덱스가 아니라 id로 찾는다 — 행 삭제로 위치가 밀려도 같은 행의 오류를 가리킨다.
+  const rowErrorsById = useMemo(
+    () => new Map(parsedData.map((item) => [item.id, getRowErrors(item)])),
+    [parsedData]
+  );
+  const validCount = useMemo(
+    () => [...rowErrorsById.values()].filter((e) => e.length === 0).length,
+    [rowErrorsById]
+  );
 
   // 중복 키 감지 (date|service_type)
   const duplicateKeys = useMemo(() => {
@@ -411,6 +457,7 @@ export default function ServiceScheduleImporter({
 
     // Vision API 결과를 ParsedSchedule 형식으로 변환
     return (result.data || []).map((schedule: Record<string, unknown>) => ({
+      id: createRowId(),
       date: (schedule.date as string) || '',
       service_type: (schedule.service_type as string) || '주일 2부 예배',
       hymn_name: (schedule.hymn_name as string) || '',
@@ -559,6 +606,7 @@ export default function ServiceScheduleImporter({
     setSelectedFile(null);
     setParsedData([]);
     setValidationResult(null);
+    setEditingId(null);
     setUploadResult(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -746,8 +794,19 @@ export default function ServiceScheduleImporter({
                   </Alert>
                 )}
 
-                {/* 테이블 */}
-                <div className="max-h-80 overflow-hidden overflow-y-auto rounded-lg border">
+                {/*
+                  읽기 중심 테이블.
+
+                  실제 수정은 18행 중 2~5행뿐인데 모든 칸을 입력칸으로 깔면, 입력칸의
+                  padding·border·min-width가 가로 폭을 나눠 먹어 "오랫동안 기다리…",
+                  "Arr. B. Kro…"처럼 값이 잘린다. 편집 UI인데 정작 무엇이 들어있는지
+                  읽을 수 없는 상태였다. 평소에는 텍스트로 넓게 보여주고, ✎를 누른
+                  행만 아래 편집 패널을 펼친다.
+
+                  높이도 max-h-80(320px, 5행)에서 늘렸다. 전용 페이지로 옮긴 이유가
+                  세로 공간을 쓰려던 것이었는데 정작 표가 그 공간을 안 쓰고 있었다.
+                */}
+                <div className="max-h-[60vh] overflow-y-auto rounded-lg border">
                   <Table>
                     <TableHeader className="sticky top-0 z-10 bg-[var(--color-surface)]">
                       <TableRow>
@@ -759,149 +818,254 @@ export default function ServiceScheduleImporter({
                         <TableHead>작곡가</TableHead>
                         <TableHead>봉헌송</TableHead>
                         <TableHead>절기/비고</TableHead>
-                        <TableHead className="w-10"></TableHead>
+                        <TableHead className="w-20 text-right">편집</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {parsedData.slice(0, 50).map((item, idx) => {
+                      {parsedData.slice(0, 50).map((item) => {
                         const isDuplicate = duplicateKeys.has(`${item.date}|${item.service_type}`);
                         // 굳은 item.valid 대신 현재 값 기준 판정을 쓴다 — 편집한 행의
                         // 상태 표시가 실제 저장 여부와 어긋나지 않게 한다.
-                        const errors = rowErrors[idx] ?? [];
+                        const errors = rowErrorsById.get(item.id) ?? [];
                         const isValid = errors.length === 0;
+                        const isEditing = editingId === item.id;
+                        // '기타'를 고르면 service_type이 빈 문자열이 된다. 읽기 행에서는
+                        // 빈 칸이 "값이 사라졌다"로 보이므로 무엇을 해야 하는지 적어준다.
+                        const isCustomType = !isPresetServiceType(item.service_type);
+
                         return (
-                          <TableRow
-                            key={idx}
-                            className={
-                              !isValid
-                                ? 'bg-[var(--color-error-50)]'
-                                : isDuplicate
-                                  ? 'bg-amber-50'
-                                  : ''
-                            }
-                          >
-                            <TableCell>
-                              {isValid ? (
-                                <CheckCircle className="h-4 w-4 text-[var(--color-success-600)]" />
-                              ) : (
-                                // 아이콘만으로는 무엇을 고쳐야 할지 알 수 없어 사유를 붙인다.
-                                // SVG의 <title>은 마우스 오버 툴팁이자 접근성 이름으로 쓰인다.
-                                <XCircle className="h-4 w-4 text-[var(--color-error-600)]">
-                                  <title>{errors.join(', ')}</title>
-                                </XCircle>
-                              )}
-                            </TableCell>
-                            <TableCell className="font-medium whitespace-nowrap">
-                              {item.date}
-                            </TableCell>
-                            <TableCell className="min-w-[140px]">
-                              <div className="flex items-center gap-1">
-                                {/*
-                                  프리셋에 없는 값(OCR이 뽑아온 '추수감사주일 찬양예배' 등)이면
-                                  드롭다운은 '기타'를 표시하고 아래 입력칸에 원본을 그대로 둔다.
-                                  이 판정을 별도 state로 두지 않고 값에서 파생시키는 이유는 행
-                                  삭제 때문이다 — 인덱스 기반 state를 쓰면 행을 지울 때마다
-                                  재매핑해야 하고, 빠뜨리면 엉뚱한 행이 입력 모드로 열린다.
-                                */}
-                                <div className="min-w-0 flex-1">
-                                  <Select
-                                    value={
-                                      isPresetServiceType(item.service_type)
-                                        ? item.service_type
-                                        : CUSTOM_SERVICE_TYPE
-                                    }
-                                    onValueChange={(value) =>
-                                      // '기타'를 고르면 빈 값으로 비워 입력칸을 띄운다.
-                                      // '기타' 자체가 저장되면 실제 예배 종류가 아닌 값이
-                                      // DB에 남으므로 절대 그대로 넣지 않는다.
-                                      updateParsedItem(
-                                        idx,
-                                        'service_type',
-                                        value === CUSTOM_SERVICE_TYPE ? '' : value
-                                      )
-                                    }
-                                  >
-                                    <SelectTrigger className="h-8 text-xs">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {SERVICE_TYPE_OPTIONS.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                          {option.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  {!isPresetServiceType(item.service_type) && (
-                                    <Input
-                                      className="mt-1 h-8 text-xs"
-                                      value={item.service_type}
-                                      onChange={(e) =>
-                                        updateParsedItem(idx, 'service_type', e.target.value)
-                                      }
-                                      placeholder="예배 유형 직접 입력"
-                                    />
+                          <Fragment key={item.id}>
+                            <TableRow
+                              className={
+                                !isValid
+                                  ? 'bg-[var(--color-error-50)]'
+                                  : isDuplicate
+                                    ? 'bg-amber-50'
+                                    : isEditing
+                                      ? 'bg-[var(--color-primary-50)]'
+                                      : ''
+                              }
+                            >
+                              <TableCell>
+                                {isValid ? (
+                                  <CheckCircle className="h-4 w-4 text-[var(--color-success-600)]" />
+                                ) : (
+                                  // 아이콘만으로는 무엇을 고쳐야 할지 알 수 없어 사유를 붙인다.
+                                  <XCircle className="h-4 w-4 text-[var(--color-error-600)]">
+                                    <title>{errors.join(', ')}</title>
+                                  </XCircle>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium whitespace-nowrap">
+                                {item.date || (
+                                  <span className="text-[var(--color-error-600)]">날짜 없음</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap">
+                                <div className="flex items-center gap-1.5">
+                                  {item.service_type ? (
+                                    <span>{item.service_type}</span>
+                                  ) : (
+                                    <span className="text-[var(--color-error-600)]">
+                                      직접 입력 필요
+                                    </span>
+                                  )}
+                                  {isDuplicate && (
+                                    <Badge
+                                      variant="destructive"
+                                      className="shrink-0 px-1 text-[10px]"
+                                    >
+                                      중복
+                                    </Badge>
                                   )}
                                 </div>
-                                {isDuplicate && (
-                                  <Badge variant="destructive" className="shrink-0 text-[10px] px-1">
-                                    중복
+                              </TableCell>
+                              <TableCell>
+                                {item.hood_color ? (
+                                  <Badge variant="outline" className="text-xs">
+                                    {item.hood_color}
                                   </Badge>
+                                ) : (
+                                  <span className="text-[var(--color-text-tertiary)]">-</span>
                                 )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {item.hood_color ? (
-                                <Badge variant="outline" className="text-xs">
-                                  {item.hood_color}
-                                </Badge>
-                              ) : (
-                                '-'
-                              )}
-                            </TableCell>
-                            <TableCell className="min-w-[120px]">
-                              <Input
-                                className="h-8 text-xs"
-                                value={item.hymn_name || ''}
-                                onChange={(e) => updateParsedItem(idx, 'hymn_name', e.target.value)}
-                                placeholder="-"
-                              />
-                            </TableCell>
-                            <TableCell className="min-w-[100px]">
-                              <Input
-                                className="h-8 text-xs"
-                                value={item.composer || ''}
-                                onChange={(e) => updateParsedItem(idx, 'composer', e.target.value)}
-                                placeholder="-"
-                              />
-                            </TableCell>
-                            <TableCell className="min-w-[100px]">
-                              <Input
-                                className="h-8 text-xs"
-                                value={item.offertory_performer || ''}
-                                onChange={(e) => updateParsedItem(idx, 'offertory_performer', e.target.value)}
-                                placeholder="-"
-                              />
-                            </TableCell>
-                            <TableCell className="min-w-[100px]">
-                              <Input
-                                className="h-8 text-xs"
-                                value={item.notes || ''}
-                                onChange={(e) => updateParsedItem(idx, 'notes', e.target.value)}
-                                placeholder="-"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-[var(--color-text-tertiary)] hover:text-[var(--color-error-600)]"
-                                onClick={() => removeParsedItem(idx)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
+                              </TableCell>
+                              <TableCell>{item.hymn_name || <span className="text-[var(--color-text-tertiary)]">-</span>}</TableCell>
+                              <TableCell>{item.composer || <span className="text-[var(--color-text-tertiary)]">-</span>}</TableCell>
+                              <TableCell>{item.offertory_performer || <span className="text-[var(--color-text-tertiary)]">-</span>}</TableCell>
+                              <TableCell>{item.notes || <span className="text-[var(--color-text-tertiary)]">-</span>}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-0.5">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    aria-expanded={isEditing}
+                                    aria-label={`${item.date || '이 행'} 편집`}
+                                    onClick={() => setEditingId(isEditing ? null : item.id)}
+                                  >
+                                    <Pencil
+                                      className={
+                                        isEditing
+                                          ? 'h-3.5 w-3.5 text-[var(--color-primary-600)]'
+                                          : 'h-3.5 w-3.5 text-[var(--color-text-tertiary)]'
+                                      }
+                                    />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-[var(--color-text-tertiary)] hover:text-[var(--color-error-600)]"
+                                    aria-label={`${item.date || '이 행'} 삭제`}
+                                    onClick={() => removeParsedItem(item.id)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+
+                            {/*
+                              편집 패널. 표의 한 행을 통째로 써서 가로 폭 전체를 쓴다 —
+                              칸을 쪼개 쓰던 때와 달리 라벨과 값이 잘리지 않는다.
+                            */}
+                            {isEditing && (
+                              <TableRow className="bg-[var(--color-primary-50)] hover:bg-[var(--color-primary-50)]">
+                                <TableCell colSpan={9} className="p-4">
+                                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                    <label className="flex flex-col gap-1 text-xs">
+                                      <span className="font-medium">날짜</span>
+                                      <Input
+                                        type="date"
+                                        className="h-9"
+                                        value={item.date}
+                                        onChange={(e) =>
+                                          updateParsedItem(item.id, 'date', e.target.value)
+                                        }
+                                      />
+                                    </label>
+
+                                    <label className="flex flex-col gap-1 text-xs">
+                                      <span className="font-medium">예배 유형</span>
+                                      {/*
+                                        프리셋에 없는 값(OCR이 뽑아온 '추수감사주일 찬양예배' 등)이면
+                                        드롭다운은 '기타'를 표시하고 아래 입력칸에 원본을 그대로 둔다.
+                                        이 판정을 별도 state로 두지 않고 값에서 파생시킨다.
+                                      */}
+                                      <Select
+                                        value={
+                                          isPresetServiceType(item.service_type)
+                                            ? item.service_type
+                                            : CUSTOM_SERVICE_TYPE
+                                        }
+                                        onValueChange={(value) =>
+                                          // '기타'를 고르면 빈 값으로 비워 입력칸을 띄운다.
+                                          // '기타' 자체가 저장되면 실제 예배 종류가 아닌 값이
+                                          // DB에 남으므로 절대 그대로 넣지 않는다.
+                                          updateParsedItem(
+                                            item.id,
+                                            'service_type',
+                                            value === CUSTOM_SERVICE_TYPE ? '' : value
+                                          )
+                                        }
+                                      >
+                                        <SelectTrigger className="h-9">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {SERVICE_TYPE_OPTIONS.map((option) => (
+                                            <SelectItem key={option.value} value={option.value}>
+                                              {option.label}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      {isCustomType && (
+                                        <Input
+                                          className="mt-1 h-9"
+                                          value={item.service_type}
+                                          onChange={(e) =>
+                                            updateParsedItem(
+                                              item.id,
+                                              'service_type',
+                                              e.target.value
+                                            )
+                                          }
+                                          placeholder="예배 유형 직접 입력"
+                                        />
+                                      )}
+                                    </label>
+
+                                    <label className="flex flex-col gap-1 text-xs">
+                                      <span className="font-medium">찬양곡명</span>
+                                      <Input
+                                        className="h-9"
+                                        value={item.hymn_name || ''}
+                                        onChange={(e) =>
+                                          updateParsedItem(item.id, 'hymn_name', e.target.value)
+                                        }
+                                        placeholder="-"
+                                      />
+                                    </label>
+
+                                    <label className="flex flex-col gap-1 text-xs">
+                                      <span className="font-medium">작곡가</span>
+                                      <Input
+                                        className="h-9"
+                                        value={item.composer || ''}
+                                        onChange={(e) =>
+                                          updateParsedItem(item.id, 'composer', e.target.value)
+                                        }
+                                        placeholder="-"
+                                      />
+                                    </label>
+
+                                    <label className="flex flex-col gap-1 text-xs">
+                                      <span className="font-medium">봉헌송 연주자</span>
+                                      <Input
+                                        className="h-9"
+                                        value={item.offertory_performer || ''}
+                                        onChange={(e) =>
+                                          updateParsedItem(
+                                            item.id,
+                                            'offertory_performer',
+                                            e.target.value
+                                          )
+                                        }
+                                        placeholder="-"
+                                      />
+                                    </label>
+
+                                    <label className="flex flex-col gap-1 text-xs">
+                                      <span className="font-medium">절기/비고</span>
+                                      <Input
+                                        className="h-9"
+                                        value={item.notes || ''}
+                                        onChange={(e) =>
+                                          updateParsedItem(item.id, 'notes', e.target.value)
+                                        }
+                                        placeholder="-"
+                                      />
+                                    </label>
+                                  </div>
+
+                                  <div className="mt-3 flex items-center justify-between gap-2">
+                                    <p className="text-xs text-[var(--color-text-tertiary)]">
+                                      {errors.length > 0
+                                        ? errors.join(', ')
+                                        : '수정한 내용은 바로 반영됩니다.'}
+                                    </p>
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => setEditingId(null)}
+                                    >
+                                      완료
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </Fragment>
                         );
                       })}
                     </TableBody>
