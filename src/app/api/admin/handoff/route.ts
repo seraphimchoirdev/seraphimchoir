@@ -8,18 +8,23 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createClient } from '@/lib/supabase/server';
 
+/**
+ * 매니페스트(public/handoff-manifest.json)의 형태.
+ * scripts/generate-handoff-manifest.mjs가 빌드 시점에 만든다.
+ *
+ * size·modifiedAt·generatedAt은 일부러 없다 — 빌드마다 값이 달라져
+ * 커밋된 산출물에 의미 없는 diff를 만들었고, 읽는 곳도 없었다.
+ * 자세한 경위는 생성 스크립트의 주석 참고.
+ */
 interface HandoffFile {
   filename: string;
   date: string;
   title: string;
   project: string;
-  size: number;
-  modifiedAt: string;
 }
 
 interface HandoffManifest {
   files: HandoffFile[];
-  generatedAt: string;
   totalCount: number;
 }
 
