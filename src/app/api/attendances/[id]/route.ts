@@ -18,6 +18,8 @@ const updateAttendanceSchema = z.object({
   is_service_available: z.boolean().optional(),
   is_practice_attended: z.boolean().optional(),
   practice_status: z.enum(['FULL', 'EARLY_LEAVE', 'LATE_JOIN', 'ABSENT']).nullable().optional(),
+  // 예배 전 연습 참석(신입대원 세트 카운팅용)
+  pre_practice_attended: z.boolean().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 

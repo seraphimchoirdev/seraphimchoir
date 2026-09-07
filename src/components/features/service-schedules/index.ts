@@ -8,3 +8,4 @@ export { default as ServiceScheduleForm } from './ServiceScheduleForm';
 export { default as ServiceScheduleDialog } from './ServiceScheduleDialog';
 export { default as ServiceScheduleBadge } from './ServiceScheduleBadge';
 export { default as ServiceScheduleImporter } from './ServiceScheduleImporter';
+export { default as BulkServiceScheduleClient } from './BulkServiceScheduleClient';

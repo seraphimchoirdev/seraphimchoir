@@ -30,7 +30,12 @@ const updateMemberSchema = z.object({
   leave_start_date: z.string().nullable().optional(), // YYYY-MM-DD 형식
   leave_duration_months: z.number().int().min(1).max(24).nullable().optional(),
   expected_return_date: z.string().nullable().optional(), // YYYY-MM-DD 형식
-  joined_date: z.string().nullable().optional(), // 임명일
+  joined_date: z.string().nullable().optional(), // 입단일 (YYYY-MM-DD)
+  // 정대원 임명일. joined_date(입단일)와 다른 날짜다 — 입단 후 2~4주 뒤에 임명받는다.
+  // 승격 시 member_status='REGULAR'와 함께 이 값을 채운다.
+  regular_member_since: z.string().nullable().optional(),
+  // 정대원 승격에 필요한 연습 세트 수(전연습+후연습=1세트)
+  required_practice_sets: z.number().int().min(1).max(10).optional(),
 });
 
 /**
@@ -116,6 +121,31 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const { version: clientVersion, ...updateData } = validation.data;
+
+    // 최초 승격일 보존
+    //
+    // regular_member_since는 "언제 정대원이 되었는가"의 기록이고, 신입대원이 몇 세트를
+    // 채우고 승격했는지 나중에 근거를 확인하는 유일한 단서다. 그런데 이 라우트는 부분
+    // 수정이라 상태 드롭다운을 건드리는 것만으로도 승격 payload가 다시 날아올 수 있고,
+    // 그러면 이미 있던 승격일이 '오늘'로 덮여 최초 기록이 사라진다.
+    //
+    // 값이 이미 있으면 그 키를 UPDATE에서 통째로 빼는 방식을 쓴다. 요청 자체는 막지
+    // 않으므로 같이 보낸 다른 필드(이름·파트 등)는 정상 수정된다.
+    //
+    // 여기서 읽은 값과 아래 UPDATE 사이에 다른 요청이 끼어들 여지가 있지만, UPDATE가
+    // version을 WHERE에 걸고 나가므로 그 경우 409로 떨어진다. 승격일이 잘못 덮이는
+    // 결과로는 이어지지 않는다.
+    if (updateData.regular_member_since !== undefined) {
+      const { data: current } = await supabase
+        .from('members')
+        .select('regular_member_since')
+        .eq('id', id)
+        .single();
+
+      if (current?.regular_member_since) {
+        delete updateData.regular_member_since;
+      }
+    }
 
     // updated_at은 자동으로 갱신되도록 DB trigger 설정되어 있음
     const dataToUpdate = {

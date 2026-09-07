@@ -91,3 +91,25 @@ blob-report/
 # Python 캐시 (스킬 스크립트 실행 시 자동 생성)
 __pycache__/
 *.pyc
+
+# 작업용 참고 자료 (악보·명단·기도순서 등)
+#
+# docs/ 아래에 실무 자료를 두고 작업하는데, 이것들이 저장소에 들어가면 안 되는 이유가
+# 종류별로 다르다:
+#   - 악보 폴더·hwpx: 수백 MB다. git은 바이너리를 delta 압축하지 못해 커밋마다 통째로
+#     저장하고, 한 번 들어간 이력은 되돌려도 영구히 남아 모든 클론이 무거워진다.
+#   - 명단·입금계좌 xlsx: 개인정보다.
+# 둘 다 "들어간 뒤 지우기"가 사실상 불가능하므로 확장자 단위로 미리 막는다.
+#
+# docs/ 전체를 무시하면 안 된다. docs/handoff/*.md·task.md·Progressed.md는 훅이
+# 자동 커밋하고 /admin/handoff 뷰어가 읽는 실제 산출물이다.
+docs/sheet-music-test/
+*.hwpx
+*.hwp
+docs/**/*.pdf
+docs/**/*.xlsx
+docs/**/*.xls
+docs/**/*.docx
+
+# 임시 메모 (커밋 대상 아님)
+/검토.md

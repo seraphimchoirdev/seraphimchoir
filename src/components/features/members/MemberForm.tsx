@@ -20,6 +20,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCreateMember, useUpdateMember } from '@/hooks/useMembers';
 
 import { createLogger } from '@/lib/logger';
+import {
+  DEFAULT_REQUIRED_PRACTICE_SETS,
+  REQUIRED_PRACTICE_SETS_OPTIONS,
+} from '@/lib/practice-set-rule';
 import { showError, showSuccess } from '@/lib/toast';
 
 import type { Database } from '@/types/database.types';
@@ -62,6 +66,10 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
     is_singer: member?.is_singer ?? true, // 등단 여부 (기본값: true)
     member_status: member?.member_status || ('NEW' as MemberStatus),
     joined_date: member?.joined_date || new Date().toISOString().split('T')[0],
+    // Select는 문자열만 다루므로 숫자를 문자열로 보관하고 제출 시 되돌린다
+    required_practice_sets: String(
+      member?.required_practice_sets ?? DEFAULT_REQUIRED_PRACTICE_SETS
+    ),
     height: member?.height?.toString() || '',
     phone_number: member?.phone_number || '',
     email: member?.email || '',
@@ -140,6 +148,9 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
       is_singer: formData.is_singer,
       member_status: formData.member_status,
       joined_date: formData.joined_date,
+      // 정대원이 된 뒤에도 값을 지우지 않는다 — 몇 세트를 채우기로 하고 승격했는지가
+      // 근거로 남아야 나중에 확인할 수 있다. (휴직 필드처럼 상태 따라 비우지 않는 이유)
+      required_practice_sets: parseInt(formData.required_practice_sets, 10),
       height: formData.height ? parseInt(formData.height, 10) : null,
       phone_number: formData.phone_number || null,
       email: formData.email || null,
@@ -374,14 +385,16 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
                 </SelectContent>
               </Select>
               <p className="text-xs text-[var(--color-text-tertiary)]">
-                신입대원은 3개월 후 자동으로 정대원으로 전환됩니다
+                신입대원은 필요 세트(전연습+후연습)를 채우면 담당자가 정대원 승격을 검토합니다.
+                자동으로 전환되지 않습니다.
               </p>
             </div>
 
-            {/* 정대원 임명일 */}
+            {/* 입단일 — 세트 카운팅의 기준 날짜다.
+                정대원 임명일(regular_member_since)과 다른 날짜이므로 혼동하지 않는다. */}
             <div className="space-y-2">
               <Label htmlFor="joined_date">
-                정대원 임명일 <span className="text-[var(--color-error-600)]">*</span>
+                입단일 <span className="text-[var(--color-error-600)]">*</span>
               </Label>
               <Input
                 type="date"
@@ -396,6 +409,34 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
               </p>
             </div>
           </div>
+
+          {/* 필요 연습 세트 수 (신입대원일 때만 표시)
+              입단일로부터 2~4주라는 폭을 지휘자가 대원마다 판단해 정하므로 고정값이 아니다. */}
+          {formData.member_status === 'NEW' && (
+            <div className="mt-6 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-subtle)] p-4">
+              <div className="space-y-2 md:max-w-xs">
+                <Label htmlFor="required_practice_sets">정대원 승격까지 필요한 연습 세트</Label>
+                <Select
+                  value={formData.required_practice_sets}
+                  onValueChange={(value) => handleSelectChange('required_practice_sets', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="세트 수 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REQUIRED_PRACTICE_SETS_OPTIONS.map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n}세트
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-[var(--color-text-tertiary)]">
+                  1세트 = 예배 전 연습 + 예배 후 연습. 파트장이 출석 화면에서 기록합니다.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* 휴직 정보 (휴직대원일 때만 표시) */}
           {formData.member_status === 'ON_LEAVE' && (

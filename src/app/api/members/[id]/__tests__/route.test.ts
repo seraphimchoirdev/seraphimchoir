@@ -187,6 +187,123 @@ describe('PATCH /api/members/[id]', () => {
     const body = await response.json();
     expect(body.code).toBe('VERSION_CONFLICT');
   });
+
+  /**
+   * 최초 승격일 보존
+   *
+   * regular_member_since는 "신입이 몇 세트를 채우고 정대원이 되었는가"의 근거로 남는
+   * 값이라, 두 번째 승격 payload에 덮이면 최초 기록이 복구 불가능하게 사라진다.
+   * 화면에서는 티가 안 나는 종류의 손실이라(날짜가 그럴듯하게 들어가 있다) 여기서 고정한다.
+   */
+  describe('최초 승격일 보존', () => {
+    /**
+     * members 테이블에 대한 호출을 순서대로 나눠 준다.
+     * 승격일이 body에 있으면 1차=선조회, 2차=update 순으로 호출된다.
+     */
+    const setupPromotionMocks = (existingRegularSince: string | null) => {
+      const { createMockQueryBuilder } = require('@/__mocks__/supabase-helpers');
+      const { createClient } = require('@/lib/supabase/server');
+
+      const selectBuilder = createMockQueryBuilder({
+        selectData: { regular_member_since: existingRegularSince },
+      });
+      const updateBuilder = createMockQueryBuilder({
+        updateData: { ...mockMember, version: 3 },
+      });
+
+      let membersCallCount = 0;
+      (createClient as jest.Mock).mockResolvedValue({
+        from: jest.fn().mockImplementation((table: string) => {
+          if (table === 'user_profiles') {
+            return createMockQueryBuilder({ selectData: { role: 'ADMIN' } });
+          }
+          if (table === 'members') {
+            membersCallCount++;
+            return membersCallCount === 1 ? selectBuilder : updateBuilder;
+          }
+          return createMockQueryBuilder();
+        }),
+        auth: {
+          getUser: jest.fn().mockResolvedValue({
+            data: { user: { id: 'test-user-id', email: 'test@test.com' } },
+            error: null,
+          }),
+        },
+      });
+
+      return { updateBuilder };
+    };
+
+    const 승격요청 = (regularSince: string) =>
+      createTestRequest(`/api/members/${MEMBER_ID}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          member_status: 'REGULAR',
+          regular_member_since: regularSince,
+          version: 2,
+        }),
+      });
+
+    it('이미 승격일이 있으면 덮어쓰지 않는다', async () => {
+      const { updateBuilder } = setupPromotionMocks('2026-08-18');
+
+      const response = await PATCH(승격요청('2026-09-03'), createRouteContext({ id: MEMBER_ID }));
+
+      expect(response.status).toBe(200);
+      // UPDATE payload에서 키가 통째로 빠져야 한다 — null이나 undefined가 아니라 부재.
+      const payload = updateBuilder.update.mock.calls[0][0];
+      expect(payload).not.toHaveProperty('regular_member_since');
+      // 같이 보낸 다른 필드는 정상 반영된다
+      expect(payload).toHaveProperty('member_status', 'REGULAR');
+    });
+
+    it('승격일이 비어 있으면 정상적으로 기록한다', async () => {
+      const { updateBuilder } = setupPromotionMocks(null);
+
+      const response = await PATCH(승격요청('2026-09-03'), createRouteContext({ id: MEMBER_ID }));
+
+      expect(response.status).toBe(200);
+      const payload = updateBuilder.update.mock.calls[0][0];
+      expect(payload).toHaveProperty('regular_member_since', '2026-09-03');
+    });
+
+    it('승격일을 보내지 않는 수정은 선조회 없이 그대로 진행한다', async () => {
+      const { createMockQueryBuilder } = require('@/__mocks__/supabase-helpers');
+      const { createClient } = require('@/lib/supabase/server');
+
+      const updateBuilder = createMockQueryBuilder({ updateData: mockMember });
+      const fromMock = jest.fn().mockImplementation((table: string) => {
+        if (table === 'user_profiles') {
+          return createMockQueryBuilder({ selectData: { role: 'ADMIN' } });
+        }
+        return table === 'members' ? updateBuilder : createMockQueryBuilder();
+      });
+
+      (createClient as jest.Mock).mockResolvedValue({
+        from: fromMock,
+        auth: {
+          getUser: jest.fn().mockResolvedValue({
+            data: { user: { id: 'test-user-id', email: 'test@test.com' } },
+            error: null,
+          }),
+        },
+      });
+
+      const request = createTestRequest(`/api/members/${MEMBER_ID}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: '수정이름', version: 2 }),
+      });
+
+      const response = await PATCH(request, createRouteContext({ id: MEMBER_ID }));
+
+      expect(response.status).toBe(200);
+      // 이름만 바꾸는 흔한 수정에 조회 쿼리가 하나 늘어나면 안 된다
+      const membersCalls = fromMock.mock.calls.filter(([t]: [string]) => t === 'members');
+      expect(membersCalls).toHaveLength(1);
+    });
+  });
 });
 
 describe('DELETE /api/members/[id]', () => {

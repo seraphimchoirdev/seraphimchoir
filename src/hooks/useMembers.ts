@@ -13,7 +13,15 @@ type MemberUpdate = Database['public']['Tables']['members']['Update'];
 export interface MemberFilters {
   part?: Database['public']['Enums']['part'];
   search?: string;
-  member_status?: Database['public']['Enums']['member_status'];
+  /**
+   * 대원 상태 필터. 배열을 넘기면 여러 상태를 한 번에 조회한다(API가 CSV → .in()으로 처리).
+   *
+   * string이 아니라 배열로 받는 이유: CSV 문자열을 타입으로 허용하면 'REGUALR' 같은
+   * 오타를 컴파일러가 못 잡는다. 배열이면 원소마다 enum 검사가 그대로 걸린다.
+   */
+  member_status?:
+    | Database['public']['Enums']['member_status']
+    | Database['public']['Enums']['member_status'][];
   /** 자리배치/출석체크 대상만 조회 (true=등단자만, false=비등단자만) */
   is_singer?: boolean;
   page?: number;
@@ -45,7 +53,13 @@ export function useMembers(filters?: MemberFilters) {
       // null과 undefined 값은 쿼리 파라미터에 추가하지 않음
       if (filters?.part) params.append('part', filters.part);
       if (filters?.search && filters.search.trim()) params.append('search', filters.search);
-      if (filters?.member_status) params.append('member_status', filters.member_status);
+      if (filters?.member_status) {
+        // 배열이면 CSV로 직렬화한다. 조립은 여기 한 곳에만 둔다.
+        const statuses = Array.isArray(filters.member_status)
+          ? filters.member_status
+          : [filters.member_status];
+        if (statuses.length > 0) params.append('member_status', statuses.join(','));
+      }
       if (filters?.is_singer !== undefined) params.append('is_singer', String(filters.is_singer));
       if (filters?.page && filters.page > 0) params.append('page', filters.page.toString());
       if (filters?.limit && filters.limit > 0) params.append('limit', filters.limit.toString());

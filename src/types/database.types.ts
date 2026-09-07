@@ -340,6 +340,7 @@ export type Database = {
           practice_status:
             | Database["public"]["Enums"]["practice_attendance_type"]
             | null
+          pre_practice_attended: boolean | null
           service_schedule_id: string | null
           updated_at: string
         }
@@ -354,6 +355,7 @@ export type Database = {
           practice_status?:
             | Database["public"]["Enums"]["practice_attendance_type"]
             | null
+          pre_practice_attended?: boolean | null
           service_schedule_id?: string | null
           updated_at?: string
         }
@@ -368,6 +370,7 @@ export type Database = {
           practice_status?:
             | Database["public"]["Enums"]["practice_attendance_type"]
             | null
+          pre_practice_attended?: boolean | null
           service_schedule_id?: string | null
           updated_at?: string
         }
@@ -785,6 +788,7 @@ export type Database = {
           part: Database["public"]["Enums"]["part"]
           phone_number: string | null
           regular_member_since: string | null
+          required_practice_sets: number | null
           updated_at: string
           version: number
         }
@@ -810,6 +814,7 @@ export type Database = {
           part: Database["public"]["Enums"]["part"]
           phone_number?: string | null
           regular_member_since?: string | null
+          required_practice_sets?: number | null
           updated_at?: string
           version?: number
         }
@@ -835,6 +840,7 @@ export type Database = {
           part?: Database["public"]["Enums"]["part"]
           phone_number?: string | null
           regular_member_since?: string | null
+          required_practice_sets?: number | null
           updated_at?: string
           version?: number
         }
@@ -1646,47 +1652,68 @@ export type Database = {
         Row: {
           created_at: string | null
           email: string | null
+          expected_return_date: string | null
           height_cm: number | null
           id: string | null
           is_leader: boolean | null
           is_singer: boolean | null
+          joined_date: string | null
+          leave_duration_months: number | null
+          leave_reason: string | null
+          leave_start_date: string | null
           member_status: Database["public"]["Enums"]["member_status"] | null
           name: string | null
           notes: string | null
           part: Database["public"]["Enums"]["part"] | null
           phone_number: string | null
           regular_member_since: string | null
+          required_practice_sets: number | null
           updated_at: string | null
+          version: number | null
         }
         Insert: {
           created_at?: string | null
           email?: string | null
+          expected_return_date?: string | null
           height_cm?: number | null
           id?: string | null
           is_leader?: boolean | null
           is_singer?: boolean | null
+          joined_date?: string | null
+          leave_duration_months?: number | null
+          leave_reason?: string | null
+          leave_start_date?: string | null
           member_status?: Database["public"]["Enums"]["member_status"] | null
           name?: string | null
           notes?: string | null
           part?: Database["public"]["Enums"]["part"] | null
           phone_number?: string | null
           regular_member_since?: string | null
+          required_practice_sets?: number | null
           updated_at?: string | null
+          version?: number | null
         }
         Update: {
           created_at?: string | null
           email?: string | null
+          expected_return_date?: string | null
           height_cm?: number | null
           id?: string | null
           is_leader?: boolean | null
           is_singer?: boolean | null
+          joined_date?: string | null
+          leave_duration_months?: number | null
+          leave_reason?: string | null
+          leave_start_date?: string | null
           member_status?: Database["public"]["Enums"]["member_status"] | null
           name?: string | null
           notes?: string | null
           part?: Database["public"]["Enums"]["part"] | null
           phone_number?: string | null
           regular_member_since?: string | null
+          required_practice_sets?: number | null
           updated_at?: string | null
+          version?: number | null
         }
         Relationships: []
       }
@@ -1694,19 +1721,26 @@ export type Database = {
         Row: {
           created_at: string | null
           email: string | null
+          expected_return_date: string | null
           height_cm: number | null
           id: string | null
           is_leader: boolean | null
           is_singer: boolean | null
+          joined_date: string | null
           last_practice_date: string | null
           last_service_date: string | null
+          leave_duration_months: number | null
+          leave_reason: string | null
+          leave_start_date: string | null
           member_status: Database["public"]["Enums"]["member_status"] | null
           name: string | null
           notes: string | null
           part: Database["public"]["Enums"]["part"] | null
           phone_number: string | null
           regular_member_since: string | null
+          required_practice_sets: number | null
           updated_at: string | null
+          version: number | null
         }
         Relationships: []
       }
@@ -1726,7 +1760,10 @@ export type Database = {
     }
     Functions: {
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
-      cleanup_old_notifications: { Args: never; Returns: number }
+      cleanup_old_notifications: {
+        Args: { retention_days?: number }
+        Returns: number
+      }
       get_all_document_tags: { Args: never; Returns: string[] }
       get_arrangement_status: {
         Args: { arrangement_id: string }
