@@ -11,6 +11,8 @@ import {
   Plus,
 } from 'lucide-react';
 
+import Link from 'next/link';
+
 import { useCallback, useMemo, useState } from 'react';
 
 import {
@@ -19,7 +21,6 @@ import {
   QuarterSelector,
   QuarterlyCalendar,
   ServiceScheduleDialog,
-  ServiceScheduleImporter,
   UpcomingCalendar,
 } from '@/components/features/service-schedules';
 import EventDialog from '@/components/features/service-schedules/EventDialog';
@@ -82,7 +83,6 @@ export default function ServiceSchedulesPage() {
   // 예배 일정 추가 다이얼로그 상태
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
-  const [isImporterOpen, setIsImporterOpen] = useState(false);
 
   // 뷰 모드에 따른 필터 설정
   const scheduleFilters = useMemo(() => {
@@ -238,13 +238,13 @@ export default function ServiceSchedulesPage() {
                 </div>
 
                 {canManageService && (
-                  <Button
-                    onClick={() => setIsImporterOpen(true)}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <FileSpreadsheet className="h-4 w-4" />
-                    <span className="hidden sm:inline">일괄 등록</span>
+                  // 모달이 아니라 전용 페이지로 이동한다. Link로 두면 Next.js가
+                  // 미리 코드를 가져오고, 새 탭 열기 같은 브라우저 기본 동작도 살아 있다.
+                  <Button asChild variant="outline" className="gap-2">
+                    <Link href="/service-schedules/bulk">
+                      <FileSpreadsheet className="h-4 w-4" />
+                      <span className="hidden sm:inline">일괄 등록</span>
+                    </Link>
                   </Button>
                 )}
                 {(canManageService || canManageEvents) && (
@@ -358,14 +358,6 @@ export default function ServiceSchedulesPage() {
         />
       )}
 
-      {/* 일괄 등록 다이얼로그 */}
-      {canManageService && (
-        <ServiceScheduleImporter
-          open={isImporterOpen}
-          onOpenChange={setIsImporterOpen}
-          onSuccess={handleRefresh}
-        />
-      )}
     </AppShell>
   );
 }

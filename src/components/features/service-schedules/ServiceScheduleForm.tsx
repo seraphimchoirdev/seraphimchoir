@@ -17,24 +17,18 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  CUSTOM_SERVICE_TYPE,
   DEFAULT_PRE_PRACTICE_START_TIME,
   DEFAULT_SERVICE_START_TIME,
+  SERVICE_TYPE_OPTIONS,
   getDefaultPrePracticeStartTime,
   getDefaultServiceStartTime,
   hasPostPractice,
+  isPresetServiceType,
   toTimeInputValue,
 } from '@/lib/service-time';
 
 import type { Database } from '@/types/database.types';
-
-// 예배 유형 옵션
-const SERVICE_TYPE_OPTIONS = [
-  { value: '주일 2부 예배', label: '주일 2부 예배' },
-  { value: '오후찬양예배', label: '오후 찬양예배' },
-  { value: '절기찬양예배', label: '절기 찬양예배' },
-  { value: '기도회', label: '기도회' },
-  { value: '기타', label: '기타' },
-] as const;
 
 // 후드 색상 옵션
 const HOOD_COLOR_OPTIONS = [
@@ -55,11 +49,6 @@ interface ServiceScheduleFormProps {
   onSubmit: (data: ServiceScheduleInsert) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
-}
-
-// 기존 옵션에 포함된 값인지 확인
-function isPresetServiceType(value: string | null | undefined): boolean {
-  return SERVICE_TYPE_OPTIONS.some((opt) => opt.value === value);
 }
 
 // 현재 시간값이 (비어 있거나) 그 매핑의 어떤 기본값인지 확인.
@@ -160,9 +149,9 @@ export default function ServiceScheduleForm({
         <div>
           <Label htmlFor="service_type">예배 유형</Label>
           <Select
-            value={isCustomMode ? '기타' : formData.service_type || '주일 2부 예배'}
+            value={isCustomMode ? CUSTOM_SERVICE_TYPE : formData.service_type || '주일 2부 예배'}
             onValueChange={(value) => {
-              if (value === '기타') {
+              if (value === CUSTOM_SERVICE_TYPE) {
                 setIsCustomMode(true);
                 setCustomServiceType('');
                 // 기타(자유 입력)는 주일 2부 예배일 수 없으므로 예배 후 연습 없음
